@@ -120,6 +120,7 @@ export function addPage(draft: EditorDraft, name: string): { draft: EditorDraft;
     showInNav: true,
     seoTitle: null,
     seoDescription: null,
+    seoKeywords: [],
     sections: [],
   };
   return {
@@ -133,7 +134,7 @@ export function addPage(draft: EditorDraft, name: string): { draft: EditorDraft;
 }
 
 export type PageMetaPatch = Partial<
-  Pick<WebsitePage, "name" | "slug" | "visible" | "showInNav" | "seoTitle" | "seoDescription">
+  Pick<WebsitePage, "name" | "slug" | "visible" | "showInNav" | "seoTitle" | "seoDescription" | "seoKeywords">
 >;
 
 /** Applies page settings and keeps the header menu and every link to the page in step. */

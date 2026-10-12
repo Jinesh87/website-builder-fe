@@ -73,10 +73,13 @@ export type WebsitePage = {
   showInNav: boolean;
   seoTitle: string | null;
   seoDescription: string | null;
+  seoKeywords: string[];
   sections: Section[];
 };
 
 export type WebsiteDetail = WebsiteSummary & {
+  /** Primary active custom domain; the live site canonicalises to it when set. */
+  customDomain: string | null;
   info: WebsiteInfo;
   draft: {
     theme: ThemeSettings;

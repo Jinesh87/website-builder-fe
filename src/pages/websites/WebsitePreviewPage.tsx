@@ -7,7 +7,7 @@ import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { DeviceToggle, PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
 import { SitePage, type SiteData } from "../../site-kit/index.ts";
-import { getLiveSiteUrl } from "../../utils/live-url.ts";
+import { getLiveSiteDomain, getLiveSiteUrl } from "../../utils/live-url.ts";
 import type { CreatedState } from "./CreateWebsitePage.tsx";
 
 export default function WebsitePreviewPage() {
@@ -54,7 +54,7 @@ export default function WebsitePreviewPage() {
     if (target) setPageId(target.id);
   }
 
-  const simulatedDomain = website ? `${website.subdomain || "preview"}.bytezora.site` : "preview.bytezora.site";
+  const simulatedDomain = getLiveSiteDomain(website?.subdomain || "preview", website?.customDomain);
   const currentPath = page?.slug === "/" ? "" : page?.slug ?? "";
   const fullUrl = `https://${simulatedDomain}${currentPath}`;
 
@@ -65,6 +65,8 @@ export default function WebsitePreviewPage() {
     document.title = `${pageTitle} — Preview`;
 
     let metaDesc = document.querySelector('meta[name="description"]');
+    const createdMeta = !metaDesc;
+    const originalDescription = metaDesc?.getAttribute("content") ?? null;
     if (!metaDesc) {
       metaDesc = document.createElement("meta");
       metaDesc.setAttribute("name", "description");
@@ -74,6 +76,9 @@ export default function WebsitePreviewPage() {
 
     return () => {
       document.title = originalTitle;
+      if (createdMeta) metaDesc.remove();
+      else if (originalDescription === null) metaDesc.removeAttribute("content");
+      else metaDesc.setAttribute("content", originalDescription);
     };
   }, [page, website]);
 
@@ -124,7 +129,7 @@ export default function WebsitePreviewPage() {
             </button>
             {website?.status === "PUBLISHED" && (
               <a
-                href={getLiveSiteUrl(website.subdomain)}
+                href={getLiveSiteUrl(website.subdomain, website.customDomain)}
                 target="_blank"
                 rel="noreferrer"
                 title="Open real live site in new tab"

@@ -1,5 +1,13 @@
 import { env } from "../config/env.ts";
 
+export function getLiveSiteDomain(subdomain?: string, customDomain?: string | null): string {
+  if (customDomain) {
+    return customDomain;
+  }
+  const base = env.publicSiteDomain;
+  return subdomain ? `${subdomain}.${base}` : base;
+}
+
 export function getLiveSiteUrl(subdomain: string, customDomain?: string | null): string {
   if (customDomain) {
     return `https://${customDomain}`;
@@ -13,5 +21,5 @@ export function getLiveSiteUrl(subdomain: string, customDomain?: string | null):
     const origin = env.apiUrl.replace(/\/api\/?$/, "");
     return `${origin}/live/${subdomain}`;
   }
-  return `https://${subdomain}.bytezora.site`;
+  return `https://${getLiveSiteDomain(subdomain)}`;
 }

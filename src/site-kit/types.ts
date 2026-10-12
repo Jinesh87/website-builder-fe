@@ -23,6 +23,7 @@ export type RadiusSize = "none" | "sm" | "md" | "lg";
 export type SpacingSize = "compact" | "normal" | "relaxed";
 
 export type ThemeSettings = {
+  language?: string;
   colors: {
     primary: string;
     secondary: string;

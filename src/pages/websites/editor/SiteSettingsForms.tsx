@@ -42,6 +42,11 @@ import {
   TextField,
 } from "./fields.tsx";
 import { FontPicker } from "./FontPicker.tsx";
+import { getLiveSiteDomain } from "../../../utils/live-url.ts";
+
+/** Mirrors the API's page validator. */
+const MAX_SEO_KEYWORDS = 10;
+const MAX_SEO_KEYWORD_LENGTH = 60;
 
 const linkTitle = (link: { label: string }) => link.label;
 const newLink = (): LinkRef => ({ label: "Link", href: "/" });
@@ -1186,6 +1191,30 @@ export function ThemeForm({
           onChange={(containerWidth) => onChange({ ...theme, containerWidth })}
         />
       </FormGroup>
+      <FormGroup title="Language & Localization">
+        <SelectField
+          label="Site language (<html lang>)"
+          value={theme.language || "en"}
+          options={[
+            { value: "en", label: "English (en)" },
+            { value: "es", label: "Spanish (es)" },
+            { value: "fr", label: "French (fr)" },
+            { value: "de", label: "German (de)" },
+            { value: "it", label: "Italian (it)" },
+            { value: "pt", label: "Portuguese (pt)" },
+            { value: "nl", label: "Dutch (nl)" },
+            { value: "ar", label: "Arabic (ar)" },
+            { value: "hi", label: "Hindi (hi)" },
+            { value: "ml", label: "Malayalam (ml)" },
+            { value: "zh", label: "Chinese (zh)" },
+            { value: "ja", label: "Japanese (ja)" },
+          ]}
+          onChange={(language) => onChange({ ...theme, language })}
+        />
+        <p className="-mt-1 text-ed-2xs text-ed-muted">
+          Sets the primary HTML language tag for search engines, SEO, and screen readers.
+        </p>
+      </FormGroup>
     </>
   );
 }
@@ -1251,8 +1280,20 @@ export function PageForm({
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeywordInput, setNewKeywordInput] = useState("");
+  const keywords = page.seoKeywords ?? [];
+  const keywordLimitReached = keywords.length >= MAX_SEO_KEYWORDS;
+
+  function addKeyword() {
+    const keyword = newKeywordInput.trim().toLowerCase().slice(0, MAX_SEO_KEYWORD_LENGTH);
+    if (!keyword || keywordLimitReached || keywords.includes(keyword)) return;
+    onChange({ seoKeywords: [...keywords, keyword] });
+    setNewKeywordInput("");
+  }
+
+  function removeKeyword(keyword: string) {
+    onChange({ seoKeywords: keywords.filter((existing) => existing !== keyword) });
+  }
   const [activeAssetPreview, setActiveAssetPreview] = useState<{
     title: string;
     filename: string;
@@ -1264,11 +1305,9 @@ export function PageForm({
 
   function getSitemapContent(): string {
     if (!website) return "";
-    const dom = website.subdomain
-      ? `https://${website.subdomain}.bytezora.site`
-      : "https://example.bytezora.site";
+    const dom = `https://${getLiveSiteDomain(website.subdomain, website.customDomain)}`;
     const visiblePages = website.draft.pages.filter((p) => p.visible);
-    const today = new Date().toISOString().split("T")[0];
+    const lastMod = (website.publishedAt || website.draft.draftUpdatedAt || new Date().toISOString()).split("T")[0];
 
     const urls = visiblePages.map((p) => {
       const slug =
@@ -1277,7 +1316,7 @@ export function PageForm({
       const changefreq = p.slug === "/" ? "daily" : "weekly";
       return `  <url>
     <loc>${dom}${slug}</loc>
-    <lastmod>${today}</lastmod>
+    <lastmod>${lastMod}</lastmod>
     <changefreq>${changefreq}</changefreq>
     <priority>${priority}</priority>
   </url>`;
@@ -1291,26 +1330,23 @@ ${urls.join("\n")}
 
   function getRobotsContent(): string {
     if (!website) return "";
-    const dom = website.subdomain
-      ? `https://${website.subdomain}.bytezora.site`
-      : "https://example.bytezora.site";
+    const dom = `https://${getLiveSiteDomain(website.subdomain, website.customDomain)}`;
     return `# Robots.txt generated automatically by Bytezora Engine
 User-agent: *
 Allow: /
 
+# Directives for AI Search Agents
+User-agent: GPTBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
 # Sitemap
 Sitemap: ${dom}/sitemap.xml`;
-  }
-
-  function addKeyword() {
-    const trimmed = newKeywordInput.trim().toLowerCase();
-    if (!trimmed || keywords.includes(trimmed)) return;
-    setKeywords([...keywords, trimmed]);
-    setNewKeywordInput("");
-  }
-
-  function removeKeyword(index: number) {
-    setKeywords(keywords.filter((_, i) => i !== index));
   }
 
   function copyModalContent() {
@@ -1323,9 +1359,7 @@ Sitemap: ${dom}/sitemap.xml`;
   const seoTitle = page.seoTitle ?? "";
   const seoDescription = page.seoDescription ?? "";
 
-  const domain = website?.subdomain
-    ? `${website.subdomain}.bytezora.site`
-    : "example.bytezora.site";
+  const domain = getLiveSiteDomain(website?.subdomain, website?.customDomain);
   const cleanPath = isHome ? "" : page.slug.replace(/^\//, "");
   const previewUrl = `https://${domain}${cleanPath ? `/${cleanPath}` : ""}`;
   const displayTitle =
@@ -1373,11 +1407,18 @@ Sitemap: ${dom}/sitemap.xml`;
         contentSummary: snippets,
       });
 
+      const generatedKeywords = [
+        ...new Set(
+          (res.keywords ?? [])
+            .map((keyword) => keyword.trim().toLowerCase().slice(0, MAX_SEO_KEYWORD_LENGTH))
+            .filter(Boolean),
+        ),
+      ].slice(0, MAX_SEO_KEYWORDS);
       onChange({
         seoTitle: res.seoTitle,
         seoDescription: res.seoDescription,
+        ...(generatedKeywords.length > 0 ? { seoKeywords: generatedKeywords } : {}),
       });
-      setKeywords(res.keywords);
       setSuccessMsg("Generated Google-optimized SEO Title & Description!");
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err) {
@@ -1545,28 +1586,28 @@ Sitemap: ${dom}/sitemap.xml`;
           />
         </div>
 
-        {/* Keywords Tags with Add / Delete support */}
         <div className="flex flex-col gap-1.5 pt-1">
           <div className="flex items-center justify-between">
             <span className="text-ed-2xs font-semibold uppercase tracking-wider text-ed-muted">
-              Target Keywords
+              Target keywords
             </span>
             <span className="text-ed-2xs text-ed-muted">
-              {keywords.length} keywords
+              {keywords.length}/{MAX_SEO_KEYWORDS}
             </span>
           </div>
 
           <div className="flex flex-wrap gap-1.5 min-h-6">
-            {keywords.map((kw, i) => (
+            {keywords.map((keyword) => (
               <span
-                key={i}
-                className="group/kw inline-flex items-center gap-1 rounded bg-ed-subtle border border-ed-border px-2 py-0.5 text-ed-2xs text-ed-text hover:border-ed-border-strong transition"
+                key={keyword}
+                className="inline-flex items-center gap-1 rounded bg-ed-subtle border border-ed-border px-2 py-0.5 text-ed-2xs text-ed-text"
               >
-                <span>{kw}</span>
+                <span>{keyword}</span>
                 <button
                   type="button"
-                  onClick={() => removeKeyword(i)}
+                  onClick={() => removeKeyword(keyword)}
                   title="Remove keyword"
+                  aria-label={`Remove keyword ${keyword}`}
                   className="text-ed-muted hover:text-red-500 rounded p-0.5 transition"
                 >
                   <X className="size-2.5" />
@@ -1580,11 +1621,12 @@ Sitemap: ${dom}/sitemap.xml`;
             )}
           </div>
 
-          {/* Add keyword input */}
           <div className="flex items-center gap-1.5 mt-1">
             <input
               type="text"
               value={newKeywordInput}
+              maxLength={MAX_SEO_KEYWORD_LENGTH}
+              disabled={keywordLimitReached}
               onChange={(e) => setNewKeywordInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -1592,18 +1634,23 @@ Sitemap: ${dom}/sitemap.xml`;
                   addKeyword();
                 }
               }}
-              placeholder="Add keyword (press Enter)…"
-              className="h-7 flex-1 rounded border border-ed-border bg-ed-panel px-2 text-ed-xs text-ed-text placeholder:text-ed-faint focus:border-ed-accent focus:outline-none"
+              placeholder={keywordLimitReached ? "Keyword limit reached" : "Add keyword (press Enter)…"}
+              aria-label="Add keyword"
+              className="h-7 flex-1 rounded border border-ed-border bg-ed-panel px-2 text-ed-xs text-ed-text placeholder:text-ed-faint focus:border-ed-accent focus:outline-none disabled:opacity-50"
             />
             <button
               type="button"
               onClick={addKeyword}
-              disabled={!newKeywordInput.trim()}
+              disabled={!newKeywordInput.trim() || keywordLimitReached}
+              aria-label="Add keyword"
               className="inline-flex h-7 items-center justify-center rounded border border-ed-border bg-ed-subtle px-2 text-ed-xs text-ed-text hover:bg-ed-hover disabled:opacity-40 transition"
             >
               <Plus className="size-3" />
             </button>
           </div>
+          <p className="text-ed-2xs text-ed-muted">
+            Saved with the page and used by the AI SEO generator. Work them into your title, description and copy.
+          </p>
         </div>
 
         {/* Automated Search Engine Assets Card */}
