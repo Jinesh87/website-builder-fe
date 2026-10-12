@@ -26,4 +26,5 @@ export { DEFAULT_FONT, FONT_CATEGORIES, FONT_KEYS, FONTS, fontStack, isFontKey }
 export type { FontCategory, FontDefinition } from "./fonts.ts";
 export { SITE_CSS } from "./styles.ts";
 export { SAMPLE_SITE } from "./sample-site.ts";
+export { HERO_VARIANTS } from "./types.ts";
 export type * from "./types.ts";
