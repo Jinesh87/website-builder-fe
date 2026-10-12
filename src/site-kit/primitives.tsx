@@ -36,10 +36,9 @@ export function SiteImage({
   className?: string;
   priority?: boolean;
 }) {
-  const alt =
-    image.alt && !["image", "hero background", "photo"].includes(image.alt.trim().toLowerCase())
-      ? image.alt
-      : "Website visual";
+  const trimmedAlt = image.alt?.trim();
+  const isGeneric = !trimmedAlt || ["image", "hero background", "photo", "picture", "website visual"].includes(trimmedAlt.toLowerCase());
+  const alt = !isGeneric ? trimmedAlt : "";
   return (
     <img
       src={image.url}

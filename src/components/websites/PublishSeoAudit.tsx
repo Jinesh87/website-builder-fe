@@ -128,6 +128,27 @@ export function runPrePublishSeoAudit(website: WebsiteDetail): SeoAuditReport {
         const alt = String((d.backgroundImage as { alt?: string }).alt || "").trim().toLowerCase();
         if (genericAltTerms.has(alt)) genericAltCount++;
       }
+      if (Array.isArray(d.images)) {
+        for (const img of d.images) {
+          if (img && typeof img === "object" && (img as { url?: string }).url) {
+            totalImages++;
+            const alt = String((img as { alt?: string; caption?: string }).alt || (img as { caption?: string }).caption || "").trim().toLowerCase();
+            if (genericAltTerms.has(alt)) genericAltCount++;
+          }
+        }
+      }
+      if (Array.isArray(d.members)) {
+        for (const m of d.members) {
+          if (m && typeof m === "object" && (m as { photo?: { url?: string; alt?: string } }).photo) {
+            const photo = (m as { photo: { url?: string; alt?: string } }).photo;
+            if (photo && typeof photo === "object" && photo.url) {
+              totalImages++;
+              const alt = String(photo.alt || (m as { name?: string }).name || "").trim().toLowerCase();
+              if (genericAltTerms.has(alt)) genericAltCount++;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -157,11 +178,11 @@ export function runPrePublishSeoAudit(website: WebsiteDetail): SeoAuditReport {
   }
 
   // 4. Structured Data Schemas & Business Entities
-  const hasBusinessDetails = Boolean(website.info.businessName || website.name);
+  const hasFormalBusinessName = Boolean(website.info.businessName && website.info.businessName.trim().length > 1);
   const hasContactInfo = Boolean(website.info.contactEmail || website.info.contactPhone || website.info.address);
   const hasFaq = visiblePages.some((p) => p.sections.some((s) => !s.hidden && s.type === "faq"));
 
-  if (hasBusinessDetails && hasContactInfo) {
+  if (hasFormalBusinessName && hasContactInfo) {
     const extraSchema = hasFaq ? " + FAQPage rich snippets" : "";
     items.push({
       id: "schema-org",
@@ -178,25 +199,38 @@ export function runPrePublishSeoAudit(website: WebsiteDetail): SeoAuditReport {
       title: "JSON-LD Structured Data",
       status: "warn",
       category: "Technical SEO",
-      scoreWeight: 12,
-      message: hasContactInfo
-        ? "Basic entity schema active; business name is using default project title."
+      scoreWeight: 10,
+      message: !hasFormalBusinessName
+        ? "Official Business Name not set (using project slug fallback)."
         : "Contact details missing; add email or phone for rich contact card schemas.",
-      recommendation: "Provide phone, email, and address in Project Settings for local ranking rich cards.",
+      recommendation: "Set formal Business Name and Contact details in Settings to enable rich Google Knowledge Graph panels.",
       icon: Network,
     });
   }
 
   // 5. Sitemap & AI Search Directives
-  items.push({
-    id: "sitemap-robots",
-    title: "Sitemap & AI Crawler Directives",
-    status: "pass",
-    category: "Crawlability",
-    scoreWeight: 15,
-    message: "Root /sitemap.xml and /robots.txt configured with GPTBot & PerplexityBot crawl rules.",
-    icon: ShieldCheck,
-  });
+  if (visiblePages.length > 0 && website.subdomain) {
+    items.push({
+      id: "sitemap-robots",
+      title: "Sitemap & AI Crawler Directives",
+      status: "pass",
+      category: "Crawlability",
+      scoreWeight: 15,
+      message: `Root /sitemap.xml (${visiblePages.length} pages) and /robots.txt configured with GPTBot & PerplexityBot crawl rules.`,
+      icon: ShieldCheck,
+    });
+  } else {
+    items.push({
+      id: "sitemap-robots",
+      title: "Sitemap & AI Crawler Directives",
+      status: "warn",
+      category: "Crawlability",
+      scoreWeight: 5,
+      message: "No live pages available to index in XML sitemap.",
+      recommendation: "Ensure at least one page is marked visible before publishing.",
+      icon: ShieldCheck,
+    });
+  }
 
   const totalScore = items.reduce((acc, curr) => acc + curr.scoreWeight, 0);
   const normalizedScore = Math.min(100, Math.max(0, Math.round(totalScore)));
