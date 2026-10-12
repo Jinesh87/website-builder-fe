@@ -49,9 +49,44 @@ export type AiUsageListResponse = {
   selectedYear: number;
 };
 
+export type AiCallDetail = {
+  id: string;
+  createdAt: string;
+  /** Which feature made the call, e.g. "site_copilot". */
+  scope: string;
+  model: string;
+  websiteId: string | null;
+  websiteName: string | null;
+  userName: string | null;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  durationMs: number;
+  inputCost: number;
+  outputCost: number;
+  cost: number;
+};
+
+export type ClientAiCallsResponse = {
+  client: { id: string; businessName: string };
+  calls: AiCallDetail[];
+  byFeature: Array<{ scope: string; calls: number; totalTokens: number; cost: number }>;
+  total: number;
+  totalCost: number;
+  page: number;
+  pageSize: number;
+};
+
+export type ClientAiCallsParams = {
+  month?: number | string;
+  year?: number | string;
+  page?: number;
+  pageSize?: number;
+};
+
 const BASE = "/admin/ai-usage";
 
-function toQuery(params: AiUsageListParams): string {
+function toQuery(params: AiUsageListParams | ClientAiCallsParams): string {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null && value !== "") {
@@ -64,4 +99,6 @@ function toQuery(params: AiUsageListParams): string {
 
 export const adminAiUsageApi = {
   list: (params: AiUsageListParams) => request<AiUsageListResponse>(`${BASE}${toQuery(params)}`),
+  clientCalls: (clientId: string, params: ClientAiCallsParams) =>
+    request<ClientAiCallsResponse>(`${BASE}/clients/${encodeURIComponent(clientId)}/calls${toQuery(params)}`),
 };

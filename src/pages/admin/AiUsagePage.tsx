@@ -7,7 +7,8 @@ import {
   DollarSign,
   Users,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { MONTH_OPTIONS, YEAR_OPTIONS, currentMonth, currentYear } from "./ai-usage-period.ts";
 import AiSparklesIcon from "../../components/icons/AiSparklesIcon.tsx";
 import {
   adminAiUsageApi,
@@ -19,34 +20,10 @@ import { errorMessage } from "../../api/http.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../../components/ui/SelectInput.tsx";
+import TablePagination from "../../components/ui/TablePagination.tsx";
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
 
-const PAGE_SIZE = 20;
-
-const currentYear = new Date().getFullYear();
-const currentMonth = new Date().getMonth() + 1;
-
-const MONTH_OPTIONS: SelectOption<string>[] = [
-  { value: "", label: "All months" },
-  { value: "1", label: "January" },
-  { value: "2", label: "February" },
-  { value: "3", label: "March" },
-  { value: "4", label: "April" },
-  { value: "5", label: "May" },
-  { value: "6", label: "June" },
-  { value: "7", label: "July" },
-  { value: "8", label: "August" },
-  { value: "9", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
-
-const YEAR_OPTIONS: SelectOption<string>[] = [
-  currentYear - 1,
-  currentYear,
-  currentYear + 1,
-].map((y) => ({ value: String(y), label: String(y) }));
+const DEFAULT_PAGE_SIZE = 10;
 
 const SORT_OPTIONS: SelectOption<AiUsageSortBy>[] = [
   { value: "totalTokens", label: "Most tokens" },
@@ -85,18 +62,20 @@ function formatDate(iso: string | null): string {
 
 export default function AiUsagePage() {
   const [search, setSearch] = useState("");
-  const [month, setMonth] = useState<string>(String(currentMonth));
-  const [year, setYear] = useState<string>(String(currentYear));
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [month, setMonth] = useState<string>(searchParams.get("month") ?? String(currentMonth));
+  const [year, setYear] = useState<string>(searchParams.get("year") ?? String(currentYear));
   const [sortBy, setSortBy] = useState<AiUsageSortBy>("totalTokens");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
 
   const [data, setData] = useState<AiUsageListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
@@ -108,7 +87,7 @@ export default function AiUsagePage() {
         sortBy,
         sortOrder,
         page,
-        pageSize: PAGE_SIZE,
+        pageSize,
       });
       setData(res);
     } catch (err) {
@@ -116,7 +95,7 @@ export default function AiUsagePage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, month, year, sortBy, sortOrder, page]);
+  }, [debouncedSearch, month, year, sortBy, sortOrder, page, pageSize]);
 
   useEffect(() => {
     void load();
@@ -129,7 +108,9 @@ export default function AiUsagePage() {
     };
   }
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
+  const callsPath = (clientId: string) =>
+    `/admin/ai-usage/${clientId}?${new URLSearchParams({ month, year }).toString()}`;
+
   const hasFilters = Boolean(debouncedSearch || month !== String(currentMonth) || year !== String(currentYear));
 
   return (
@@ -299,10 +280,16 @@ export default function AiUsagePage() {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {data.items.map((row) => (
-                    <tr key={row.clientId} className="hover:bg-canvas/40">
+                    <tr
+                      key={row.clientId}
+                      onClick={() => navigate(callsPath(row.clientId))}
+                      title="View cost of each call"
+                      className="cursor-pointer hover:bg-canvas/40"
+                    >
                       <td className="px-5 py-3">
                         <Link
                           to={`/admin/clients/${row.clientId}`}
+                          onClick={(event) => event.stopPropagation()}
                           className="font-medium text-ink hover:text-brand"
                         >
                           {row.businessName}
@@ -355,9 +342,18 @@ export default function AiUsagePage() {
                         {formatDate(row.lastUsedAt)}
                       </td>
 
-                      <td className="px-5 py-3">
+                      <td className="whitespace-nowrap px-5 py-3">
+                        <Link
+                          to={callsPath(row.clientId)}
+                          onClick={(event) => event.stopPropagation()}
+                          className="font-medium text-brand hover:underline"
+                        >
+                          Call details
+                        </Link>
+                        <span className="mx-2 text-line-strong">·</span>
                         <Link
                           to={`/admin/websites?clientId=${encodeURIComponent(row.clientId)}`}
+                          onClick={(event) => event.stopPropagation()}
                           className="font-medium text-brand hover:underline"
                         >
                           Websites
@@ -372,30 +368,17 @@ export default function AiUsagePage() {
         )}
       </section>
 
-      {/* Pagination Footer */}
-      {data && data.total > data.pageSize && (
-        <div className="mt-4 flex items-center justify-between text-sm text-ink-body">
-          <span>
-            Page {data.page} of {totalPages} · {data.total} clients
-          </span>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              isDisabled={page <= 1 || loading}
-              onPress={() => setPage(page - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              isDisabled={page >= totalPages || loading}
-              onPress={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
-          </div>
+      {data && data.total > 0 && (
+        <div className="mt-4">
+          <TablePagination
+            page={data.page}
+            pageSize={data.pageSize}
+            total={data.total}
+            itemLabel="clients"
+            isDisabled={loading}
+            onPageChange={setPage}
+            onPageSizeChange={resetPageAnd(setPageSize)}
+          />
         </div>
       )}
     </div>

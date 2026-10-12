@@ -20,6 +20,7 @@ const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage.tsx"
 const DashboardPage = lazy(() => import("./pages/client/DashboardPage.tsx"));
 const MyWebsitesPage = lazy(() => import("./pages/client/MyWebsitesPage.tsx"));
 const AccountSettingsPage = lazy(() => import("./pages/client/AccountSettingsPage.tsx"));
+const WalletPage = lazy(() => import("./pages/client/WalletPage.tsx"));
 const MediaLibraryPage = lazy(() => import("./pages/media/MediaLibraryPage.tsx"));
 const CreateWebsitePage = lazy(() => import("./pages/websites/CreateWebsitePage.tsx"));
 const WebsitePreviewPage = lazy(() => import("./pages/websites/WebsitePreviewPage.tsx"));
@@ -31,6 +32,8 @@ const ClientsPage = lazy(() => import("./pages/admin/ClientsPage.tsx"));
 const ClientFormPage = lazy(() => import("./pages/admin/ClientFormPage.tsx"));
 const AllWebsitesPage = lazy(() => import("./pages/admin/AllWebsitesPage.tsx"));
 const AiUsagePage = lazy(() => import("./pages/admin/AiUsagePage.tsx"));
+const AiUsageClientPage = lazy(() => import("./pages/admin/AiUsageClientPage.tsx"));
+const TransactionsPage = lazy(() => import("./pages/admin/TransactionsPage.tsx"));
 const SectionLibraryPage = lazy(() => import("./pages/admin/SectionLibraryPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage.tsx"));
 
@@ -68,6 +71,7 @@ export default function App() {
                 <Route path="websites" element={<MyWebsitesPage />} />
                 <Route path="media" element={<MediaLibraryPage />} />
                 <Route path="account" element={<AccountSettingsPage />} />
+                <Route path="wallet" element={<WalletPage />} />
               </Route>
             </Route>
 
@@ -87,6 +91,8 @@ export default function App() {
                 <Route path="clients/:id" element={<ClientFormPage />} />
                 <Route path="websites" element={<AllWebsitesPage />} />
                 <Route path="ai-usage" element={<AiUsagePage />} />
+                <Route path="ai-usage/:clientId" element={<AiUsageClientPage />} />
+                <Route path="transactions" element={<TransactionsPage />} />
                 <Route path="sections" element={<SectionLibraryPage />} />
                 <Route path="media" element={<MediaLibraryPage />} />
                 <Route path="settings" element={<SettingsPage />} />
