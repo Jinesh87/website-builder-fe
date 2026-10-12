@@ -6753,7 +6753,7 @@ details[open] > summary .wb-faq-plus {
   .wb-footer-grid { grid-template-columns: repeat(2, 1fr); }
   
   /* Header Tablet Responsive */
-  .wb-nav, .wb-nav-left, .wb-actions-right, .wb-header-cta,
+  .wb-nav, .wb-nav-left, .wb-header-cta,
   .wb-dock-nav, .wb-dock-status, .wb-dock-cmd-btn, .wb-utility-topbar,
   .wb-cmd-nav, .wb-cmd-search-trigger, .wb-mega-nav, .wb-editorial-grid-nav,
   .wb-console-nav, .wb-console-status-pill, .wb-console-search-pill { display: none !important; }
@@ -6774,7 +6774,7 @@ details[open] > summary .wb-faq-plus {
   .wb-container { padding: 0 16px; }
   .wb-grid { grid-template-columns: repeat(var(--wb-cols-mobile, 1), minmax(0, 1fr)); gap: 16px; }
   .wb-hide-mobile { display: none; }
-  .wb-nav, .wb-nav-left, .wb-actions-right, .wb-header-cta,
+  .wb-nav, .wb-nav-left, .wb-header-cta,
   .wb-dock-nav, .wb-dock-status, .wb-dock-cmd-btn, .wb-utility-topbar,
   .wb-cmd-nav, .wb-cmd-search-trigger, .wb-mega-nav, .wb-editorial-grid-nav,
   .wb-console-nav, .wb-console-status-pill, .wb-console-search-pill { display: none !important; }

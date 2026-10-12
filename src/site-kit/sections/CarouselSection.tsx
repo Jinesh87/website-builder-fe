@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { SectionHead, SectionShell, SiteImage, SiteLink } from "../primitives.tsx";
+import { StaticStates, useStaticRender } from "../render-mode.tsx";
 import type {
   CarouselCardStyle,
   CarouselSlide,
@@ -110,6 +111,7 @@ function CarouselCards({
                 type="button"
                 className={`wb-carousel-dot ${i === activeIndex ? "wb-dot-active" : ""}`}
                 onClick={() => onSelect(i)}
+                data-wb-go={i}
                 aria-label={`Slide ${i + 1}`}
                 aria-selected={i === activeIndex}
               />
@@ -123,6 +125,7 @@ function CarouselCards({
               type="button"
               className="wb-carousel-arrow-btn"
               onClick={onPrev}
+              data-wb-go="prev"
               aria-label="Previous slide"
             >
               <ChevronLeftIcon />
@@ -131,6 +134,7 @@ function CarouselCards({
               type="button"
               className="wb-carousel-arrow-btn"
               onClick={onNext}
+              data-wb-go="next"
               aria-label="Next slide"
             >
               <ChevronRightIcon />
@@ -260,6 +264,7 @@ function CarouselHeroSlider({
                   type="button"
                   className={`wb-carousel-hero-dot ${i === activeIndex ? "wb-hero-dot-active" : ""}`}
                   onClick={() => onSelect(i)}
+                data-wb-go={i}
                   aria-label={`Slide ${i + 1}`}
                 >
                   <span className="wb-hero-dot-bar" />
@@ -274,6 +279,7 @@ function CarouselHeroSlider({
                 type="button"
                 className="wb-carousel-hero-arrow-btn"
                 onClick={onPrev}
+              data-wb-go="prev"
                 aria-label="Previous slide"
               >
                 <ChevronLeftIcon />
@@ -282,6 +288,7 @@ function CarouselHeroSlider({
                 type="button"
                 className="wb-carousel-hero-arrow-btn"
                 onClick={onNext}
+              data-wb-go="next"
                 aria-label="Next slide"
               >
                 <ChevronRightIcon />
@@ -333,6 +340,7 @@ function CarouselShowcase({
               key={i}
               className={`wb-carousel-showcase-card ${positionClass} ${cardClass}`}
               onClick={() => onSelect(i)}
+                data-wb-go={i}
             >
               {slide.image && (
                 <div className="wb-carousel-showcase-media">
@@ -355,13 +363,15 @@ function CarouselShowcase({
       </div>
 
       <div className="wb-carousel-showcase-nav">
-        <button type="button" className="wb-carousel-arrow-btn" onClick={onPrev} aria-label="Previous">
+        <button type="button" className="wb-carousel-arrow-btn" onClick={onPrev}
+              data-wb-go="prev" aria-label="Previous">
           <ChevronLeftIcon />
         </button>
         <span className="wb-carousel-counter">
           {String(activeIndex + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
         </span>
-        <button type="button" className="wb-carousel-arrow-btn" onClick={onNext} aria-label="Next">
+        <button type="button" className="wb-carousel-arrow-btn" onClick={onNext}
+              data-wb-go="next" aria-label="Next">
           <ChevronRightIcon />
         </button>
       </div>
@@ -422,6 +432,7 @@ function CarouselMinimalEditorial({
                   type="button"
                   className={`wb-carousel-editorial-tab ${idx === activeIndex ? "wb-tab-active" : ""}`}
                   onClick={() => onSelect(idx)}
+                  data-wb-go={idx}
                 >
                   <span className="wb-tab-line" />
                 </button>
@@ -429,10 +440,12 @@ function CarouselMinimalEditorial({
             </div>
 
             <div className="wb-carousel-arrows">
-              <button type="button" className="wb-carousel-arrow-btn" onClick={onPrev} aria-label="Previous">
+              <button type="button" className="wb-carousel-arrow-btn" onClick={onPrev}
+              data-wb-go="prev" aria-label="Previous">
                 <ChevronLeftIcon />
               </button>
-              <button type="button" className="wb-carousel-arrow-btn" onClick={onNext} aria-label="Next">
+              <button type="button" className="wb-carousel-arrow-btn" onClick={onNext}
+              data-wb-go="next" aria-label="Next">
                 <ChevronRightIcon />
               </button>
             </div>
@@ -526,6 +539,7 @@ function CarouselImageGallery({
               type="button"
               className="wb-carousel-gallery-arrow-btn"
               onClick={onPrev}
+              data-wb-go="prev"
               aria-label="Previous image"
             >
               <ChevronLeftIcon />
@@ -534,6 +548,7 @@ function CarouselImageGallery({
               type="button"
               className="wb-carousel-gallery-arrow-btn"
               onClick={onNext}
+              data-wb-go="next"
               aria-label="Next image"
             >
               <ChevronRightIcon />
@@ -550,6 +565,7 @@ function CarouselImageGallery({
                 type="button"
                 className={`wb-carousel-dot ${i === activeIndex ? "wb-dot-active" : ""}`}
                 onClick={() => onSelect(i)}
+                data-wb-go={i}
                 aria-label={`Image ${i + 1}`}
               />
             ))}
@@ -566,6 +582,7 @@ function CarouselImageGallery({
               type="button"
               className={`wb-carousel-thumb-btn ${i === activeIndex ? "wb-thumb-active" : ""}`}
               onClick={() => onSelect(i)}
+                data-wb-go={i}
               aria-label={`Go to slide ${i + 1}`}
               aria-selected={i === activeIndex}
             >
@@ -622,6 +639,7 @@ function CarouselImageStrip({
               className={`wb-carousel-strip-item ${index === activeIndex ? "wb-strip-active" : ""}`}
               style={{ width: `${slideWidthPct}%` }}
               onClick={() => onSelect(index)}
+              data-wb-go={index}
             >
               <div className="wb-carousel-strip-card">
                 <div className={`wb-carousel-strip-media ${aspectClass}`}>
@@ -656,6 +674,7 @@ function CarouselImageStrip({
                 type="button"
                 className={`wb-carousel-dot ${i === safeIndex ? "wb-dot-active" : ""}`}
                 onClick={() => onSelect(i)}
+                data-wb-go={i}
                 aria-label={`Position ${i + 1}`}
               />
             ))}
@@ -668,6 +687,7 @@ function CarouselImageStrip({
               type="button"
               className="wb-carousel-arrow-btn"
               onClick={onPrev}
+              data-wb-go="prev"
               aria-label="Previous images"
             >
               <ChevronLeftIcon />
@@ -676,6 +696,7 @@ function CarouselImageStrip({
               type="button"
               className="wb-carousel-arrow-btn"
               onClick={onNext}
+              data-wb-go="next"
               aria-label="Next images"
             >
               <ChevronRightIcon />
@@ -726,6 +747,7 @@ function CarouselImageCoverflow({
               key={i}
               className={`wb-carousel-coverflow-card ${positionClass}`}
               onClick={() => onSelect(i)}
+                data-wb-go={i}
             >
               <div className={`wb-carousel-coverflow-media ${aspectClass}`}>
                 {slide.image && (
@@ -746,13 +768,15 @@ function CarouselImageCoverflow({
       </div>
 
       <div className="wb-carousel-coverflow-nav">
-        <button type="button" className="wb-carousel-arrow-btn" onClick={onPrev} aria-label="Previous">
+        <button type="button" className="wb-carousel-arrow-btn" onClick={onPrev}
+              data-wb-go="prev" aria-label="Previous">
           <ChevronLeftIcon />
         </button>
         <span className="wb-carousel-counter">
           {String(activeIndex + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
         </span>
-        <button type="button" className="wb-carousel-arrow-btn" onClick={onNext} aria-label="Next">
+        <button type="button" className="wb-carousel-arrow-btn" onClick={onNext}
+              data-wb-go="next" aria-label="Next">
           <ChevronRightIcon />
         </button>
       </div>
@@ -767,6 +791,7 @@ export default function CarouselSection({ section }: { section: SectionOf<"carou
   const { data } = section;
   const variant: CarouselVariant = data.variant || "cards";
   const slides = data.slides && data.slides.length > 0 ? data.slides : [];
+  const isStatic = useStaticRender();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -822,69 +847,7 @@ export default function CarouselSection({ section }: { section: SectionOf<"carou
           </div>
         )}
 
-        {variant === "hero-slider" ? (
-          <CarouselHeroSlider
-            slides={slides}
-            cardStyle={data.cardStyle}
-            align={data.align}
-            activeIndex={activeIndex}
-            onPrev={prevSlide}
-            onNext={nextSlide}
-            onSelect={setActiveIndex}
-            showArrows={showArrows}
-            showDots={showDots}
-          />
-        ) : variant === "showcase" ? (
-          <CarouselShowcase
-            slides={slides}
-            cardStyle={data.cardStyle}
-            activeIndex={activeIndex}
-            onPrev={prevSlide}
-            onNext={nextSlide}
-            onSelect={setActiveIndex}
-          />
-        ) : variant === "minimal-editorial" ? (
-          <CarouselMinimalEditorial
-            slides={slides}
-            activeIndex={activeIndex}
-            onPrev={prevSlide}
-            onNext={nextSlide}
-            onSelect={setActiveIndex}
-          />
-        ) : variant === "image-gallery" ? (
-          <CarouselImageGallery
-            slides={slides}
-            activeIndex={activeIndex}
-            onPrev={prevSlide}
-            onNext={nextSlide}
-            onSelect={setActiveIndex}
-            showArrows={showArrows}
-            showDots={showDots}
-            showThumbnails={showThumbnails}
-            aspect={imageAspect}
-          />
-        ) : variant === "image-strip" ? (
-          <CarouselImageStrip
-            slides={slides}
-            columns={columns}
-            aspect={imageAspect}
-            activeIndex={activeIndex}
-            onPrev={prevSlide}
-            onNext={nextSlide}
-            onSelect={setActiveIndex}
-            showArrows={showArrows}
-            showDots={showDots}
-          />
-        ) : variant === "image-coverflow" ? (
-          <CarouselImageCoverflow
-            slides={slides}
-            aspect={imageAspect}
-            activeIndex={activeIndex}
-            onPrev={prevSlide}
-            onNext={nextSlide}
-            onSelect={setActiveIndex}
-          />
-        ) : variant === "curved-banner" ? (
+        {variant === "curved-banner" ? (
           <div className="wb-carousel-curved-wrapper">
             <CurvedBannerCarousel
               items={
@@ -907,19 +870,95 @@ export default function CarouselSection({ section }: { section: SectionOf<"carou
               pauseOnHover={data.pauseOnHover ?? true}
             />
           </div>
-        ) : (
-          <CarouselCards
-            slides={slides}
-            cardStyle={data.cardStyle}
-            activeIndex={activeIndex}
-            onPrev={prevSlide}
-            onNext={nextSlide}
-            onSelect={setActiveIndex}
-            showArrows={showArrows}
-            showDots={showDots}
+        ) : isStatic ? (
+          <StaticStates
+            states={slides.map((_, index) => index)}
+            initial={0}
+            render={renderSlides}
+            autoplaySeconds={autoPlay && slides.length > 1 ? intervalSeconds : undefined}
+            pauseOnHover={data.pauseOnHover}
           />
+        ) : (
+          renderSlides(activeIndex)
         )}
       </div>
     </SectionShell>
   );
+
+  function renderSlides(activeIndex: number) {
+    return variant === "hero-slider" ? (
+      <CarouselHeroSlider
+        slides={slides}
+        cardStyle={data.cardStyle}
+        align={data.align}
+        activeIndex={activeIndex}
+        onPrev={prevSlide}
+        onNext={nextSlide}
+        onSelect={setActiveIndex}
+        showArrows={showArrows}
+        showDots={showDots}
+      />
+    ) : variant === "showcase" ? (
+      <CarouselShowcase
+        slides={slides}
+        cardStyle={data.cardStyle}
+        activeIndex={activeIndex}
+        onPrev={prevSlide}
+        onNext={nextSlide}
+        onSelect={setActiveIndex}
+      />
+    ) : variant === "minimal-editorial" ? (
+      <CarouselMinimalEditorial
+        slides={slides}
+        activeIndex={activeIndex}
+        onPrev={prevSlide}
+        onNext={nextSlide}
+        onSelect={setActiveIndex}
+      />
+    ) : variant === "image-gallery" ? (
+      <CarouselImageGallery
+        slides={slides}
+        activeIndex={activeIndex}
+        onPrev={prevSlide}
+        onNext={nextSlide}
+        onSelect={setActiveIndex}
+        showArrows={showArrows}
+        showDots={showDots}
+        showThumbnails={showThumbnails}
+        aspect={imageAspect}
+      />
+    ) : variant === "image-strip" ? (
+      <CarouselImageStrip
+        slides={slides}
+        columns={columns}
+        aspect={imageAspect}
+        activeIndex={activeIndex}
+        onPrev={prevSlide}
+        onNext={nextSlide}
+        onSelect={setActiveIndex}
+        showArrows={showArrows}
+        showDots={showDots}
+      />
+    ) : variant === "image-coverflow" ? (
+      <CarouselImageCoverflow
+        slides={slides}
+        aspect={imageAspect}
+        activeIndex={activeIndex}
+        onPrev={prevSlide}
+        onNext={nextSlide}
+        onSelect={setActiveIndex}
+      />
+    ) : (
+      <CarouselCards
+        slides={slides}
+        cardStyle={data.cardStyle}
+        activeIndex={activeIndex}
+        onPrev={prevSlide}
+        onNext={nextSlide}
+        onSelect={setActiveIndex}
+        showArrows={showArrows}
+        showDots={showDots}
+      />
+    );
+  }
 }

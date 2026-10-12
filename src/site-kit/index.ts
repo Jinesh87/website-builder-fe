@@ -25,5 +25,7 @@ export { DEFAULT_THEME, sectionFontStyle, themeToCssVars } from "./theme.ts";
 export { DEFAULT_FONT, FONT_CATEGORIES, FONT_KEYS, FONTS, fontStack, isFontKey } from "./fonts.ts";
 export type { FontCategory, FontDefinition } from "./fonts.ts";
 export { SITE_CSS } from "./styles.ts";
+export { SiteRenderModeProvider } from "./render-mode.tsx";
+export type { SiteRenderMode } from "./render-mode.tsx";
 export { SAMPLE_SITE } from "./sample-site.ts";
 export type * from "./types.ts";
