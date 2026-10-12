@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Spinner } from "@heroui/react";
-import { ArrowLeft, Check, Copy, Lock, Pencil, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, Copy, Lock, Pencil, X } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { errorMessage } from "../../api/http.ts";
 import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { DeviceToggle, PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
 import { SitePage, type SiteData } from "../../site-kit/index.ts";
+import { getLiveSiteUrl } from "../../utils/live-url.ts";
 import type { CreatedState } from "./CreateWebsitePage.tsx";
 
 export default function WebsitePreviewPage() {
@@ -57,11 +58,31 @@ export default function WebsitePreviewPage() {
   const currentPath = page?.slug === "/" ? "" : page?.slug ?? "";
   const fullUrl = `https://${simulatedDomain}${currentPath}`;
 
+  useEffect(() => {
+    if (!page) return;
+    const originalTitle = document.title;
+    const pageTitle = page.seoTitle || (website?.name ? `${page.name} | ${website.name}` : page.name);
+    document.title = `${pageTitle} — Preview`;
+
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement("meta");
+      metaDesc.setAttribute("name", "description");
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute("content", page.seoDescription || "");
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [page, website]);
+
   function copyUrl() {
     navigator.clipboard.writeText(fullUrl).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
 
   return (
     <div className="h-screen flex flex-col bg-zinc-900 text-zinc-100 antialiased overflow-hidden">
@@ -101,6 +122,18 @@ export default function WebsitePreviewPage() {
             >
               {copied ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
             </button>
+            {website?.status === "PUBLISHED" && (
+              <a
+                href={getLiveSiteUrl(website.subdomain)}
+                target="_blank"
+                rel="noreferrer"
+                title="Open real live site in new tab"
+                className="flex items-center gap-1 rounded bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-400 transition hover:bg-emerald-500/25"
+              >
+                <span>Live</span>
+                <ArrowUpRight className="size-3" />
+              </a>
+            )}
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import { History } from "lucide-react";
 import { errorMessage } from "../../../api/http.ts";
 import { websitesApi, type WebsiteDetail, type WebsiteVersion } from "../../../api/websites.ts";
 import FormAlert from "../../../components/ui/FormAlert.tsx";
+import PublishSeoAudit from "../../../components/websites/PublishSeoAudit.tsx";
 import { useEditor } from "../editor-context.ts";
 
 type PublishDialogProps = {
@@ -57,7 +58,7 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
 
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={(open) => !open && !publishing && onClose()}>
-      <Modal.Container size="md">
+      <Modal.Container size="lg">
         <Modal.Dialog aria-label="Publish website">
           <Modal.Header>
             <Modal.Heading>Publish “{website.name}”?</Modal.Heading>
@@ -69,6 +70,9 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
                 <span className="font-mono text-ink">{website.subdomain}</span>. Your draft stays editable, and the
                 live site only changes when you publish again.
               </p>
+
+              {/* Pre-Publish Live SEO Audit */}
+              <PublishSeoAudit website={website} />
               <ul className="grid grid-cols-2 gap-2 text-xs">
                 <li className="rounded-md border border-line px-3 py-2">
                   <span className="block text-ink-muted">Pages going live</span>

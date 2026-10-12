@@ -121,7 +121,7 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
 }
 
 function SiteInspector() {
-  const { draft, page, themes, editDraft, selectPage } = useEditor();
+  const { draft, page, themes, editDraft, selectPage, website } = useEditor();
   const [tab, setTab] = useState<SiteAreaTab>("page");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -143,7 +143,14 @@ function SiteInspector() {
       <div role="tabpanel" aria-label={AREA_TABS.find((t) => t.id === tab)?.label} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {tab === "page" && (
           <>
-            <PageForm key={page.id} page={page} pages={draft.pages} onChange={(patch) => editDraft((current) => updatePageMeta(current, page.id, patch))} />
+            <PageForm
+              key={page.id}
+              page={page}
+              pages={draft.pages}
+              website={website}
+              onChange={(patch) => editDraft((current) => updatePageMeta(current, page.id, patch))}
+            />
+
             {page.slug !== "/" && (
               <div className="px-4 py-4">
                 <button

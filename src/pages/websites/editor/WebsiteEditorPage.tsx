@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  Globe,
   Home,
   LayoutPanelTop,
   LayoutTemplate,
@@ -25,6 +26,7 @@ import ConfirmDialog from "../../../components/ui/ConfirmDialog.tsx";
 import FormAlert from "../../../components/ui/FormAlert.tsx";
 import { DeviceToggle, PreviewFrame, type Device } from "../../../components/websites/DevicePreview.tsx";
 import { WebsiteStatusChip } from "../../../components/websites/website-labels.tsx";
+import { getLiveSiteUrl } from "../../../utils/live-url.ts";
 import {
   DEFAULT_FONT,
   isFontKey,
@@ -434,7 +436,14 @@ export default function WebsiteEditorPage() {
       inspectorTitle = "Page settings";
       inspector = (
         <>
-          <PageForm key={page.id} page={page} pages={pages} onChange={(patch) => edit((current) => updatePageMeta(current, page.id, patch))} />
+          <PageForm
+            key={page.id}
+            page={page}
+            pages={pages}
+            website={website}
+            onChange={(patch) => edit((current) => updatePageMeta(current, page.id, patch))}
+          />
+
           {page.slug !== "/" && (
             <div className="px-4 py-4">
               <Button variant="danger-soft" size="sm" onPress={() => setConfirm({ kind: "delete-page" })}>
@@ -472,6 +481,18 @@ export default function WebsiteEditorPage() {
             >
               Preview
             </Link>
+          )}
+          {website && website.status === "PUBLISHED" && (
+            <a
+              href={getLiveSiteUrl(website.subdomain)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-sm font-medium text-emerald-400 hover:text-emerald-300"
+              title="Open live published website in new tab"
+            >
+              <Globe className="size-3.5" aria-hidden />
+              <span>Live Site</span>
+            </a>
           )}
           <button
             type="button"

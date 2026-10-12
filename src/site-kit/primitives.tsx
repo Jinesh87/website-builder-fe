@@ -27,8 +27,28 @@ export function SiteButton({ link, tone = "primary" }: { link: LinkRef; tone?: "
   return <SiteLink link={link} className={`wb-btn wb-btn-${tone}`} />;
 }
 
-export function SiteImage({ image, className }: { image: ImageRef; className?: string }) {
-  return <img src={image.url} alt={image.alt} className={className} loading="lazy" decoding="async" />;
+export function SiteImage({
+  image,
+  className,
+  priority = false,
+}: {
+  image: ImageRef;
+  className?: string;
+  priority?: boolean;
+}) {
+  const trimmedAlt = image.alt?.trim();
+  const isGeneric = !trimmedAlt || ["image", "hero background", "photo", "picture", "website visual"].includes(trimmedAlt.toLowerCase());
+  const alt = !isGeneric ? trimmedAlt : "";
+  return (
+    <img
+      src={image.url}
+      alt={alt}
+      className={className}
+      loading={priority ? "eager" : "lazy"}
+      decoding="async"
+      fetchPriority={priority ? "high" : "auto"}
+    />
+  );
 }
 
 const ICON_PATHS: Record<IconName, ReactNode> = {
