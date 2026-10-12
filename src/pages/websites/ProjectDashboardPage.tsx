@@ -13,6 +13,7 @@ import SitePreviewCard from "../../components/dashboard/SitePreviewCard.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import { BUILDER_LABELS, WebsiteStatusChip, formatDateTime } from "../../components/websites/website-labels.tsx";
+import PublishSeoAudit from "../../components/websites/PublishSeoAudit.tsx";
 import type { SiteData } from "../../site-kit/index.ts";
 import { getLiveSiteUrl } from "../../utils/live-url.ts";
 
@@ -52,6 +53,7 @@ export default function ProjectDashboardPage() {
   const [loadError, setLoadError] = useState<{ notFound: boolean; message: string } | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -95,6 +97,7 @@ export default function ProjectDashboardPage() {
     try {
       setWebsite(await websitesApi.publish(website.id, website.draft.draftUpdatedAt));
       await loadVersions();
+      setConfirmPublish(false);
     } catch (err) {
       setPublishError(errorMessage(err));
     } finally {
@@ -198,7 +201,7 @@ export default function ProjectDashboardPage() {
               <Pencil className="size-4" aria-hidden /> Edit site
             </Link>
             {needsPublish && (
-              <Button size="sm" onPress={handlePublish} isPending={publishing}>
+              <Button size="sm" onPress={() => { setPublishError(null); setConfirmPublish(true); }} isPending={publishing}>
                 <Rocket className="size-4" aria-hidden /> Publish
               </Button>
             )}
@@ -299,6 +302,36 @@ export default function ProjectDashboardPage() {
             and deployments will be permanently removed. This can't be undone.
           </p>
           {deleteError && <FormAlert status="danger">{deleteError}</FormAlert>}
+        </div>
+      </CommonModal>
+
+      <CommonModal
+        isOpen={confirmPublish}
+        onClose={() => !publishing && setConfirmPublish(false)}
+        headerDetails={{
+          icon: <Rocket className="size-4.5" />,
+          title: "Publish website",
+          description: `${website.name} · ${website.subdomain}`,
+        }}
+        size="lg"
+        primaryAction={{
+          label: "Confirm & Publish",
+          onPress: handlePublish,
+          isPending: publishing,
+        }}
+        secondaryAction={{
+          label: "Cancel",
+          onPress: () => setConfirmPublish(false),
+          isDisabled: publishing,
+        }}
+      >
+        <div className="space-y-3.5">
+          <p className="text-xs text-ink-body">
+            A new production snapshot will be generated from your draft and published live at{" "}
+            <strong className="font-mono text-ink">{website.subdomain}.bytezora.site</strong>.
+          </p>
+          <PublishSeoAudit website={website} />
+          {publishError && <FormAlert status="danger">{publishError}</FormAlert>}
         </div>
       </CommonModal>
     </div>
