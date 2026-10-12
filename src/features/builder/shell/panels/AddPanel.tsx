@@ -30,6 +30,7 @@ import {
   SectionView,
   SiteStyles,
   themeToCssVars,
+  type HeroData,
   type SectionCategory,
   type SectionPreset,
   type ThemeSettings,
@@ -74,15 +75,35 @@ const HEADER_PREVIEW_WIDTH = 1360;
 const HEADER_PREVIEW_SCALE = (PREVIEW_WIDTH * PREVIEW_SCALE) / HEADER_PREVIEW_WIDTH;
 
 function SectionLivePreview({ preset, theme }: { preset: SectionPreset; theme: ThemeSettings }) {
-  const section = useMemo(() => preset.create(), [preset.key]);
   const isHeader = preset.type === "header";
   const isAuth = preset.type === "auth";
   const isCurvedHero = preset.key === "hero-curved-carousel";
   const isHeaderOrFooter = isHeader || preset.type === "footer";
-  const heightClass = isHeaderOrFooter ? "h-20" : isAuth || isCurvedHero ? "h-36" : "h-32";
+  const heightClass = isHeaderOrFooter
+    ? "h-20"
+    : isAuth
+      ? "h-36"
+      : isCurvedHero
+        ? "h-48"
+        : "h-32";
   const isWide = isHeader || isAuth;
   const width = isWide ? HEADER_PREVIEW_WIDTH : PREVIEW_WIDTH;
-  const scale = isWide ? HEADER_PREVIEW_SCALE : isCurvedHero ? 0.20 : PREVIEW_SCALE;
+  const scale = isWide
+    ? HEADER_PREVIEW_SCALE
+    : isCurvedHero
+      ? 0.265
+      : PREVIEW_SCALE;
+
+  const section = useMemo(() => {
+    const s = preset.create();
+    if (isCurvedHero && s.data) {
+      s.data = {
+        ...(s.data as HeroData),
+        carouselSpeed: 0,
+      };
+    }
+    return s;
+  }, [preset.key, isCurvedHero]);
 
   return (
     <div
@@ -92,14 +113,14 @@ function SectionLivePreview({ preset, theme }: { preset: SectionPreset; theme: T
     >
       <SiteStyles />
       <div
-        className="origin-top-left"
+        className="absolute top-0 left-1/2 -translate-x-1/2 origin-top"
         style={{ width, transform: `scale(${scale})` }}
       >
         <div
           className={`wb-site wb-buttons-${theme.buttonStyle} wb-cards-${theme.cardStyle}`}
           style={{
             ...themeToCssVars(theme),
-            "--wb-section-y": isHeaderOrFooter ? "16px" : "24px",
+            "--wb-section-y": isCurvedHero ? "14px" : isHeaderOrFooter ? "16px" : "24px",
             "--wb-container": isWide ? "1280px" : "1000px",
             "--wb-auth-screen-h": "680px",
           } as CSSProperties}

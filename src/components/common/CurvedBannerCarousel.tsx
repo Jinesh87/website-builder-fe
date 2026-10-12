@@ -178,16 +178,6 @@ export default function CurvedBannerCarousel({
 
   const [activePreview, setActivePreview] = useState<CurvedBannerItem | null>(null);
 
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const update = () => setFit(fitForWidth(container.clientWidth));
-    const observer = new ResizeObserver(update);
-    observer.observe(container);
-    update();
-    return () => observer.disconnect();
-  }, []);
-
   const updateTransforms = useCallback(
     (offset: number) => {
       const container = containerRef.current;
@@ -227,6 +217,28 @@ export default function CurvedBannerCarousel({
     [cardW, cardGap, totalItemCount, curveFactor, fit]
   );
 
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const update = () => {
+      const w = container.clientWidth || container.offsetWidth || 1040;
+      const newFit = fitForWidth(w);
+      setFit(newFit);
+      if (offsetRef.current === 0) {
+        const curCardW = Math.round(cardWidth * newFit);
+        const curCardGap = Math.round(gap * newFit);
+        const curStep = curCardW + curCardGap;
+        const centerIdx = items.length;
+        offsetRef.current = (w / 2) - (centerIdx * curStep + curCardW / 2);
+        updateTransforms(offsetRef.current);
+      }
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    update();
+    return () => observer.disconnect();
+  }, [items.length, cardWidth, gap, updateTransforms]);
+
   useEffect(() => {
     let running = true;
 
@@ -246,7 +258,7 @@ export default function CurvedBannerCarousel({
         } else {
           dragVelocityRef.current = 0;
           const isPaused = pauseOnHover && isHoveredRef.current;
-          if (!isPaused) {
+          if (!isPaused && speed > 0) {
             const dirMultiplier = direction === "left-to-right" ? 1 : -1;
             offsetRef.current += dirMultiplier * speed * fit * dt;
           }
