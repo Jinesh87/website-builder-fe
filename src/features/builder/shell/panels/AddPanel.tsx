@@ -181,6 +181,13 @@ const CATEGORIES: CategoryItem[] = [
   },
 ];
 
+// Temporarily hidden categories from the sidebar without deleting code or designs
+const HIDDEN_CATEGORIES = new Set<string>(["Contact", "Auth"]);
+
+export const VISIBLE_CATEGORIES = CATEGORIES.filter(
+  (c) => !HIDDEN_CATEGORIES.has(c.category),
+);
+
 const PREVIEW_WIDTH = 1040;
 const PREVIEW_SCALE = 0.27;
 /** Headers are previewed at a full desktop width so their desktop layout shows, at the same thumbnail size. */
@@ -278,17 +285,20 @@ export default function AddPanel() {
   const [selectedCategoryId, setSelectedCategoryId] = useState("hero");
 
   const selectedCategory =
-    CATEGORIES.find((c) => c.id === selectedCategoryId) ?? CATEGORIES[0]!;
+    VISIBLE_CATEGORIES.find((c) => c.id === selectedCategoryId) ?? VISIBLE_CATEGORIES[0]!;
 
   const filteredPresets = useMemo(() => {
     const trimmed = query.trim();
+    const availablePresets = SECTION_PRESETS.filter(
+      (preset) => !HIDDEN_CATEGORIES.has(preset.category),
+    );
     if (trimmed) {
-      return SECTION_PRESETS.filter((preset) => matches(preset, trimmed));
+      return availablePresets.filter((preset) => matches(preset, trimmed));
     }
     if (selectedCategory.category === "All") {
-      return SECTION_PRESETS;
+      return availablePresets;
     }
-    return SECTION_PRESETS.filter(
+    return availablePresets.filter(
       (preset) => preset.category === selectedCategory.category,
     );
   }, [query, selectedCategory]);
@@ -331,7 +341,7 @@ export default function AddPanel() {
           aria-label="Section categories"
           className="flex w-14 shrink-0 flex-col gap-1 border-r border-ed-border bg-ed-subtle/40 p-1 overflow-y-auto overscroll-contain"
         >
-          {CATEGORIES.map(({ id, shortLabel, label, icon: Icon }) => {
+          {VISIBLE_CATEGORIES.map(({ id, shortLabel, label, icon: Icon }) => {
             const isSelected = selectedCategoryId === id && !query.trim();
             return (
               <AppTooltip key={id} content={label} placement="right" offset={8}>

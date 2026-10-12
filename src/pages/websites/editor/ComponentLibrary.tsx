@@ -86,14 +86,26 @@ export default function ComponentLibrary({ isOpen, onClose, theme, savedSections
   const [category, setCategory] = useState<Category>("All");
   // Built once so preview ids stay stable between renders.
   const presets = useMemo(() => SECTION_PRESETS.map((preset) => ({ preset, sample: preset.create() })), []);
+  const HIDDEN_CATEGORIES = new Set<string>(["Contact", "Auth"]);
   const categories: Category[] = [
     ...(savedSections.length > 0 ? [SAVED] : []),
     "All",
-    ...new Set(SECTION_PRESETS.map((preset) => preset.category)),
+    ...new Set(
+      SECTION_PRESETS.map((preset) => preset.category).filter(
+        (cat) => !HIDDEN_CATEGORIES.has(cat),
+      ),
+    ),
   ];
   const activeCategory = category === SAVED && savedSections.length === 0 ? "All" : category;
   const showSaved = activeCategory === SAVED || (activeCategory === "All" && savedSections.length > 0);
-  const visiblePresets = activeCategory === SAVED ? [] : presets.filter(({ preset }) => activeCategory === "All" || preset.category === activeCategory);
+  const visiblePresets =
+    activeCategory === SAVED
+      ? []
+      : presets.filter(
+          ({ preset }) =>
+            !HIDDEN_CATEGORIES.has(preset.category) &&
+            (activeCategory === "All" || preset.category === activeCategory),
+        );
 
   return (
     <Modal.Backdrop isOpen={isOpen} onOpenChange={(open) => !open && onClose()}>

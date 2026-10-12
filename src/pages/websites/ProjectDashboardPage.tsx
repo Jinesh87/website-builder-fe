@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, Spinner } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
-import { ArrowLeft, ArrowUpRight, Eye, FileText, Pencil, Rocket, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Eye, FileText, Globe, Pencil, Rocket, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { websitesApi, type WebsiteDetail, type WebsiteVersion } from "../../api/websites.ts";
@@ -14,6 +14,7 @@ import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import { BUILDER_LABELS, WebsiteStatusChip, formatDateTime } from "../../components/websites/website-labels.tsx";
 import type { SiteData } from "../../site-kit/index.ts";
+import { getLiveSiteUrl } from "../../utils/live-url.ts";
 
 const RECENT_DEPLOYMENTS = 3;
 
@@ -146,6 +147,7 @@ export default function ProjectDashboardPage() {
 
   const previewUrl = `/websites/${website.id}/preview`;
   const editUrl = `/websites/${website.id}/edit`;
+  const liveSiteUrl = getLiveSiteUrl(website.subdomain);
   const needsPublish = website.status !== "PUBLISHED" || website.hasUnpublishedChanges;
   const visiblePages = website.draft.pages.filter((page) => page.visible);
 
@@ -175,6 +177,17 @@ export default function ProjectDashboardPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {website.status === "PUBLISHED" && (
+              <a
+                href={liveSiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={buttonVariants({ size: "sm", variant: "secondary" })}
+                title="Visit live published site"
+              >
+                <Globe className="size-4 text-emerald-500" aria-hidden /> Visit live site
+              </a>
+            )}
             <Link to={previewUrl} className={buttonVariants({ size: "sm", variant: "outline" })}>
               <Eye className="size-4" aria-hidden /> Preview
             </Link>
