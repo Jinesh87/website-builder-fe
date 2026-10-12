@@ -8,6 +8,7 @@ import {
   SiteImage,
   SiteLink,
 } from "../primitives.tsx";
+import { StaticStates, useStaticRender } from "../render-mode.tsx";
 import type { FeatureColor, SectionOf, ServiceItem } from "../types.ts";
 
 const DEFAULT_COLOR_PALETTE: FeatureColor[] = [
@@ -88,6 +89,7 @@ export default function ServicesSection({
   section: SectionOf<"services">;
 }) {
   const { data } = section;
+  const isStatic = useStaticRender();
   const [activeHoverIndex, setActiveHoverIndex] = useState<number>(0);
 
   const variant = data.variant ?? "cards-grid";
@@ -361,34 +363,24 @@ export default function ServicesSection({
 
   // 3. Interactive / Hover Reveal Rows (Awwwards / Agency Studio Style)
   if (variant === "interactive-list") {
-    const activeItem = data.items[activeHoverIndex] ?? data.items[0];
-
-    return (
-      <SectionShell
-        sectionId={section.id}
-        settings={section.settings}
-        className="wb-services-section wb-services-variant-interactive"
-        label={data.heading}
-      >
-        <SectionHead
-          heading={data.heading}
-          intro={data.intro}
-          eyebrow={data.eyebrow}
-        />
-
+    const renderInteractive = (activeIndex: number) => {
+      const activeItem = data.items[activeIndex] ?? data.items[0];
+      return (
         <div className="wb-services-interactive-wrapper">
           {/* Interactive Row List */}
           <div className="wb-services-interactive-list">
             {data.items.map((item, index) => {
               const itemColor = getItemColor(item, index);
               const colorClass = `wb-color-${itemColor}`;
-              const isActive = activeHoverIndex === index;
+              const isActive = activeIndex === index;
               const num = String(index + 1).padStart(2, "0");
 
               return (
                 <div
                   key={index}
                   onMouseEnter={() => setActiveHoverIndex(index)}
+                  data-wb-go={index}
+                  data-wb-go-hover=""
                   className={`wb-services-interactive-row ${colorClass} ${
                     isActive ? "wb-row-active" : ""
                   }`}
@@ -478,6 +470,28 @@ export default function ServicesSection({
             </div>
           )}
         </div>
+      );
+    };
+
+    return (
+
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-services-section wb-services-variant-interactive"
+        label={data.heading}
+      >
+        <SectionHead
+          heading={data.heading}
+          intro={data.intro}
+          eyebrow={data.eyebrow}
+        />
+
+        {isStatic ? (
+          <StaticStates states={data.items.map((_, index) => index)} initial={0} render={renderInteractive} />
+        ) : (
+          renderInteractive(activeHoverIndex)
+        )}
 
         {data.bottomCta && (
           <div className={`wb-services-bottom-cta wb-align-${align}`}>

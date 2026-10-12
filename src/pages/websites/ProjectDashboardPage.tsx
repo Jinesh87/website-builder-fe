@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button, Spinner } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
-import { ArrowLeft, ArrowUpRight, Eye, FileText, Globe, Pencil, Rocket, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Code2, Eye, FileText, Globe, Pencil, Rocket, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { websitesApi, type WebsiteDetail, type WebsiteVersion } from "../../api/websites.ts";
@@ -12,6 +12,7 @@ import ProjectTabs, { type ProjectTab } from "../../components/dashboard/Project
 import SitePreviewCard from "../../components/dashboard/SitePreviewCard.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
+import DownloadCodeDialog from "../../components/websites/DownloadCodeDialog.tsx";
 import { BUILDER_LABELS, WebsiteStatusChip, formatDateTime } from "../../components/websites/website-labels.tsx";
 import PublishSeoAudit from "../../components/websites/PublishSeoAudit.tsx";
 import type { SiteData } from "../../site-kit/index.ts";
@@ -55,6 +56,7 @@ export default function ProjectDashboardPage() {
   const [publishError, setPublishError] = useState<string | null>(null);
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -191,6 +193,9 @@ export default function ProjectDashboardPage() {
                 <Globe className="size-4 text-emerald-500" aria-hidden /> Visit live site
               </a>
             )}
+            <Button size="sm" variant="outline" onPress={() => setDownloadOpen(true)}>
+              <Code2 className="size-4" aria-hidden /> Download code
+            </Button>
             <Link to={previewUrl} className={buttonVariants({ size: "sm", variant: "outline" })}>
               <Eye className="size-4" aria-hidden /> Preview
             </Link>
@@ -334,6 +339,8 @@ export default function ProjectDashboardPage() {
           {publishError && <FormAlert status="danger">{publishError}</FormAlert>}
         </div>
       </CommonModal>
+
+      <DownloadCodeDialog websiteId={website.id} isOpen={downloadOpen} onClose={() => setDownloadOpen(false)} />
     </div>
   );
 }

@@ -63,7 +63,7 @@ function HeroVideoPlayer({
   if (embedUrl) {
     if (!isPlaying && posterUrl) {
       return (
-        <div className="wb-hero-video-poster-wrap" onClick={() => setIsPlaying(true)}>
+        <div className="wb-hero-video-poster-wrap" onClick={() => setIsPlaying(true)} data-wb-video={embedUrl}>
           <img src={posterUrl} alt="Video thumbnail" className="wb-hero-video-poster" />
           <button
             type="button"

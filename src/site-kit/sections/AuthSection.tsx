@@ -11,6 +11,7 @@ import {
 } from "react";
 import { safeHref } from "../links.ts";
 import { SectionShell, SiteImage, SocialIcon } from "../primitives.tsx";
+import { StaticStates, useStaticRender } from "../render-mode.tsx";
 import { contrastText } from "../theme.ts";
 import type {
   AuthData,
@@ -245,6 +246,14 @@ function useAuthFlow(data: AuthData): AuthFlow {
 
   return { view: activeView, done, error, goTo, submit, restart };
 }
+
+/** A fixed view for the static export; the export runtime switches views instead of React state. */
+function staticFlow(view: AuthView): AuthFlow {
+  const noop = () => {};
+  return { view, done: null, error: null, goTo: noop, submit: (event) => event.preventDefault(), restart: noop };
+}
+
+const STATIC_VIEWS: AuthView[] = ["login", "register", "forgot"];
 
 /* ---------------------------------------------------------- form building */
 
@@ -543,7 +552,7 @@ function AuthForm({ data, flow, hideSwitch }: AuthFormProps) {
               <span />
             )}
             {data.forgot.enabled && (
-              <button type="button" className="wb-auth-link" onClick={() => goTo("forgot")}>
+              <button type="button" className="wb-auth-link" onClick={() => goTo("forgot")} data-wb-go="forgot">
                 {data.login.forgotLabel || "Forgot password?"}
               </button>
             )}
@@ -589,7 +598,7 @@ function AuthForm({ data, flow, hideSwitch }: AuthFormProps) {
       {view === "login" && !hideSwitch && data.register.enabled && (
         <p className="wb-auth-switch">
           {data.login.switchPrompt}{" "}
-          <button type="button" className="wb-auth-link" onClick={() => goTo("register")}>
+          <button type="button" className="wb-auth-link" onClick={() => goTo("register")} data-wb-go="register">
             {data.login.switchLabel || "Sign up"}
           </button>
         </p>
@@ -597,14 +606,14 @@ function AuthForm({ data, flow, hideSwitch }: AuthFormProps) {
       {view === "register" && !hideSwitch && (
         <p className="wb-auth-switch">
           {data.register.switchPrompt}{" "}
-          <button type="button" className="wb-auth-link" onClick={() => goTo("login")}>
+          <button type="button" className="wb-auth-link" onClick={() => goTo("login")} data-wb-go="login">
             {data.register.switchLabel || "Log in"}
           </button>
         </p>
       )}
       {(view === "forgot" || view === "otp") && (
         <p className="wb-auth-switch">
-          <button type="button" className="wb-auth-link wb-auth-back" onClick={() => goTo("login")}>
+          <button type="button" className="wb-auth-link wb-auth-back" onClick={() => goTo("login")} data-wb-go="login">
             <ArrowLeftIcon /> {data.forgot.backLabel || "Back to log in"}
           </button>
         </p>
@@ -631,6 +640,7 @@ function AuthTabs({ data, flow }: { data: AuthData; flow: AuthFlow }) {
           aria-selected={flow.view === tab.view}
           className="wb-auth-tab"
           onClick={() => flow.goTo(tab.view)}
+          data-wb-go={tab.view}
         >
           {tab.label}
         </button>
@@ -719,7 +729,7 @@ function DiagonalSplit({ data, flow, form }: LayoutProps) {
           {copy.heading && <h2 className="wb-auth-panel-title">{copy.heading}</h2>}
           {copy.text && <p>{copy.text}</p>}
           {next && (
-            <button type="button" className="wb-auth-ghost-btn" onClick={() => flow.goTo(next.view)}>
+            <button type="button" className="wb-auth-ghost-btn" onClick={() => flow.goTo(next.view)} data-wb-go={next.view}>
               {next.label}
             </button>
           )}
@@ -971,6 +981,7 @@ function colorVars(data: AuthData): CSSProperties {
 export default function AuthSection({ section }: { section: SectionOf<"auth"> }) {
   const { data } = section;
   const flow = useAuthFlow(data);
+  const isStatic = useStaticRender();
   const variant: AuthVariant = data.variant in LAYOUTS ? data.variant : "diagonal-split";
   const Layout = LAYOUTS[variant];
   const tabbed = variant === "tabbed-compact" && data.register.enabled;
@@ -989,6 +1000,10 @@ export default function AuthSection({ section }: { section: SectionOf<"auth"> })
     .filter(Boolean)
     .join(" ");
 
+  const renderLayout = (layoutFlow: AuthFlow) => (
+    <Layout data={data} flow={layoutFlow} form={<AuthForm data={data} flow={layoutFlow} hideSwitch={tabbed} />} />
+  );
+
   return (
     <SectionShell
       sectionId={section.id}
@@ -998,7 +1013,15 @@ export default function AuthSection({ section }: { section: SectionOf<"auth"> })
       label={viewContent(data, flow.view).heading || "Sign in"}
     >
       <div className={classes} style={colorVars(data)}>
-        <Layout data={data} flow={flow} form={<AuthForm data={data} flow={flow} hideSwitch={tabbed} />} />
+        {isStatic ? (
+          <StaticStates
+            states={STATIC_VIEWS.filter((view) => isViewEnabled(data, view))}
+            initial={STATIC_VIEWS.includes(flow.view) ? flow.view : "login"}
+            render={(view) => renderLayout(staticFlow(view))}
+          />
+        ) : (
+          renderLayout(flow)
+        )}
       </div>
     </SectionShell>
   );

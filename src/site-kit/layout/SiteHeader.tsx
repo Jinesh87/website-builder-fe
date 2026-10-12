@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useStaticRender } from "../render-mode.tsx";
 import {
   ChevronDownIcon,
   CloseIcon,
@@ -169,11 +170,12 @@ function MobileDrawer({
   onClose: () => void;
   header: HeaderData;
 }) {
-  if (!isOpen) return null;
+  const isStatic = useStaticRender();
+  if (!isOpen && !isStatic) return null;
 
   return (
-    <div className="wb-drawer-portal">
-      <div className="wb-drawer-backdrop" onClick={onClose} aria-hidden="true" />
+    <div className="wb-drawer-portal" data-wb-menu="" hidden={!isOpen}>
+      <div className="wb-drawer-backdrop" onClick={onClose} aria-hidden="true" data-wb-menu-close="" />
       <div className="wb-drawer-panel" role="dialog" aria-modal="true" aria-label="Navigation Menu">
         {/* Drawer Header: Brand + Clear Close X Button */}
         <div className="wb-drawer-header">
@@ -186,6 +188,7 @@ function MobileDrawer({
             type="button"
             onClick={onClose}
             className="wb-drawer-close-btn"
+            data-wb-menu-close=""
             aria-label="Close navigation menu"
           >
             <CloseIcon />
@@ -259,11 +262,12 @@ function EditorialCurtainDrawer({
   onClose: () => void;
   header: HeaderData;
 }) {
-  if (!isOpen) return null;
+  const isStatic = useStaticRender();
+  if (!isOpen && !isStatic) return null;
 
   return (
-    <div className="wb-curtain-portal">
-      <div className="wb-curtain-backdrop" onClick={onClose} aria-hidden="true" />
+    <div className="wb-curtain-portal" data-wb-menu="" hidden={!isOpen}>
+      <div className="wb-curtain-backdrop" onClick={onClose} aria-hidden="true" data-wb-menu-close="" />
       <div className="wb-curtain-panel" role="dialog" aria-modal="true" aria-label="Explore Menu">
         <div className="wb-curtain-header">
           <SiteBrand
@@ -275,6 +279,7 @@ function EditorialCurtainDrawer({
             type="button"
             onClick={onClose}
             className="wb-curtain-close-btn"
+            data-wb-menu-close=""
             aria-label="Close navigation curtain"
           >
             <CloseIcon />
@@ -322,9 +327,8 @@ function EditorialCurtainDrawer({
 }
 
 export default function SiteHeader({ header, settings }: { header: HeaderData; settings?: Partial<SectionSettings> }) {
-  if (header.hidden) return null;
-
   const [mobileOpen, setMobileOpen] = useState(false);
+  if (header.hidden) return null;
 
   const position = header.position ?? (header.sticky ? "sticky" : "static");
 
@@ -364,6 +368,7 @@ export default function SiteHeader({ header, settings }: { header: HeaderData; s
       type="button"
       onClick={() => setMobileOpen(true)}
       className="wb-mobile-toggle-btn"
+      data-wb-menu-open=""
       aria-label="Open menu"
     >
       <MenuIcon />
@@ -740,6 +745,7 @@ export default function SiteHeader({ header, settings }: { header: HeaderData; s
                 type="button"
                 onClick={() => setMobileOpen(true)}
                 className="wb-side-drawer-trigger-btn"
+                data-wb-menu-open=""
                 aria-label="Toggle navigation menu"
               >
                 <span className="wb-side-menu-label">Menu</span>
