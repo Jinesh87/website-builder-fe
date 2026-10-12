@@ -316,7 +316,27 @@ export const websitesApi = {
     request<void>(`${BASE}/${id}/ai/sessions/${sessionId}`, { method: "DELETE" }),
 
   clearAiSessions: (id: string) => request<void>(`${BASE}/${id}/ai/sessions`, { method: "DELETE" }),
+
+  generatePageSeo: (
+    id: string,
+    pageId: string,
+    input: {
+      pageName?: string;
+      pageSlug?: string;
+      currentTitle?: string | null;
+      currentDescription?: string | null;
+      contentSummary?: string | null;
+    },
+  ) =>
+    request<{ seoTitle: string; seoDescription: string; keywords: string[] }>(
+      `${BASE}/${id}/pages/${pageId}/seo/generate`,
+      { method: "POST", body: input },
+    ),
+
+  sitemapUrl: (id: string) => `${BASE}/${id}/seo/sitemap.xml`,
+  robotsUrl: (id: string) => `${BASE}/${id}/seo/robots.txt`,
 };
+
 
 const previewCache = new Map<string, Promise<TemplatePreview>>();
 

@@ -1,4 +1,9 @@
-import { useMemo, useState, type CSSProperties, type ComponentType } from "react";
+import {
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ComponentType,
+} from "react";
 import { Drawer } from "@puckeditor/core";
 import {
   Briefcase,
@@ -48,33 +53,148 @@ type CategoryItem = {
 };
 
 const CATEGORIES: CategoryItem[] = [
-  { id: "all", category: "All", label: "All sections", shortLabel: "All", icon: Grid },
-  { id: "header", category: "Header", label: "Header", shortLabel: "Header", icon: PanelTop },
-  { id: "hero", category: "Hero", label: "Hero", shortLabel: "Hero", icon: Rocket },
-  { id: "features", category: "Features", label: "Features", shortLabel: "Features", icon: Layers },
-  { id: "services", category: "Services", label: "Services", shortLabel: "Services", icon: Briefcase },
-  { id: "social-proof", category: "Social proof", label: "Testimonials & Social", shortLabel: "Proof", icon: MessageSquareQuote },
-  { id: "pricing", category: "Pricing", label: "Pricing", shortLabel: "Pricing", icon: CreditCard },
-  { id: "faq", category: "FAQ", label: "FAQ", shortLabel: "FAQ", icon: HelpCircle },
-  { id: "cta", category: "CTA", label: "Call to action", shortLabel: "CTA", icon: Megaphone },
-  { id: "contact", category: "Contact", label: "Contact", shortLabel: "Contact", icon: Mail },
-  { id: "content", category: "Content", label: "Content", shortLabel: "Content", icon: FileText },
-  { id: "portfolio", category: "Portfolio", label: "Gallery", shortLabel: "Gallery", icon: Image },
-  { id: "media", category: "Media", label: "Media", shortLabel: "Media", icon: PlaySquare },
-  { id: "team", category: "Team", label: "Team", shortLabel: "Team", icon: Users },
-  { id: "carousel", category: "Carousel", label: "Carousel & Sliders", shortLabel: "Carousel", icon: SlidersHorizontal },
-  { id: "marquee", category: "Marquee", label: "Marquee & Tickers", shortLabel: "Marquee", icon: MoveHorizontal },
-  { id: "auth", category: "Auth", label: "Login & Sign up", shortLabel: "Auth", icon: LogIn },
-  { id: "footer", category: "Footer", label: "Footer", shortLabel: "Footer", icon: PanelBottom },
+  {
+    id: "all",
+    category: "All",
+    label: "All sections",
+    shortLabel: "All",
+    icon: Grid,
+  },
+  {
+    id: "header",
+    category: "Header",
+    label: "Header",
+    shortLabel: "Header",
+    icon: PanelTop,
+  },
+  {
+    id: "hero",
+    category: "Hero",
+    label: "Hero",
+    shortLabel: "Hero",
+    icon: Rocket,
+  },
+  {
+    id: "features",
+    category: "Features",
+    label: "Features",
+    shortLabel: "Features",
+    icon: Layers,
+  },
+  {
+    id: "services",
+    category: "Services",
+    label: "Services",
+    shortLabel: "Services",
+    icon: Briefcase,
+  },
+  {
+    id: "social-proof",
+    category: "Social proof",
+    label: "Testimonials & Social",
+    shortLabel: "Proof",
+    icon: MessageSquareQuote,
+  },
+  {
+    id: "pricing",
+    category: "Pricing",
+    label: "Pricing",
+    shortLabel: "Pricing",
+    icon: CreditCard,
+  },
+  {
+    id: "faq",
+    category: "FAQ",
+    label: "FAQ",
+    shortLabel: "FAQ",
+    icon: HelpCircle,
+  },
+  {
+    id: "cta",
+    category: "CTA",
+    label: "Call to action",
+    shortLabel: "CTA",
+    icon: Megaphone,
+  },
+  {
+    id: "contact",
+    category: "Contact",
+    label: "Contact",
+    shortLabel: "Contact",
+    icon: Mail,
+  },
+  {
+    id: "content",
+    category: "Content",
+    label: "Content",
+    shortLabel: "Content",
+    icon: FileText,
+  },
+  {
+    id: "portfolio",
+    category: "Portfolio",
+    label: "Gallery",
+    shortLabel: "Gallery",
+    icon: Image,
+  },
+  {
+    id: "media",
+    category: "Media",
+    label: "Media",
+    shortLabel: "Media",
+    icon: PlaySquare,
+  },
+  {
+    id: "team",
+    category: "Team",
+    label: "Team",
+    shortLabel: "Team",
+    icon: Users,
+  },
+  {
+    id: "carousel",
+    category: "Carousel",
+    label: "Carousel & Sliders",
+    shortLabel: "Carousel",
+    icon: SlidersHorizontal,
+  },
+  {
+    id: "marquee",
+    category: "Marquee",
+    label: "Marquee & Tickers",
+    shortLabel: "Marquee",
+    icon: MoveHorizontal,
+  },
+  {
+    id: "auth",
+    category: "Auth",
+    label: "Login & Sign up",
+    shortLabel: "Auth",
+    icon: LogIn,
+  },
+  {
+    id: "footer",
+    category: "Footer",
+    label: "Footer",
+    shortLabel: "Footer",
+    icon: PanelBottom,
+  },
 ];
 
 const PREVIEW_WIDTH = 1040;
 const PREVIEW_SCALE = 0.27;
 /** Headers are previewed at a full desktop width so their desktop layout shows, at the same thumbnail size. */
 const HEADER_PREVIEW_WIDTH = 1360;
-const HEADER_PREVIEW_SCALE = (PREVIEW_WIDTH * PREVIEW_SCALE) / HEADER_PREVIEW_WIDTH;
+const HEADER_PREVIEW_SCALE =
+  (PREVIEW_WIDTH * PREVIEW_SCALE) / HEADER_PREVIEW_WIDTH;
 
-function SectionLivePreview({ preset, theme }: { preset: SectionPreset; theme: ThemeSettings }) {
+function SectionLivePreview({
+  preset,
+  theme,
+}: {
+  preset: SectionPreset;
+  theme: ThemeSettings;
+}) {
   const isHeader = preset.type === "header";
   const isAuth = preset.type === "auth";
   const isCurvedHero = preset.key === "hero-curved-carousel";
@@ -118,12 +238,18 @@ function SectionLivePreview({ preset, theme }: { preset: SectionPreset; theme: T
       >
         <div
           className={`wb-site wb-buttons-${theme.buttonStyle} wb-cards-${theme.cardStyle}`}
-          style={{
-            ...themeToCssVars(theme),
-            "--wb-section-y": isCurvedHero ? "14px" : isHeaderOrFooter ? "16px" : "24px",
-            "--wb-container": isWide ? "1280px" : "1000px",
-            "--wb-auth-screen-h": "680px",
-          } as CSSProperties}
+          style={
+            {
+              ...themeToCssVars(theme),
+              "--wb-section-y": isCurvedHero
+                ? "14px"
+                : isHeaderOrFooter
+                  ? "16px"
+                  : "24px",
+              "--wb-container": isWide ? "1280px" : "1000px",
+              "--wb-auth-screen-h": "680px",
+            } as CSSProperties
+          }
         >
           <SectionView section={section} />
         </div>
@@ -133,7 +259,8 @@ function SectionLivePreview({ preset, theme }: { preset: SectionPreset; theme: T
 }
 
 function matches(preset: SectionPreset, query: string): boolean {
-  const text = `${preset.label} ${preset.category} ${preset.description}`.toLowerCase();
+  const text =
+    `${preset.label} ${preset.category} ${preset.description}`.toLowerCase();
   return query
     .toLowerCase()
     .split(/\s+/)
@@ -143,12 +270,15 @@ function matches(preset: SectionPreset, query: string): boolean {
 export default function AddPanel() {
   const { notify, draft } = useEditor();
   const dispatch = useBuilderPuck((state) => state.dispatch);
-  const selectedIndex = useBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
+  const selectedIndex = useBuilderPuck(
+    (state) => state.appState.ui.itemSelector?.index ?? null,
+  );
   const count = useBuilderPuck((state) => state.appState.data.content.length);
   const [query, setQuery] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("hero");
 
-  const selectedCategory = CATEGORIES.find((c) => c.id === selectedCategoryId) ?? CATEGORIES[0]!;
+  const selectedCategory =
+    CATEGORIES.find((c) => c.id === selectedCategoryId) ?? CATEGORIES[0]!;
 
   const filteredPresets = useMemo(() => {
     const trimmed = query.trim();
@@ -158,7 +288,9 @@ export default function AddPanel() {
     if (selectedCategory.category === "All") {
       return SECTION_PRESETS;
     }
-    return SECTION_PRESETS.filter((preset) => preset.category === selectedCategory.category);
+    return SECTION_PRESETS.filter(
+      (preset) => preset.category === selectedCategory.category,
+    );
   }, [query, selectedCategory]);
 
   const full = count >= LIMITS.sectionsPerPage;
@@ -174,9 +306,17 @@ export default function AddPanel() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <PanelHeader
         title="Add sections"
-        description={selectedIndex === null ? "Added to the end of page" : "Added below selected"}
+        description={
+          selectedIndex === null
+            ? "Added to the end of page"
+            : "Added below selected"
+        }
       />
-      <SearchField value={query} onChange={setQuery} placeholder="Search sections..." />
+      <SearchField
+        value={query}
+        onChange={setQuery}
+        placeholder="Search sections..."
+      />
 
       {full && (
         <p className="mx-3 mb-2 rounded-ed bg-ed-warning-soft px-2 py-1.5 text-ed-xs text-ed-warning">
@@ -211,7 +351,9 @@ export default function AddPanel() {
                 >
                   <Icon
                     className={`size-4 transition-transform group-hover:scale-105 ${
-                      isSelected ? "text-ed-accent" : "text-ed-muted group-hover:text-ed-text"
+                      isSelected
+                        ? "text-ed-accent"
+                        : "text-ed-muted group-hover:text-ed-text"
                     }`}
                     aria-hidden
                   />
@@ -228,15 +370,21 @@ export default function AddPanel() {
         <div className="flex-1 overflow-y-auto overscroll-contain p-2.5">
           <div className="mb-2 flex items-center justify-between px-0.5">
             <h3 className="text-ed-2xs font-semibold uppercase tracking-wider text-ed-faint">
-              {query.trim() ? `Search results (${filteredPresets.length})` : selectedCategory.label}
+              {query.trim()
+                ? `Search results (${filteredPresets.length})`
+                : selectedCategory.label}
             </h3>
             <span className="text-ed-2xs text-ed-faint">
-              {filteredPresets.length} {filteredPresets.length === 1 ? "layout" : "layouts"}
+              {filteredPresets.length}{" "}
+              {filteredPresets.length === 1 ? "layout" : "layouts"}
             </span>
           </div>
 
           {filteredPresets.length === 0 ? (
-            <EmptyState icon={<SearchX className="size-4" />} title="No matching sections">
+            <EmptyState
+              icon={<SearchX className="size-4" />}
+              title="No matching sections"
+            >
               Try a different search term like “pricing” or “hero”.
             </EmptyState>
           ) : (
@@ -265,7 +413,10 @@ export default function AddPanel() {
                       >
                         {/* Live Rendered Section Preview matching actual page design 1:1 */}
                         <div className="mb-2 w-full transition-transform duration-150 group-hover:scale-[1.01] pointer-events-none">
-                          <SectionLivePreview preset={preset} theme={draft.theme} />
+                          <SectionLivePreview
+                            preset={preset}
+                            theme={draft.theme}
+                          />
                         </div>
 
                         {/* Section Title, Description & Action Button */}
@@ -274,14 +425,12 @@ export default function AddPanel() {
                             <p className="truncate text-ed-xs font-semibold text-ed-text group-hover:text-ed-accent transition-colors">
                               {preset.label}
                             </p>
-                            <p className="line-clamp-1 text-[11px] leading-tight text-ed-muted">
+                            <p className="line-clamp-1 text-ed-2xs leading-tight text-ed-muted">
                               {preset.description}
                             </p>
                           </div>
 
-                          <div
-                            className="flex size-5 shrink-0 items-center justify-center rounded-ed bg-ed-subtle text-ed-muted border border-ed-border shadow-2xs transition-colors group-hover:bg-ed-accent group-hover:border-ed-accent group-hover:text-white"
-                          >
+                          <div className="flex size-5 shrink-0 items-center justify-center rounded-ed bg-ed-subtle text-ed-muted border border-ed-border shadow-2xs transition-colors group-hover:bg-ed-accent group-hover:border-ed-accent group-hover:text-white">
                             <Plus className="size-3" aria-hidden />
                           </div>
                         </div>

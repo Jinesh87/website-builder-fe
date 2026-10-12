@@ -434,7 +434,14 @@ export default function WebsiteEditorPage() {
       inspectorTitle = "Page settings";
       inspector = (
         <>
-          <PageForm key={page.id} page={page} pages={pages} onChange={(patch) => edit((current) => updatePageMeta(current, page.id, patch))} />
+          <PageForm
+            key={page.id}
+            page={page}
+            pages={pages}
+            website={website}
+            onChange={(patch) => edit((current) => updatePageMeta(current, page.id, patch))}
+          />
+
           {page.slug !== "/" && (
             <div className="px-4 py-4">
               <Button variant="danger-soft" size="sm" onPress={() => setConfirm({ kind: "delete-page" })}>

@@ -57,11 +57,31 @@ export default function WebsitePreviewPage() {
   const currentPath = page?.slug === "/" ? "" : page?.slug ?? "";
   const fullUrl = `https://${simulatedDomain}${currentPath}`;
 
+  useEffect(() => {
+    if (!page) return;
+    const originalTitle = document.title;
+    const pageTitle = page.seoTitle || (website?.name ? `${page.name} | ${website.name}` : page.name);
+    document.title = `${pageTitle} — Preview`;
+
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement("meta");
+      metaDesc.setAttribute("name", "description");
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute("content", page.seoDescription || "");
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [page, website]);
+
   function copyUrl() {
     navigator.clipboard.writeText(fullUrl).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
 
   return (
     <div className="h-screen flex flex-col bg-zinc-900 text-zinc-100 antialiased overflow-hidden">

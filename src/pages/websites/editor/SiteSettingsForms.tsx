@@ -1,5 +1,15 @@
 import { useState } from "react";
-import type { ThemeOption, WebsitePage } from "../../../api/websites.ts";
+import { Modal } from "@heroui/react";
+import { AlertCircle, Check, Copy, Eye, Globe, Plus, X } from "lucide-react";
+import { errorMessage } from "../../../api/http.ts";
+import {
+  websitesApi,
+  type ThemeOption,
+  type WebsiteDetail,
+  type WebsitePage,
+} from "../../../api/websites.ts";
+import { AiSparklesIcon } from "../../../components/icons/AiSparklesIcon.tsx";
+
 import {
   DEFAULT_FONT,
   isFontKey,
@@ -13,7 +23,12 @@ import {
   type LinkRef,
   type ThemeSettings,
 } from "../../../site-kit/index.ts";
-import { LIMITS, menuFromPages, PAGE_SLUG_PATTERN, type PageMetaPatch } from "./editor-state.ts";
+import {
+  LIMITS,
+  menuFromPages,
+  PAGE_SLUG_PATTERN,
+  type PageMetaPatch,
+} from "./editor-state.ts";
 import {
   CheckboxField,
   ColorField,
@@ -34,7 +49,10 @@ const renderLink = (item: LinkRef, update: (item: LinkRef) => void) => (
   <LinkField label="Link" value={item} onChange={update} />
 );
 const newMenuItem = (): HeaderMenuItem => ({ label: "New link", href: "/" });
-const newSubMenuItem = (): HeaderSubMenuItem => ({ label: "Submenu item", href: "/" });
+const newSubMenuItem = (): HeaderSubMenuItem => ({
+  label: "Submenu item",
+  href: "/",
+});
 
 const MENU_ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
   { value: "", label: "Default (Layers)" },
@@ -72,9 +90,21 @@ const STATUS_COLOR_OPTIONS: { value: HeaderStatusColor; label: string }[] = [
   { value: "red", label: "Red (Live / Incident)" },
 ];
 
-const DESIGNS_WITH_STATUS_COLOR: HeaderData["design"][] = ["glass-dock", "split-stacked", "headline-ticker"];
-const DESIGNS_WITH_SEARCH: HeaderData["design"][] = ["glass-dock", "command-bar", "mega-menu-grid", "ecommerce"];
-const DESIGNS_WITH_CURTAIN: HeaderData["design"][] = ["side-drawer", "luxury-editorial"];
+const DESIGNS_WITH_STATUS_COLOR: HeaderData["design"][] = [
+  "glass-dock",
+  "split-stacked",
+  "headline-ticker",
+];
+const DESIGNS_WITH_SEARCH: HeaderData["design"][] = [
+  "glass-dock",
+  "command-bar",
+  "mega-menu-grid",
+  "ecommerce",
+];
+const DESIGNS_WITH_CURTAIN: HeaderData["design"][] = [
+  "side-drawer",
+  "luxury-editorial",
+];
 
 function MenuItemEditor({
   item,
@@ -83,22 +113,32 @@ function MenuItemEditor({
   item: HeaderMenuItem;
   onChange: (item: HeaderMenuItem) => void;
 }) {
-  const [showSubmenu, setShowSubmenu] = useState(() => (item.children?.length ?? 0) > 0);
+  const [showSubmenu, setShowSubmenu] = useState(
+    () => (item.children?.length ?? 0) > 0,
+  );
 
   return (
     <div className="flex flex-col gap-2.5">
-      <LinkField label="Link" value={item} onChange={(patch) => onChange({ ...item, ...patch })} />
+      <LinkField
+        label="Link"
+        value={item}
+        onChange={(patch) => onChange({ ...item, ...patch })}
+      />
       <TextField
         label="Description (optional)"
         value={item.description ?? ""}
-        onChange={(description) => onChange({ ...item, description: description.trim() || undefined })}
+        onChange={(description) =>
+          onChange({ ...item, description: description.trim() || undefined })
+        }
         maxLength={140}
         placeholder="Shown in curtain menus and mega menu intros"
       />
       <TextField
         label="Badge (optional)"
         value={item.badge ?? ""}
-        onChange={(badge) => onChange({ ...item, badge: badge.trim() || undefined })}
+        onChange={(badge) =>
+          onChange({ ...item, badge: badge.trim() || undefined })
+        }
         maxLength={20}
         placeholder="New, Pro, Hot..."
       />
@@ -130,18 +170,29 @@ function MenuItemEditor({
             addLabel="Add dropdown item"
             renderItem={(sub, update) => (
               <div className="flex flex-col gap-2">
-                <LinkField label="Submenu link" value={sub} onChange={(patch) => update({ ...sub, ...patch })} />
+                <LinkField
+                  label="Submenu link"
+                  value={sub}
+                  onChange={(patch) => update({ ...sub, ...patch })}
+                />
                 <TextField
                   label="Description (optional)"
                   value={sub.description ?? ""}
-                  onChange={(description) => update({ ...sub, description: description.trim() || undefined })}
+                  onChange={(description) =>
+                    update({
+                      ...sub,
+                      description: description.trim() || undefined,
+                    })
+                  }
                   maxLength={100}
                   placeholder="Short subtext under item"
                 />
                 <TextField
                   label="Badge (optional)"
                   value={sub.badge ?? ""}
-                  onChange={(badge) => update({ ...sub, badge: badge.trim() || undefined })}
+                  onChange={(badge) =>
+                    update({ ...sub, badge: badge.trim() || undefined })
+                  }
                   maxLength={20}
                   placeholder="New, Hot..."
                 />
@@ -149,7 +200,9 @@ function MenuItemEditor({
                   label="Icon (mega menu)"
                   value={(sub.icon ?? "") as IconName | ""}
                   options={MENU_ICON_OPTIONS}
-                  onChange={(icon) => update({ ...sub, icon: icon || undefined })}
+                  onChange={(icon) =>
+                    update({ ...sub, icon: icon || undefined })
+                  }
                 />
               </div>
             )}
@@ -171,10 +224,13 @@ export function HeaderForm({
 }) {
   const { design, featured } = header;
   const statusColor =
-    STATUS_COLOR_OPTIONS.find((option) => option.value === header.statusColor)?.value ??
-    (design === "headline-ticker" ? "red" : "green");
+    STATUS_COLOR_OPTIONS.find((option) => option.value === header.statusColor)
+      ?.value ?? (design === "headline-ticker" ? "red" : "green");
   const updateFeatured = (patch: Partial<HeaderFeatured>) =>
-    onChange({ ...header, featured: { title: featured?.title ?? "", ...featured, ...patch } });
+    onChange({
+      ...header,
+      featured: { title: featured?.title ?? "", ...featured, ...patch },
+    });
 
   return (
     <>
@@ -183,24 +239,68 @@ export function HeaderForm({
           label="Design layout"
           value={header.design}
           options={[
-            { value: "glass-dock", label: "Glass dock (Segmented liquid glass island)" },
-            { value: "split-stacked", label: "Split stacked (2-tier enterprise double-decker)" },
-            { value: "command-bar", label: "Command bar (Centered spotlight search)" },
-            { value: "mega-menu-grid", label: "Mega menu grid (Bento multi-column mega menu)" },
-            { value: "side-drawer", label: "Side drawer (Slide-over off-canvas curtain)" },
-            { value: "headline-ticker", label: "Headline ticker (Live broadcast marquee strip)" },
-            { value: "luxury-editorial", label: "Luxury editorial (Numbered grid index & masthead)" },
-            { value: "clean-transparent", label: "Clean transparent (Minimal header over your hero)" },
-            { value: "classical", label: "Classical (Logo left, nav center, dual buttons)" },
-            { value: "minimalist", label: "Minimalist (Nav left, centered logo, CTA right)" },
-            { value: "comprehensive", label: "Comprehensive (Mega nav, CTA buttons)" },
-            { value: "ecommerce", label: "E-commerce (Top search & cart bar, category tabs)" },
-            { value: "floating", label: "Floating pill (Blurred floating island)" },
-            { value: "transparent", label: "Transparent overlay (Hero overlay)" },
+            {
+              value: "glass-dock",
+              label: "Glass dock (Segmented liquid glass island)",
+            },
+            {
+              value: "split-stacked",
+              label: "Split stacked (2-tier enterprise double-decker)",
+            },
+            {
+              value: "command-bar",
+              label: "Command bar (Centered spotlight search)",
+            },
+            {
+              value: "mega-menu-grid",
+              label: "Mega menu grid (Bento multi-column mega menu)",
+            },
+            {
+              value: "side-drawer",
+              label: "Side drawer (Slide-over off-canvas curtain)",
+            },
+            {
+              value: "headline-ticker",
+              label: "Headline ticker (Live broadcast marquee strip)",
+            },
+            {
+              value: "luxury-editorial",
+              label: "Luxury editorial (Numbered grid index & masthead)",
+            },
+            {
+              value: "clean-transparent",
+              label: "Clean transparent (Minimal header over your hero)",
+            },
+            {
+              value: "classical",
+              label: "Classical (Logo left, nav center, dual buttons)",
+            },
+            {
+              value: "minimalist",
+              label: "Minimalist (Nav left, centered logo, CTA right)",
+            },
+            {
+              value: "comprehensive",
+              label: "Comprehensive (Mega nav, CTA buttons)",
+            },
+            {
+              value: "ecommerce",
+              label: "E-commerce (Top search & cart bar, category tabs)",
+            },
+            {
+              value: "floating",
+              label: "Floating pill (Blurred floating island)",
+            },
+            {
+              value: "transparent",
+              label: "Transparent overlay (Hero overlay)",
+            },
             { value: "logo-left", label: "Standard (Logo left, nav right)" },
             { value: "centered", label: "Standard (Logo & nav centered)" },
           ]}
-          onChange={(design) => onChange({ ...header, design: design as HeaderData["design"] })}
+          onChange={(design) =>
+            onChange({ ...header, design: design as HeaderData["design"] })
+          }
         />
         <SelectField
           label="Position & behavior"
@@ -229,28 +329,36 @@ export function HeaderForm({
         <TextField
           label="Tagline / Sub-label"
           value={header.tagline ?? ""}
-          onChange={(tagline) => onChange({ ...header, tagline: tagline || undefined })}
+          onChange={(tagline) =>
+            onChange({ ...header, tagline: tagline || undefined })
+          }
           maxLength={150}
           hint="Optional secondary brand subtitle or editorial volume label."
         />
         <TextField
           label="Badge / Version / Workspace"
           value={header.badge ?? ""}
-          onChange={(badge) => onChange({ ...header, badge: badge || undefined })}
+          onChange={(badge) =>
+            onChange({ ...header, badge: badge || undefined })
+          }
           maxLength={40}
           hint="Optional pill badge (e.g. 'v2.6', 'Pro', 'ACME Corp')."
         />
         <TextField
           label="Status text"
           value={header.statusText ?? ""}
-          onChange={(statusText) => onChange({ ...header, statusText: statusText || undefined })}
+          onChange={(statusText) =>
+            onChange({ ...header, statusText: statusText || undefined })
+          }
           maxLength={60}
           hint="Optional status text (e.g. 'All systems online'). Also used as the ticker label and editorial edition line."
         />
         <TextField
           label="Announcement bar / Marquee"
           value={header.announcement ?? ""}
-          onChange={(announcement) => onChange({ ...header, announcement: announcement || undefined })}
+          onChange={(announcement) =>
+            onChange({ ...header, announcement: announcement || undefined })
+          }
           maxLength={200}
           hint={
             design === "headline-ticker"
@@ -261,7 +369,9 @@ export function HeaderForm({
         <OptionalLinkField
           label="Announcement link"
           value={header.announcementLink}
-          onChange={(announcementLink) => onChange({ ...header, announcementLink })}
+          onChange={(announcementLink) =>
+            onChange({ ...header, announcementLink })
+          }
           fallback={{ label: "Learn more", href: "/" }}
         />
       </FormGroup>
@@ -285,13 +395,22 @@ export function HeaderForm({
             <>
               <CheckboxField
                 label="Show search"
-                checked={design === "command-bar" ? header.showSearch !== false : (header.showSearch ?? Boolean(header.searchPlaceholder))}
+                checked={
+                  design === "command-bar"
+                    ? header.showSearch !== false
+                    : (header.showSearch ?? Boolean(header.searchPlaceholder))
+                }
                 onChange={(showSearch) => onChange({ ...header, showSearch })}
               />
               <TextField
                 label="Search placeholder"
                 value={header.searchPlaceholder ?? ""}
-                onChange={(searchPlaceholder) => onChange({ ...header, searchPlaceholder: searchPlaceholder || undefined })}
+                onChange={(searchPlaceholder) =>
+                  onChange({
+                    ...header,
+                    searchPlaceholder: searchPlaceholder || undefined,
+                  })
+                }
                 maxLength={100}
                 placeholder="Search docs, products..."
               />
@@ -304,7 +423,13 @@ export function HeaderForm({
                 label="Utility links (top strip)"
                 items={header.utilityLinks ?? []}
                 max={8}
-                onChange={(utilityLinks) => onChange({ ...header, utilityLinks: utilityLinks.length > 0 ? utilityLinks : undefined })}
+                onChange={(utilityLinks) =>
+                  onChange({
+                    ...header,
+                    utilityLinks:
+                      utilityLinks.length > 0 ? utilityLinks : undefined,
+                  })
+                }
                 create={newLink}
                 itemTitle={linkTitle}
                 renderItem={renderLink}
@@ -313,7 +438,9 @@ export function HeaderForm({
               <TextField
                 label="Currency / Region tag"
                 value={header.currency ?? ""}
-                onChange={(currency) => onChange({ ...header, currency: currency || undefined })}
+                onChange={(currency) =>
+                  onChange({ ...header, currency: currency || undefined })
+                }
                 maxLength={10}
                 placeholder="USD"
               />
@@ -324,7 +451,9 @@ export function HeaderForm({
             <TextField
               label="Menu button label"
               value={header.menuLabel ?? ""}
-              onChange={(menuLabel) => onChange({ ...header, menuLabel: menuLabel || undefined })}
+              onChange={(menuLabel) =>
+                onChange({ ...header, menuLabel: menuLabel || undefined })
+              }
               maxLength={30}
               placeholder="Menu"
             />
@@ -335,7 +464,12 @@ export function HeaderForm({
               <TextField
                 label="Menu contact heading"
                 value={header.contactLabel ?? ""}
-                onChange={(contactLabel) => onChange({ ...header, contactLabel: contactLabel || undefined })}
+                onChange={(contactLabel) =>
+                  onChange({
+                    ...header,
+                    contactLabel: contactLabel || undefined,
+                  })
+                }
                 maxLength={60}
                 placeholder="Get in touch"
               />
@@ -343,7 +477,12 @@ export function HeaderForm({
                 label="Menu contact email"
                 type="email"
                 value={header.contactEmail ?? ""}
-                onChange={(contactEmail) => onChange({ ...header, contactEmail: contactEmail.trim() || undefined })}
+                onChange={(contactEmail) =>
+                  onChange({
+                    ...header,
+                    contactEmail: contactEmail.trim() || undefined,
+                  })
+                }
                 maxLength={255}
                 hint="Shown at the bottom of the full-height menu."
               />
@@ -358,7 +497,12 @@ export function HeaderForm({
                 onChange={(on) =>
                   onChange({
                     ...header,
-                    featured: on ? { title: "What's new", description: "Discover the latest updates." } : undefined,
+                    featured: on
+                      ? {
+                          title: "What's new",
+                          description: "Discover the latest updates.",
+                        }
+                      : undefined,
                   })
                 }
               />
@@ -367,7 +511,9 @@ export function HeaderForm({
                   <TextField
                     label="Featured badge"
                     value={featured.badge ?? ""}
-                    onChange={(badge) => updateFeatured({ badge: badge || undefined })}
+                    onChange={(badge) =>
+                      updateFeatured({ badge: badge || undefined })
+                    }
                     maxLength={30}
                     placeholder="New"
                   />
@@ -381,7 +527,9 @@ export function HeaderForm({
                   <TextAreaField
                     label="Featured description"
                     value={featured.description ?? ""}
-                    onChange={(description) => updateFeatured({ description: description || undefined })}
+                    onChange={(description) =>
+                      updateFeatured({ description: description || undefined })
+                    }
                     maxLength={200}
                     rows={2}
                   />
@@ -403,16 +551,38 @@ export function HeaderForm({
           label="Logo & brand layout"
           value={header.logoDisplay ?? "auto"}
           options={[
-            { value: "auto", label: "Smart / Auto (Logo if uploaded, else Brand text)" },
-            { value: "logo_left", label: "Logo + Name (Logo on left, Name on right)" },
-            { value: "logo_right", label: "Logo + Name (Name on left, Logo on right)" },
-            { value: "logo_top", label: "Logo + Name (Logo on top, Name below)" },
+            {
+              value: "auto",
+              label: "Smart / Auto (Logo if uploaded, else Brand text)",
+            },
+            {
+              value: "logo_left",
+              label: "Logo + Name (Logo on left, Name on right)",
+            },
+            {
+              value: "logo_right",
+              label: "Logo + Name (Name on left, Logo on right)",
+            },
+            {
+              value: "logo_top",
+              label: "Logo + Name (Logo on top, Name below)",
+            },
             { value: "logo_only", label: "Logo image only" },
             { value: "text_only", label: "Brand text only" },
           ]}
-          onChange={(logoDisplay) => onChange({ ...header, logoDisplay: logoDisplay as HeaderData["logoDisplay"] })}
+          onChange={(logoDisplay) =>
+            onChange({
+              ...header,
+              logoDisplay: logoDisplay as HeaderData["logoDisplay"],
+            })
+          }
         />
-        <ImageField label="Logo image" value={header.logo} onChange={(logo) => onChange({ ...header, logo })} optional />
+        <ImageField
+          label="Logo image"
+          value={header.logo}
+          onChange={(logo) => onChange({ ...header, logo })}
+          optional
+        />
       </FormGroup>
 
       <FormGroup title="Navigation menu & dropdowns">
@@ -430,7 +600,9 @@ export function HeaderForm({
           onChange={(menu) => onChange({ ...header, menu })}
           create={newMenuItem}
           itemTitle={linkTitle}
-          renderItem={(item, update) => <MenuItemEditor item={item} onChange={update} />}
+          renderItem={(item, update) => (
+            <MenuItemEditor item={item} onChange={update} />
+          )}
           addLabel="Add menu item"
         />
       </FormGroup>
@@ -463,29 +635,48 @@ export function FooterForm({
   onChange: (footer: FooterData) => void;
 }) {
   const contact = footer.contact ?? {};
-  const updateContact = (patch: Partial<NonNullable<FooterData["contact"]>>) => {
+  const updateContact = (
+    patch: Partial<NonNullable<FooterData["contact"]>>,
+  ) => {
     const next = { ...contact, ...patch };
     const hasAny = Object.values(next).some((value) => value?.trim());
     onChange({ ...footer, contact: hasAny ? next : undefined });
   };
 
   const newsletter = footer.newsletter ?? {};
-  const updateNewsletter = (patch: Partial<NonNullable<FooterData["newsletter"]>>) => {
+  const updateNewsletter = (
+    patch: Partial<NonNullable<FooterData["newsletter"]>>,
+  ) => {
     onChange({ ...footer, newsletter: { ...newsletter, ...patch } });
   };
 
   const ctaBanner = footer.ctaBanner ?? {};
-  const updateCtaBanner = (patch: Partial<NonNullable<FooterData["ctaBanner"]>>) => {
+  const updateCtaBanner = (
+    patch: Partial<NonNullable<FooterData["ctaBanner"]>>,
+  ) => {
     onChange({ ...footer, ctaBanner: { ...ctaBanner, ...patch } });
   };
 
-  const paymentMethods = footer.paymentMethods ?? { enabled: true, methods: ["paypal", "amex", "discover", "mastercard", "visa"] };
-  const updatePaymentMethods = (patch: Partial<NonNullable<FooterData["paymentMethods"]>>) => {
+  const paymentMethods = footer.paymentMethods ?? {
+    enabled: true,
+    methods: ["paypal", "amex", "discover", "mastercard", "visa"],
+  };
+  const updatePaymentMethods = (
+    patch: Partial<NonNullable<FooterData["paymentMethods"]>>,
+  ) => {
     onChange({ ...footer, paymentMethods: { ...paymentMethods, ...patch } });
   };
 
-  const showColumns = footer.design === "columns" || footer.design === "mega" || footer.design === "cta-banner" || footer.design === "split";
-  const showHorizontalMenu = footer.design === "newsletter" || footer.design === "inline" || footer.design === "centered" || footer.design === "split";
+  const showColumns =
+    footer.design === "columns" ||
+    footer.design === "mega" ||
+    footer.design === "cta-banner" ||
+    footer.design === "split";
+  const showHorizontalMenu =
+    footer.design === "newsletter" ||
+    footer.design === "inline" ||
+    footer.design === "centered" ||
+    footer.design === "split";
 
   return (
     <>
@@ -494,16 +685,39 @@ export function FooterForm({
           label="Design layout"
           value={footer.design}
           options={[
-            { value: "mega", label: "Mega store (Categories, contact, social, payment badges)" },
-            { value: "newsletter", label: "Newsletter & links (Horizontal nav + subscribe form)" },
-            { value: "split", label: "Split navigation (Brand & social + links + contact)" },
-            { value: "inline", label: "Inline bar (Single-row logo, links & social)" },
-            { value: "centered", label: "Centered brand (Centered stack & links)" },
-            { value: "cta-banner", label: "CTA banner (Top call-to-action banner + links)" },
-            { value: "columns", label: "Multi-column (Organized link columns)" },
+            {
+              value: "mega",
+              label: "Mega store (Categories, contact, social, payment badges)",
+            },
+            {
+              value: "newsletter",
+              label: "Newsletter & links (Horizontal nav + subscribe form)",
+            },
+            {
+              value: "split",
+              label: "Split navigation (Brand & social + links + contact)",
+            },
+            {
+              value: "inline",
+              label: "Inline bar (Single-row logo, links & social)",
+            },
+            {
+              value: "centered",
+              label: "Centered brand (Centered stack & links)",
+            },
+            {
+              value: "cta-banner",
+              label: "CTA banner (Top call-to-action banner + links)",
+            },
+            {
+              value: "columns",
+              label: "Multi-column (Organized link columns)",
+            },
             { value: "simple", label: "Simple (Minimal single line)" },
           ]}
-          onChange={(design) => onChange({ ...footer, design: design as FooterData["design"] })}
+          onChange={(design) =>
+            onChange({ ...footer, design: design as FooterData["design"] })
+          }
         />
         <SelectField
           label="Color theme mode"
@@ -513,7 +727,12 @@ export function FooterForm({
             { value: "dark", label: "Dark (Deep sleek dark background)" },
             { value: "light", label: "Light (Clean white background)" },
           ]}
-          onChange={(themeMode) => onChange({ ...footer, themeMode: themeMode as FooterData["themeMode"] })}
+          onChange={(themeMode) =>
+            onChange({
+              ...footer,
+              themeMode: themeMode as FooterData["themeMode"],
+            })
+          }
         />
         <TextField
           label="Site name / Brand"
@@ -525,14 +744,18 @@ export function FooterForm({
         <TextField
           label="Tagline / Brand subtext (optional)"
           value={footer.tagline ?? ""}
-          onChange={(tagline) => onChange({ ...footer, tagline: tagline || undefined })}
+          onChange={(tagline) =>
+            onChange({ ...footer, tagline: tagline || undefined })
+          }
           maxLength={200}
           placeholder="Online Store"
         />
         <TextAreaField
           label="Short description"
           value={footer.description ?? ""}
-          onChange={(description) => onChange({ ...footer, description: description || undefined })}
+          onChange={(description) =>
+            onChange({ ...footer, description: description || undefined })
+          }
           maxLength={500}
           rows={2}
         />
@@ -543,14 +766,31 @@ export function FooterForm({
           label="Logo & brand layout"
           value={footer.logoDisplay ?? "auto"}
           options={[
-            { value: "auto", label: "Smart / Auto (Logo if uploaded, else Brand text)" },
-            { value: "logo_left", label: "Logo + Name (Logo on left, Name on right)" },
-            { value: "logo_right", label: "Logo + Name (Name on left, Logo on right)" },
-            { value: "logo_top", label: "Logo + Name (Logo on top, Name below)" },
+            {
+              value: "auto",
+              label: "Smart / Auto (Logo if uploaded, else Brand text)",
+            },
+            {
+              value: "logo_left",
+              label: "Logo + Name (Logo on left, Name on right)",
+            },
+            {
+              value: "logo_right",
+              label: "Logo + Name (Name on left, Logo on right)",
+            },
+            {
+              value: "logo_top",
+              label: "Logo + Name (Logo on top, Name below)",
+            },
             { value: "logo_only", label: "Logo image only" },
             { value: "text_only", label: "Brand text only" },
           ]}
-          onChange={(logoDisplay) => onChange({ ...footer, logoDisplay: logoDisplay as FooterData["logoDisplay"] })}
+          onChange={(logoDisplay) =>
+            onChange({
+              ...footer,
+              logoDisplay: logoDisplay as FooterData["logoDisplay"],
+            })
+          }
         />
         <ImageField
           label="Footer logo image"
@@ -571,14 +811,18 @@ export function FooterForm({
             <TextField
               label="Banner headline"
               value={ctaBanner.heading ?? ""}
-              onChange={(heading) => updateCtaBanner({ heading: heading || undefined })}
+              onChange={(heading) =>
+                updateCtaBanner({ heading: heading || undefined })
+              }
               maxLength={200}
               placeholder="Ready to get started?"
             />
             <TextField
               label="Banner subtext"
               value={ctaBanner.subheading ?? ""}
-              onChange={(subheading) => updateCtaBanner({ subheading: subheading || undefined })}
+              onChange={(subheading) =>
+                updateCtaBanner({ subheading: subheading || undefined })
+              }
               maxLength={500}
               placeholder="Join thousands of satisfied customers."
             />
@@ -658,7 +902,10 @@ export function FooterForm({
       <FormGroup title="Newsletter subscription">
         <CheckboxField
           label="Enable newsletter signup box"
-          checked={Boolean(footer.newsletter?.enabled ?? (footer.design === "newsletter" || footer.design === "mega"))}
+          checked={Boolean(
+            footer.newsletter?.enabled ??
+            (footer.design === "newsletter" || footer.design === "mega"),
+          )}
           onChange={(enabled) => updateNewsletter({ enabled })}
         />
         <TextField
@@ -671,21 +918,27 @@ export function FooterForm({
         <TextField
           label="Newsletter description"
           value={newsletter.description ?? ""}
-          onChange={(description) => updateNewsletter({ description: description || undefined })}
+          onChange={(description) =>
+            updateNewsletter({ description: description || undefined })
+          }
           maxLength={200}
           placeholder="Get the latest updates and offers."
         />
         <TextField
           label="Email input placeholder"
           value={newsletter.placeholder ?? ""}
-          onChange={(placeholder) => updateNewsletter({ placeholder: placeholder || undefined })}
+          onChange={(placeholder) =>
+            updateNewsletter({ placeholder: placeholder || undefined })
+          }
           maxLength={100}
           placeholder="Enter email address"
         />
         <TextField
           label="Button label"
           value={newsletter.buttonText ?? ""}
-          onChange={(buttonText) => updateNewsletter({ buttonText: buttonText || undefined })}
+          onChange={(buttonText) =>
+            updateNewsletter({ buttonText: buttonText || undefined })
+          }
           maxLength={50}
           placeholder="Subscribe"
         />
@@ -716,7 +969,9 @@ export function FooterForm({
         <TextAreaField
           label="Physical address"
           value={contact.address ?? ""}
-          onChange={(address) => updateContact({ address: address || undefined })}
+          onChange={(address) =>
+            updateContact({ address: address || undefined })
+          }
           maxLength={500}
           rows={2}
         />
@@ -735,7 +990,10 @@ export function FooterForm({
           items={footer.social}
           max={12}
           onChange={(social) => onChange({ ...footer, social })}
-          create={() => ({ label: "Instagram", href: "https://instagram.com/" })}
+          create={() => ({
+            label: "Instagram",
+            href: "https://instagram.com/",
+          })}
           itemTitle={linkTitle}
           renderItem={renderLink}
           addLabel="Add social link"
@@ -751,7 +1009,15 @@ export function FooterForm({
         {paymentMethods.enabled !== false && (
           <TextField
             label="Payment badges (comma separated)"
-            value={(paymentMethods.methods ?? ["paypal", "amex", "discover", "mastercard", "visa"]).join(", ")}
+            value={(
+              paymentMethods.methods ?? [
+                "paypal",
+                "amex",
+                "discover",
+                "mastercard",
+                "visa",
+              ]
+            ).join(", ")}
             onChange={(val) =>
               updatePaymentMethods({
                 methods: val
@@ -819,11 +1085,23 @@ export function ThemeForm({
                   onClick={() => onChange(preset.settings)}
                   className="rounded-md border border-line p-1.5 text-left hover:border-brand"
                 >
-                  <span className="flex h-7 items-end gap-1 rounded p-1" style={{ background: colors.background }} aria-hidden>
-                    <span className="h-4 w-6 rounded-sm" style={{ background: colors.primary }} />
-                    <span className="h-3 w-3 rounded-sm" style={{ background: colors.secondary }} />
+                  <span
+                    className="flex h-7 items-end gap-1 rounded p-1"
+                    style={{ background: colors.background }}
+                    aria-hidden
+                  >
+                    <span
+                      className="h-4 w-6 rounded-sm"
+                      style={{ background: colors.primary }}
+                    />
+                    <span
+                      className="h-3 w-3 rounded-sm"
+                      style={{ background: colors.secondary }}
+                    />
                   </span>
-                  <span className="mt-1 block truncate text-xs text-ink">{preset.name}</span>
+                  <span className="mt-1 block truncate text-xs text-ink">
+                    {preset.name}
+                  </span>
                 </button>
               );
             })}
@@ -836,18 +1114,25 @@ export function ThemeForm({
             key={key}
             label={label}
             value={theme.colors[key]}
-            onChange={(value) => onChange({ ...theme, colors: { ...theme.colors, [key]: value } })}
+            onChange={(value) =>
+              onChange({ ...theme, colors: { ...theme.colors, [key]: value } })
+            }
           />
         ))}
       </FormGroup>
       <FormGroup title="Site font">
         <p className="-mt-1 text-ed-2xs leading-normal text-ed-muted">
-          Used across the whole website. Any section can override it from its Style tab.
+          Used across the whole website. Any section can override it from its
+          Style tab.
         </p>
         <FontPicker
           label="Site font"
-          value={isFontKey(theme.fonts.heading) ? theme.fonts.heading : DEFAULT_FONT}
-          onChange={(font) => onChange({ ...theme, fonts: { heading: font, body: font } })}
+          value={
+            isFontKey(theme.fonts.heading) ? theme.fonts.heading : DEFAULT_FONT
+          }
+          onChange={(font) =>
+            onChange({ ...theme, fonts: { heading: font, body: font } })
+          }
         />
       </FormGroup>
       <FormGroup title="Style">
@@ -894,7 +1179,10 @@ export function ThemeForm({
         <SelectField
           label="Content width"
           value={theme.containerWidth}
-          options={[960, 1120, 1200, 1320, 1440].map((value) => ({ value, label: `${value}px` }))}
+          options={[960, 1120, 1200, 1320, 1440].map((value) => ({
+            value,
+            label: `${value}px`,
+          }))}
           onChange={(containerWidth) => onChange({ ...theme, containerWidth })}
         />
       </FormGroup>
@@ -902,7 +1190,15 @@ export function ThemeForm({
   );
 }
 
-function SlugField({ page, pages, onCommit }: { page: WebsitePage; pages: WebsitePage[]; onCommit: (slug: string) => void }) {
+function SlugField({
+  page,
+  pages,
+  onCommit,
+}: {
+  page: WebsitePage;
+  pages: WebsitePage[];
+  onCommit: (slug: string) => void;
+}) {
   const [text, setText] = useState(page.slug);
   const [lastSlug, setLastSlug] = useState(page.slug);
   if (page.slug !== lastSlug) {
@@ -910,11 +1206,12 @@ function SlugField({ page, pages, onCommit }: { page: WebsitePage; pages: Websit
     setText(page.slug);
   }
   const normalized = text.trim().toLowerCase();
-  const error = !PAGE_SLUG_PATTERN.test(normalized) || normalized === "/"
-    ? 'Use "/" followed by lowercase words, e.g. /about-us'
-    : pages.some((other) => other.id !== page.id && other.slug === normalized)
-      ? "Another page already uses this URL"
-      : undefined;
+  const error =
+    !PAGE_SLUG_PATTERN.test(normalized) || normalized === "/"
+      ? 'Use "/" followed by lowercase words, e.g. /about-us'
+      : pages.some((other) => other.id !== page.id && other.slug === normalized)
+        ? "Another page already uses this URL"
+        : undefined;
 
   function commit() {
     if (!error && normalized !== page.slug) onCommit(normalized);
@@ -943,22 +1240,185 @@ export function PageForm({
   page,
   pages,
   onChange,
+  website,
 }: {
   page: WebsitePage;
   pages: WebsitePage[];
   onChange: (patch: PageMetaPatch) => void;
+  website?: WebsiteDetail | null;
 }) {
   const isHome = page.slug === "/";
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [newKeywordInput, setNewKeywordInput] = useState("");
+  const [activeAssetPreview, setActiveAssetPreview] = useState<{
+    title: string;
+    filename: string;
+    desc: string;
+    content: string;
+  } | null>(null);
+  const [copiedModalContent, setCopiedModalContent] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+
+  function getSitemapContent(): string {
+    if (!website) return "";
+    const dom = website.subdomain
+      ? `https://${website.subdomain}.bytezora.site`
+      : "https://example.bytezora.site";
+    const visiblePages = website.draft.pages.filter((p) => p.visible);
+    const today = new Date().toISOString().split("T")[0];
+
+    const urls = visiblePages.map((p) => {
+      const slug =
+        p.slug === "/" ? "" : p.slug.startsWith("/") ? p.slug : `/${p.slug}`;
+      const priority = p.slug === "/" ? "1.0" : "0.8";
+      const changefreq = p.slug === "/" ? "daily" : "weekly";
+      return `  <url>
+    <loc>${dom}${slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`;
+    });
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.join("\n")}
+</urlset>`;
+  }
+
+  function getRobotsContent(): string {
+    if (!website) return "";
+    const dom = website.subdomain
+      ? `https://${website.subdomain}.bytezora.site`
+      : "https://example.bytezora.site";
+    return `# Robots.txt generated automatically by Bytezora Engine
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: ${dom}/sitemap.xml`;
+  }
+
+  function addKeyword() {
+    const trimmed = newKeywordInput.trim().toLowerCase();
+    if (!trimmed || keywords.includes(trimmed)) return;
+    setKeywords([...keywords, trimmed]);
+    setNewKeywordInput("");
+  }
+
+  function removeKeyword(index: number) {
+    setKeywords(keywords.filter((_, i) => i !== index));
+  }
+
+  function copyModalContent() {
+    if (!activeAssetPreview) return;
+    navigator.clipboard.writeText(activeAssetPreview.content).catch(() => {});
+    setCopiedModalContent(true);
+    setTimeout(() => setCopiedModalContent(false), 2000);
+  }
+
+  const seoTitle = page.seoTitle ?? "";
+  const seoDescription = page.seoDescription ?? "";
+
+  const domain = website?.subdomain
+    ? `${website.subdomain}.bytezora.site`
+    : "example.bytezora.site";
+  const cleanPath = isHome ? "" : page.slug.replace(/^\//, "");
+  const previewUrl = `https://${domain}${cleanPath ? `/${cleanPath}` : ""}`;
+  const displayTitle =
+    seoTitle || (website?.name ? `${page.name} | ${website.name}` : page.name);
+  const displayDescription =
+    seoDescription ||
+    (website?.info?.description
+      ? `${website.info.description.slice(0, 150)}...`
+      : "No meta description set yet. Search engines will automatically generate a snippet from your page content.");
+
+  async function handleGenerateSeo() {
+    if (!website) return;
+    setIsGenerating(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      // Gather relevant section headings & text for context
+      const snippets = page.sections
+        .filter((s) => !s.hidden)
+        .map((s) => {
+          const d = s.data as Record<string, unknown>;
+          const h = [d.heading, d.title, d.siteName].find(
+            (v) => typeof v === "string",
+          );
+          const sub = [d.subheading, d.tagline, d.subtitle].find(
+            (v) => typeof v === "string",
+          );
+          const text = [d.text, d.description, d.body].find(
+            (v) => typeof v === "string",
+          );
+          return [h, sub, typeof text === "string" ? text.slice(0, 100) : ""]
+            .filter(Boolean)
+            .join(" - ");
+        })
+        .filter(Boolean)
+        .slice(0, 8)
+        .join("\n");
+
+      const res = await websitesApi.generatePageSeo(website.id, page.id, {
+        pageName: page.name,
+        pageSlug: page.slug,
+        currentTitle: page.seoTitle,
+        currentDescription: page.seoDescription,
+        contentSummary: snippets,
+      });
+
+      onChange({
+        seoTitle: res.seoTitle,
+        seoDescription: res.seoDescription,
+      });
+      setKeywords(res.keywords);
+      setSuccessMsg("Generated Google-optimized SEO Title & Description!");
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  function copyText(text: string, label: string) {
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopiedUrl(label);
+    setTimeout(() => setCopiedUrl(null), 2000);
+  }
+
   return (
     <>
       <FormGroup title="Page">
-        <TextField label="Page name" value={page.name} onChange={(name) => onChange({ name })} maxLength={120} required />
+        <TextField
+          label="Page name"
+          value={page.name}
+          onChange={(name) => onChange({ name })}
+          maxLength={120}
+          required
+        />
         {isHome ? (
-          <p className="text-xs text-ink-muted">This is your home page. Its URL is always “/”.</p>
+          <p className="text-xs text-ink-muted">
+            This is your home page. Its URL is always “/”.
+          </p>
         ) : (
-          <SlugField page={page} pages={pages} onCommit={(slug) => onChange({ slug })} />
+          <SlugField
+            page={page}
+            pages={pages}
+            onCommit={(slug) => onChange({ slug })}
+          />
         )}
-        <CheckboxField label="Show in header menu" checked={page.showInNav} onChange={(showInNav) => onChange({ showInNav })} />
+        <CheckboxField
+          label="Show in header menu"
+          checked={page.showInNav}
+          onChange={(showInNav) => onChange({ showInNav })}
+        />
         {!isHome && (
           <CheckboxField
             label="Page is visible"
@@ -968,22 +1428,335 @@ export function PageForm({
           />
         )}
       </FormGroup>
+
       <FormGroup title="Search engines (SEO)">
-        <TextField
-          label="SEO title"
-          value={page.seoTitle ?? ""}
-          onChange={(seoTitle) => onChange({ seoTitle })}
-          maxLength={160}
-          hint="Shown as the title in Google results. Defaults to the page name."
-        />
-        <TextAreaField
-          label="SEO description"
-          value={page.seoDescription ?? ""}
-          onChange={(seoDescription) => onChange({ seoDescription })}
-          maxLength={320}
-          rows={3}
-        />
+        {/* Header action button */}
+        <div className="flex items-center justify-between gap-2 -mt-1">
+          <p className="text-ed-2xs text-ed-muted">
+            AI metadata & SERP preview
+          </p>
+          {website && (
+            <button
+              type="button"
+              disabled={isGenerating}
+              onClick={handleGenerateSeo}
+              className="group relative inline-flex items-center gap-1.5 rounded-md border border-brand/35 bg-linear-to-r from-brand/10 via-indigo-500/10 to-violet-500/15 px-2.5 py-1 text-ed-2xs font-semibold text-ed-text shadow-2xs hover:border-brand/60 hover:from-brand/20 hover:to-violet-500/25 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+            >
+              {isGenerating ? (
+                <>
+                  <AiSparklesIcon
+                    className="size-3.5 animate-spin"
+                    variant="glossy"
+                  />
+                  <span className="font-medium text-ed-muted">Generating…</span>
+                </>
+              ) : (
+                <>
+                  <AiSparklesIcon
+                    className="size-3.5 transition-transform duration-200 group-hover:scale-110"
+                    variant="glossy"
+                    glow
+                  />
+                  <span className="font-semibold text-ed-text">
+                    Generate with AI
+                  </span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        {error && (
+          <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-2.5 text-ed-2xs text-red-600 dark:text-red-400">
+            <AlertCircle className="size-3.5 shrink-0 mt-0.5" />
+            <p className="flex-1 leading-tight">{error}</p>
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-ed-2xs font-medium text-emerald-600 dark:text-emerald-400">
+            <Check className="size-3.5 shrink-0" />
+            <p>{successMsg}</p>
+          </div>
+        )}
+
+        {/* Google SERP Live Snippet Box */}
+        <div className="rounded-ed border border-ed-border/80 bg-ed-panel p-2.5 shadow-2xs space-y-1.5">
+          <div className="flex items-center gap-1.5 text-ed-2xs text-ed-muted">
+            <Globe className="size-3 text-ed-faint" />
+            <span className="truncate">{previewUrl}</span>
+          </div>
+          <h4 className="text-ed-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline line-clamp-1 leading-tight">
+            {displayTitle}
+          </h4>
+          <p className="text-ed-2xs text-ed-muted line-clamp-2 leading-relaxed">
+            {displayDescription}
+          </p>
+        </div>
+
+        {/* SEO Title field with live character count */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between text-ed-xs">
+            <span className="font-medium text-ed-text">SEO title</span>
+            <span
+              className={`text-[10px] font-mono font-medium rounded px-1.5 py-0.5 ${
+                seoTitle.length > 60
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  : seoTitle.length >= 35
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    : "bg-ed-subtle text-ed-muted"
+              }`}
+            >
+              {seoTitle.length}/60 chars
+            </span>
+          </div>
+          <TextField
+            label=""
+            value={seoTitle}
+            onChange={(val) => onChange({ seoTitle: val })}
+            maxLength={160}
+            hint="Displayed as the headline on Google. Recommended length: 40–60 characters."
+          />
+        </div>
+
+        {/* SEO Description field with live character count */}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-between text-ed-xs">
+            <span className="font-medium text-ed-text">SEO description</span>
+            <span
+              className={`text-[10px] font-mono font-medium rounded px-1.5 py-0.5 ${
+                seoDescription.length > 160
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  : seoDescription.length >= 110
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    : "bg-ed-subtle text-ed-muted"
+              }`}
+            >
+              {seoDescription.length}/160 chars
+            </span>
+          </div>
+          <TextAreaField
+            label=""
+            value={seoDescription}
+            onChange={(val) => onChange({ seoDescription: val })}
+            maxLength={320}
+            rows={3}
+            hint="Shown under the title in search results. Optimal length: 120–155 characters."
+          />
+        </div>
+
+        {/* Keywords Tags with Add / Delete support */}
+        <div className="flex flex-col gap-1.5 pt-1">
+          <div className="flex items-center justify-between">
+            <span className="text-ed-2xs font-semibold uppercase tracking-wider text-ed-muted">
+              Target Keywords
+            </span>
+            <span className="text-ed-2xs text-ed-muted">
+              {keywords.length} keywords
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 min-h-6">
+            {keywords.map((kw, i) => (
+              <span
+                key={i}
+                className="group/kw inline-flex items-center gap-1 rounded bg-ed-subtle border border-ed-border px-2 py-0.5 text-ed-2xs text-ed-text hover:border-ed-border-strong transition"
+              >
+                <span>{kw}</span>
+                <button
+                  type="button"
+                  onClick={() => removeKeyword(i)}
+                  title="Remove keyword"
+                  className="text-ed-muted hover:text-red-500 rounded p-0.5 transition"
+                >
+                  <X className="size-2.5" />
+                </button>
+              </span>
+            ))}
+            {keywords.length === 0 && (
+              <p className="text-ed-2xs text-ed-muted italic">
+                Click “Generate with AI” or add keywords below.
+              </p>
+            )}
+          </div>
+
+          {/* Add keyword input */}
+          <div className="flex items-center gap-1.5 mt-1">
+            <input
+              type="text"
+              value={newKeywordInput}
+              onChange={(e) => setNewKeywordInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addKeyword();
+                }
+              }}
+              placeholder="Add keyword (press Enter)…"
+              className="h-7 flex-1 rounded border border-ed-border bg-ed-panel px-2 text-ed-xs text-ed-text placeholder:text-ed-faint focus:border-ed-accent focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={addKeyword}
+              disabled={!newKeywordInput.trim()}
+              className="inline-flex h-7 items-center justify-center rounded border border-ed-border bg-ed-subtle px-2 text-ed-xs text-ed-text hover:bg-ed-hover disabled:opacity-40 transition"
+            >
+              <Plus className="size-3" />
+            </button>
+          </div>
+        </div>
+
+        {/* Automated Search Engine Assets Card */}
+        {website && (
+          <div className="mt-2 rounded-ed border border-ed-border/60 bg-ed-subtle/50 p-2.5 text-ed-2xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-ed-text">
+                Search Engine Assets
+              </span>
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="size-1.5 rounded-full bg-emerald-500" />
+                Auto-managed
+              </span>
+            </div>
+            <div className="space-y-1.5 text-ed-muted font-mono text-ed-2xs">
+              <div className="flex items-center justify-between">
+                <span>/sitemap.xml</span>
+                <div className="flex items-center gap-2 font-sans text-ed-2xs">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveAssetPreview({
+                        title: "Sitemap XML",
+                        filename: "sitemap.xml",
+                        desc: "Google Search and web crawlers read this file to discover and index all your published pages automatically.",
+                        content: getSitemapContent(),
+                      })
+                    }
+                    className="inline-flex items-center gap-1 text-ed-text hover:text-indigo-500 cursor-pointer"
+                  >
+                    <Eye className="size-2.5" /> View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyText(`https://${domain}/sitemap.xml`, "sitemap")
+                    }
+                    title="Copy full sitemap URL"
+                    className="hover:text-ed-text"
+                  >
+                    {copiedUrl === "sitemap" ? (
+                      <Check className="size-3 text-emerald-500" />
+                    ) : (
+                      <Copy className="size-3" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>/robots.txt</span>
+                <div className="flex items-center gap-2 font-sans text-ed-2xs">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveAssetPreview({
+                        title: "Robots Directives",
+                        filename: "robots.txt",
+                        desc: "This file informs Googlebot and search spiders that your public pages are allowed to be crawled and points them to your sitemap.",
+                        content: getRobotsContent(),
+                      })
+                    }
+                    className="inline-flex items-center gap-1 text-ed-text hover:text-indigo-500 cursor-pointer"
+                  >
+                    <Eye className="size-2.5" /> View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyText(`https://${domain}/robots.txt`, "robots")
+                    }
+                    title="Copy full robots URL"
+                    className="hover:text-ed-text"
+                  >
+                    {copiedUrl === "robots" ? (
+                      <Check className="size-3 text-emerald-500" />
+                    ) : (
+                      <Copy className="size-3" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </FormGroup>
+
+      {/* In-Editor File Preview Modal */}
+      {activeAssetPreview && (
+        <Modal.Backdrop
+          isOpen
+          onOpenChange={(open) => !open && setActiveAssetPreview(null)}
+        >
+          <Modal.Container size="md">
+            <Modal.Dialog aria-label={activeAssetPreview.title}>
+              <Modal.Header>
+                <div className="flex items-center justify-between gap-3 w-full pr-6">
+                  <div>
+                    <Modal.Heading>{activeAssetPreview.title}</Modal.Heading>
+                    <p className="font-mono text-xs text-ed-muted">
+                      /{activeAssetPreview.filename}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyModalContent}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-ed-border bg-ed-subtle px-2.5 py-1 text-xs font-medium text-ed-text hover:bg-ed-hover transition"
+                  >
+                    {copiedModalContent ? (
+                      <>
+                        <Check className="size-3.5 text-emerald-500" />
+                        <span>Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-3.5" />
+                        <span>Copy File</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </Modal.Header>
+              <Modal.Body>
+                <div className="space-y-3">
+                  <p className="text-xs text-ink-muted leading-relaxed">
+                    {activeAssetPreview.desc}
+                  </p>
+                  <div className="relative rounded-lg border border-line bg-zinc-950 p-3.5 shadow-inner">
+                    <pre className="max-h-80 overflow-auto font-mono text-xs text-zinc-200 whitespace-pre leading-relaxed select-all">
+                      {activeAssetPreview.content}
+                    </pre>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
+                    <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>
+                      Auto-generated by Bytezora and served directly to search
+                      engines upon deploy.
+                    </span>
+                  </div>
+                </div>
+              </Modal.Body>
+              <Modal.Footer>
+                <button
+                  type="button"
+                  onClick={() => setActiveAssetPreview(null)}
+                  className="rounded-md border border-ed-border bg-ed-panel px-3.5 py-1.5 text-xs font-semibold text-ed-text hover:bg-ed-subtle transition"
+                >
+                  Close
+                </button>
+              </Modal.Footer>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      )}
     </>
   );
 }
