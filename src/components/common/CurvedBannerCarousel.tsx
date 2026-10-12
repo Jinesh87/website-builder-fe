@@ -346,6 +346,7 @@ export default function CurvedBannerCarousel({
         onTouchMove={onTouchMove}
         onTouchEnd={handlePointerUp}
         aria-label="Interactive 3D video carousel"
+        data-wb-reel={JSON.stringify({ speed, direction, curveFactor, pauseOnHover, interactive, cardWidth, cardHeight, gap })}
       >
         <div
           ref={containerRef}

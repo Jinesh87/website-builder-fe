@@ -18,6 +18,10 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes("node_modules")) {
+            // Only the code export renders to HTML; keep the server renderer out of the eagerly loaded React chunk.
+            if (id.includes("react-dom-server") || id.includes("react-dom/server")) {
+              return undefined;
+            }
             if (id.includes("@puckeditor")) {
               return "vendor-puck";
             }

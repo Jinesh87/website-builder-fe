@@ -1,6 +1,8 @@
-import { ArrowLeft, ChevronRight, ExternalLink, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, ChevronRight, Code2, ExternalLink, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppTooltip from "../../../components/ui/AppTooltip.tsx";
+import DownloadCodeDialog from "../../../components/websites/DownloadCodeDialog.tsx";
 import type { Device } from "../../../components/websites/DevicePreview.tsx";
 import { useEditor } from "../editor-context.ts";
 import { useBuilderPuck } from "../puck/puck-api.ts";
@@ -39,6 +41,7 @@ type TopBarProps = {
 export default function TopBar({ backTo, onPublish }: TopBarProps) {
   const { website, page, role, device, setDevice, autosave, aiLock } = useEditor();
   const history = useBuilderPuck((state) => state.history);
+  const [downloadOpen, setDownloadOpen] = useState(false);
 
   async function openPreview() {
     const url = `/websites/${website.id}/preview`;
@@ -121,6 +124,17 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
           {role === "SUPER_ADMIN" ? "Admin" : "Owner"}
         </span>
       </AppTooltip>
+      <AppTooltip content="Download code" placement="bottom">
+        <button
+          type="button"
+          onClick={() => setDownloadOpen(true)}
+          disabled={autosave.status === "conflict"}
+          aria-label="Download code"
+          className="grid size-8 place-items-center rounded-ed border border-ed-border text-ed-muted hover:bg-ed-hover hover:text-ed-text disabled:opacity-50"
+        >
+          <Code2 className="size-4" aria-hidden />
+        </button>
+      </AppTooltip>
       <button
         type="button"
         onClick={() => void openPreview()}
@@ -137,6 +151,12 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
       >
         Publish
       </button>
+      <DownloadCodeDialog
+        websiteId={website.id}
+        isOpen={downloadOpen}
+        onClose={() => setDownloadOpen(false)}
+        beforeExport={autosave.flush}
+      />
     </header>
   );
 }
