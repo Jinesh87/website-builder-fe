@@ -38,39 +38,65 @@ export function runPrePublishSeoAudit(website: WebsiteDetail): SeoAuditReport {
 
   // 1. Meta Titles & Descriptions
   let missingTitles = 0;
+  let overLengthTitles = 0;
   let missingDescriptions = 0;
+  let overLengthDescriptions = 0;
   const titles = new Set<string>();
   let duplicateTitles = false;
 
   for (const page of visiblePages) {
-    const title = page.seoTitle || page.name;
-    if (!title || title.trim().length < 3) missingTitles++;
-    if (titles.has(title.toLowerCase())) duplicateTitles = true;
-    titles.add(title.toLowerCase());
+    const rawTitle = page.seoTitle?.trim();
+    if (!rawTitle) {
+      missingTitles++;
+    } else if (rawTitle.length > 60) {
+      overLengthTitles++;
+    }
 
-    if (!page.seoDescription || page.seoDescription.trim().length < 20) {
+    const effectiveTitle = (rawTitle || page.name || "").trim().toLowerCase();
+    if (effectiveTitle) {
+      if (titles.has(effectiveTitle)) duplicateTitles = true;
+      titles.add(effectiveTitle);
+    }
+
+    const rawDesc = page.seoDescription?.trim();
+    if (!rawDesc || rawDesc.length < 20) {
       missingDescriptions++;
+    } else if (rawDesc.length > 160) {
+      overLengthDescriptions++;
     }
   }
 
-  if (missingTitles === 0 && !duplicateTitles && missingDescriptions === 0) {
+  if (
+    missingTitles === 0 &&
+    overLengthTitles === 0 &&
+    !duplicateTitles &&
+    missingDescriptions === 0 &&
+    overLengthDescriptions === 0
+  ) {
     items.push({
       id: "meta-tags",
       title: "Page Titles & Meta Descriptions",
       status: "pass",
       category: "On-Page SEO",
       scoreWeight: 25,
-      message: `All ${visiblePages.length} live pages have unique, optimized titles and meta descriptions.`,
+      message: `All ${visiblePages.length} live pages have unique, optimized titles (≤60 chars) and meta descriptions.`,
       icon: FileText,
     });
   } else {
+    const warnings: string[] = [];
+    if (missingTitles > 0) warnings.push(`${missingTitles} page(s) missing custom SEO titles`);
+    if (overLengthTitles > 0) warnings.push(`${overLengthTitles} title(s) exceed 60 characters`);
+    if (missingDescriptions > 0) warnings.push(`${missingDescriptions} page(s) missing meta descriptions`);
+    if (overLengthDescriptions > 0) warnings.push(`${overLengthDescriptions} description(s) exceed 160 characters`);
+    if (duplicateTitles) warnings.push("duplicate titles detected");
+
     items.push({
       id: "meta-tags",
       title: "Page Titles & Meta Descriptions",
       status: "warn",
       category: "On-Page SEO",
       scoreWeight: missingTitles > 0 ? 10 : 18,
-      message: `${missingDescriptions} page(s) missing descriptions or titles${duplicateTitles ? "; duplicate titles detected" : ""}.`,
+      message: warnings.join("; ") + ".",
       recommendation: "Use the AI SEO generator in Site Settings to auto-generate unique page meta tags.",
       icon: FileText,
     });
@@ -79,10 +105,20 @@ export function runPrePublishSeoAudit(website: WebsiteDetail): SeoAuditReport {
   // 2. Heading Structure & Single H1 Rule
   let pagesWithoutH1 = 0;
   for (const page of visiblePages) {
-    const hasHero = page.sections.some((s) => !s.hidden && s.type === "hero");
-    // Inner pages without hero will receive automatic semantic H1 from LiveSiteEngine
-    if (page.slug === "/" && !hasHero && page.sections.length === 0) {
-      pagesWithoutH1++;
+    if (page.slug === "/") {
+      const hasHeroOrHeading = page.sections.some(
+        (s) =>
+          !s.hidden &&
+          (s.type === "hero" ||
+            Boolean(
+              ((s.data as Record<string, unknown>)?.heading ||
+                (s.data as Record<string, unknown>)?.title ||
+                "")
+            ))
+      );
+      if (!hasHeroOrHeading) {
+        pagesWithoutH1++;
+      }
     }
   }
 
@@ -216,7 +252,7 @@ export function runPrePublishSeoAudit(website: WebsiteDetail): SeoAuditReport {
       status: "pass",
       category: "Crawlability",
       scoreWeight: 15,
-      message: `Root /sitemap.xml (${visiblePages.length} pages) and /robots.txt configured with GPTBot & PerplexityBot crawl rules.`,
+      message: `Root /sitemap.xml (${visiblePages.length} pages) and /robots.txt configured with GPTBot, PerplexityBot & ClaudeBot crawl rules.`,
       icon: ShieldCheck,
     });
   } else {

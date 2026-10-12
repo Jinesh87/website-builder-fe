@@ -484,7 +484,7 @@ export default function WebsiteEditorPage() {
           )}
           {website && website.status === "PUBLISHED" && (
             <a
-              href={getLiveSiteUrl(website.subdomain)}
+              href={getLiveSiteUrl(website.subdomain, website.customDomain)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-sm font-medium text-emerald-400 hover:text-emerald-300"

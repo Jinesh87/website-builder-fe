@@ -39,6 +39,10 @@ function pageDocument(site: ExportSite, page: ExportSite["pages"][number], marku
     `<meta name="viewport" content="width=device-width, initial-scale=1" />`,
     `<title>${escapeHtml(title)}</title>`,
     page.seoDescription ? `<meta name="description" content="${escapeHtml(page.seoDescription)}" />` : "",
+    `<meta property="og:type" content="website" />`,
+    `<meta property="og:title" content="${escapeHtml(title)}" />`,
+    page.seoDescription ? `<meta property="og:description" content="${escapeHtml(page.seoDescription)}" />` : "",
+    `<meta property="og:site_name" content="${escapeHtml(site.name)}" />`,
     ...(fontLinks.length > 0
       ? [
           `<link rel="preconnect" href="https://fonts.googleapis.com" />`,
@@ -50,7 +54,7 @@ function pageDocument(site: ExportSite, page: ExportSite["pages"][number], marku
     `<link rel="stylesheet" href="css/styles.css" />`,
   ].filter(Boolean);
   return `<!doctype html>
-<html lang="en">
+<html lang="${escapeHtml(site.theme.language || "en")}">
 <head>
 ${head.join("\n")}
 </head>

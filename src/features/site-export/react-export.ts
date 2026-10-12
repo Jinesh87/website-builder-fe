@@ -171,8 +171,9 @@ export default function App() {
 
 function indexHtml(site: ExportSite): string {
   const title = site.name.replace(/[<>&"]/g, "");
+  const lang = (site.theme.language || "en").replace(/[^A-Za-z0-9-]/g, "");
   return `<!doctype html>
-<html lang="en">
+<html lang="${lang}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
