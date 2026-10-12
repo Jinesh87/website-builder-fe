@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button, Chip, Label, Spinner, Switch } from "@heroui/react";
-import { Check, Eye, EyeOff, Info, Mail, PenLine, Send, Sliders } from "lucide-react";
+import { Check, CreditCard, Eye, EyeOff, Mail, Send, Sliders } from "lucide-react";
 import AiSparklesIcon from "../../components/icons/AiSparklesIcon.tsx";
 import { adminAiApi, type AiConfig, type AiConfigInput } from "../../api/admin-ai.ts";
 import AiModelPicker from "../../components/ai/AiModelPicker.tsx";
@@ -12,15 +12,17 @@ import { validateEmail } from "../../auth/validation.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
+import PaymentSettingsPanel, { PaymentStatusChip } from "../../components/admin/PaymentSettingsPanel.tsx";
+import type { PaymentConfig } from "../../api/wallet.ts";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
+type SettingsTab = "email" | "ai" | "payments";
 type EmailConfigErrors = Partial<Record<keyof EmailConfigInput, string>>;
 type AiConfigErrors = Partial<Record<keyof AiConfigInput, string>>;
 
-const CUSTOM_MODEL = "custom";
-
-function isCatalogModel(config: AiConfig, model: string): boolean {
-  return config.models.some((option) => option.id === model);
+/** A saved model that is no longer in the catalog leaves the picker empty so the admin picks a new one. */
+function catalogModel(config: AiConfig): string {
+  return config.models.some((option) => option.id === config.model) ? config.model : "";
 }
 
 function toEmailForm(config: EmailConfig): EmailConfigInput {
@@ -45,7 +47,9 @@ function AiStatusChip({ config }: { config: AiConfig }) {
 export default function SettingsPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") === "ai" ? "ai" : "email";
+  const tabParam = searchParams.get("tab");
+  const activeTab: SettingsTab = tabParam === "ai" || tabParam === "payments" ? tabParam : "email";
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
 
   // EMAIL CONFIG STATE
   const [emailConfig, setEmailConfig] = useState<EmailConfig | null>(null);
@@ -68,8 +72,6 @@ export default function SettingsPage() {
   // AI CONFIG STATE
   const [aiConfig, setAiConfig] = useState<AiConfig | null>(null);
   const [aiLoadError, setAiLoadError] = useState<string | null>(null);
-  const [selectedModelDropdown, setSelectedModelDropdown] = useState("gpt-4o-mini");
-  const [customModelText, setCustomModelText] = useState("");
   const [aiForm, setAiForm] = useState<AiConfigInput>({
     openaiApiKey: "",
     model: "gpt-4o-mini",
@@ -98,18 +100,7 @@ export default function SettingsPage() {
       .then((loaded) => {
         if (cancelled) return;
         setAiConfig(loaded);
-        const m = loaded.model || "gpt-4o-mini";
-        if (isCatalogModel(loaded, m)) {
-          setSelectedModelDropdown(m);
-          setCustomModelText("");
-        } else {
-          setSelectedModelDropdown(CUSTOM_MODEL);
-          setCustomModelText(m);
-        }
-        setAiForm({
-          openaiApiKey: "",
-          model: m,
-        });
+        setAiForm({ openaiApiKey: "", model: catalogModel(loaded) });
       })
       .catch((err: unknown) => !cancelled && setAiLoadError(errorMessage(err)));
 
@@ -118,7 +109,7 @@ export default function SettingsPage() {
     };
   }, []);
 
-  function setTab(tab: "email" | "ai") {
+  function setTab(tab: SettingsTab) {
     setSearchParams({ tab });
   }
 
@@ -179,30 +170,16 @@ export default function SettingsPage() {
   }
 
   // AI HANDLERS
-  function handleModelDropdownChange(val: string) {
-    setSelectedModelDropdown(val);
-    if (val !== CUSTOM_MODEL) {
-      setAiForm((prev) => ({ ...prev, model: val }));
-    } else {
-      setAiForm((prev) => ({ ...prev, model: customModelText || "gpt-4o-mini" }));
-    }
-  }
-
-  function handleCustomModelTextChange(val: string) {
-    setCustomModelText(val);
-    setAiForm((prev) => ({ ...prev, model: val.trim() }));
-  }
-
   async function handleAiSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const finalModel = selectedModelDropdown === CUSTOM_MODEL ? customModelText.trim() : selectedModelDropdown;
+    const finalModel = aiForm.model;
 
     const nextErrors: AiConfigErrors = {
       openaiApiKey:
         !aiConfig?.configured && !aiForm.openaiApiKey?.trim()
           ? "OpenAI API key is required"
           : undefined,
-      model: finalModel ? undefined : "Please specify or select an OpenAI model",
+      model: finalModel ? undefined : "Please select an OpenAI model",
     };
     setAiErrors(nextErrors);
     setAiSaveFeedback(null);
@@ -215,17 +192,7 @@ export default function SettingsPage() {
         model: finalModel,
       });
       setAiConfig(saved);
-      if (isCatalogModel(saved, saved.model)) {
-        setSelectedModelDropdown(saved.model);
-        setCustomModelText("");
-      } else {
-        setSelectedModelDropdown(CUSTOM_MODEL);
-        setCustomModelText(saved.model);
-      }
-      setAiForm({
-        openaiApiKey: "",
-        model: saved.model || "gpt-4o-mini",
-      });
+      setAiForm({ openaiApiKey: "", model: catalogModel(saved) });
       setAiSaveFeedback({ status: "success", message: "AI settings saved successfully." });
     } catch (err) {
       if (err instanceof ApiError) setAiErrors(err.fieldErrors());
@@ -239,12 +206,14 @@ export default function SettingsPage() {
     <div className="px-6 py-8 sm:px-8 max-w-5xl">
       <PageHeader
         title="Settings"
-        description="Manage system communications and AI Copilot generation engine."
+        description="Manage system communications, the AI Copilot generation engine and payments."
         actions={
           activeTab === "email" ? (
             emailConfig && <EmailStatusChip config={emailConfig} />
-          ) : (
+          ) : activeTab === "ai" ? (
             aiConfig && <AiStatusChip config={aiConfig} />
+          ) : (
+            paymentConfig && <PaymentStatusChip config={paymentConfig} />
           )
         }
       />
@@ -276,7 +245,26 @@ export default function SettingsPage() {
           <AiSparklesIcon className="size-4" variant="glossy" />
           <span>AI Settings</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setTab("payments")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-t-lg border-b-2 -mb-px ${
+            activeTab === "payments"
+              ? "border-primary text-ink bg-surface shadow-xs font-semibold"
+              : "border-transparent text-ink-muted hover:text-ink hover:bg-surface/50"
+          }`}
+        >
+          <CreditCard className="size-4" />
+          <span>Payments</span>
+        </button>
       </div>
+
+      {activeTab === "payments" && (
+        <div className="mt-8">
+          <PaymentSettingsPanel onLoaded={setPaymentConfig} />
+        </div>
+      )}
 
       {/* EMAIL TAB CONTENT */}
       {activeTab === "email" && (
@@ -488,42 +476,10 @@ export default function SettingsPage() {
 
                     <AiModelPicker
                       models={aiConfig.models}
-                      value={selectedModelDropdown === CUSTOM_MODEL ? null : selectedModelDropdown}
-                      onChange={handleModelDropdownChange}
+                      value={aiForm.model || null}
+                      onChange={(model) => setAiForm((prev) => ({ ...prev, model }))}
                     />
-
-                    <button
-                      type="button"
-                      aria-pressed={selectedModelDropdown === CUSTOM_MODEL}
-                      onClick={() => handleModelDropdownChange(CUSTOM_MODEL)}
-                      className={`flex items-center gap-2 rounded-xl border p-3 text-left text-sm transition-all cursor-pointer ${
-                        selectedModelDropdown === CUSTOM_MODEL
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-line bg-surface hover:border-ink-muted/40"
-                      }`}
-                    >
-                      <PenLine className="size-4 text-ink-muted" aria-hidden />
-                      <span className="font-medium text-ink">Custom model ID</span>
-                      <span className="text-xs text-ink-muted">(platform default only, not offered to clients)</span>
-                    </button>
-
-                    {selectedModelDropdown === CUSTOM_MODEL && (
-                      <div className="mt-1">
-                        <TextInput
-                          label="Custom Model ID"
-                          name="customModel"
-                          placeholder="e.g. gpt-5-mini, ft:gpt-4o-mini:..."
-                          value={customModelText}
-                          onChange={handleCustomModelTextChange}
-                          error={aiErrors.model}
-                        />
-                        <p className="mt-2 flex items-start gap-1.5 text-xs text-ink-muted">
-                          <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                          Custom models have no price on file, so AI usage costs for them are estimated at GPT-4o mini
-                          rates.
-                        </p>
-                      </div>
-                    )}
+                    {aiErrors.model && <p className="text-xs text-danger">{aiErrors.model}</p>}
                   </div>
 
                   {/* Security Note */}

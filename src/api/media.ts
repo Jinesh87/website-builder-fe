@@ -89,6 +89,23 @@ export type UploadMediaInput = {
   altText?: string;
 };
 
+export const MAX_VARIATIONS = 4;
+
+export type GenerateVariationsInput = {
+  file: File;
+  count: number;
+  instructions?: string;
+  /** Required for Super Admin. */
+  clientId?: string;
+  websiteId?: string;
+};
+
+/** An unsaved AI-generated image; `data` is base64. */
+export type ImageSample = {
+  mimeType: string;
+  data: string;
+};
+
 export type UpdateMediaInput = {
   fileName?: string;
   altText?: string | null;
@@ -158,6 +175,17 @@ export const mediaApi = {
     }
     form.set("file", file);
     return request<{ file: MediaFile }>(BASE, { method: "POST", body: form }).then((data) => data.file);
+  },
+
+  /** Returns unsaved samples; save the ones the user keeps with `upload`. */
+  generateVariations: ({ file, count, ...fields }: GenerateVariationsInput) => {
+    const form = new FormData();
+    for (const [key, value] of Object.entries(fields)) {
+      if (value) form.set(key, value);
+    }
+    form.set("count", String(count));
+    form.set("file", file);
+    return request<{ samples: ImageSample[] }>(`${BASE}/variations`, { method: "POST", body: form }).then((data) => data.samples);
   },
 
   update: (id: string, input: UpdateMediaInput) =>

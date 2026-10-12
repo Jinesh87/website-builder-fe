@@ -6,6 +6,7 @@ import {
   ACCEPT_ANY,
   ACCEPT_BY_KIND,
   formatBytes,
+  kindOfFile,
   mediaApi,
   uploadProblem,
   type MediaFile,
@@ -20,6 +21,7 @@ import FormAlert from "../ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../ui/SelectInput.tsx";
 import { optimizeImageToWebP } from "../../utils/image-optimizer.ts";
 import MediaDeleteDialog from "./MediaDeleteDialog.tsx";
+import ImageUploadDialog from "./ImageUploadDialog.tsx";
 import MediaDetailsDialog from "./MediaDetailsDialog.tsx";
 
 const PAGE_SIZE = 24;
@@ -68,6 +70,7 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
   const [folderDialog, setFolderDialog] = useState<FolderDialog | null>(null);
   const [pendingFolderDelete, setPendingFolderDelete] = useState<MediaFolder | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(
@@ -117,9 +120,17 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
     void loadFolders();
   }, [loadFolders]);
 
+  const uploadFolderId = folderFilter && folderFilter !== "none" ? folderFilter : undefined;
+
   async function uploadFiles(list: FileList | File[]) {
     if (!canManage) return;
     const chosen = [...list];
+    const [single] = chosen;
+    // Animated GIFs can't be used as a source for AI variations, so they upload directly.
+    if (chosen.length === 1 && kindOfFile(single) === "IMAGE" && single.type !== "image/gif" && !uploadProblem(single, onlyKind)) {
+      setPendingImage(single);
+      return;
+    }
     const items: UploadItem[] = chosen.map((file) => ({ key: crypto.randomUUID(), name: file.name, status: "uploading" }));
     setUploads((current) => [...items, ...current.filter((item) => item.status === "uploading")]);
 
@@ -139,7 +150,7 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
           file: fileToUpload,
           clientId,
           websiteId,
-          folderId: folderFilter && folderFilter !== "none" ? folderFilter : undefined,
+          folderId: uploadFolderId,
         });
         added++;
         finish({ status: "done" });
@@ -402,6 +413,19 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
             setPendingDelete(file);
           }}
           onClose={() => setSelected(null)}
+        />
+      )}
+      {pendingImage && (
+        <ImageUploadDialog
+          file={pendingImage}
+          clientId={clientId}
+          websiteId={websiteId}
+          folderId={uploadFolderId}
+          onSaved={() => {
+            setPendingImage(null);
+            void Promise.all([load(1), loadFolders()]);
+          }}
+          onClose={() => setPendingImage(null)}
         />
       )}
       {pendingDelete && (
