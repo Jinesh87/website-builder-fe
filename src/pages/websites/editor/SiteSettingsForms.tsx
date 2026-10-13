@@ -1472,33 +1472,33 @@ Sitemap: ${dom}/sitemap.xml`;
 
       <FormGroup title="Search engines (SEO)">
         {/* Header action button */}
-        <div className="flex items-center justify-between gap-2 -mt-1">
+        <div className="flex flex-col gap-2 -mt-1">
           <p className="text-ed-2xs text-ed-muted">
-            AI metadata & SERP preview
+            AI metadata & Google preview
           </p>
           {website && (
             <button
               type="button"
               disabled={isGenerating}
               onClick={handleGenerateSeo}
-              className="group relative inline-flex items-center gap-1.5 rounded-md border border-brand/35 bg-linear-to-r from-brand/10 via-indigo-500/10 to-violet-500/15 px-2.5 py-1 text-ed-2xs font-semibold text-ed-text shadow-2xs hover:border-brand/60 hover:from-brand/20 hover:to-violet-500/25 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+              className="group relative flex w-full items-center justify-center gap-2 rounded-md border border-brand/35 bg-linear-to-r from-brand/10 via-indigo-500/10 to-violet-500/15 px-3 py-1.5 text-xs font-semibold text-ed-text shadow-2xs hover:border-brand/60 hover:from-brand/20 hover:to-violet-500/25 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap"
             >
               {isGenerating ? (
                 <>
                   <AiSparklesIcon
-                    className="size-3.5 animate-spin"
+                    className="size-3.5 animate-spin shrink-0"
                     variant="glossy"
                   />
-                  <span className="font-medium text-ed-muted">Generating…</span>
+                  <span className="font-medium text-ed-muted whitespace-nowrap">Generating SEO with AI…</span>
                 </>
               ) : (
                 <>
                   <AiSparklesIcon
-                    className="size-3.5 transition-transform duration-200 group-hover:scale-110"
+                    className="size-3.5 transition-transform duration-200 group-hover:scale-110 shrink-0"
                     variant="glossy"
                     glow
                   />
-                  <span className="font-semibold text-ed-text">
+                  <span className="font-semibold text-ed-text whitespace-nowrap">
                     Generate with AI
                   </span>
                 </>
