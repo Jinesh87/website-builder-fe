@@ -78,12 +78,90 @@ export const editorDocumentSchema = z.object({
 
 export type EditorDocument = z.infer<typeof editorDocumentSchema>;
 
+export const aiClarificationSchema = z.object({
+  question: z.string(),
+  options: z.array(z.string()),
+  allowCustomInput: z.boolean().default(true),
+});
+
+export type AiClarification = z.infer<typeof aiClarificationSchema>;
+
+export const createdPageEditSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  pageType: z.enum(["HOME", "ABOUT", "SERVICES", "CONTACT", "BLOG", "LANDING", "CUSTOM"]).default("CUSTOM"),
+  showInNav: z.boolean().optional(),
+  sections: z.array(sectionEnvelopeSchema),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+});
+
+export type CreatedPageEdit = z.infer<typeof createdPageEditSchema>;
+
+export const updatedPageEditSchema = z.object({
+  id: z.string().optional(),
+  pageId: z.string().optional(),
+  name: z.string().optional(),
+  slug: z.string().optional(),
+  showInNav: z.boolean().optional(),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  sections: z.array(sectionEnvelopeSchema).optional(),
+});
+
+export type UpdatedPageEdit = z.infer<typeof updatedPageEditSchema>;
+
+export const navigationPatchSchema = z.object({
+  menu: z
+    .array(
+      z.object({
+        label: z.string(),
+        href: z.string(),
+        badge: z.string().optional(),
+        children: z.array(z.object({ label: z.string(), href: z.string(), badge: z.string().optional() })).optional(),
+      }),
+    )
+    .optional(),
+  headerMenu: z
+    .array(
+      z.object({
+        label: z.string(),
+        href: z.string(),
+        badge: z.string().optional(),
+        children: z.array(z.object({ label: z.string(), href: z.string(), badge: z.string().optional() })).optional(),
+      }),
+    )
+    .optional(),
+  cta: z.object({ label: z.string(), href: z.string(), target: z.string().optional() }).nullable().optional(),
+  headerCta: z.object({ label: z.string(), href: z.string(), target: z.string().optional() }).nullable().optional(),
+  footerColumns: z
+    .array(
+      z.object({
+        title: z.string(),
+        links: z.array(z.object({ label: z.string(), href: z.string() })),
+      }),
+    )
+    .optional(),
+});
+
+export type NavigationPatchEdit = z.infer<typeof navigationPatchSchema>;
+
+export const themePatchSchema = z.object({
+  colors: z.record(z.string(), z.string()).optional(),
+  fonts: z.object({ heading: z.string().optional(), body: z.string().optional() }).optional(),
+  font: z.string().optional(),
+});
+
+export type ThemePatchEdit = z.infer<typeof themePatchSchema>;
+
 /** A proposed AI change, reviewed as a before/after diff before it can be applied. */
 export const aiSuggestionSchema = z.object({
   id: z.string().min(1),
   prompt: z.string().min(1).max(2000),
   summary: z.string().max(500),
   chatReply: z.string().optional(),
+  clarification: aiClarificationSchema.optional(),
   target: z.discriminatedUnion("scope", [
     z.object({ scope: z.literal("chat") }),
     z.object({
@@ -93,9 +171,15 @@ export const aiSuggestionSchema = z.object({
       focusSectionId: z.string().optional(),
     }),
     z.object({ scope: z.literal("section"), sectionId: z.string().min(1) }),
+    z.object({ scope: z.literal("site") }),
   ]),
   before: z.array(sectionEnvelopeSchema).max(60),
   after: z.array(sectionEnvelopeSchema).max(60),
+  createdPages: z.array(createdPageEditSchema).optional(),
+  updatedPages: z.array(updatedPageEditSchema).optional(),
+  deletedPageIds: z.array(z.string()).optional(),
+  navigationPatch: navigationPatchSchema.optional(),
+  themePatch: themePatchSchema.optional(),
   /** Proposed SEO for the open page (AI-built websites); applied on accept. */
   seo: z
     .object({ pageId: z.string().min(1), seoTitle: z.string().max(160), seoDescription: z.string().max(320) })

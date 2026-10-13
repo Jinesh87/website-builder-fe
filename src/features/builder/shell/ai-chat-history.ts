@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import type { Section } from "../../../site-kit/index.ts";
-import type { AiSuggestion } from "../schema/editor-document.ts";
+import type { FooterData, HeaderData, Section, ThemeSettings } from "../../../site-kit/index.ts";
+import type { AiClarification, AiSuggestion } from "../schema/editor-document.ts";
+import type { WebsitePage } from "../../../api/websites.ts";
 
 /** How long an accepted AI change can be rolled back. */
 export const ROLLBACK_WINDOW_MS = 10 * 60 * 1000;
@@ -14,6 +15,7 @@ export type ChatMessage = {
   timestamp: string;
   suggestion?: AiSuggestion | null;
   chatReply?: string | null;
+  clarification?: AiClarification | null;
   status?: SuggestionStatus;
   acceptedAt?: number;
   /** Canvas before/after the accepted change; only the latest accepted change keeps one. */
@@ -22,6 +24,13 @@ export type ChatMessage = {
     after: Section[];
     /** Page SEO before an accepted AI SEO change. */
     seo?: { pageId: string; seoTitle: string | null; seoDescription: string | null };
+    /** Full draft snapshot for site-wide or multi-page rollbacks. */
+    draft?: {
+      pages: WebsitePage[];
+      header: HeaderData;
+      footer: FooterData;
+      theme: ThemeSettings;
+    };
   };
 };
 
