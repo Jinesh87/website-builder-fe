@@ -8,7 +8,7 @@ import {
   resolveInternalLink,
   sanitizeSectionLinks,
 } from "./link-validator.ts";
-import type { Section } from "../../../site-kit/index.ts";
+import { DEFAULT_SECTION_SETTINGS, type Section } from "../../../site-kit/index.ts";
 import type { WebsitePage } from "../../../api/websites.ts";
 import type { CreatedPageEdit } from "../schema/editor-document.ts";
 
@@ -127,7 +127,7 @@ describe("link-validator", () => {
         id: "hero-1",
         type: "hero",
         hidden: false,
-        settings: { background: "default" },
+        settings: { ...DEFAULT_SECTION_SETTINGS, background: "default" },
         data: {
           variant: "split",
           heading: "Welcome to Our Website",
