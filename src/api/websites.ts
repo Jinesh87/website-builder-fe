@@ -131,6 +131,35 @@ export type WebsiteList = {
   pageSize: number;
 };
 
+export type SectionSeoSuggestion = {
+  sectionId: string;
+  sectionType: string;
+  sectionLabel: string;
+  seoScore: number;
+  currentHeading?: string;
+  currentSubheading?: string;
+  suggestedHeading: string;
+  suggestedSubheading?: string;
+  suggestedDescription?: string;
+  suggestedCtaLabel?: string;
+  suggestedItems?: Array<{ title: string; description?: string }>;
+  seoRationale: string;
+  targetKeywordsUsed: string[];
+};
+
+export type PageSeoContentReviewResult = {
+  overallScore: number;
+  grade: "Excellent" | "Good" | "Needs Attention";
+  primaryKeyword: string;
+  secondaryKeywords: string[];
+  searchIntent: "Commercial" | "Informational" | "Transactional" | "Navigational";
+  pageOverview: string;
+  contentReadability: "Easy" | "Moderate" | "Complex";
+  totalWordCount: number;
+  topRankingTips: string[];
+  sectionSuggestions: SectionSeoSuggestion[];
+};
+
 export type ThemeOption = {
   id: string;
   name: string;
@@ -334,6 +363,20 @@ export const websitesApi = {
     request<{ seoTitle: string; seoDescription: string; keywords: string[] }>(
       `${BASE}/${id}/pages/${pageId}/seo/generate`,
       { method: "POST", body: input },
+    ),
+
+  reviewPageSeoContent: (
+    id: string,
+    pageId: string,
+    input?: {
+      targetKeyword?: string;
+      language?: string;
+      sections?: Array<Record<string, unknown>>;
+    },
+  ) =>
+    request<PageSeoContentReviewResult>(
+      `${BASE}/${id}/pages/${pageId}/seo/content-review`,
+      { method: "POST", body: input ?? {} },
     ),
 
   sitemapUrl: (id: string) => `${BASE}/${id}/seo/sitemap.xml`,

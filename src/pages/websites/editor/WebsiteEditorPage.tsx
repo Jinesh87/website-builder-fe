@@ -442,6 +442,7 @@ export default function WebsiteEditorPage() {
             pages={pages}
             website={website}
             onChange={(patch) => edit((current) => updatePageMeta(current, page.id, patch))}
+            onUpdateSections={(sections) => edit((current) => updateSections(current, page.id, () => sections))}
           />
 
           {page.slug !== "/" && (

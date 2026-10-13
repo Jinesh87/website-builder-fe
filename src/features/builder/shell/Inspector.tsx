@@ -2,7 +2,7 @@ import { useState } from "react";
 import { BookmarkPlus, Copy, MousePointerClick, Trash2, X } from "lucide-react";
 import { websitesApi } from "../../../api/websites.ts";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog.tsx";
-import { deletePage, homePage, updatePageMeta } from "../../../pages/websites/editor/editor-state.ts";
+import { deletePage, homePage, updatePage, updatePageMeta } from "../../../pages/websites/editor/editor-state.ts";
 import SaveNameDialog from "../../../pages/websites/editor/SaveNameDialog.tsx";
 import {
   SectionAdvancedForm,
@@ -20,7 +20,7 @@ import {
 } from "../../../site-kit/index.ts";
 import { useEditor } from "../editor-context.ts";
 import { itemAsSection, type BuilderItem } from "../puck/adapter.ts";
-import { duplicateSection, removeSection, replaceSection, selectSection, useBuilderPuck } from "../puck/puck-api.ts";
+import { duplicateSection, removeSection, replaceSection, selectSection, setAllSections, useBuilderPuck } from "../puck/puck-api.ts";
 import { Tabs, ToolButton } from "./ui.tsx";
 
 type SectionTab = "content" | "style" | "responsive" | "advanced";
@@ -122,6 +122,7 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
 
 function SiteInspector() {
   const { draft, page, themes, editDraft, selectPage, website } = useEditor();
+  const dispatch = useBuilderPuck((state) => state.dispatch);
   const [tab, setTab] = useState<SiteAreaTab>("page");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -149,6 +150,12 @@ function SiteInspector() {
               pages={draft.pages}
               website={website}
               onChange={(patch) => editDraft((current) => updatePageMeta(current, page.id, patch))}
+              onUpdateSections={(sections) => {
+                setAllSections(dispatch, sections);
+                editDraft((current) =>
+                  updatePage(current, page.id, (p) => ({ ...p, sections }))
+                );
+              }}
             />
 
             {page.slug !== "/" && (

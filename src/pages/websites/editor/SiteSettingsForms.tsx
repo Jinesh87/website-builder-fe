@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal } from "@heroui/react";
-import { AlertCircle, Check, Copy, Eye, Globe, Plus, X } from "lucide-react";
+import { AlertCircle, Check, ChevronRight, Copy, Eye, Globe, Plus, X } from "lucide-react";
 import { errorMessage } from "../../../api/http.ts";
 import {
   websitesApi,
@@ -9,6 +9,7 @@ import {
   type WebsitePage,
 } from "../../../api/websites.ts";
 import { AiSparklesIcon } from "../../../components/icons/AiSparklesIcon.tsx";
+import PageSeoContentReviewModal from "../../../components/websites/PageSeoContentReviewModal.tsx";
 
 import {
   DEFAULT_FONT,
@@ -21,6 +22,7 @@ import {
   type HeaderSubMenuItem,
   type IconName,
   type LinkRef,
+  type Section,
   type ThemeSettings,
 } from "../../../site-kit/index.ts";
 import {
@@ -1251,13 +1253,16 @@ export function PageForm({
   pages,
   onChange,
   website,
+  onUpdateSections,
 }: {
   page: WebsitePage;
   pages: WebsitePage[];
   onChange: (patch: PageMetaPatch) => void;
   website?: WebsiteDetail | null;
+  onUpdateSections?: (sections: Section[]) => void;
 }) {
   const isHome = page.slug === "/";
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -1452,17 +1457,32 @@ Sitemap: ${dom}/sitemap.xml`;
       </FormGroup>
 
       <FormGroup title="Search engines (SEO)">
-        {/* Header action button */}
+        {/* AI SEO Action Buttons */}
         <div className="flex flex-col gap-2 -mt-1">
-          <p className="text-ed-2xs text-ed-muted">
-            AI metadata & Google preview
-          </p>
+          {website && (
+            <button
+              type="button"
+              onClick={() => setReviewModalOpen(true)}
+              className="group relative flex w-full items-center justify-between gap-2.5 rounded-lg border border-blue-500/30 bg-blue-50/50 hover:bg-blue-50 dark:bg-blue-950/20 dark:hover:bg-blue-950/35 px-3 py-2 text-xs font-semibold text-ed-text shadow-2xs hover:border-blue-500/50 active:scale-[0.99] transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <AiSparklesIcon
+                  className="size-4 shrink-0 transition-transform duration-200 group-hover:scale-110"
+                  variant="glossy"
+                />
+                <span className="truncate font-semibold text-ed-text">
+                  Review Page SEO & Ranking
+                </span>
+              </div>
+              <ChevronRight className="size-3.5 text-ed-faint group-hover:text-ed-muted group-hover:translate-x-0.5 transition-all shrink-0" />
+            </button>
+          )}
           {website && (
             <button
               type="button"
               disabled={isGenerating}
               onClick={handleGenerateSeo}
-              className="group relative flex w-full items-center justify-center gap-2 rounded-md border border-brand/35 bg-linear-to-r from-brand/10 via-indigo-500/10 to-violet-500/15 px-3 py-1.5 text-xs font-semibold text-ed-text shadow-2xs hover:border-brand/60 hover:from-brand/20 hover:to-violet-500/25 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer whitespace-nowrap"
+              className="group relative flex w-full items-center justify-center gap-2 rounded-lg border border-ed-border bg-ed-panel hover:bg-ed-subtle/70 px-3 py-1.5 text-xs font-medium text-ed-text shadow-2xs hover:border-ed-border-strong active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
             >
               {isGenerating ? (
                 <>
@@ -1470,18 +1490,15 @@ Sitemap: ${dom}/sitemap.xml`;
                     className="size-3.5 animate-spin shrink-0"
                     variant="glossy"
                   />
-                  <span className="font-medium text-ed-muted whitespace-nowrap">Generating SEO with AI…</span>
+                  <span className="text-ed-muted">Generating SEO Meta…</span>
                 </>
               ) : (
                 <>
                   <AiSparklesIcon
                     className="size-3.5 transition-transform duration-200 group-hover:scale-110 shrink-0"
                     variant="glossy"
-                    glow
                   />
-                  <span className="font-semibold text-ed-text whitespace-nowrap">
-                    Generate with AI
-                  </span>
+                  <span>Generate Meta with AI</span>
                 </>
               )}
             </button>
@@ -1784,6 +1801,16 @@ Sitemap: ${dom}/sitemap.xml`;
             </Modal.Dialog>
           </Modal.Container>
         </Modal.Backdrop>
+      )}
+
+      {website && (
+        <PageSeoContentReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          website={website}
+          page={page}
+          onUpdateSections={onUpdateSections}
+        />
       )}
     </>
   );
