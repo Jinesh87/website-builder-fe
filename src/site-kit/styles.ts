@@ -1296,6 +1296,494 @@ export const SITE_CSS = `
   .wb-hero-curved-actions .wb-btn { flex: 1 1 100%; }
 }
 
+/* ==========================================================================
+   CAMPAIGN VIDEO BANNER HERO (INTERACTIVE EVENT & FUNDRAISING BANNER)
+   ========================================================================== */
+.wb-hero-campaign-banner {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 0 !important;
+  margin: 0;
+}
+
+.wb-campaign-banner-container {
+  position: relative;
+  width: 100%;
+  min-height: 640px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+.wb-hero-campaign-banner.wb-hero-min-screen .wb-campaign-banner-container {
+  min-height: calc(100vh - 80px);
+}
+.wb-hero-campaign-banner.wb-hero-min-tall .wb-campaign-banner-container {
+  min-height: 820px;
+}
+.wb-hero-campaign-banner.wb-hero-min-compact .wb-campaign-banner-container {
+  min-height: 540px;
+}
+
+/* Media background layer */
+.wb-campaign-media-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+  background-color: #0f172a;
+}
+
+.wb-campaign-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  z-index: 2;
+}
+
+.wb-campaign-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  z-index: 1;
+}
+
+.wb-campaign-media-layer .wb-hero-bg-iframe-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+.wb-campaign-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.wb-campaign-overlay.wb-overlay-dark {
+  background: rgba(0, 0, 0, 0.32);
+}
+.wb-campaign-overlay.wb-overlay-light {
+  background: rgba(255, 255, 255, 0.28);
+}
+.wb-campaign-overlay.wb-overlay-gradient {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.1) 45%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+/* Headline & Description Copy */
+.wb-campaign-copy-wrap {
+  position: relative;
+  z-index: 5;
+  text-align: left;
+  max-width: 1100px;
+  margin: 54px auto 26px;
+  padding: 0 24px;
+  color: #ffffff;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
+  width: 100%;
+}
+
+.wb-campaign-copy-wrap.wb-align-left {
+  text-align: left;
+}
+.wb-campaign-copy-wrap.wb-align-left .wb-campaign-subheading {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.wb-campaign-copy-wrap.wb-align-center {
+  text-align: center;
+}
+.wb-campaign-copy-wrap.wb-align-center .wb-campaign-subheading {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.wb-campaign-eyebrow {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.wb-campaign-heading h1 {
+  font-family: var(--wb-font-heading);
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 800;
+  line-height: 1.12;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.wb-campaign-subheading {
+  font-size: clamp(15px, 2.2vw, 19px);
+  margin-top: 14px;
+  opacity: 0.95;
+  line-height: 1.5;
+  max-width: 720px;
+}
+
+/* Simple Hero CTA Buttons Design */
+.wb-campaign-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.wb-campaign-actions.wb-align-left {
+  justify-content: flex-start;
+}
+
+.wb-campaign-actions.wb-align-center {
+  justify-content: center;
+}
+
+.wb-campaign-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 30px;
+  border-radius: 9999px;
+  background: #2563eb;
+  color: #ffffff !important;
+  font-size: 15.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.42), 0 2px 6px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.wb-campaign-btn-primary:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.52), 0 4px 10px rgba(0, 0, 0, 0.16);
+}
+
+.wb-campaign-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 28px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff !important;
+  font-size: 15.5px;
+  font-weight: 600;
+  text-decoration: none;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+}
+
+.wb-campaign-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+}
+
+/* Floating Cards Row */
+.wb-campaign-cards-row {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 0 24px 64px;
+  max-width: 1100px;
+  margin: auto auto 0;
+  width: 100%;
+}
+
+/* Card 1: Stats Widget */
+.wb-campaign-stat-card {
+  background: #ffffff;
+  color: #18181b;
+  border-radius: 20px;
+  padding: 22px 28px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  flex-shrink: 0;
+}
+
+.wb-campaign-stat-col {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.wb-campaign-stat-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.wb-campaign-stat-svg {
+  width: 26px;
+  height: 26px;
+}
+
+.wb-campaign-stat-custom-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.wb-campaign-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.wb-campaign-stat-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #71717a;
+  text-transform: capitalize;
+}
+
+.wb-campaign-stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #18181b;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+/* Card 2: Campaign Target & Progress Widget */
+.wb-campaign-progress-card {
+  background: #ffffff;
+  color: #18181b;
+  border-radius: 20px;
+  padding: 22px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: min(100%, 460px);
+  flex: 1;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.wb-campaign-progress-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wb-campaign-raised-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #18181b;
+  letter-spacing: -0.02em;
+}
+
+.wb-campaign-currency {
+  font-size: 19px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.wb-campaign-raised-val {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.wb-campaign-raised-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #71717a;
+  margin-left: 4px;
+}
+
+.wb-campaign-target-val {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #71717a;
+}
+
+.wb-campaign-progress-track {
+  width: 100%;
+  height: 12px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  position: relative;
+}
+
+.wb-campaign-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+}
+
+.wb-campaign-progress-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.wb-campaign-btn-donate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #0f172a !important;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid #cbd5e1;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wb-campaign-btn-donate:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.wb-campaign-btn-register {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 12px;
+  background: #2563eb;
+  color: #ffffff !important;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.32);
+}
+.wb-campaign-btn-register:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+/* Bottom divider shape */
+.wb-campaign-bottom-divider {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.wb-campaign-bottom-divider svg,
+.wb-campaign-bottom-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Campaign Banner Responsive */
+@container wb-site (max-width: 900px) {
+  .wb-campaign-cards-row {
+    padding-bottom: 40px;
+    gap: 16px;
+  }
+  .wb-campaign-stat-card {
+    width: 100%;
+    justify-content: space-around;
+  }
+  .wb-campaign-progress-card {
+    width: 100%;
+    min-width: 100%;
+  }
+}
+
+@container wb-site (max-width: 600px) {
+  .wb-campaign-copy-wrap {
+    margin: 24px auto 14px;
+    padding: 0 16px;
+  }
+  .wb-campaign-cards-row {
+    padding: 0 16px 36px;
+  }
+  .wb-campaign-stat-card {
+    padding: 16px 20px;
+    gap: 18px;
+  }
+  .wb-campaign-stat-icon-wrap {
+    width: 40px;
+    height: 40px;
+  }
+  .wb-campaign-stat-svg {
+    width: 20px;
+    height: 20px;
+  }
+  .wb-campaign-stat-value {
+    font-size: 22px;
+  }
+  .wb-campaign-progress-card {
+    padding: 18px 20px;
+  }
+  .wb-campaign-progress-actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .wb-campaign-ticker-pill {
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+}
+
 /* 3D curved video reel (shared by the hero and carousel sections) */
 .wb-reel { position: relative; width: 100%; overflow: hidden; user-select: none; -webkit-user-select: none; }
 .wb-reel-interactive { cursor: grab; touch-action: pan-y; }

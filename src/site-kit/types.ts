@@ -265,6 +265,7 @@ export const HERO_VARIANTS = [
   "floating-cards",
   "asymmetric",
   "curved-carousel",
+  "campaign-banner",
 ] as const;
 
 export type HeroVariant = (typeof HERO_VARIANTS)[number];
@@ -285,6 +286,32 @@ export type HeroRating = {
 export type HeroTrustedBy = {
   label?: string;
   logos?: { label: string; url?: string }[];
+};
+
+export type HeroCampaignStat = {
+  id?: string;
+  label: string;
+  value: string;
+  icon?: string;
+};
+
+export type HeroCampaignProgress = {
+  raisedAmount?: number | string;
+  targetAmount?: number | string;
+  currency?: string;
+  raisedLabel?: string;
+  targetLabel?: string;
+  percentage?: number;
+  donateButton?: LinkRef;
+  registerButton?: LinkRef;
+};
+
+export type HeroCampaignTickerItem = {
+  id?: string;
+  name: string;
+  action: string;
+  amount?: string;
+  avatarIcon?: string;
 };
 
 export type HeroData = {
@@ -316,7 +343,7 @@ export type HeroData = {
   overlayBlur?: boolean;
   minHeight?: "auto" | "compact" | "screen" | "tall";
   contentAlign?: "center" | "left" | "right";
-  bottomShape?: "none" | "wave" | "curve" | "slant" | "tilt";
+  bottomShape?: "none" | "wave" | "curve" | "curved" | "slant" | "tilt" | "arch" | "normal";
   rating?: HeroRating;
   floatingCards?: HeroFloatingCard[];
   trustedBy?: HeroTrustedBy;
@@ -325,6 +352,22 @@ export type HeroData = {
   showDoodles?: boolean;
   curveIntensity?: "none" | "subtle" | "medium" | "dramatic";
   carouselSlides?: CarouselSlide[];
+  // Campaign video banner fields
+  campaignStats?: HeroCampaignStat[];
+  campaignProgress?: HeroCampaignProgress;
+  campaignTicker?: HeroCampaignTickerItem[];
+  showCampaignTicker?: boolean;
+  showCampaignCards?: boolean;
+  bannerBottomShape?: "curved" | "wave" | "normal" | "slant" | "tilt" | "arch" | "none";
+  bannerCurveDepth?: number;
+  bottomDividerColor?: string;
+  bannerTopBar?: {
+    enabled?: boolean;
+    logoText?: string;
+    logoImage?: ImageRef;
+    primaryButton?: LinkRef;
+    secondaryButton?: LinkRef;
+  };
 };
 
 export type GridColumns = 1 | 2 | 3 | 4;

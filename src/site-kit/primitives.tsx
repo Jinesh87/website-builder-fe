@@ -247,26 +247,31 @@ export function StarFilledIcon() {
   );
 }
 
-export function BottomShapeDivider({ shape }: { shape?: "none" | "wave" | "curve" | "slant" | "tilt" }) {
-  if (!shape || shape === "none") return null;
+export function BottomShapeDivider({
+  shape,
+}: {
+  shape?: "none" | "wave" | "curve" | "curved" | "slant" | "tilt" | "arch" | "normal";
+}) {
+  if (!shape || shape === "none" || shape === "normal") return null;
+  const normalized = shape === "curved" ? "curve" : shape;
   return (
-    <div className={`wb-shape-divider wb-shape-${shape}`} aria-hidden="true">
-      {shape === "wave" && (
+    <div className={`wb-shape-divider wb-shape-${normalized}`} aria-hidden="true">
+      {normalized === "wave" && (
         <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path d="M0,0 C150,90 350,-40 500,60 C650,160 900,10 1200,40 L1200,120 L0,120 Z" fill="currentColor" />
         </svg>
       )}
-      {shape === "curve" && (
+      {(normalized === "curve" || normalized === "arch") && (
         <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path d="M0,0 C400,120 800,120 1200,0 L1200,120 L0,120 Z" fill="currentColor" />
         </svg>
       )}
-      {shape === "slant" && (
+      {normalized === "slant" && (
         <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path d="M1200,0 L0,120 L1200,120 Z" fill="currentColor" />
         </svg>
       )}
-      {shape === "tilt" && (
+      {normalized === "tilt" && (
         <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path d="M0,0 L1200,100 L1200,120 L0,120 Z" fill="currentColor" />
         </svg>

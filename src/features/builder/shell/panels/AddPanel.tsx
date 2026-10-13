@@ -213,20 +213,21 @@ function SectionLivePreview({
   const isHeader = preset.type === "header";
   const isAuth = preset.type === "auth";
   const isCurvedHero = preset.key === "hero-curved-carousel";
+  const isCampaignHero = preset.key === "hero-campaign-banner";
   const isHeaderOrFooter = isHeader || preset.type === "footer";
   const heightClass = isHeaderOrFooter
     ? "h-20"
     : isAuth
       ? "h-36"
-      : isCurvedHero
+      : isCurvedHero || isCampaignHero
         ? "h-48"
         : "h-32";
   const isWide = isHeader || isAuth;
   const width = isWide ? HEADER_PREVIEW_WIDTH : PREVIEW_WIDTH;
   const scale = isWide
     ? HEADER_PREVIEW_SCALE
-    : isCurvedHero
-      ? 0.265
+    : isCurvedHero || isCampaignHero
+      ? 0.25
       : PREVIEW_SCALE;
 
   const section = useMemo(() => {

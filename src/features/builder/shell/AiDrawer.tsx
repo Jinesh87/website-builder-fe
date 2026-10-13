@@ -230,7 +230,16 @@ function normalizeSection(raw: Section): Section {
     ) {
       delete mergedData.contentAlign;
     }
-    const validBottomShapes = ["none", "wave", "curve", "slant", "tilt"];
+    const validBottomShapes = [
+      "none",
+      "wave",
+      "curve",
+      "curved",
+      "slant",
+      "tilt",
+      "arch",
+      "normal",
+    ];
     if (
       mergedData.bottomShape &&
       !validBottomShapes.includes(mergedData.bottomShape as string)

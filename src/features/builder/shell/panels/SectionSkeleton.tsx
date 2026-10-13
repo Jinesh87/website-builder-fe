@@ -271,6 +271,30 @@ export function SectionSkeleton({ preset }: { preset: SectionPreset }) {
         </div>
       );
 
+    case "hero-campaign-banner":
+      return (
+        <div className="relative flex h-full w-full flex-col justify-between overflow-hidden rounded-sm bg-gradient-to-b from-sky-950 via-slate-900 to-sky-900 p-2 text-center">
+          <div className="mt-1 flex flex-col items-center gap-1">
+            <div className="h-2 w-20 rounded-xs bg-white/90" />
+            <div className="h-1 w-28 rounded-full bg-white/60" />
+          </div>
+          <div className="flex w-full items-center justify-center gap-1.5">
+            <div className="h-4.5 w-12 rounded-xs bg-white/95 p-0.5 shadow-xs">
+              <div className="h-1 w-6 rounded-full bg-pink-400" />
+              <div className="mt-0.5 h-1.5 w-4 rounded-xs bg-zinc-800" />
+            </div>
+            <div className="h-4.5 w-16 rounded-xs bg-white/95 p-0.5 shadow-xs">
+              <div className="h-1 w-10 rounded-full bg-pink-500" />
+              <div className="mt-0.5 flex gap-0.5">
+                <div className="h-1.5 w-5 rounded-xs bg-pink-400" />
+                <div className="h-1.5 w-5 rounded-xs bg-cyan-500" />
+              </div>
+            </div>
+          </div>
+          <div className="h-2 w-full rounded-t-full bg-sky-500/30" />
+        </div>
+      );
+
     case "hero-split":
       return (
         <div className="grid h-full w-full grid-cols-2 items-center gap-2 px-2">

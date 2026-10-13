@@ -1,5 +1,19 @@
-import { useState, type CSSProperties, type ReactNode } from "react";
-import { BottomShapeDivider, parseRichText, PlayIcon, SectionShell, SiteButton, SiteImage, SiteLink } from "../primitives.tsx";
+import {
+  useState,
+  useRef,
+  useEffect,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import {
+  BottomShapeDivider,
+  parseRichText,
+  PlayIcon,
+  SectionShell,
+  SiteButton,
+  SiteImage,
+  SiteLink,
+} from "../primitives.tsx";
 import type { HeroData, SectionOf } from "../types.ts";
 import CurvedBannerCarousel, {
   DEFAULT_BANNER_ITEMS,
@@ -63,8 +77,16 @@ function HeroVideoPlayer({
   if (embedUrl) {
     if (!isPlaying && posterUrl) {
       return (
-        <div className="wb-hero-video-poster-wrap" onClick={() => setIsPlaying(true)} data-wb-video={embedUrl}>
-          <img src={posterUrl} alt="Video thumbnail" className="wb-hero-video-poster" />
+        <div
+          className="wb-hero-video-poster-wrap"
+          onClick={() => setIsPlaying(true)}
+          data-wb-video={embedUrl}
+        >
+          <img
+            src={posterUrl}
+            alt="Video thumbnail"
+            className="wb-hero-video-poster"
+          />
           <button
             type="button"
             className="wb-hero-video-play-btn"
@@ -108,8 +130,85 @@ function HeroVideoPlayer({
   );
 }
 
+const DEFAULT_CAMPAIGN_VIDEO = "/banner-vid.mp4";
+
+function CampaignVideoPlayer({
+  src,
+  poster,
+}: {
+  src: string;
+  poster?: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  const resolvedSrc =
+    src.startsWith("http") || src.startsWith("/") || src.startsWith("blob:")
+      ? src
+      : `/${src}`;
+  const activeSrc = loadError ? "/bannervid.mp4" : resolvedSrc;
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Enforce DOM properties required by browser autoplay policies
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+
+    const playVideo = () => {
+      const promise = video.play();
+      if (promise !== undefined) {
+        promise.catch(() => {
+          // If browser policy blocked unprompted autoplay, play on very first user interaction
+          const handleGesture = () => {
+            if (videoRef.current) {
+              videoRef.current.play().catch(() => {});
+            }
+            window.removeEventListener("click", handleGesture);
+            window.removeEventListener("touchstart", handleGesture);
+            window.removeEventListener("keydown", handleGesture);
+          };
+          window.addEventListener("click", handleGesture, { once: true });
+          window.addEventListener("touchstart", handleGesture, { once: true });
+          window.addEventListener("keydown", handleGesture, { once: true });
+        });
+      }
+    };
+
+    if (video.readyState >= 2) {
+      playVideo();
+    } else {
+      video.addEventListener("loadedmetadata", playVideo, { once: true });
+      video.addEventListener("canplay", playVideo, { once: true });
+    }
+  }, [activeSrc]);
+
+  return (
+    <video
+      ref={videoRef}
+      src={activeSrc}
+      poster={poster}
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload="auto"
+      className="wb-campaign-video"
+      onError={() => {
+        if (!loadError) setLoadError(true);
+      }}
+    />
+  );
+}
+
 /** `gradient`: the section has its own gradient colors, shown on the whole heading when no words are highlighted. */
-function renderHighlightedHeading(heading: string, highlight: string | undefined, gradient: boolean): ReactNode {
+function renderHighlightedHeading(
+  heading: string,
+  highlight: string | undefined,
+  gradient: boolean,
+): ReactNode {
   if (!highlight || !heading.includes(highlight)) {
     return gradient ? (
       <h1>
@@ -156,7 +255,9 @@ function TrustedByStrip({ trustedBy }: { trustedBy?: HeroData["trustedBy"] }) {
   if (!trustedBy || (!trustedBy.logos?.length && !trustedBy.label)) return null;
   return (
     <div className="wb-hero-trusted-by">
-      {trustedBy.label && <div className="wb-trusted-label">{trustedBy.label}</div>}
+      {trustedBy.label && (
+        <div className="wb-trusted-label">{trustedBy.label}</div>
+      )}
       {trustedBy.logos && trustedBy.logos.length > 0 && (
         <div className="wb-trusted-logos">
           {trustedBy.logos.map((logo, i) => (
@@ -170,7 +271,11 @@ function TrustedByStrip({ trustedBy }: { trustedBy?: HeroData["trustedBy"] }) {
   );
 }
 
-export default function HeroSection({ section }: { section: SectionOf<"hero"> }) {
+export default function HeroSection({
+  section,
+}: {
+  section: SectionOf<"hero">;
+}) {
   const { data } = section;
 
   const minHeightClass =
@@ -195,7 +300,7 @@ export default function HeroSection({ section }: { section: SectionOf<"hero"> })
             link={btn}
             tone={idx === 0 ? "primary" : "secondary"}
           />
-        ) : null
+        ) : null,
       )}
       {data.tertiaryCta && (
         <SiteLink link={data.tertiaryCta} className="wb-btn-video-play">
@@ -254,7 +359,10 @@ export default function HeroSection({ section }: { section: SectionOf<"hero"> })
                 {renderHighlightedHeading(
                   data.heading,
                   data.highlightText,
-                  Boolean(section.settings.customColors?.gradientFrom || section.settings.customColors?.gradientTo),
+                  Boolean(
+                    section.settings.customColors?.gradientFrom ||
+                    section.settings.customColors?.gradientTo,
+                  ),
                 )}
               </div>
             )}
@@ -292,12 +400,462 @@ export default function HeroSection({ section }: { section: SectionOf<"hero"> })
                     link={btn}
                     tone={idx === 0 ? "primary" : "secondary"}
                   />
-                ) : null
+                ) : null,
               )}
             </div>
           )}
         </div>
         <BottomShapeDivider shape={data.bottomShape} />
+      </SectionShell>
+    );
+  }
+
+  if (data.variant === "campaign-banner") {
+    const bgImage = data.backgroundImage || data.image;
+    const defaultPoster =
+      "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1600&q=80";
+
+    const rawVideo = data.backgroundVideoUrl || data.videoUrl;
+    const isPlaceholderOrExternal =
+      !rawVideo ||
+      rawVideo.includes("commondatastorage") ||
+      rawVideo.includes("mixkit.co") ||
+      rawVideo.includes("example.com");
+
+    const bgVideoUrl = isPlaceholderOrExternal
+      ? DEFAULT_CAMPAIGN_VIDEO
+      : rawVideo.startsWith("http") || rawVideo.startsWith("/")
+        ? rawVideo
+        : `/${rawVideo}`;
+
+    const bgEmbedUrl =
+      data.videoUrl && !data.videoUrl.match(/\.(mp4|webm|ogg)/i)
+        ? getEmbedUrl(data.videoUrl, true) || undefined
+        : undefined;
+    const posterUrl = bgImage?.url || defaultPoster;
+
+    // Resolve bottom shape divider: handles both bannerBottomShape and bottomShape
+    const rawShape =
+      (data.bottomShape && data.bottomShape !== "none"
+        ? data.bottomShape
+        : undefined) ??
+      (data.bannerBottomShape && data.bannerBottomShape !== "normal"
+        ? data.bannerBottomShape
+        : undefined) ??
+      data.bottomShape ??
+      data.bannerBottomShape ??
+      "curved";
+
+    const bottomShape =
+      rawShape === "curve"
+        ? "curved"
+        : rawShape === "normal"
+          ? "none"
+          : rawShape;
+
+    // Remove unwanted cyan blue (#70c4d4); blend seamlessly with page white/background
+    const bottomColor =
+      data.bottomDividerColor && data.bottomDividerColor !== "#70c4d4"
+        ? data.bottomDividerColor
+        : "var(--wb-bg, #ffffff)";
+
+    const curveDepth =
+      typeof data.bannerCurveDepth === "number" ? data.bannerCurveDepth : 80;
+
+    const contentAlign = data.contentAlign ?? "left";
+
+    // Sanitize legacy "Swim in Pink" and "Donate" texts for clean dummy presentation
+    const headingText =
+      !data.heading || data.heading.toLowerCase().includes("swim in pink")
+        ? "Empower Your Next Breakthrough 2026"
+        : data.heading;
+
+    const subheadingText =
+      !data.subheading ||
+      data.subheading.toLowerCase().includes("making waves") ||
+      data.subheading.toLowerCase().includes("vital research")
+        ? "Join over 25,000 innovators, creators, and teams scaling high-impact digital experiences worldwide."
+        : data.subheading;
+
+    const rawStats =
+      data.campaignStats && data.campaignStats.length > 0
+        ? data.campaignStats
+        : [
+            { label: "Active Members", value: "12,450", icon: "users" },
+            { label: "Milestones Hit", value: "320+", icon: "pin" },
+          ];
+
+    const stats = rawStats.map((stat) => ({
+      ...stat,
+      label:
+        stat.label?.toLowerCase() === "swimmers"
+          ? "Active Members"
+          : stat.label?.toLowerCase() === "swims"
+            ? "Milestones Hit"
+            : stat.label,
+      icon: stat.icon === "swimmer" ? "users" : stat.icon || "users",
+    }));
+
+    const rawProgress = data.campaignProgress ?? {
+      currency: "$",
+      raisedAmount: "285,000",
+      targetAmount: "300,000",
+      raisedLabel: "funded",
+      targetLabel: "of $300,000 milestone",
+      percentage: 95,
+      donateButton: { label: "Explore Platform", href: "#explore" },
+      registerButton: { label: "Get Started Free →", href: "#start" },
+    };
+
+    const progress = {
+      ...rawProgress,
+      currency: rawProgress.currency ?? "$",
+      raisedAmount: rawProgress.raisedAmount ?? "285,000",
+      targetAmount: rawProgress.targetAmount ?? "300,000",
+      raisedLabel:
+        rawProgress.raisedLabel?.toLowerCase() === "raised"
+          ? "funded"
+          : (rawProgress.raisedLabel ?? "funded"),
+      targetLabel: rawProgress.targetLabel?.toLowerCase().includes("target")
+        ? "of $300,000 milestone"
+        : (rawProgress.targetLabel ?? "of $300,000 milestone"),
+      donateButton: rawProgress.donateButton?.label
+        ?.toLowerCase()
+        .includes("donate")
+        ? { ...rawProgress.donateButton, label: "Explore Platform" }
+        : (rawProgress.donateButton ?? {
+            label: "Explore Platform",
+            href: "#explore",
+          }),
+      registerButton: rawProgress.registerButton?.label
+        ?.toLowerCase()
+        .includes("register")
+        ? { ...rawProgress.registerButton, label: "Get Started Free →" }
+        : (rawProgress.registerButton ?? {
+            label: "Get Started Free →",
+            href: "#start",
+          }),
+    };
+
+    const primaryAction =
+      data.primaryCta ??
+      data.buttons?.[0] ??
+      (progress.registerButton
+        ? {
+            label: progress.registerButton.label
+              ?.toLowerCase()
+              .includes("register")
+              ? "Get Started Free →"
+              : progress.registerButton.label,
+            href: progress.registerButton.href ?? "#start",
+          }
+        : { label: "Get Started Free →", href: "#start" });
+
+    const secondaryAction =
+      data.secondaryCta ??
+      data.buttons?.[1] ??
+      (progress.donateButton
+        ? {
+            label: progress.donateButton.label?.toLowerCase().includes("donate")
+              ? "Explore Platform"
+              : progress.donateButton.label,
+            href: progress.donateButton.href ?? "#explore",
+          }
+        : { label: "Explore Platform", href: "#explore" });
+
+    const percentage =
+      typeof progress.percentage === "number"
+        ? progress.percentage
+        : typeof progress.raisedAmount === "number" &&
+            typeof progress.targetAmount === "number" &&
+            progress.targetAmount > 0
+          ? Math.min(
+              100,
+              Math.round((progress.raisedAmount / progress.targetAmount) * 100),
+            )
+          : 93;
+
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className={`wb-hero wb-hero-campaign-banner ${minHeightClass}`}
+        label="Hero"
+        fullWidth={true}
+      >
+        <div className="wb-campaign-banner-container">
+          {/* Background Video / Image Layer */}
+          <div className="wb-campaign-media-layer">
+            {/* High-res fallback image always mounted so background is never blank */}
+            <img
+              src={posterUrl}
+              alt={bgImage?.alt ?? "Campaign Hero Background"}
+              className="wb-campaign-bg-img"
+              loading="eager"
+            />
+
+            {bgEmbedUrl ? (
+              <div className="wb-hero-bg-iframe-container">
+                <iframe
+                  src={bgEmbedUrl}
+                  title="Campaign Background Video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  className="wb-hero-bg-iframe"
+                />
+              </div>
+            ) : (
+              <CampaignVideoPlayer src={bgVideoUrl} poster={posterUrl} />
+            )}
+
+            {/* Gradient / Overlay Layer */}
+            {data.bgOverlayType !== "none" && (
+              <div
+                className={`wb-campaign-overlay wb-overlay-${data.bgOverlayType ?? "dark"}`}
+                style={{
+                  opacity: (data.overlayOpacity ?? 25) / 100,
+                  backdropFilter: data.overlayBlur ? "blur(4px)" : undefined,
+                  WebkitBackdropFilter: data.overlayBlur
+                    ? "blur(4px)"
+                    : undefined,
+                }}
+              />
+            )}
+          </div>
+
+          {/* Headline, Subheading & Simple CTA Buttons Row */}
+          {(headingText ||
+            subheadingText ||
+            data.eyebrow ||
+            primaryAction ||
+            secondaryAction) && (
+            <div className={`wb-campaign-copy-wrap wb-align-${contentAlign}`}>
+              {data.eyebrow && (
+                <span className="wb-campaign-eyebrow">{data.eyebrow}</span>
+              )}
+              {headingText && (
+                <div className="wb-campaign-heading">
+                  {renderHighlightedHeading(
+                    headingText,
+                    data.highlightText,
+                    Boolean(
+                      section.settings.customColors?.gradientFrom ||
+                      section.settings.customColors?.gradientTo,
+                    ),
+                  )}
+                </div>
+              )}
+              {subheadingText && (
+                <p className="wb-campaign-subheading">
+                  {parseRichText(subheadingText)}
+                </p>
+              )}
+
+              {/* Simple CTA Buttons Design (Replaces bulky cards with clean modern hero buttons) */}
+              {(primaryAction || secondaryAction) && (
+                <div className={`wb-campaign-actions wb-align-${contentAlign}`}>
+                  {primaryAction && (
+                    <SiteLink
+                      link={primaryAction}
+                      className="wb-campaign-btn-primary"
+                    >
+                      <span>{primaryAction.label}</span>
+                    </SiteLink>
+                  )}
+                  {secondaryAction && (
+                    <SiteLink
+                      link={secondaryAction}
+                      className="wb-campaign-btn-secondary"
+                    >
+                      <span>{secondaryAction.label}</span>
+                    </SiteLink>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Optional Floating Cards Row (Hidden by default; simple buttons design used instead) */}
+          {data.showCampaignCards && (
+            <div className="wb-campaign-cards-row">
+              {/* Card 1: Stats Widget */}
+              <div className="wb-campaign-stat-card">
+                {stats.map((stat, idx) => (
+                  <div key={idx} className="wb-campaign-stat-col">
+                    <div className="wb-campaign-stat-icon-wrap">
+                      {stat.icon === "users" ? (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="wb-campaign-stat-svg"
+                        >
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                      ) : stat.icon === "pin" ? (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="wb-campaign-stat-svg"
+                        >
+                          <path d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+                        </svg>
+                      ) : stat.icon === "award" || stat.icon === "star" ? (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="wb-campaign-stat-svg"
+                        >
+                          <circle cx="12" cy="8" r="7" />
+                          <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+                        </svg>
+                      ) : (
+                        <span className="wb-campaign-stat-custom-icon">
+                          {stat.icon || "👥"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="wb-campaign-stat-info">
+                      <span className="wb-campaign-stat-label">
+                        {stat.label}
+                      </span>
+                      <span className="wb-campaign-stat-value">
+                        {stat.value}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Card 2: Campaign Target / Raised Widget */}
+              <div className="wb-campaign-progress-card">
+                <div className="wb-campaign-progress-header">
+                  <div className="wb-campaign-raised-amount">
+                    <span className="wb-campaign-currency">
+                      {progress.currency ?? "€"}
+                    </span>
+                    <span className="wb-campaign-raised-val">
+                      {progress.raisedAmount ?? "279,585"}
+                    </span>
+                    <span className="wb-campaign-raised-label">
+                      {progress.raisedLabel ?? "raised"}
+                    </span>
+                  </div>
+                  <div className="wb-campaign-target-val">
+                    {progress.targetLabel ??
+                      `of ${progress.currency ?? "€"}${progress.targetAmount ?? "300,000"} target`}
+                  </div>
+                </div>
+
+                {/* Animated Progress Bar */}
+                <div className="wb-campaign-progress-track">
+                  <div
+                    className="wb-campaign-progress-fill"
+                    style={{
+                      width: `${Math.min(100, Math.max(4, percentage))}%`,
+                    }}
+                  />
+                </div>
+
+                {/* Action Buttons Row */}
+                <div className="wb-campaign-progress-actions">
+                  {progress.donateButton && (
+                    <SiteLink
+                      link={progress.donateButton}
+                      className="wb-campaign-btn-donate"
+                    >
+                      <span>{progress.donateButton.label}</span>
+                    </SiteLink>
+                  )}
+                  {progress.registerButton && (
+                    <SiteLink
+                      link={progress.registerButton}
+                      className="wb-campaign-btn-register"
+                    >
+                      <span>{progress.registerButton.label}</span>
+                    </SiteLink>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Adjustable Bottom Edge Divider Shape */}
+          {bottomShape !== "none" && curveDepth > 0 && (
+            <div
+              className={`wb-campaign-bottom-divider wb-shape-${bottomShape}`}
+              style={{
+                color: bottomColor,
+                height: `${curveDepth}px`,
+              }}
+              aria-hidden="true"
+            >
+              {bottomShape === "curved" && (
+                <svg
+                  viewBox="0 0 1440 120"
+                  preserveAspectRatio="none"
+                  className="wb-campaign-bottom-svg"
+                >
+                  <path
+                    d="M0,0 C480,120 960,120 1440,0 L1440,120 L0,120 Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              )}
+              {bottomShape === "arch" && (
+                <svg
+                  viewBox="0 0 1440 120"
+                  preserveAspectRatio="none"
+                  className="wb-campaign-bottom-svg"
+                >
+                  <path
+                    d="M0,120 C480,0 960,0 1440,120 L1440,120 L0,120 Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              )}
+              {bottomShape === "wave" && (
+                <svg
+                  viewBox="0 0 1440 120"
+                  preserveAspectRatio="none"
+                  className="wb-campaign-bottom-svg"
+                >
+                  <path
+                    d="M0,35 C360,110 720,-10 1080,75 C1260,115 1380,45 1440,35 L1440,120 L0,120 Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              )}
+              {bottomShape === "slant" && (
+                <svg
+                  viewBox="0 0 1440 120"
+                  preserveAspectRatio="none"
+                  className="wb-campaign-bottom-svg"
+                >
+                  <path d="M0,0 L1440,120 L0,120 Z" fill="currentColor" />
+                </svg>
+              )}
+              {bottomShape === "tilt" && (
+                <svg
+                  viewBox="0 0 1440 120"
+                  preserveAspectRatio="none"
+                  className="wb-campaign-bottom-svg"
+                >
+                  <path d="M1440,0 L0,120 L1440,120 Z" fill="currentColor" />
+                </svg>
+              )}
+            </div>
+          )}
+        </div>
       </SectionShell>
     );
   }
@@ -315,12 +873,21 @@ export default function HeroSection({ section }: { section: SectionOf<"hero"> })
         ? renderHighlightedHeading(
             data.heading,
             data.highlightText,
-            Boolean(section.settings.customColors?.gradientFrom || section.settings.customColors?.gradientTo),
+            Boolean(
+              section.settings.customColors?.gradientFrom ||
+              section.settings.customColors?.gradientTo,
+            ),
           )
         : null}
 
-      {data.subheading && <p className="wb-hero-sub wb-muted">{parseRichText(data.subheading)}</p>}
-      {data.description && <p className="wb-hero-desc wb-muted">{parseRichText(data.description)}</p>}
+      {data.subheading && (
+        <p className="wb-hero-sub wb-muted">{parseRichText(data.subheading)}</p>
+      )}
+      {data.description && (
+        <p className="wb-hero-desc wb-muted">
+          {parseRichText(data.description)}
+        </p>
+      )}
 
       {actions}
 
@@ -395,8 +962,7 @@ export default function HeroSection({ section }: { section: SectionOf<"hero"> })
     </div>
   );
 
-  const isLeft =
-    data.variant === "split-left" || data.imagePosition === "left";
+  const isLeft = data.variant === "split-left" || data.imagePosition === "left";
 
   const isSplit =
     data.variant === "split" ||
@@ -418,7 +984,8 @@ export default function HeroSection({ section }: { section: SectionOf<"hero"> })
   };
 
   const isDarkOverlay =
-    (hasBgMedia && (overlayType === "dark" || (overlayType as string) === "default")) ||
+    (hasBgMedia &&
+      (overlayType === "dark" || (overlayType as string) === "default")) ||
     data.variant === "background-image" ||
     data.variant === "video-bg" ||
     (isBgMediaMode && Boolean(bgVideoUrl || bgImage));
