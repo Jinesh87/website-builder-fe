@@ -102,13 +102,10 @@ const DESIGNS_WITH_STATUS_COLOR: HeaderData["design"][] = [
 ];
 const DESIGNS_WITH_SEARCH: HeaderData["design"][] = [
   "glass-dock",
-  "command-bar",
   "mega-menu-grid",
-  "ecommerce",
 ];
 const DESIGNS_WITH_CURTAIN: HeaderData["design"][] = [
   "side-drawer",
-  "luxury-editorial",
 ];
 
 function MenuItemEditor({
@@ -253,10 +250,6 @@ export function HeaderForm({
               label: "Split stacked (2-tier enterprise double-decker)",
             },
             {
-              value: "command-bar",
-              label: "Command bar (Centered spotlight search)",
-            },
-            {
               value: "mega-menu-grid",
               label: "Mega menu grid (Bento multi-column mega menu)",
             },
@@ -267,10 +260,6 @@ export function HeaderForm({
             {
               value: "headline-ticker",
               label: "Headline ticker (Live broadcast marquee strip)",
-            },
-            {
-              value: "luxury-editorial",
-              label: "Luxury editorial (Numbered grid index & masthead)",
             },
             {
               value: "clean-transparent",
@@ -287,10 +276,6 @@ export function HeaderForm({
             {
               value: "comprehensive",
               label: "Comprehensive (Mega nav, CTA buttons)",
-            },
-            {
-              value: "ecommerce",
-              label: "E-commerce (Top search & cart bar, category tabs)",
             },
             {
               value: "floating",
@@ -400,11 +385,7 @@ export function HeaderForm({
             <>
               <CheckboxField
                 label="Show search"
-                checked={
-                  design === "command-bar"
-                    ? header.showSearch !== false
-                    : (header.showSearch ?? Boolean(header.searchPlaceholder))
-                }
+                checked={header.showSearch ?? Boolean(header.searchPlaceholder)}
                 onChange={(showSearch) => onChange({ ...header, showSearch })}
               />
               <TextField

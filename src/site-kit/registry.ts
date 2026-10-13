@@ -771,36 +771,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
       }),
   },
   {
-    key: "header-ecommerce",
-    type: "header",
-    label: "E-commerce header",
-    category: "Header",
-    description:
-      "Top utility bar with search, cart badge, and bottom category tabs.",
-    create: () =>
-      createSection("header", {
-        data: {
-          design: "ecommerce",
-          siteName: "Modulus",
-          menu: [
-            { label: "Products", href: "/products" },
-            { label: "Solutions", href: "/solutions" },
-            { label: "Categories", href: "/categories" },
-            { label: "App", href: "/app" },
-            { label: "Resources", href: "/resources" },
-            { label: "Affiliates", href: "/affiliates" },
-            { label: "About", href: "/about" },
-          ],
-          showSearch: true,
-          showAccount: true,
-          showCart: true,
-          cartCount: 1,
-          currency: "USD $",
-          sticky: true,
-        },
-      }),
-  },
-  {
     key: "header-floating",
     type: "header",
     label: "Floating pill header",
@@ -930,32 +900,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
       }),
   },
   {
-    key: "header-command-bar",
-    type: "header",
-    label: "Command bar header",
-    category: "Header",
-    description:
-      "Developer spotlight header with interactive ⌘K command search pill and modal.",
-    create: () =>
-      createSection("header", {
-        data: {
-          design: "command-bar",
-          siteName: "Modulus Dev",
-          badge: "API v3",
-          searchPlaceholder: "Search docs, components, APIs...",
-          menu: [
-            { label: "Documentation", href: "/docs" },
-            { label: "Components", href: "/components" },
-            { label: "Playground", href: "/playground" },
-            { label: "Changelog", href: "/changelog" },
-          ],
-          secondaryCta: { label: "GitHub", href: "https://github.com" },
-          cta: { label: "Deploy App", href: "/deploy" },
-          sticky: true,
-        },
-      }),
-  },
-  {
     key: "header-mega-menu-grid",
     type: "header",
     label: "Mega menu grid header",
@@ -1046,61 +990,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
           ],
           secondaryCta: { label: "Sign in", href: "/login" },
           cta: { label: "Subscribe $5/mo", href: "/subscribe" },
-          sticky: true,
-        },
-      }),
-  },
-  {
-    key: "header-luxury-editorial",
-    type: "header",
-    label: "Luxury editorial header",
-    category: "Header",
-    description:
-      "Hairline bordered grid layout with numbered index navigation, centered masthead, and atelier metadata.",
-    create: () =>
-      createSection("header", {
-        data: {
-          design: "luxury-editorial",
-          siteName: "CHRONICLE & CO.",
-          tagline: "Vol. XXIV — Global Architectural Journal",
-          statusText: "Spring / Summer 2026",
-          menu: [
-            { label: "Editorial", href: "/editorial" },
-            { label: "Architecture", href: "/architecture" },
-            { label: "Interiors", href: "/interiors" },
-            { label: "Exhibitions", href: "/exhibitions" },
-            { label: "Archive", href: "/archive" },
-          ],
-          secondaryCta: { label: "Index", href: "/index" },
-          cta: { label: "Subscribe Edition", href: "/subscribe" },
-          sticky: false,
-        },
-      }),
-  },
-  {
-    key: "header-saas-console",
-    type: "header",
-    label: "SaaS console header",
-    category: "Header",
-    description:
-      "Developer cloud console header with workspace selector pill, tabbed navigation, and utility cluster.",
-    create: () =>
-      createSection("header", {
-        data: {
-          design: "saas-console",
-          siteName: "Modulus Cloud",
-          badge: "ACME Corp",
-          statusText: "Healthy",
-          statusColor: "green",
-          searchPlaceholder: "Quick Jump...",
-          menu: [
-            { label: "Projects", href: "/projects" },
-            { label: "Deployments", href: "/deployments" },
-            { label: "Analytics", href: "/analytics" },
-            { label: "Logs", href: "/logs" },
-            { label: "Settings", href: "/settings" },
-          ],
-          cta: { label: "+ New Project", href: "/new" },
           sticky: true,
         },
       }),

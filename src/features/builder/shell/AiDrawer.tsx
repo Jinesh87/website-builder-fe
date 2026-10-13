@@ -469,16 +469,13 @@ function normalizeSection(raw: Section): Section {
       "classical",
       "minimalist",
       "comprehensive",
-      "ecommerce",
       "floating",
       "transparent",
       "glass-dock",
       "split-stacked",
-      "command-bar",
       "mega-menu-grid",
       "side-drawer",
       "headline-ticker",
-      "luxury-editorial",
       "clean-transparent",
     ];
     if (
