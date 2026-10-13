@@ -1518,7 +1518,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
           subheading:
             "Join over 25,000 innovators, creators, and teams scaling high-impact digital experiences worldwide.",
           minHeight: "screen",
-          backgroundVideoUrl: "/banner-vid.mp4",
+          backgroundVideoUrl: "/bannervid.mp4",
           backgroundImage: {
             url: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1600&q=80",
             alt: "Cinematic modern landscape backdrop",

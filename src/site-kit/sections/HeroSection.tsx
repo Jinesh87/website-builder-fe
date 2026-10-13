@@ -130,7 +130,23 @@ function HeroVideoPlayer({
   );
 }
 
-const DEFAULT_CAMPAIGN_VIDEO = "/banner-vid.mp4";
+const DEFAULT_CAMPAIGN_VIDEO = "/bannervid.mp4";
+
+export function normalizeVideoSrc(src?: string): string {
+  if (!src) return DEFAULT_CAMPAIGN_VIDEO;
+  const trimmed = src.trim();
+  if (
+    trimmed === "/banner-vid.mp4" ||
+    trimmed === "banner-vid.mp4" ||
+    trimmed === "/bannervid.mp4" ||
+    trimmed === "bannervid.mp4"
+  ) {
+    return DEFAULT_CAMPAIGN_VIDEO;
+  }
+  return trimmed.startsWith("http") || trimmed.startsWith("/") || trimmed.startsWith("blob:")
+    ? trimmed
+    : `/${trimmed}`;
+}
 
 function CampaignVideoPlayer({
   src,
@@ -142,11 +158,8 @@ function CampaignVideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [loadError, setLoadError] = useState(false);
 
-  const resolvedSrc =
-    src.startsWith("http") || src.startsWith("/") || src.startsWith("blob:")
-      ? src
-      : `/${src}`;
-  const activeSrc = loadError ? "/bannervid.mp4" : resolvedSrc;
+  const resolvedSrc = normalizeVideoSrc(src);
+  const activeSrc = loadError ? DEFAULT_CAMPAIGN_VIDEO : resolvedSrc;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -424,9 +437,7 @@ export default function HeroSection({
 
     const bgVideoUrl = isPlaceholderOrExternal
       ? DEFAULT_CAMPAIGN_VIDEO
-      : rawVideo.startsWith("http") || rawVideo.startsWith("/")
-        ? rawVideo
-        : `/${rawVideo}`;
+      : normalizeVideoSrc(rawVideo);
 
     const bgEmbedUrl =
       data.videoUrl && !data.videoUrl.match(/\.(mp4|webm|ogg)/i)

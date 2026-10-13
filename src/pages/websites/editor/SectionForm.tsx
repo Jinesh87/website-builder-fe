@@ -578,7 +578,7 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                   videoUrl: videoUrl || undefined,
                 })
               }
-              placeholder="/banner-vid.mp4"
+              placeholder="/bannervid.mp4"
               hint="High definition looping background video that plays continuously behind the banner."
             />
             <div className="flex flex-wrap items-center gap-1.5 -mt-1 mb-2">
@@ -591,12 +591,12 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                 onClick={() => {
                   onChange({
                     ...data,
-                    backgroundVideoUrl: "/banner-vid.mp4",
-                    videoUrl: "/banner-vid.mp4",
+                    backgroundVideoUrl: "/bannervid.mp4",
+                    videoUrl: "/bannervid.mp4",
                   });
                 }}
               >
-                🎬 Local /banner-vid.mp4
+                🎬 Local /bannervid.mp4
               </button>
               <button
                 type="button"
