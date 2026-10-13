@@ -39,7 +39,7 @@ export const sectionSettingsSchema = z.object({
  * server's Joi schemas on every save; the client only guarantees the envelope.
  */
 export const sectionEnvelopeSchema = z.object({
-  id: z.string().min(1).max(64),
+  id: z.string().min(1).max(128),
   type: sectionTypeSchema,
   hidden: z.boolean(),
   settings: sectionSettingsSchema,
@@ -50,7 +50,7 @@ export const sectionEnvelopeSchema = z.object({
 export const puckItemSchema = z.object({
   type: puckItemTypeSchema,
   props: z.object({
-    id: z.string().min(1).max(64),
+    id: z.string().min(1).max(128),
     hidden: z.boolean(),
     settings: sectionSettingsSchema,
     data: z.record(z.string(), z.unknown()),

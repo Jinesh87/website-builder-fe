@@ -64,6 +64,7 @@ import {
 import { FontPicker } from "./FontPicker.tsx";
 import CustomSectionForm from "./CustomSectionForm.tsx";
 import AuthSectionForm from "./AuthSectionForm.tsx";
+import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
 
@@ -3585,6 +3586,20 @@ function DataForm({
     case "custom":
       return (
         <CustomSectionForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "blog":
+      return (
+        <BlogForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "blog_detail":
+      return (
+        <BlogDetailForm
           data={section.data}
           onChange={(data) => onChange({ ...section, data })}
         />

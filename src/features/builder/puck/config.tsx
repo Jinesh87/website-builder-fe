@@ -50,11 +50,6 @@ function sectionComponent<T extends SectionType>(type: T): ComponentConfig<Secti
   };
 }
 
-/** Site links point at the client site's paths, which don't exist inside the editor iframe. */
-function blockLinkNavigation(event: MouseEvent<HTMLDivElement>) {
-  if (event.target instanceof Element && event.target.closest("a")) event.preventDefault();
-}
-
 function EmptyCanvas() {
   return (
     <div className="pointer-events-none absolute inset-0 z-0 flex flex-col items-center justify-center gap-2 px-6 py-24 text-center font-sans select-none">
@@ -69,6 +64,20 @@ function EmptyCanvas() {
 function RootRender({ children }: { children: ReactNode }) {
   const site = useBuilderSite();
 
+  const handleLinkClick = (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement | null;
+    const anchor = target instanceof Element ? target.closest<HTMLAnchorElement>("a") : null;
+    const cardWithHref = target instanceof Element ? target.closest<HTMLElement>("[data-href]") : null;
+    const href = anchor?.getAttribute("href") || cardWithHref?.getAttribute("data-href");
+
+    if (anchor || cardWithHref) {
+      event.preventDefault();
+      if (href && href !== "#") {
+        site.navigateToHref?.(href);
+      }
+    }
+  };
+
   const handleRootClick = (e: MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement | null;
     const isSection = target?.closest(".wb-editor-section-wrap") !== null;
@@ -81,7 +90,7 @@ function RootRender({ children }: { children: ReactNode }) {
 
   return (
     <div
-      onClickCapture={blockLinkNavigation}
+      onClickCapture={handleLinkClick}
       onClick={handleRootClick}
       className="min-h-full h-full flex flex-col flex-1"
     >
@@ -120,6 +129,8 @@ const baseComponents: { [T in SectionType]: ComponentConfig<SectionProps<T>> } =
   marquee: sectionComponent("marquee"),
   auth: sectionComponent("auth"),
   custom: sectionComponent("custom"),
+  blog: sectionComponent("blog"),
+  blog_detail: sectionComponent("blog_detail"),
 };
 
 const presetComponents = Object.fromEntries(

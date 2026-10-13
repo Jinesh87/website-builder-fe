@@ -6,6 +6,7 @@ import {
 } from "react";
 import { Drawer } from "@puckeditor/core";
 import {
+  BookOpen,
   Briefcase,
   CreditCard,
   FileText,
@@ -171,6 +172,13 @@ const CATEGORIES: CategoryItem[] = [
     label: "Login & Sign up",
     shortLabel: "Auth",
     icon: LogIn,
+  },
+  {
+    id: "blog",
+    category: "Blog",
+    label: "Blog",
+    shortLabel: "Blog",
+    icon: BookOpen,
   },
   {
     id: "footer",

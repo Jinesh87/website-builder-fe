@@ -1001,6 +1001,82 @@ export type CustomData = {
   blocks: CustomBlock[];
 };
 
+export const BLOG_DETAIL_DESIGNS = [
+  "minimalist-editorial",
+  "split-hero",
+  "immersive-dark",
+  "magazine-classic",
+  "newsletter-tech",
+  "floating-card",
+  "sticky-sidebar",
+  "swiss-brutalist",
+  "visual-story",
+  "glassmorphism-deck",
+] as const;
+
+export type BlogDetailDesign = (typeof BLOG_DETAIL_DESIGNS)[number];
+
+export type BlogPostItem = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  coverImage: ImageRef;
+  category: string;
+  authorName: string;
+  authorAvatar?: ImageRef;
+  date: string;
+  readTime: string;
+  featured?: boolean;
+  readMoreLabel?: string;
+};
+
+export type BlogData = {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  categories: string[];
+  layout?: "grid-3" | "grid-2" | "magazine";
+  showNewsletterCard?: boolean;
+  newsletterTitle?: string;
+  newsletterDescription?: string;
+  newsletterPlaceholder?: string;
+  newsletterButtonText?: string;
+  posts: BlogPostItem[];
+};
+
+export type BlogContentSection = {
+  heading?: string;
+  subheading?: string;
+  paragraphs: string[];
+  quote?: string;
+  quoteAuthor?: string;
+  callout?: string;
+  image?: ImageRef;
+};
+
+export type BlogDetailData = {
+  design: BlogDetailDesign;
+  title: string;
+  subtitle?: string;
+  category: string;
+  date: string;
+  authorName: string;
+  authorRole?: string;
+  authorAvatar?: ImageRef;
+  authorBio?: string;
+  readTime: string;
+  coverImage: ImageRef;
+  coverImageCaption?: string;
+  content: BlogContentSection[];
+  tags: string[];
+  showShareButtons?: boolean;
+  showAuthorBio?: boolean;
+  showNewsletter?: boolean;
+  newsletterTitle?: string;
+  newsletterDescription?: string;
+};
+
 export type SectionDataMap = {
   header: HeaderData;
   footer: FooterData;
@@ -1023,6 +1099,8 @@ export type SectionDataMap = {
   marquee: MarqueeData;
   auth: AuthData;
   custom: CustomData;
+  blog: BlogData;
+  blog_detail: BlogDetailData;
 };
 
 export type SectionType = keyof SectionDataMap;

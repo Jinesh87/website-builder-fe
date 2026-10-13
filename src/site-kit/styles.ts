@@ -5,6 +5,7 @@
  * frames behave exactly like real devices on the published site.
  */
 import { AUTH_CSS } from "./auth-styles.ts";
+import { BLOG_CSS } from "./blog-styles.ts";
 
 const NOT_CHROME = ":not(.wb-editor-chrome, .wb-editor-chrome *)";
 
@@ -6871,6 +6872,7 @@ details[open] > summary .wb-faq-plus {
   .wb-cb-row > .wb-btn { flex: 1 1 100%; }
 }
 ${AUTH_CSS}
+${BLOG_CSS}
 @media (prefers-reduced-motion: reduce) {
   .wb-site *, .wb-site *::before, .wb-site *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }

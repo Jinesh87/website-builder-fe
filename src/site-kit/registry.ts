@@ -24,7 +24,8 @@ export type SectionCategory =
   | "Team"
   | "Carousel"
   | "Marquee"
-  | "Auth";
+  | "Auth"
+  | "Blog";
 
 export type SectionDefinition<T extends SectionType> = {
   type: T;
@@ -505,6 +506,117 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
             ],
           },
         ],
+      }),
+    },
+    blog: {
+      type: "blog",
+      label: "Blog cards",
+      category: "Blog",
+      description: "Responsive blog post cards with category filtering, reading times, and optional newsletter box.",
+      createData: () => ({
+        eyebrow: "Articles & Insights",
+        title: "The Kindsight Blog",
+        subtitle: "Practical stories, industry observations, and guides to help you build and scale with intention.",
+        categories: ["All", "Design", "Architecture", "Technology", "Culture"],
+        layout: "grid-3",
+        showNewsletterCard: false,
+        posts: [
+          {
+            id: "post-1",
+            title: "The influence of modern architecture",
+            slug: "/blog/influence-of-modern-architecture",
+            excerpt: "An exploration into how minimalist silhouettes and brutalist honesty redefine modern spaces.",
+            coverImage: {
+              url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
+              alt: "Modern architecture skyscrapers",
+            },
+            category: "Design",
+            authorName: "Jakob Gronberg",
+            date: "July 21, 2024",
+            readTime: "12 Min",
+            readMoreLabel: "Read More →",
+          },
+          {
+            id: "post-2",
+            title: "How to write a sponsorship letter that converts",
+            slug: "/blog/how-to-write-a-sponsorship-letter",
+            excerpt: "Practical guidelines and a field-tested template to craft compelling partnership requests.",
+            coverImage: {
+              url: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80",
+              alt: "Working on laptop in office",
+            },
+            category: "Tips",
+            authorName: "Maya Lin",
+            date: "June 14, 2024",
+            readTime: "8 Min",
+            readMoreLabel: "Read More →",
+          },
+          {
+            id: "post-3",
+            title: "How to use your donor pyramid to build donation strategies",
+            slug: "/blog/donor-pyramid-strategies",
+            excerpt: "Structure your outreach tiers to turn one-time contributors into lifelong supporters.",
+            coverImage: {
+              url: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=1200&q=80",
+              alt: "Stone pyramid monument",
+            },
+            category: "Growth",
+            authorName: "Alex Rivera",
+            date: "May 29, 2024",
+            readTime: "10 Min",
+            readMoreLabel: "Read More →",
+          },
+        ],
+      }),
+    },
+    blog_detail: {
+      type: "blog_detail",
+      label: "Blog detail",
+      category: "Blog",
+      description: "Full-page article layout with 10 modern designs, rich typography, author bio, and sharing tools.",
+      createData: () => ({
+        design: "minimalist-editorial",
+        title: "The influence of modern architecture",
+        subtitle: "Nibh sed pulvinar proin gravida hendrerit lectus a. Consequat mauris nunc congue nisi vitae suscipit tellus mauris a. Cursus metus aliquam.",
+        category: "Design",
+        date: "July 21, 2024",
+        authorName: "Jakob Gronberg",
+        authorRole: "Lead Architectural Designer",
+        authorBio: "Jakob Gronberg explores tectonic expression, geometric clarity, and material permanence in contemporary urban design.",
+        readTime: "12 Min",
+        coverImage: {
+          url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1400&q=80",
+          alt: "The influence of modern architecture",
+        },
+        coverImageCaption: "Skyscrapers rising against a clear horizon in Copenhagen.",
+        content: [
+          {
+            heading: "Elit ullamcorper dignissim",
+            paragraphs: [
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Elit ullamcorper dignissim cras tincidunt. Enim neque volutpat ac tincidunt vitae. Dictum at tempor commodo ullamcorper a lacus vestibulum sed. Condimentum mattis pellentesque id nibh tortor id. Nisl condimentum id venenatis a condimentum.",
+              "Nunc sed blandit libero volutpat sed. Tristique sollicitudin nibh sit amet commodo. Sit amet justo donec enim diam vulputate ut pharetra. Quis imperdiet massa tincidunt nunc pulvinar sapien et ligula ullamcorper. Massa vitae tortor condimentum lacinia quis vel.",
+            ],
+            quote: "Architecture is the learned game, correct and magnificent, of forms assembled in the light.",
+            quoteAuthor: "Le Corbusier",
+          },
+          {
+            heading: "Hendrerit dolor magna",
+            paragraphs: [
+              "Tristique sollicitudin nibh sit amet commodo. Sit amet justo donec enim diam vulputate ut pharetra. Quis imperdiet massa tincidunt nunc pulvinar sapien et ligula ullamcorper. Massa vitae tortor condimentum lacinia quis vel. Hendrerit dolor magna eget est lorem ipsum dolor. Mollis aliquam ut porttitor leo a diam sollicitudin tempor id.",
+            ],
+            callout: "Simplicity in architectural geometry often requires the most complex structural precision behind the facade.",
+          },
+          {
+            heading: "Materiality and spatial balance",
+            paragraphs: [
+              "Suspendisse faucibus interdum posuere lorem ipsum dolor sit amet consectetur. Quis imperdiet massa tincidunt nunc pulvinar sapien et ligula ullamcorper. Dignissim cras tincidunt lobortis feugiat vivamus at augue eget arcu.",
+            ],
+          },
+        ],
+        tags: ["Architecture", "Modernism", "Design Systems", "Urbanism"],
+        showShareButtons: true,
+        showAuthorBio: true,
+        showNewsletter: true,
       }),
     },
   };
@@ -3705,4 +3817,252 @@ export const SECTION_PRESETS: SectionPreset[] = [
       create: () => createSection("auth", { data: preset.data(), settings: { spacing: "none", ...preset.settings } }),
     }),
   ),
+  {
+    key: "blog-cards-grid",
+    type: "blog",
+    label: "Blog Cards Grid",
+    category: "Blog",
+    description: "Responsive 3-column blog card grid with category pills, cover media, and read time.",
+    create: () => createSection("blog"),
+  },
+  {
+    key: "blog-detail-minimalist-editorial",
+    type: "blog_detail",
+    label: "Blog Detail · Minimalist Editorial",
+    category: "Blog",
+    description: "Centered modern header, large rounded hero image, sticky social share, clean typography.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "minimalist-editorial",
+          title: "The influence of modern architecture",
+          subtitle: "An exploration into how minimalist silhouettes and brutalist honesty redefine contemporary spaces.",
+          category: "Design",
+          date: "July 21, 2024",
+          authorName: "Jakob Gronberg",
+          authorRole: "Lead Architectural Designer",
+          readTime: "12 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1400&q=80",
+            alt: "Modern architecture skyscrapers",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-split-hero",
+    type: "blog_detail",
+    label: "Blog Detail · Split Hero Banner",
+    category: "Blog",
+    description: "Dual-column hero header with title and author on left and featured image frame on right.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "split-hero",
+          title: "Crafting scalable design systems for modern teams",
+          subtitle: "How consistent tokens, modular architecture, and documentation transform product velocity.",
+          category: "Systems",
+          date: "August 10, 2024",
+          authorName: "Maya Lin",
+          authorRole: "Head of Design",
+          readTime: "9 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80",
+            alt: "Design work",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-immersive-dark",
+    type: "blog_detail",
+    label: "Blog Detail · Immersive Dark Mode",
+    category: "Blog",
+    description: "Dramatic full-width dark hero with atmospheric ambient glow, contrast typography, and reading column.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "immersive-dark",
+          title: "Building next-generation distributed systems",
+          subtitle: "A deep dive into latency mitigation, consensus algorithms, and zero-downtime deployments.",
+          category: "Engineering",
+          date: "September 04, 2024",
+          authorName: "Marcus Vance",
+          authorRole: "Principal Systems Architect",
+          readTime: "14 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1400&q=80",
+            alt: "Hardware circuit tech",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-magazine-classic",
+    type: "blog_detail",
+    label: "Blog Detail · Magazine Classic Gazette",
+    category: "Blog",
+    description: "Refined serif print editorial aesthetic with author sidebar and structured two-column layout.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "magazine-classic",
+          title: "The vanishing art of contemplative long-form journalism",
+          subtitle: "Why depth, pacing, and editorial integrity matter more than ever in an era of micro-attention.",
+          category: "Journalism",
+          date: "October 02, 2024",
+          authorName: "Clara Kensington",
+          authorRole: "Senior Editor",
+          readTime: "16 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80",
+            alt: "Vintage printing and reading",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-newsletter-tech",
+    type: "blog_detail",
+    label: "Blog Detail · Substack / Newsletter Style",
+    category: "Blog",
+    description: "Creator profile header, read time, callout boxes, and bottom newsletter subscribe box.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "newsletter-tech",
+          title: "The founder's playbook for zero-to-one product growth",
+          subtitle: "The metrics that actually matter before product-market fit, and the vanity metrics to ignore.",
+          category: "Startups",
+          date: "September 18, 2024",
+          authorName: "Alex Rivera",
+          authorRole: "Product Strategist",
+          readTime: "7 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
+            alt: "Analytics and strategy",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-floating-card",
+    type: "blog_detail",
+    label: "Blog Detail · Modernist Floating Card",
+    category: "Blog",
+    description: "Wide cover image hero with the article header card floating and overlapping upward.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "floating-card",
+          title: "Urban sanctuaries: Reclaiming quiet in dense metropolises",
+          subtitle: "How biophilic architecture and sound dampening materials create mental breathing room.",
+          category: "Urbanism",
+          date: "August 28, 2024",
+          authorName: "Elena Rostova",
+          authorRole: "Urban Researcher",
+          readTime: "11 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80",
+            alt: "Urban landscape",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-sticky-sidebar",
+    type: "blog_detail",
+    label: "Blog Detail · Sticky Table of Contents",
+    category: "Blog",
+    description: "Modern publication layout with sticky outline TOC, author bio widget, and share widget.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "sticky-sidebar",
+          title: "Comprehensive guide to sustainable web performance",
+          subtitle: "Optimizing bundle budgets, server response latency, and carbon footprint for modern web apps.",
+          category: "Engineering",
+          date: "July 30, 2024",
+          authorName: "David Zhao",
+          authorRole: "Frontend Architect",
+          readTime: "13 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80",
+            alt: "Code and performance",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-swiss-brutalist",
+    type: "blog_detail",
+    label: "Blog Detail · Swiss Brutalist Grid",
+    category: "Blog",
+    description: "High-contrast 1px border grid, tabular metadata, clean typography, and numbered blocks.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "swiss-brutalist",
+          title: "OBJECTIVE FORM: THE SWISS TYPOGRAPHIC LEGACY",
+          subtitle: "ANALYZING MAX BILL, JOSEF MÜLLER-BROCKMANN, AND THE MATHEMATICAL FOUNDATIONS OF GRID SYSTEMS.",
+          category: "TYPOGRAPHY",
+          date: "JUNE 22, 2024",
+          authorName: "HANS WEBER",
+          authorRole: "GRAPHIC THEORIST",
+          readTime: "10 MIN",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80",
+            alt: "Geometric graphic art",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-visual-story",
+    type: "blog_detail",
+    label: "Blog Detail · Cinematic Photo Essay",
+    category: "Blog",
+    description: "Panoramic media hero with overlay, oversized statement quotes, and storytelling rhythm.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "visual-story",
+          title: "Chasing the midnight sun across the Arctic archipelago",
+          subtitle: "When the horizon never sleeps, time bends into an endless golden hour of light, ice, and silence.",
+          category: "Expeditions",
+          date: "August 14, 2024",
+          authorName: "Soren Lindqvist",
+          authorRole: "Documentary Photographer",
+          readTime: "8 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80",
+            alt: "Nordic coast landscape",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-glassmorphism-deck",
+    type: "blog_detail",
+    label: "Blog Detail · Glassmorphism Card Deck",
+    category: "Blog",
+    description: "Translucent frosted glass card container with subtle ambient glow and sleek floating elements.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "glassmorphism-deck",
+          title: "Spatial interfaces and the future of human computing",
+          subtitle: "How depth, physics, and ambient illumination are replacing traditional flat UI paradigms.",
+          category: "Future Tech",
+          date: "September 29, 2024",
+          authorName: "Aria Thorne",
+          authorRole: "Spatial Designer",
+          readTime: "9 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
+            alt: "Abstract glass and light",
+          },
+        },
+      }),
+  },
 ];
