@@ -78,21 +78,6 @@ export function SectionSkeleton({ preset }: { preset: SectionPreset }) {
         </div>
       );
 
-    case "header-ecommerce":
-      return (
-        <div className="flex h-full w-full flex-col justify-center gap-1 px-2">
-          <div className="flex items-center justify-between">
-            <div className="h-2 w-6 rounded-sm bg-zinc-400 dark:bg-zinc-500" />
-            <div className="h-1.5 w-10 rounded-full bg-zinc-200 dark:bg-zinc-700" />
-            <div className="h-2 w-2 rounded-full bg-brand/70" />
-          </div>
-          <div className="flex items-center justify-center gap-2 border-t border-zinc-200/60 pt-0.5 dark:border-zinc-700/60">
-            <div className="h-0.5 w-3 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-            <div className="h-0.5 w-3 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-            <div className="h-0.5 w-3 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-          </div>
-        </div>
-      );
 
     case "header-floating":
       return (
@@ -158,17 +143,6 @@ export function SectionSkeleton({ preset }: { preset: SectionPreset }) {
         </div>
       );
 
-    case "header-command-bar":
-      return (
-        <div className="flex h-full w-full items-center justify-between px-2">
-          <div className="h-2 w-5 rounded-sm bg-zinc-400 dark:bg-zinc-500" />
-          <div className="flex items-center justify-between rounded-md border border-zinc-200 bg-zinc-100 px-1.5 py-0.5 dark:border-zinc-700 dark:bg-zinc-800">
-            <div className="h-1 w-6 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-            <div className="ml-1 h-1.5 w-2.5 rounded-xs border border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-700" />
-          </div>
-          <div className="h-2 w-4 rounded-sm bg-brand/70" />
-        </div>
-      );
 
     case "header-mega-menu-grid":
       return (
@@ -220,24 +194,6 @@ export function SectionSkeleton({ preset }: { preset: SectionPreset }) {
         </div>
       );
 
-    case "header-luxury-editorial":
-      return (
-        <div className="flex h-full w-full flex-col justify-between py-1 px-2 border-b border-zinc-900 dark:border-zinc-100">
-          <div className="flex items-center justify-between text-[6px] text-zinc-400">
-            <div className="h-0.5 w-4 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-            <div className="h-0.5 w-4 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-          </div>
-          <div className="flex justify-center">
-            <div className="h-2 w-10 rounded-xs bg-zinc-700 dark:bg-zinc-300" />
-          </div>
-          <div className="grid grid-cols-4 gap-0.5 border-t border-zinc-200 pt-0.5 dark:border-zinc-700">
-            <div className="h-0.5 w-full bg-zinc-300 dark:bg-zinc-600" />
-            <div className="h-0.5 w-full bg-zinc-300 dark:bg-zinc-600" />
-            <div className="h-0.5 w-full bg-zinc-300 dark:bg-zinc-600" />
-            <div className="h-0.5 w-full bg-zinc-300 dark:bg-zinc-600" />
-          </div>
-        </div>
-      );
 
     case "header-clean-transparent":
       return (
@@ -312,6 +268,30 @@ export function SectionSkeleton({ preset }: { preset: SectionPreset }) {
             <div className="h-6 w-3.5 rotate-6 translate-y-0.5 rounded-xs bg-zinc-400/60 dark:bg-zinc-600" />
           </div>
           <div className="h-1.5 w-8 rounded-full border border-dashed border-red-400 bg-red-400/20" />
+        </div>
+      );
+
+    case "hero-campaign-banner":
+      return (
+        <div className="relative flex h-full w-full flex-col justify-between overflow-hidden rounded-sm bg-gradient-to-b from-sky-950 via-slate-900 to-sky-900 p-2 text-center">
+          <div className="mt-1 flex flex-col items-center gap-1">
+            <div className="h-2 w-20 rounded-xs bg-white/90" />
+            <div className="h-1 w-28 rounded-full bg-white/60" />
+          </div>
+          <div className="flex w-full items-center justify-center gap-1.5">
+            <div className="h-4.5 w-12 rounded-xs bg-white/95 p-0.5 shadow-xs">
+              <div className="h-1 w-6 rounded-full bg-pink-400" />
+              <div className="mt-0.5 h-1.5 w-4 rounded-xs bg-zinc-800" />
+            </div>
+            <div className="h-4.5 w-16 rounded-xs bg-white/95 p-0.5 shadow-xs">
+              <div className="h-1 w-10 rounded-full bg-pink-500" />
+              <div className="mt-0.5 flex gap-0.5">
+                <div className="h-1.5 w-5 rounded-xs bg-pink-400" />
+                <div className="h-1.5 w-5 rounded-xs bg-cyan-500" />
+              </div>
+            </div>
+          </div>
+          <div className="h-2 w-full rounded-t-full bg-sky-500/30" />
         </div>
       );
 

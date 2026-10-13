@@ -22,6 +22,8 @@ import StatsSection from "./sections/StatsSection.tsx";
 import TeamSection from "./sections/TeamSection.tsx";
 import TestimonialsSection from "./sections/TestimonialsSection.tsx";
 import TextSection from "./sections/TextSection.tsx";
+import BlogSection from "./sections/BlogSection.tsx";
+import BlogDetailSection from "./sections/BlogDetailSection.tsx";
 import { SITE_CSS } from "./styles.ts";
 import { themeToCssVars } from "./theme.ts";
 import type { FooterData, HeaderData, PageData, Section, SectionOf, SiteData, ThemeSettings } from "./types.ts";
@@ -70,6 +72,10 @@ export function SectionView({ section }: { section: Section }) {
       return <AuthSection section={section} />;
     case "custom":
       return <CustomSection section={section} />;
+    case "blog":
+      return <BlogSection section={section} />;
+    case "blog_detail":
+      return <BlogDetailSection section={section} />;
   }
 }
 

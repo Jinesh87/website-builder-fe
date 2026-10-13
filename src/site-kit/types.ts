@@ -50,17 +50,13 @@ export const HEADER_DESIGNS = [
   "classical",
   "minimalist",
   "comprehensive",
-  "ecommerce",
   "floating",
   "transparent",
   "glass-dock",
   "split-stacked",
-  "command-bar",
   "mega-menu-grid",
   "side-drawer",
   "headline-ticker",
-  "luxury-editorial",
-  "saas-console",
 ] as const;
 
 export type HeaderDesign = (typeof HEADER_DESIGNS)[number];
@@ -269,6 +265,7 @@ export const HERO_VARIANTS = [
   "floating-cards",
   "asymmetric",
   "curved-carousel",
+  "campaign-banner",
 ] as const;
 
 export type HeroVariant = (typeof HERO_VARIANTS)[number];
@@ -289,6 +286,32 @@ export type HeroRating = {
 export type HeroTrustedBy = {
   label?: string;
   logos?: { label: string; url?: string }[];
+};
+
+export type HeroCampaignStat = {
+  id?: string;
+  label: string;
+  value: string;
+  icon?: string;
+};
+
+export type HeroCampaignProgress = {
+  raisedAmount?: number | string;
+  targetAmount?: number | string;
+  currency?: string;
+  raisedLabel?: string;
+  targetLabel?: string;
+  percentage?: number;
+  donateButton?: LinkRef;
+  registerButton?: LinkRef;
+};
+
+export type HeroCampaignTickerItem = {
+  id?: string;
+  name: string;
+  action: string;
+  amount?: string;
+  avatarIcon?: string;
 };
 
 export type HeroData = {
@@ -320,7 +343,7 @@ export type HeroData = {
   overlayBlur?: boolean;
   minHeight?: "auto" | "compact" | "screen" | "tall";
   contentAlign?: "center" | "left" | "right";
-  bottomShape?: "none" | "wave" | "curve" | "slant" | "tilt";
+  bottomShape?: "none" | "wave" | "curve" | "curved" | "slant" | "tilt" | "arch" | "normal";
   rating?: HeroRating;
   floatingCards?: HeroFloatingCard[];
   trustedBy?: HeroTrustedBy;
@@ -329,6 +352,22 @@ export type HeroData = {
   showDoodles?: boolean;
   curveIntensity?: "none" | "subtle" | "medium" | "dramatic";
   carouselSlides?: CarouselSlide[];
+  // Campaign video banner fields
+  campaignStats?: HeroCampaignStat[];
+  campaignProgress?: HeroCampaignProgress;
+  campaignTicker?: HeroCampaignTickerItem[];
+  showCampaignTicker?: boolean;
+  showCampaignCards?: boolean;
+  bannerBottomShape?: "curved" | "wave" | "normal" | "slant" | "tilt" | "arch" | "none";
+  bannerCurveDepth?: number;
+  bottomDividerColor?: string;
+  bannerTopBar?: {
+    enabled?: boolean;
+    logoText?: string;
+    logoImage?: ImageRef;
+    primaryButton?: LinkRef;
+    secondaryButton?: LinkRef;
+  };
 };
 
 export type GridColumns = 1 | 2 | 3 | 4;
@@ -1001,6 +1040,82 @@ export type CustomData = {
   blocks: CustomBlock[];
 };
 
+export const BLOG_DETAIL_DESIGNS = [
+  "minimalist-editorial",
+  "split-hero",
+  "immersive-dark",
+  "magazine-classic",
+  "newsletter-tech",
+  "floating-card",
+  "sticky-sidebar",
+  "swiss-brutalist",
+  "visual-story",
+  "glassmorphism-deck",
+] as const;
+
+export type BlogDetailDesign = (typeof BLOG_DETAIL_DESIGNS)[number];
+
+export type BlogPostItem = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  coverImage: ImageRef;
+  category: string;
+  authorName: string;
+  authorAvatar?: ImageRef;
+  date: string;
+  readTime: string;
+  featured?: boolean;
+  readMoreLabel?: string;
+};
+
+export type BlogData = {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  categories: string[];
+  layout?: "grid-3" | "grid-2" | "magazine";
+  showNewsletterCard?: boolean;
+  newsletterTitle?: string;
+  newsletterDescription?: string;
+  newsletterPlaceholder?: string;
+  newsletterButtonText?: string;
+  posts: BlogPostItem[];
+};
+
+export type BlogContentSection = {
+  heading?: string;
+  subheading?: string;
+  paragraphs: string[];
+  quote?: string;
+  quoteAuthor?: string;
+  callout?: string;
+  image?: ImageRef;
+};
+
+export type BlogDetailData = {
+  design: BlogDetailDesign;
+  title: string;
+  subtitle?: string;
+  category: string;
+  date: string;
+  authorName: string;
+  authorRole?: string;
+  authorAvatar?: ImageRef;
+  authorBio?: string;
+  readTime: string;
+  coverImage: ImageRef;
+  coverImageCaption?: string;
+  content: BlogContentSection[];
+  tags: string[];
+  showShareButtons?: boolean;
+  showAuthorBio?: boolean;
+  showNewsletter?: boolean;
+  newsletterTitle?: string;
+  newsletterDescription?: string;
+};
+
 export type SectionDataMap = {
   header: HeaderData;
   footer: FooterData;
@@ -1023,6 +1138,8 @@ export type SectionDataMap = {
   marquee: MarqueeData;
   auth: AuthData;
   custom: CustomData;
+  blog: BlogData;
+  blog_detail: BlogDetailData;
 };
 
 export type SectionType = keyof SectionDataMap;

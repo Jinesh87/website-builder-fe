@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, ChevronRight, Code2, ExternalLink, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, ChevronDown, ChevronRight, Code2, ExternalLink, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppTooltip from "../../../components/ui/AppTooltip.tsx";
 import DownloadCodeDialog from "../../../components/websites/DownloadCodeDialog.tsx";
@@ -39,9 +39,26 @@ type TopBarProps = {
 };
 
 export default function TopBar({ backTo, onPublish }: TopBarProps) {
-  const { website, page, role, device, setDevice, autosave, aiLock } = useEditor();
+  const { website, draft, page, selectPage, role, device, setDevice, autosave, aiLock } = useEditor();
   const history = useBuilderPuck((state) => state.history);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    if (!pageDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setPageDropdownOpen(false);
+      }
+    };
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => window.removeEventListener("mousedown", handleClickOutside);
+  }, [pageDropdownOpen]);
+
+  const blogDetailSection = page.sections?.find((s) => s.type === "blog_detail");
+  const blogArticleTitle = (blogDetailSection?.data as any)?.title as string | undefined;
+  const isBlogPage = page.pageType === "BLOG" || Boolean(blogDetailSection);
 
   async function openPreview() {
     const url = `/websites/${website.id}/preview`;
@@ -70,17 +87,80 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
       <span className="h-5 w-px bg-ed-border" aria-hidden />
 
       <nav aria-label="Breadcrumb" className="min-w-0">
-        <ol className="flex min-w-0 items-center gap-1 text-ed-sm">
+        <ol className="flex min-w-0 items-center gap-1.5 text-ed-sm">
           <li className="hidden truncate text-ed-muted lg:block">{website.clientName}</li>
           <li className="hidden text-ed-faint lg:block" aria-hidden>
             <ChevronRight className="size-3.5" />
           </li>
-          <li className="max-w-48 truncate text-ed-muted">{website.name}</li>
+          <li className="max-w-40 truncate text-ed-muted">{website.name}</li>
           <li className="text-ed-faint" aria-hidden>
             <ChevronRight className="size-3.5" />
           </li>
-          <li className="max-w-40 truncate font-medium text-ed-text" aria-current="page">
-            {page.name}
+          <li className="relative flex items-center" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setPageDropdownOpen((v) => !v)}
+              className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-ed-xs font-medium text-ed-text bg-ed-subtle/80 hover:bg-ed-hover border border-ed-border transition-colors cursor-pointer"
+              aria-expanded={pageDropdownOpen}
+              title={blogArticleTitle ? `Page: ${page.name} — "${blogArticleTitle}"` : `Page: ${page.name}`}
+            >
+              <span className="text-ed-muted font-normal">Page:</span>
+              <span className="font-semibold text-ed-text max-w-28 truncate">{page.name}</span>
+              {blogArticleTitle ? (
+                <span className="hidden sm:inline-flex items-center gap-1 rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-indigo-600 dark:text-indigo-400 max-w-48 truncate">
+                  Blog: “{blogArticleTitle}”
+                </span>
+              ) : isBlogPage ? (
+                <span className="hidden sm:inline-flex items-center rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-indigo-600 dark:text-indigo-400">
+                  Blog
+                </span>
+              ) : null}
+              <ChevronDown className={`size-3 text-ed-muted transition-transform group-hover:text-ed-text ${pageDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {pageDropdownOpen && (
+              <div className="absolute left-0 top-full z-50 mt-1 w-72 rounded-lg border border-ed-border bg-ed-panel p-1.5 shadow-xl animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-ed-muted border-b border-ed-border/60 mb-1">
+                  Switch Editor Page ({draft.pages.length})
+                </div>
+                <div className="max-h-64 overflow-y-auto space-y-0.5 overscroll-contain">
+                  {draft.pages.map((p) => {
+                    const isCurrent = p.id === page.id;
+                    const pBlogDetail = p.sections?.find((s) => s.type === "blog_detail");
+                    const pBlogTitle = (pBlogDetail?.data as any)?.title as string | undefined;
+                    const pIsBlog = p.pageType === "BLOG" || Boolean(pBlogDetail);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          selectPage(p.id);
+                          setPageDropdownOpen(false);
+                        }}
+                        className={`flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors ${
+                          isCurrent
+                            ? "bg-ed-accent/10 font-semibold text-ed-accent"
+                            : "text-ed-text hover:bg-ed-hover"
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="shrink-0">{p.slug === "/" ? "🏠" : pIsBlog ? "📰" : "📄"}</span>
+                            <span className="truncate">{p.name}</span>
+                          </div>
+                          {pBlogTitle && (
+                            <p className="truncate text-[10.5px] text-indigo-600 dark:text-indigo-400 pl-5 font-normal">
+                              “{pBlogTitle}”
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-mono text-ed-muted shrink-0">{p.slug}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </li>
         </ol>
       </nav>

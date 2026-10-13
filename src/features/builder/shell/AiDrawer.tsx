@@ -230,7 +230,16 @@ function normalizeSection(raw: Section): Section {
     ) {
       delete mergedData.contentAlign;
     }
-    const validBottomShapes = ["none", "wave", "curve", "slant", "tilt"];
+    const validBottomShapes = [
+      "none",
+      "wave",
+      "curve",
+      "curved",
+      "slant",
+      "tilt",
+      "arch",
+      "normal",
+    ];
     if (
       mergedData.bottomShape &&
       !validBottomShapes.includes(mergedData.bottomShape as string)
@@ -469,16 +478,13 @@ function normalizeSection(raw: Section): Section {
       "classical",
       "minimalist",
       "comprehensive",
-      "ecommerce",
       "floating",
       "transparent",
       "glass-dock",
       "split-stacked",
-      "command-bar",
       "mega-menu-grid",
       "side-drawer",
       "headline-ticker",
-      "luxury-editorial",
       "clean-transparent",
     ];
     if (

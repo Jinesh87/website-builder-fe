@@ -50,7 +50,15 @@ export default function WebsitePreviewPage() {
   const page = pages.find((candidate) => candidate.id === pageId) ?? pages.find((candidate) => candidate.slug === "/") ?? pages[0];
 
   function openLink(href: string) {
-    const target = pages.find((candidate) => candidate.slug === href);
+    if (!href || href === "#") return;
+    const clean = href.startsWith("/") ? href : `/${href}`;
+    const target = pages.find(
+      (candidate) =>
+        candidate.slug === clean ||
+        candidate.slug === href ||
+        candidate.id === href ||
+        candidate.slug.replace(/^\//, "") === href.replace(/^\//, ""),
+    );
     if (target) setPageId(target.id);
   }
 

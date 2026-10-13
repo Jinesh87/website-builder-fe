@@ -198,33 +198,33 @@ export function SiteIcon({ name }: { name: IconName | string }) {
   );
 }
 
-export function MenuIcon() {
+export function MenuIcon({ className = "", style }: { className?: string; style?: CSSProperties } = {}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className={className} style={{ width: "1.25em", height: "1.25em", flexShrink: 0, ...style }} aria-hidden="true">
       <path d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   );
 }
 
-export function CloseIcon() {
+export function CloseIcon({ className = "", style }: { className?: string; style?: CSSProperties } = {}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={{ width: "1.25em", height: "1.25em", flexShrink: 0, ...style }} aria-hidden="true">
       <path d="M18 6L6 18M6 6l12 12" />
     </svg>
   );
 }
 
-export function ChevronDownIcon() {
+export function ChevronDownIcon({ className = "", style }: { className?: string; style?: CSSProperties } = {}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={{ width: "1em", height: "1em", flexShrink: 0, ...style }} aria-hidden="true">
       <path d="M6 9l6 6 6-6" />
     </svg>
   );
 }
 
-export function SearchIcon() {
+export function SearchIcon({ className = "", style }: { className?: string; style?: CSSProperties } = {}) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} style={{ width: "1.1em", height: "1.1em", flexShrink: 0, ...style }} aria-hidden="true">
       <circle cx="11" cy="11" r="8" />
       <path d="M21 21l-4.35-4.35" />
     </svg>
@@ -247,26 +247,31 @@ export function StarFilledIcon() {
   );
 }
 
-export function BottomShapeDivider({ shape }: { shape?: "none" | "wave" | "curve" | "slant" | "tilt" }) {
-  if (!shape || shape === "none") return null;
+export function BottomShapeDivider({
+  shape,
+}: {
+  shape?: "none" | "wave" | "curve" | "curved" | "slant" | "tilt" | "arch" | "normal";
+}) {
+  if (!shape || shape === "none" || shape === "normal") return null;
+  const normalized = shape === "curved" ? "curve" : shape;
   return (
-    <div className={`wb-shape-divider wb-shape-${shape}`} aria-hidden="true">
-      {shape === "wave" && (
+    <div className={`wb-shape-divider wb-shape-${normalized}`} aria-hidden="true">
+      {normalized === "wave" && (
         <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path d="M0,0 C150,90 350,-40 500,60 C650,160 900,10 1200,40 L1200,120 L0,120 Z" fill="currentColor" />
         </svg>
       )}
-      {shape === "curve" && (
+      {(normalized === "curve" || normalized === "arch") && (
         <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path d="M0,0 C400,120 800,120 1200,0 L1200,120 L0,120 Z" fill="currentColor" />
         </svg>
       )}
-      {shape === "slant" && (
+      {normalized === "slant" && (
         <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path d="M1200,0 L0,120 L1200,120 Z" fill="currentColor" />
         </svg>
       )}
-      {shape === "tilt" && (
+      {normalized === "tilt" && (
         <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path d="M0,0 L1200,100 L1200,120 L0,120 Z" fill="currentColor" />
         </svg>

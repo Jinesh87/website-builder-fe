@@ -18,6 +18,7 @@ export type BuilderSiteValue = {
   isEmpty: boolean;
   selectArea: (area: SiteArea) => void;
   openAddPanel: () => void;
+  navigateToHref?: (href: string) => void;
 };
 
 export const BuilderSiteContext = createContext<BuilderSiteValue | null>(null);

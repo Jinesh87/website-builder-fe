@@ -1,9 +1,31 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
+function videoAliasPlugin(): Plugin {
+  return {
+    name: "video-alias-plugin",
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        if (req.url?.startsWith("/banner-vid.mp4")) {
+          req.url = req.url.replace("/banner-vid.mp4", "/bannervid.mp4");
+        }
+        next();
+      });
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        if (req.url?.startsWith("/banner-vid.mp4")) {
+          req.url = req.url.replace("/banner-vid.mp4", "/bannervid.mp4");
+        }
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [tailwindcss(), react()],
+  plugins: [tailwindcss(), react(), videoAliasPlugin()],
   server: {
     host: true,
     port: 5173,
