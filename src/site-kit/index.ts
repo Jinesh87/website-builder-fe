@@ -1,8 +1,3 @@
-/**
- * Website component kit. Must stay framework-agnostic beyond React itself
- * (no router, HeroUI, Tailwind or browser-only APIs) so the publish step can
- * render the same components to static HTML on the server.
- */
 export {
   default as SitePage,
   SectionView,
@@ -19,13 +14,25 @@ export {
   SECTION_PRESETS,
   SECTION_TYPES,
 } from "./registry.ts";
-export type { SectionCategory, SectionDefinition, SectionPreset } from "./registry.ts";
+export type {
+  SectionCategory,
+  SectionDefinition,
+  SectionPreset,
+} from "./registry.ts";
 export { safeHref, videoEmbedUrl } from "./links.ts";
 export { DEFAULT_THEME, sectionFontStyle, themeToCssVars } from "./theme.ts";
-export { DEFAULT_FONT, FONT_CATEGORIES, FONT_KEYS, FONTS, fontStack, isFontKey } from "./fonts.ts";
+export {
+  DEFAULT_FONT,
+  FONT_CATEGORIES,
+  FONT_KEYS,
+  FONTS,
+  fontStack,
+  isFontKey,
+} from "./fonts.ts";
 export type { FontCategory, FontDefinition } from "./fonts.ts";
 export { SITE_CSS } from "./styles.ts";
 export { SiteRenderModeProvider } from "./render-mode.tsx";
 export type { SiteRenderMode } from "./render-mode.tsx";
 export { SAMPLE_SITE } from "./sample-site.ts";
+export { HERO_VARIANTS } from "./types.ts";
 export type * from "./types.ts";

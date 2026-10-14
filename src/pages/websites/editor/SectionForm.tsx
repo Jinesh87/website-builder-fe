@@ -19,6 +19,7 @@ import type {
   FontKey,
   GalleryData,
   GridColumns,
+  HeroCampaignStat,
   HeroData,
   IconName,
   LogosData,
@@ -64,6 +65,7 @@ import {
 import { FontPicker } from "./FontPicker.tsx";
 import CustomSectionForm from "./CustomSectionForm.tsx";
 import AuthSectionForm from "./AuthSectionForm.tsx";
+import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
 
@@ -284,6 +286,11 @@ const DEFAULT_HERO_CAROUSEL_SLIDES: CarouselSlide[] = [
   },
 ];
 
+const DEFAULT_CAMPAIGN_STATS: HeroCampaignStat[] = [
+  { label: "Active Members", value: "12,450", icon: "users" },
+  { label: "Milestones Hit", value: "320+", icon: "pin" },
+];
+
 function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
   const trustedBy = data.trustedBy ?? {};
   const updateTrustedBy = (
@@ -300,14 +307,23 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
           value={data.variant === "split-left" ? "split" : data.variant}
           options={[
             {
+              value: "campaign-banner",
+              label:
+                "Interactive Video Banner (Full-bleed media, bottom shape divider, stats & milestone tracker)",
+            },
+            {
               value: "centered",
               label: "Centered (Heading, dual CTAs, visual showcase)",
             },
             {
               value: "curved-carousel",
-              label: "3D Curved Video Reel Banner (Exact Arc Carousel & Doodles)",
+              label:
+                "3D Curved Video Reel Banner (Exact Arc Carousel & Doodles)",
             },
-            { value: "split", label: "Split screen (Side-by-side headline & media mockup)" },
+            {
+              value: "split",
+              label: "Split screen (Side-by-side headline & media mockup)",
+            },
             {
               value: "gradient",
               label: "Vibrant gradient (Mesh glow & trusted logos)",
@@ -389,23 +405,25 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             onChange({ ...data, minHeight: minHeight as HeroData["minHeight"] })
           }
         />
-        <SelectField
-          label="Bottom shape divider"
-          value={data.bottomShape ?? "none"}
-          options={[
-            { value: "none", label: "None (Straight border)" },
-            { value: "wave", label: "Smooth wave" },
-            { value: "curve", label: "Convex curve" },
-            { value: "slant", label: "Angled slant" },
-            { value: "tilt", label: "Gentle tilt" },
-          ]}
-          onChange={(bottomShape) =>
-            onChange({
-              ...data,
-              bottomShape: bottomShape as HeroData["bottomShape"],
-            })
-          }
-        />
+        {data.variant !== "campaign-banner" && (
+          <SelectField
+            label="Bottom shape divider"
+            value={data.bottomShape ?? "none"}
+            options={[
+              { value: "none", label: "None (Straight border)" },
+              { value: "wave", label: "Smooth wave" },
+              { value: "curve", label: "Convex curve" },
+              { value: "slant", label: "Angled slant" },
+              { value: "tilt", label: "Gentle tilt" },
+            ]}
+            onChange={(bottomShape) =>
+              onChange({
+                ...data,
+                bottomShape: bottomShape as HeroData["bottomShape"],
+              })
+            }
+          />
+        )}
       </FormGroup>
 
       {data.variant === "curved-carousel" && (
@@ -414,8 +432,14 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             label="Scroll direction"
             value={data.carouselDirection || "left-to-right"}
             options={[
-              { value: "left-to-right", label: "Left to Right (Continuous Loop)" },
-              { value: "right-to-left", label: "Right to Left (Continuous Loop)" },
+              {
+                value: "left-to-right",
+                label: "Left to Right (Continuous Loop)",
+              },
+              {
+                value: "right-to-left",
+                label: "Right to Left (Continuous Loop)",
+              },
             ]}
             onChange={(dir) =>
               onChange({
@@ -445,17 +469,400 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             options={[
               { value: "subtle", label: "Subtle (Gentle tilt)" },
               { value: "medium", label: "Medium (Realistic 3D cylinder arc)" },
-              { value: "dramatic", label: "Dramatic (Deep panoramic amphitheater)" },
+              {
+                value: "dramatic",
+                label: "Dramatic (Deep panoramic amphitheater)",
+              },
               { value: "none", label: "None (Flat linear reel)" },
             ]}
             onChange={(curve) =>
               onChange({
                 ...data,
-                curveIntensity: curve as "none" | "subtle" | "medium" | "dramatic",
+                curveIntensity: curve as
+                  "none" | "subtle" | "medium" | "dramatic",
               })
             }
           />
         </FormGroup>
+      )}
+
+      {data.variant === "campaign-banner" && (
+        <>
+          <FormGroup title="Video Banner Layout & Bottom Edge">
+            <SelectField
+              label="Text alignment"
+              value={data.contentAlign ?? "left"}
+              options={[
+                {
+                  value: "left",
+                  label: "Left aligned (Clean non-centered layout)",
+                },
+                { value: "center", label: "Center aligned" },
+              ]}
+              onChange={(align) =>
+                onChange({
+                  ...data,
+                  contentAlign: align as HeroData["contentAlign"],
+                })
+              }
+              hint="Position of headline and description text across the banner."
+            />
+            <SelectField
+              label="Bottom shape divider"
+              value={
+                data.bannerBottomShape === "curved" ||
+                data.bottomShape === "curve" ||
+                data.bottomShape === "curved"
+                  ? "curved"
+                  : (data.bannerBottomShape ??
+                    (data.bottomShape as string) ??
+                    "curved")
+              }
+              options={[
+                {
+                  value: "curved",
+                  label: "Curved concave arc (Smooth scooped curve)",
+                },
+                { value: "arch", label: "Convex inverted arch" },
+                { value: "wave", label: "Smooth fluid wave" },
+                { value: "slant", label: "Angled slant" },
+                { value: "tilt", label: "Gentle tilt" },
+                { value: "none", label: "None (Straight flat border)" },
+              ]}
+              onChange={(shape) =>
+                onChange({
+                  ...data,
+                  bannerBottomShape: shape as HeroData["bannerBottomShape"],
+                  bottomShape: (shape === "curved" || shape === "arch"
+                    ? "curve"
+                    : shape === "normal" || shape === "none"
+                      ? "none"
+                      : shape) as HeroData["bottomShape"],
+                })
+              }
+              hint="Controls the bottom cutout curve or divider under the video banner."
+            />
+            <TextField
+              label="Curve depth / height (pixels)"
+              type="number"
+              value={String(data.bannerCurveDepth ?? 80)}
+              onChange={(depth) =>
+                onChange({
+                  ...data,
+                  bannerCurveDepth: Math.max(0, parseInt(depth, 10) || 0),
+                })
+              }
+              placeholder="80"
+              hint="Adjustable curvature height in pixels (e.g. 40 subtle, 80 standard, 120 dramatic)."
+            />
+            <TextField
+              label="Bottom divider background color"
+              value={
+                data.bottomDividerColor === "#70c4d4"
+                  ? ""
+                  : (data.bottomDividerColor ?? "")
+              }
+              onChange={(color) =>
+                onChange({ ...data, bottomDividerColor: color || undefined })
+              }
+              placeholder="var(--wb-bg, #ffffff)"
+              hint="Color for backdrop below the banner (defaults to page white var(--wb-bg, #ffffff))."
+            />
+            <VideoField
+              label="Background video URL (MP4 / WebM / Direct link)"
+              value={data.backgroundVideoUrl ?? data.videoUrl ?? ""}
+              onChange={(videoUrl) =>
+                onChange({
+                  ...data,
+                  backgroundVideoUrl: videoUrl || undefined,
+                  videoUrl: videoUrl || undefined,
+                })
+              }
+              placeholder="/bannervid.mp4"
+              hint="High definition looping background video that plays continuously behind the banner."
+            />
+            <div className="flex flex-wrap items-center gap-1.5 -mt-1 mb-2">
+              <span className="text-xs text-slate-500 font-medium mr-1">
+                Videos:
+              </span>
+              <button
+                type="button"
+                className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-100 hover:bg-blue-200 text-blue-800 border border-blue-300 transition"
+                onClick={() => {
+                  onChange({
+                    ...data,
+                    backgroundVideoUrl: "/bannervid.mp4",
+                    videoUrl: "/bannervid.mp4",
+                  });
+                }}
+              >
+                🎬 Local /bannervid.mp4
+              </button>
+              <button
+                type="button"
+                className="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition"
+                onClick={() => {
+                  const url =
+                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4";
+                  onChange({
+                    ...data,
+                    backgroundVideoUrl: url,
+                    videoUrl: url,
+                  });
+                }}
+              >
+                🌊 Scenic Escapes
+              </button>
+              <button
+                type="button"
+                className="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition"
+                onClick={() => {
+                  const url =
+                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+                  onChange({
+                    ...data,
+                    backgroundVideoUrl: url,
+                    videoUrl: url,
+                  });
+                }}
+              >
+                🔥 Dynamic Demo
+              </button>
+              <button
+                type="button"
+                className="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition"
+                onClick={() => {
+                  const url =
+                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+                  onChange({
+                    ...data,
+                    backgroundVideoUrl: url,
+                    videoUrl: url,
+                  });
+                }}
+              >
+                🎬 Nature Clip
+              </button>
+            </div>
+            <ImageField
+              label="Banner fallback / poster image"
+              value={data.backgroundImage ?? data.image}
+              onChange={(backgroundImage) =>
+                onChange({
+                  ...data,
+                  backgroundImage,
+                  image: backgroundImage,
+                })
+              }
+              optional
+            />
+            <SelectField
+              label="Background overlay style"
+              value={data.bgOverlayType ?? "dark"}
+              options={[
+                {
+                  value: "dark",
+                  label: "Dark tint (Optimal for text readability)",
+                },
+                { value: "gradient", label: "Gradient fade (Top to bottom)" },
+                { value: "light", label: "Light tint" },
+                { value: "none", label: "No overlay (Raw video)" },
+              ]}
+              onChange={(bgOverlayType) =>
+                onChange({
+                  ...data,
+                  bgOverlayType: bgOverlayType as HeroData["bgOverlayType"],
+                })
+              }
+            />
+            {data.bgOverlayType !== "none" && (
+              <TextField
+                label="Overlay opacity (0 - 100%)"
+                type="number"
+                value={String(data.overlayOpacity ?? 25)}
+                onChange={(val) =>
+                  onChange({
+                    ...data,
+                    overlayOpacity: Math.min(
+                      100,
+                      Math.max(0, parseInt(val, 10) || 0),
+                    ),
+                  })
+                }
+              />
+            )}
+          </FormGroup>
+
+          <FormGroup title="Hero Action Buttons">
+            <OptionalLinkField
+              label="Primary CTA button"
+              value={data.primaryCta ?? data.campaignProgress?.registerButton}
+              onChange={(primaryCta) =>
+                onChange({
+                  ...data,
+                  primaryCta,
+                  campaignProgress: {
+                    ...(data.campaignProgress ?? {}),
+                    registerButton: primaryCta,
+                  },
+                })
+              }
+              fallback={{ label: "Get Started Free →", href: "#start" }}
+            />
+            <OptionalLinkField
+              label="Secondary CTA button"
+              value={data.secondaryCta ?? data.campaignProgress?.donateButton}
+              onChange={(secondaryCta) =>
+                onChange({
+                  ...data,
+                  secondaryCta,
+                  campaignProgress: {
+                    ...(data.campaignProgress ?? {}),
+                    donateButton: secondaryCta,
+                  },
+                })
+              }
+              fallback={{ label: "Explore Platform", href: "#explore" }}
+            />
+          </FormGroup>
+
+          <FormGroup title="Optional Stat & Milestone Cards">
+            <CheckboxField
+              label="Show floating milestone & stat cards (Keep off for clean buttons)"
+              checked={Boolean(data.showCampaignCards)}
+              onChange={(showCampaignCards: boolean) =>
+                onChange({ ...data, showCampaignCards })
+              }
+            />
+          </FormGroup>
+
+          {data.showCampaignCards && (
+            <>
+              <FormGroup title="Milestone Progress Card">
+                <div className="grid grid-cols-2 gap-2">
+                  <TextField
+                    label="Progress amount"
+                    value={String(
+                      data.campaignProgress?.raisedAmount ?? "285,000",
+                    )}
+                    onChange={(raisedAmount) =>
+                      onChange({
+                        ...data,
+                        campaignProgress: {
+                          ...(data.campaignProgress ?? {}),
+                          raisedAmount,
+                        },
+                      })
+                    }
+                    placeholder="285,000"
+                  />
+                  <TextField
+                    label="Target goal"
+                    value={String(
+                      data.campaignProgress?.targetAmount ?? "300,000",
+                    )}
+                    onChange={(targetAmount) =>
+                      onChange({
+                        ...data,
+                        campaignProgress: {
+                          ...(data.campaignProgress ?? {}),
+                          targetAmount,
+                        },
+                      })
+                    }
+                    placeholder="300,000"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <TextField
+                    label="Currency symbol"
+                    value={data.campaignProgress?.currency ?? "$"}
+                    onChange={(currency) =>
+                      onChange({
+                        ...data,
+                        campaignProgress: {
+                          ...(data.campaignProgress ?? {}),
+                          currency,
+                        },
+                      })
+                    }
+                    maxLength={5}
+                    placeholder="$"
+                  />
+                  <TextField
+                    label="Target text subtitle"
+                    value={
+                      data.campaignProgress?.targetLabel ??
+                      "of $300,000 milestone"
+                    }
+                    onChange={(targetLabel) =>
+                      onChange({
+                        ...data,
+                        campaignProgress: {
+                          ...(data.campaignProgress ?? {}),
+                          targetLabel,
+                        },
+                      })
+                    }
+                    placeholder="of $300,000 milestone"
+                  />
+                </div>
+              </FormGroup>
+
+              <FormGroup title="Stat & Metric Cards">
+                <ItemList<HeroCampaignStat>
+                  label="Metric Counters"
+                  items={data.campaignStats ?? DEFAULT_CAMPAIGN_STATS}
+                  max={6}
+                  onChange={(campaignStats) =>
+                    onChange({ ...data, campaignStats })
+                  }
+                  create={() => ({
+                    label: "Metric",
+                    value: "1,000+",
+                    icon: "users",
+                  })}
+                  itemTitle={(stat) => `${stat.label}: ${stat.value}`}
+                  addLabel="Add Metric Stat"
+                  renderItem={(stat, update) => (
+                    <div className="flex flex-col gap-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <TextField
+                          label="Metric Label"
+                          value={stat.label}
+                          onChange={(label) => update({ ...stat, label })}
+                          maxLength={60}
+                          placeholder="Active Members"
+                          required
+                        />
+                        <TextField
+                          label="Counter Value"
+                          value={stat.value}
+                          onChange={(value) => update({ ...stat, value })}
+                          maxLength={40}
+                          placeholder="12,450"
+                          required
+                        />
+                      </div>
+                      <SelectField
+                        label="Icon style"
+                        value={stat.icon ?? "users"}
+                        options={[
+                          { value: "users", label: "Community / Users 👥" },
+                          { value: "pin", label: "Location Pin 📍" },
+                          { value: "award", label: "Milestone / Award 🏆" },
+                          { value: "star", label: "Star ⭐" },
+                          { value: "heart", label: "Heart 💖" },
+                        ]}
+                        onChange={(icon) => update({ ...stat, icon })}
+                      />
+                    </div>
+                  )}
+                />
+              </FormGroup>
+            </>
+          )}
+        </>
       )}
 
       <FormGroup title="Headings & copy">
@@ -544,7 +951,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
       {data.variant === "curved-carousel" ? (
         <FormGroup title="Carousel Cards & Imagery">
           <p className="text-xs text-ed-muted mb-3">
-            Add, reorder, or customize the photography and video reel cards in the 3D banner.
+            Add, reorder, or customize the photography and video reel cards in
+            the 3D banner.
           </p>
           <ItemList<CarouselSlide>
             label="Carousel Cards"
@@ -594,18 +1002,24 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             )}
           />
         </FormGroup>
-      ) : (
+      ) : data.variant === "campaign-banner" ? null : (
         <FormGroup title="Foreground media / visual">
           <SelectField
             label="Foreground media type"
             value={data.mediaType ?? (data.videoUrl ? "video" : "image")}
             options={[
               { value: "image", label: "Image showcase / Mockup" },
-              { value: "video", label: "Playable video demo (MP4 / YouTube / Vimeo)" },
+              {
+                value: "video",
+                label: "Playable video demo (MP4 / YouTube / Vimeo)",
+              },
               { value: "both", label: "Interactive video with poster image" },
             ]}
             onChange={(mediaType) =>
-              onChange({ ...data, mediaType: mediaType as HeroData["mediaType"] })
+              onChange({
+                ...data,
+                mediaType: mediaType as HeroData["mediaType"],
+              })
             }
           />
 
@@ -617,7 +1031,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                 ? "right"
                 : data.variant === "split-left"
                   ? "left"
-                  : data.variant === "background-image" || data.variant === "video-bg"
+                  : data.variant === "background-image" ||
+                      data.variant === "video-bg"
                     ? "background"
                     : "bottom")
             }
@@ -643,7 +1058,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
               const pos = imagePosition as HeroData["imagePosition"];
               let variant = data.variant;
               if (pos === "left") variant = "split-left";
-              else if (pos === "right" && data.variant === "split-left") variant = "split";
+              else if (pos === "right" && data.variant === "split-left")
+                variant = "split";
               onChange({
                 ...data,
                 imagePosition: pos,
@@ -720,87 +1136,97 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
         </FormGroup>
       )}
 
-      <FormGroup title="Full background media & cover (Image / Video)">
-        <ImageField
-          label="Background image (full-bleed cover)"
-          value={data.backgroundImage}
-          onChange={(backgroundImage) =>
-            onChange({ ...data, backgroundImage })
-          }
-          optional
-        />
+      {data.variant !== "campaign-banner" && (
+        <FormGroup title="Full background media & cover (Image / Video)">
+          <ImageField
+            label="Background image (full-bleed cover)"
+            value={data.backgroundImage}
+            onChange={(backgroundImage) =>
+              onChange({ ...data, backgroundImage })
+            }
+            optional
+          />
 
-        <SelectField
-          label="Background image alignment / position"
-          value={data.bgImagePosition ?? "cover"}
-          options={[
-            { value: "cover", label: "Center cover (Full bleed background)" },
-            { value: "top", label: "Top aligned" },
-            { value: "center", label: "Centered" },
-          ]}
-          onChange={(bgImagePosition) =>
-            onChange({
-              ...data,
-              bgImagePosition: bgImagePosition as HeroData["bgImagePosition"],
-            })
-          }
-        />
-
-        <VideoField
-          label="Background video (ambient cover)"
-          value={data.backgroundVideoUrl ?? (data.variant === "video-bg" || data.imagePosition === "background" ? data.videoUrl ?? "" : "")}
-          onChange={(backgroundVideoUrl) =>
-            onChange({ ...data, backgroundVideoUrl: backgroundVideoUrl || undefined })
-          }
-          placeholder="https://www.youtube.com/watch?v=... or upload MP4"
-          hint="Ambient full-bleed video that plays automatically in the background."
-        />
-
-        <SelectField
-          label="Background overlay style"
-          value={data.bgOverlayType ?? "gradient"}
-          options={[
-            {
-              value: "gradient",
-              label: "Soft top-to-bottom fade (Keeps top text crystal clear)",
-            },
-            { value: "dark", label: "Dark tint overlay" },
-            { value: "light", label: "Light tint overlay" },
-            { value: "none", label: "No overlay (Raw image/video)" },
-          ]}
-          onChange={(bgOverlayType) =>
-            onChange({
-              ...data,
-              bgOverlayType: bgOverlayType as HeroData["bgOverlayType"],
-            })
-          }
-        />
-
-        {(data.bgOverlayType === "dark" || data.bgOverlayType === "light") && (
-          <TextField
-            label="Overlay opacity (0 - 100%)"
-            type="number"
-            value={String(data.overlayOpacity ?? 50)}
-            onChange={(val) =>
+          <SelectField
+            label="Background image alignment / position"
+            value={data.bgImagePosition ?? "cover"}
+            options={[
+              { value: "cover", label: "Center cover (Full bleed background)" },
+              { value: "top", label: "Top aligned" },
+              { value: "center", label: "Centered" },
+            ]}
+            onChange={(bgImagePosition) =>
               onChange({
                 ...data,
-                overlayOpacity: Math.min(
-                  100,
-                  Math.max(0, parseInt(val, 10) || 0),
-                ),
+                bgImagePosition: bgImagePosition as HeroData["bgImagePosition"],
               })
             }
           />
-        )}
 
-        <CheckboxField
-          label="Enable glassmorphism background blur"
-          checked={Boolean(data.overlayBlur)}
-          onChange={(overlayBlur) => onChange({ ...data, overlayBlur })}
-        />
-      </FormGroup>
+          <VideoField
+            label="Background video (ambient cover)"
+            value={
+              data.backgroundVideoUrl ??
+              (data.variant === "video-bg" ||
+              data.imagePosition === "background"
+                ? (data.videoUrl ?? "")
+                : "")
+            }
+            onChange={(backgroundVideoUrl) =>
+              onChange({
+                ...data,
+                backgroundVideoUrl: backgroundVideoUrl || undefined,
+              })
+            }
+            placeholder="https://www.youtube.com/watch?v=... or upload MP4"
+            hint="Ambient full-bleed video that plays automatically in the background."
+          />
 
+          <SelectField
+            label="Background overlay style"
+            value={data.bgOverlayType ?? "gradient"}
+            options={[
+              {
+                value: "gradient",
+                label: "Soft top-to-bottom fade (Keeps top text crystal clear)",
+              },
+              { value: "dark", label: "Dark tint overlay" },
+              { value: "light", label: "Light tint overlay" },
+              { value: "none", label: "No overlay (Raw image/video)" },
+            ]}
+            onChange={(bgOverlayType) =>
+              onChange({
+                ...data,
+                bgOverlayType: bgOverlayType as HeroData["bgOverlayType"],
+              })
+            }
+          />
 
+          {(data.bgOverlayType === "dark" ||
+            data.bgOverlayType === "light") && (
+            <TextField
+              label="Overlay opacity (0 - 100%)"
+              type="number"
+              value={String(data.overlayOpacity ?? 50)}
+              onChange={(val) =>
+                onChange({
+                  ...data,
+                  overlayOpacity: Math.min(
+                    100,
+                    Math.max(0, parseInt(val, 10) || 0),
+                  ),
+                })
+              }
+            />
+          )}
+
+          <CheckboxField
+            label="Enable glassmorphism background blur"
+            checked={Boolean(data.overlayBlur)}
+            onChange={(overlayBlur) => onChange({ ...data, overlayBlur })}
+          />
+        </FormGroup>
+      )}
 
       <FormGroup title="Trusted by logo strip">
         <CheckboxField
@@ -871,11 +1297,13 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
             },
             {
               value: "split",
-              label: "Split screen showcase (Headline + mockup on one side, stacked cards on other)",
+              label:
+                "Split screen showcase (Headline + mockup on one side, stacked cards on other)",
             },
             {
               value: "pastel-icons",
-              label: "Pastel icon highlights (Soft circular badges with clean typography)",
+              label:
+                "Pastel icon highlights (Soft circular badges with clean typography)",
             },
             {
               value: "minimal",
@@ -883,7 +1311,8 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
             },
             {
               value: "cards",
-              label: "Elevated modern cards (Surface cards with hover lift & subtle shadow)",
+              label:
+                "Elevated modern cards (Surface cards with hover lift & subtle shadow)",
             },
           ]}
           onChange={(variant) =>
@@ -940,7 +1369,16 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
 
         <SelectField
           label="Icon badge style"
-          value={data.iconStyle ?? (data.variant === "pastel-icons" ? "pastel-circle" : isSplit ? "square-badge" : data.variant === "minimal" ? "minimal-accent" : "pastel-circle")}
+          value={
+            data.iconStyle ??
+            (data.variant === "pastel-icons"
+              ? "pastel-circle"
+              : isSplit
+                ? "square-badge"
+                : data.variant === "minimal"
+                  ? "minimal-accent"
+                  : "pastel-circle")
+          }
           options={[
             {
               value: "pastel-circle",
@@ -948,7 +1386,8 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
             },
             {
               value: "square-badge",
-              label: "Modern rounded squircle (Subtle border and tinted surface)",
+              label:
+                "Modern rounded squircle (Subtle border and tinted surface)",
             },
             {
               value: "minimal-accent",
@@ -970,12 +1409,28 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
 
         <SelectField
           label="Card container style"
-          value={data.cardStyle ?? (data.variant === "cards" ? "surface" : data.variant === "minimal" || data.variant === "pastel-icons" ? "transparent" : "surface")}
+          value={
+            data.cardStyle ??
+            (data.variant === "cards"
+              ? "surface"
+              : data.variant === "minimal" || data.variant === "pastel-icons"
+                ? "transparent"
+                : "surface")
+          }
           options={[
-            { value: "transparent", label: "Transparent / Flat (No background box)" },
-            { value: "surface", label: "Surface card (Tinted background & soft hover)" },
+            {
+              value: "transparent",
+              label: "Transparent / Flat (No background box)",
+            },
+            {
+              value: "surface",
+              label: "Surface card (Tinted background & soft hover)",
+            },
             { value: "bordered", label: "Subtle outlined border" },
-            { value: "glass", label: "Glassmorphism (Frosted glass blur & soft border)" },
+            {
+              value: "glass",
+              label: "Glassmorphism (Frosted glass blur & soft border)",
+            },
           ]}
           onChange={(cardStyle) =>
             onChange({
@@ -1021,9 +1476,7 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
         <TextAreaField
           label="Intro description (optional)"
           value={data.intro ?? ""}
-          onChange={(intro) =>
-            onChange({ ...data, intro: intro || undefined })
-          }
+          onChange={(intro) => onChange({ ...data, intro: intro || undefined })}
           maxLength={500}
         />
 
@@ -1155,9 +1608,18 @@ const SERVICES_VARIANT_OPTIONS: { value: ServicesVariant; label: string }[] = [
   { value: "cards-grid", label: "Cards grid (Modern standard)" },
   { value: "bento-grid", label: "Bento box grid (Featured spotlight)" },
   { value: "split-showcase", label: "Split showcase (Sticky hero + cards)" },
-  { value: "interactive-list", label: "Interactive list (Agency studio hover)" },
-  { value: "horizontal-cards", label: "Horizontal cards (Detailed enterprise)" },
-  { value: "minimal-numbered", label: "Minimal numbered (Editorial / Consulting)" },
+  {
+    value: "interactive-list",
+    label: "Interactive list (Agency studio hover)",
+  },
+  {
+    value: "horizontal-cards",
+    label: "Horizontal cards (Detailed enterprise)",
+  },
+  {
+    value: "minimal-numbered",
+    label: "Minimal numbered (Editorial / Consulting)",
+  },
 ];
 
 const SERVICE_CARD_STYLE_OPTIONS = [
@@ -1243,9 +1705,11 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
             onChange={(align) => onChange({ ...data, align })}
           />
         </div>
-        {!isSplit && data.variant !== "interactive-list" && data.variant !== "horizontal-cards" && (
-          <ColumnsFields data={data} onChange={onChange} />
-        )}
+        {!isSplit &&
+          data.variant !== "interactive-list" &&
+          data.variant !== "horizontal-cards" && (
+            <ColumnsFields data={data} onChange={onChange} />
+          )}
       </FormGroup>
 
       <FormGroup title="Header content">
@@ -1362,7 +1826,8 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
           onChange={(items) => onChange({ ...data, items })}
           create={() => ({
             title: "New service",
-            description: "A comprehensive description of what this service delivers.",
+            description:
+              "A comprehensive description of what this service delivers.",
             badge: "Popular",
             badgeColor: "blue",
             icon: "sparkles",
@@ -1783,7 +2248,10 @@ const CTA_VARIANT_OPTIONS: { value: CtaVariant; label: string }[] = [
   { value: "centered-card", label: "Centered banner (Modern standard)" },
   { value: "split-visual", label: "Split visual (Metric / Proof showcase)" },
   { value: "floating-card", label: "Floating card (Ambient framed glow)" },
-  { value: "minimal-editorial", label: "Minimal editorial (Swiss architectural)" },
+  {
+    value: "minimal-editorial",
+    label: "Minimal editorial (Swiss architectural)",
+  },
 ];
 
 const CTA_CARD_STYLE_OPTIONS: { value: CtaCardStyle; label: string }[] = [
@@ -1932,14 +2400,15 @@ const CONTACT_VARIANT_OPTIONS: { value: ContactVariant; label: string }[] = [
   { value: "floating-glass", label: "Floating Glass Framed Card" },
 ];
 
-const CONTACT_CARD_STYLE_OPTIONS: { value: ContactCardStyle; label: string }[] = [
-  { value: "default", label: "Default (Soft Tone & Clean Border)" },
-  { value: "bordered", label: "Bordered (Crisp Accent Line)" },
-  { value: "elevated", label: "Elevated (Subtle Depth Shadow)" },
-  { value: "flat", label: "Flat (Modern Minimalist)" },
-  { value: "glass", label: "Frosted Glass" },
-  { value: "contrast", label: "High Contrast" },
-];
+const CONTACT_CARD_STYLE_OPTIONS: { value: ContactCardStyle; label: string }[] =
+  [
+    { value: "default", label: "Default (Soft Tone & Clean Border)" },
+    { value: "bordered", label: "Bordered (Crisp Accent Line)" },
+    { value: "elevated", label: "Elevated (Subtle Depth Shadow)" },
+    { value: "flat", label: "Flat (Modern Minimalist)" },
+    { value: "glass", label: "Frosted Glass" },
+    { value: "contrast", label: "High Contrast" },
+  ];
 
 function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
   const currentVariant = data.variant || "split-form";
@@ -1966,7 +2435,9 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
         <SelectField
           label="Header Alignment"
           value={data.align || "left"}
-          onChange={(align) => onChange({ ...data, align: align as SectionAlign })}
+          onChange={(align) =>
+            onChange({ ...data, align: align as SectionAlign })
+          }
           options={ALIGN_OPTIONS}
         />
       </FormGroup>
@@ -2078,7 +2549,8 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
                 onChange={(icon) =>
                   onChannelChange({
                     ...channel,
-                    icon: (icon as "mail" | "phone" | "chat" | "user") || undefined,
+                    icon:
+                      (icon as "mail" | "phone" | "chat" | "user") || undefined,
                   })
                 }
                 options={[
@@ -2120,7 +2592,9 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
               label="Service Interest Tags (Clickable Inquiry Options)"
               items={data.serviceOptions || []}
               max={8}
-              onChange={(serviceOptions) => onChange({ ...data, serviceOptions })}
+              onChange={(serviceOptions) =>
+                onChange({ ...data, serviceOptions })
+              }
               addLabel="Add Service Tag"
             />
           </>
@@ -2335,19 +2809,26 @@ function StatsForm({ data, onChange }: DataFormProps<StatsData>) {
 
 const PRICING_VARIANT_OPTIONS: { value: PricingVariant; label: string }[] = [
   { value: "cards-grid", label: "Executive cards (Modern standard)" },
-  { value: "minimal-monochrome", label: "Minimal monochrome (Swiss architectural)" },
+  {
+    value: "minimal-monochrome",
+    label: "Minimal monochrome (Swiss architectural)",
+  },
   { value: "spotlight-tier", label: "Spotlight tier (Asymmetric pro focus)" },
-  { value: "horizontal-rows", label: "Horizontal rows (Enterprise consultative)" },
+  {
+    value: "horizontal-rows",
+    label: "Horizontal rows (Enterprise consultative)",
+  },
 ];
 
-const PRICING_CARD_STYLE_OPTIONS: { value: PricingCardStyle; label: string }[] = [
-  { value: "default", label: "Surface (Clean neutral)" },
-  { value: "bordered", label: "Bordered (Crisp hairline)" },
-  { value: "flat", label: "Flat (Transparent)" },
-  { value: "glass", label: "Glassmorphism (Frosted glass)" },
-  { value: "elevated", label: "Elevated (Ambient shadow)" },
-  { value: "contrast", label: "High contrast" },
-];
+const PRICING_CARD_STYLE_OPTIONS: { value: PricingCardStyle; label: string }[] =
+  [
+    { value: "default", label: "Surface (Clean neutral)" },
+    { value: "bordered", label: "Bordered (Crisp hairline)" },
+    { value: "flat", label: "Flat (Transparent)" },
+    { value: "glass", label: "Glassmorphism (Frosted glass)" },
+    { value: "elevated", label: "Elevated (Ambient shadow)" },
+    { value: "contrast", label: "High contrast" },
+  ];
 
 function PricingForm({ data, onChange }: DataFormProps<PricingData>) {
   return (
@@ -2368,7 +2849,10 @@ function PricingForm({ data, onChange }: DataFormProps<PricingData>) {
         <div className="grid grid-cols-2 gap-3">
           <SelectField
             label="Columns"
-            value={data.columns || (Math.min(Math.max(data.plans.length, 1), 4) as GridColumns)}
+            value={
+              data.columns ||
+              (Math.min(Math.max(data.plans.length, 1), 4) as GridColumns)
+            }
             options={COLUMN_OPTIONS}
             onChange={(columns) => onChange({ ...data, columns })}
           />
@@ -2406,7 +2890,9 @@ function PricingForm({ data, onChange }: DataFormProps<PricingData>) {
           <TextField
             label="Billing cycle label"
             value={data.billingCycleLabel}
-            onChange={(billingCycleLabel) => onChange({ ...data, billingCycleLabel })}
+            onChange={(billingCycleLabel) =>
+              onChange({ ...data, billingCycleLabel })
+            }
             maxLength={80}
             placeholder="e.g. Billed annually"
           />
@@ -2480,7 +2966,9 @@ function PricingForm({ data, onChange }: DataFormProps<PricingData>) {
                 <TextField
                   label="Original price"
                   value={plan.originalPrice}
-                  onChange={(originalPrice) => update({ ...plan, originalPrice })}
+                  onChange={(originalPrice) =>
+                    update({ ...plan, originalPrice })
+                  }
                   maxLength={30}
                   placeholder="$79 (strike)"
                 />
@@ -2506,7 +2994,9 @@ function PricingForm({ data, onChange }: DataFormProps<PricingData>) {
                 label="Excluded Features (Optional Strike)"
                 items={plan.excludedFeatures || []}
                 max={15}
-                onChange={(excludedFeatures) => update({ ...plan, excludedFeatures })}
+                onChange={(excludedFeatures) =>
+                  update({ ...plan, excludedFeatures })
+                }
                 addLabel="Add excluded feature"
               />
 
@@ -2568,7 +3058,9 @@ function MediaForm({ data, onChange }: DataFormProps<MediaData>) {
           <VideoField
             label="Video"
             value={data.videoUrl}
-            onChange={(videoUrl) => onChange({ ...data, videoUrl: videoUrl || "" })}
+            onChange={(videoUrl) =>
+              onChange({ ...data, videoUrl: videoUrl || "" })
+            }
             placeholder="https://www.youtube.com/watch?v=… or upload MP4"
             hint="Plays with privacy-enhanced embedding or direct MP4 streaming."
           />
@@ -2659,7 +3151,9 @@ function TeamForm({ data, onChange }: DataFormProps<TeamData>) {
         <SelectField
           label="Header Alignment"
           value={data.align || "center"}
-          onChange={(align) => onChange({ ...data, align: align as SectionAlign })}
+          onChange={(align) =>
+            onChange({ ...data, align: align as SectionAlign })
+          }
           options={ALIGN_OPTIONS}
         />
       </FormGroup>
@@ -2692,9 +3186,10 @@ function TeamForm({ data, onChange }: DataFormProps<TeamData>) {
           maxLength={80}
           placeholder="e.g. 40+ Specialists Worldwide"
         />
-        {currentVariant !== "spotlight-featured" && currentVariant !== "minimal-editorial" && (
-          <ColumnsFields data={data} onChange={onChange} />
-        )}
+        {currentVariant !== "spotlight-featured" &&
+          currentVariant !== "minimal-editorial" && (
+            <ColumnsFields data={data} onChange={onChange} />
+          )}
       </FormGroup>
 
       <FormGroup title="Team Members">
@@ -2765,14 +3260,20 @@ function TeamForm({ data, onChange }: DataFormProps<TeamData>) {
                 label="Primary Profile Link"
                 value={member.link}
                 onChange={(link) => update({ ...member, link })}
-                fallback={{ label: "View Profile", href: "https://linkedin.com/" }}
+                fallback={{
+                  label: "View Profile",
+                  href: "https://linkedin.com/",
+                }}
               />
               <ItemList<TeamSocialLink>
                 label="Social & Direct Channels"
                 items={member.socialLinks || []}
                 max={5}
                 onChange={(socialLinks) => update({ ...member, socialLinks })}
-                create={() => ({ platform: "linkedin", url: "https://linkedin.com/" })}
+                create={() => ({
+                  platform: "linkedin",
+                  url: "https://linkedin.com/",
+                })}
                 itemTitle={(item) => item.platform}
                 addLabel="Add Social Link"
                 renderItem={(social, updateSocial) => (
@@ -2818,7 +3319,10 @@ const CAROUSEL_VARIANT_OPTIONS: { value: CarouselVariant; label: string }[] = [
   { value: "minimal-editorial", label: "Minimal Editorial Slide Deck" },
 ];
 
-const CAROUSEL_CARD_STYLE_OPTIONS: { value: CarouselCardStyle; label: string }[] = [
+const CAROUSEL_CARD_STYLE_OPTIONS: {
+  value: CarouselCardStyle;
+  label: string;
+}[] = [
   { value: "default", label: "Default (Soft Tone & Clean Border)" },
   { value: "bordered", label: "Bordered (Crisp Accent Line)" },
   { value: "elevated", label: "Elevated (Subtle Depth Shadow)" },
@@ -2891,7 +3395,9 @@ function CarouselForm({ data, onChange }: DataFormProps<CarouselData>) {
         <SelectField
           label="Header Alignment"
           value={data.align || "left"}
-          onChange={(align) => onChange({ ...data, align: align as SectionAlign })}
+          onChange={(align) =>
+            onChange({ ...data, align: align as SectionAlign })
+          }
           options={ALIGN_OPTIONS}
         />
       </FormGroup>
@@ -2941,7 +3447,10 @@ function CarouselForm({ data, onChange }: DataFormProps<CarouselData>) {
             value={String(data.interval || 5)}
             onChange={(val) => {
               const num = parseInt(val, 10);
-              onChange({ ...data, interval: isNaN(num) ? 5 : Math.max(2, Math.min(30, num)) });
+              onChange({
+                ...data,
+                interval: isNaN(num) ? 5 : Math.max(2, Math.min(30, num)),
+              });
             }}
           />
         )}
@@ -3019,7 +3528,9 @@ function CarouselForm({ data, onChange }: DataFormProps<CarouselData>) {
               <TextAreaField
                 label="Caption / Description"
                 value={slide.caption || slide.description || ""}
-                onChange={(text) => update({ ...slide, caption: text, description: text })}
+                onChange={(text) =>
+                  update({ ...slide, caption: text, description: text })
+                }
                 maxLength={600}
                 rows={2}
               />
@@ -3032,7 +3543,9 @@ function CarouselForm({ data, onChange }: DataFormProps<CarouselData>) {
               <OptionalLinkField
                 label="Secondary Button"
                 value={slide.secondaryButton}
-                onChange={(secondaryButton) => update({ ...slide, secondaryButton })}
+                onChange={(secondaryButton) =>
+                  update({ ...slide, secondaryButton })
+                }
                 fallback={{ label: "Explore", href: "/contact" }}
               />
             </>
@@ -3052,10 +3565,16 @@ const MARQUEE_VARIANT_OPTIONS: { value: MarqueeVariant; label: string }[] = [
 
 function normalizeMarqueeVariant(variant?: string): MarqueeVariant {
   if (!variant) return "ticker-text";
-  if (variant === "gradient-pill" || variant === "pills" || variant === "badges") return "pill-badges";
+  if (
+    variant === "gradient-pill" ||
+    variant === "pills" ||
+    variant === "badges"
+  )
+    return "pill-badges";
   if (variant === "cards" || variant === "features") return "cards-stream";
   if (variant === "dual" || variant === "two-way") return "dual-directional";
-  if (MARQUEE_VARIANT_OPTIONS.some((o) => o.value === variant)) return variant as MarqueeVariant;
+  if (MARQUEE_VARIANT_OPTIONS.some((o) => o.value === variant))
+    return variant as MarqueeVariant;
   return "ticker-text";
 }
 
@@ -3190,7 +3709,9 @@ function MarqueeForm({ data, onChange }: DataFormProps<MarqueeData>) {
               <SelectField
                 label="Icon"
                 value={item.icon || ""}
-                onChange={(icon) => update({ ...item, icon: (icon as IconName) || undefined })}
+                onChange={(icon) =>
+                  update({ ...item, icon: (icon as IconName) || undefined })
+                }
                 options={ICON_OPTIONS}
               />
             </>
@@ -3230,7 +3751,9 @@ function MarqueeForm({ data, onChange }: DataFormProps<MarqueeData>) {
                 <SelectField
                   label="Icon"
                   value={item.icon || ""}
-                  onChange={(icon) => update({ ...item, icon: (icon as IconName) || undefined })}
+                  onChange={(icon) =>
+                    update({ ...item, icon: (icon as IconName) || undefined })
+                  }
                   options={ICON_OPTIONS}
                 />
               </>
@@ -3269,12 +3792,12 @@ export function SectionStyleForm({
 
   const hasAnyCustomColors = Boolean(
     customColors.background ||
-      customColors.text ||
-      customColors.primary ||
-      customColors.muted ||
-      customColors.border ||
-      customColors.gradientFrom ||
-      customColors.gradientTo,
+    customColors.text ||
+    customColors.primary ||
+    customColors.muted ||
+    customColors.border ||
+    customColors.gradientFrom ||
+    customColors.gradientTo,
   );
 
   return (
@@ -3589,6 +4112,20 @@ function DataForm({
           onChange={(data) => onChange({ ...section, data })}
         />
       );
+    case "blog":
+      return (
+        <BlogForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "blog_detail":
+      return (
+        <BlogDetailForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
   }
 }
 
@@ -3606,7 +4143,11 @@ export default function SectionForm({
   return (
     <>
       <DataForm section={section} onChange={onChange} />
-      <SectionStyleForm settings={section.settings} siteFont={siteFont} onChange={changeSettings} />
+      <SectionStyleForm
+        settings={section.settings}
+        siteFont={siteFont}
+        onChange={changeSettings}
+      />
       <SectionResponsiveForm
         settings={section.settings}
         onChange={changeSettings}

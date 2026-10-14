@@ -72,7 +72,7 @@ function blockHistoryHotkeys(): () => void {
 
 /** Lives inside <Puck> so it can reach editor state; draws the canvas and site chrome. */
 function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublish: () => void; onCommit: (data: Data) => void }) {
-  const { draft, siteArea, setSiteArea, setLeftPanel, device, aiOpen, aiLock } = useEditor();
+  const { draft, siteArea, setSiteArea, setLeftPanel, device, aiOpen, aiLock, selectPage, notify } = useEditor();
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const getPuck = useGetPuck();
   const wasLocked = useRef(false);
@@ -108,8 +108,23 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
         setSiteArea(area);
       },
       openAddPanel: () => setLeftPanel("add"),
+      navigateToHref: (href: string) => {
+        if (!href || href === "#") return;
+        const clean = href.startsWith("/") ? href : `/${href}`;
+        const target = draft.pages.find(
+          (p) =>
+            p.slug === clean ||
+            p.slug === href ||
+            p.id === href ||
+            p.slug.replace(/^\//, "") === href.replace(/^\//, ""),
+        );
+        if (target) {
+          selectPage(target.id);
+          notify(`Switched to page: ${target.name}`);
+        }
+      },
     }),
-    [draft.theme, draft.header, draft.footer, hasSelection, siteArea, isEmpty, dispatch, setSiteArea, setLeftPanel],
+    [draft.theme, draft.header, draft.footer, draft.pages, hasSelection, siteArea, isEmpty, dispatch, setSiteArea, setLeftPanel, selectPage, notify],
   );
 
   const handleDeselect = useCallback(() => {

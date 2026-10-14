@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Button } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
-import { Eye, Globe, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpRight, Eye, Globe, Pencil, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { websitesApi, type WebsiteDetail, type WebsiteSummary } from "../../api/websites.ts";
 import { formatDate } from "../admin/client-labels.tsx";
 import SiteThumbnail from "./SiteThumbnail.tsx";
 import { BUILDER_LABELS, WebsiteStatusChip } from "./website-labels.tsx";
+import { getLiveSiteUrl } from "../../utils/live-url.ts";
 
 export default function WebsiteCard({
   website,
@@ -111,6 +112,18 @@ export default function WebsiteCard({
           >
             <Eye className="size-3.5" aria-hidden />
           </Link>
+          {website.status === "PUBLISHED" && (
+            <a
+              href={getLiveSiteUrl(website.subdomain)}
+              target="_blank"
+              rel="noreferrer"
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+              title="Visit live published site"
+              aria-label="Visit live published site"
+            >
+              <ArrowUpRight className="size-3.5 text-emerald-500" aria-hidden />
+            </a>
+          )}
           {onDelete && (
             <Button
               size="sm"

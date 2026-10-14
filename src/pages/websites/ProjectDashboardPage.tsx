@@ -1,33 +1,77 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { Button, Spinner } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
-import { ArrowLeft, ArrowUpRight, Code2, Eye, FileText, Pencil, Rocket, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUpRight,
+  Code2,
+  Eye,
+  FileText,
+  Globe,
+  Pencil,
+  Rocket,
+  Trash2,
+} from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, errorMessage } from "../../api/http.ts";
-import { websitesApi, type WebsiteDetail, type WebsiteVersion } from "../../api/websites.ts";
+import {
+  websitesApi,
+  type WebsiteDetail,
+  type WebsiteVersion,
+} from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import DeploymentList from "../../components/dashboard/DeploymentList.tsx";
 import ProjectSettingsPanel from "../../components/dashboard/ProjectSettingsPanel.tsx";
-import ProjectTabs, { type ProjectTab } from "../../components/dashboard/ProjectTabs.tsx";
+import ProjectTabs, {
+  type ProjectTab,
+} from "../../components/dashboard/ProjectTabs.tsx";
 import SitePreviewCard from "../../components/dashboard/SitePreviewCard.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import DownloadCodeDialog from "../../components/websites/DownloadCodeDialog.tsx";
-import { BUILDER_LABELS, WebsiteStatusChip, formatDateTime } from "../../components/websites/website-labels.tsx";
+import {
+  BUILDER_LABELS,
+  WebsiteStatusChip,
+  formatDateTime,
+} from "../../components/websites/website-labels.tsx";
+import PublishSeoAudit from "../../components/websites/PublishSeoAudit.tsx";
 import type { SiteData } from "../../site-kit/index.ts";
+import { getLiveSiteDomain, getLiveSiteUrl } from "../../utils/live-url.ts";
 
 const RECENT_DEPLOYMENTS = 3;
 
-function DetailRow({ label, children }: { label: string; children: ReactNode }) {
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
   return (
     <div className="flex items-center justify-between gap-4 py-3 text-sm">
       <dt className="text-ink-muted">{label}</dt>
-      <dd className="min-w-0 truncate text-right font-medium text-ink">{children}</dd>
+      <dd className="min-w-0 truncate text-right font-medium text-ink">
+        {children}
+      </dd>
     </div>
   );
 }
 
-function Panel({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+function Panel({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <section className="rounded-xl border border-line bg-surface shadow-xs">
       <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
@@ -49,15 +93,22 @@ export default function ProjectDashboardPage() {
   const [tab, setTab] = useState<ProjectTab>("overview");
   const [website, setWebsite] = useState<WebsiteDetail | null>(null);
   const [versions, setVersions] = useState<WebsiteVersion[]>([]);
-  const [loadError, setLoadError] = useState<{ notFound: boolean; message: string } | null>(null);
+  const [loadError, setLoadError] = useState<{
+    notFound: boolean;
+    message: string;
+  } | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+  const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const loadVersions = useCallback(() => websitesApi.versions(id).then(setVersions), [id]);
+  const loadVersions = useCallback(
+    () => websitesApi.versions(id).then(setVersions),
+    [id],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -71,7 +122,11 @@ export default function ProjectDashboardPage() {
       })
       .catch(
         (err: unknown) =>
-          !cancelled && setLoadError({ notFound: err instanceof ApiError && err.status === 404, message: errorMessage(err) }),
+          !cancelled &&
+          setLoadError({
+            notFound: err instanceof ApiError && err.status === 404,
+            message: errorMessage(err),
+          }),
       );
     return () => {
       cancelled = true;
@@ -94,8 +149,11 @@ export default function ProjectDashboardPage() {
     setPublishing(true);
     setPublishError(null);
     try {
-      setWebsite(await websitesApi.publish(website.id, website.draft.draftUpdatedAt));
+      setWebsite(
+        await websitesApi.publish(website.id, website.draft.draftUpdatedAt),
+      );
       await loadVersions();
+      setConfirmPublish(false);
     } catch (err) {
       setPublishError(errorMessage(err));
     } finally {
@@ -126,11 +184,18 @@ export default function ProjectDashboardPage() {
     return (
       <div className="grid min-h-[70vh] place-items-center px-6 text-center">
         <div className="max-w-sm">
-          <h1 className="text-xl font-semibold text-ink">{loadError.notFound ? "Website not found" : "Couldn't load website"}</h1>
+          <h1 className="text-xl font-semibold text-ink">
+            {loadError.notFound ? "Website not found" : "Couldn't load website"}
+          </h1>
           <p className="mt-2 text-sm text-ink-body">
-            {loadError.notFound ? "It may have been deleted, or you don't have access to it." : loadError.message}
+            {loadError.notFound
+              ? "It may have been deleted, or you don't have access to it."
+              : loadError.message}
           </p>
-          <Link to={backTo} className={`${buttonVariants({ variant: "outline" })} mt-6`}>
+          <Link
+            to={backTo}
+            className={`${buttonVariants({ variant: "outline" })} mt-6`}
+          >
             <ArrowLeft className="size-4" aria-hidden /> Back to websites
           </Link>
         </div>
@@ -148,14 +213,22 @@ export default function ProjectDashboardPage() {
 
   const previewUrl = `/websites/${website.id}/preview`;
   const editUrl = `/websites/${website.id}/edit`;
-  const needsPublish = website.status !== "PUBLISHED" || website.hasUnpublishedChanges;
+  const liveSiteUrl = getLiveSiteUrl(website.subdomain, website.customDomain);
+  const needsPublish =
+    website.status !== "PUBLISHED" || website.hasUnpublishedChanges;
   const visiblePages = website.draft.pages.filter((page) => page.visible);
 
   return (
     <div className="px-6 py-8 sm:px-8">
       <div className="space-y-6">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
-          <Link to={backTo} className="inline-flex items-center gap-1.5 text-ink-muted transition-colors hover:text-ink">
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-2 text-sm"
+        >
+          <Link
+            to={backTo}
+            className="inline-flex items-center gap-1.5 text-ink-muted transition-colors hover:text-ink"
+          >
             <ArrowLeft className="size-4" aria-hidden />
             {isAdmin ? "All websites" : "My websites"}
           </Link>
@@ -168,29 +241,62 @@ export default function ProjectDashboardPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="truncate text-2xl font-semibold tracking-tight text-ink">{website.name}</h1>
+              <h1 className="truncate text-2xl font-semibold tracking-tight text-ink">
+                {website.name}
+              </h1>
               <WebsiteStatusChip website={website} />
             </div>
             <p className="mt-1 font-mono text-sm text-ink-muted">
               {website.subdomain}
-              {isAdmin && <span className="font-sans"> · {website.clientName}</span>}
+              {isAdmin && (
+                <span className="font-sans"> · {website.clientName}</span>
+              )}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="outline" onPress={() => setDownloadOpen(true)}>
+            {website.status === "PUBLISHED" && (
+              <a
+                href={liveSiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={buttonVariants({ size: "sm", variant: "secondary" })}
+                title="Visit live published site"
+              >
+                <Globe className="size-4 text-emerald-500" aria-hidden /> Visit
+                live site
+              </a>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onPress={() => setDownloadOpen(true)}
+            >
               <Code2 className="size-4" aria-hidden /> Download code
             </Button>
-            <Link to={previewUrl} className={buttonVariants({ size: "sm", variant: "outline" })}>
+            <Link
+              to={previewUrl}
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+            >
               <Eye className="size-4" aria-hidden /> Preview
             </Link>
             <Link
               to={editUrl}
-              className={buttonVariants({ size: "sm", variant: needsPublish ? "outline" : "primary" })}
+              className={buttonVariants({
+                size: "sm",
+                variant: needsPublish ? "outline" : "primary",
+              })}
             >
               <Pencil className="size-4" aria-hidden /> Edit site
             </Link>
             {needsPublish && (
-              <Button size="sm" onPress={handlePublish} isPending={publishing}>
+              <Button
+                size="sm"
+                onPress={() => {
+                  setPublishError(null);
+                  setConfirmPublish(true);
+                }}
+                isPending={publishing}
+              >
                 <Rocket className="size-4" aria-hidden /> Publish
               </Button>
             )}
@@ -204,7 +310,11 @@ export default function ProjectDashboardPage() {
         {tab === "overview" && (
           <div className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-              <SitePreviewCard site={site} address={website.subdomain} previewUrl={previewUrl} />
+              <SitePreviewCard
+                site={site}
+                address={website.subdomain}
+                previewUrl={previewUrl}
+              />
 
               <Panel title="Details">
                 <dl className="divide-y divide-line px-5">
@@ -212,14 +322,24 @@ export default function ProjectDashboardPage() {
                     <WebsiteStatusChip website={website} />
                   </DetailRow>
                   <DetailRow label="Address">
-                    <span className="font-mono text-[13px]">{website.subdomain}</span>
+                    <span className="font-mono text-ed-sm">
+                      {website.subdomain}
+                    </span>
                   </DetailRow>
-                  <DetailRow label="Builder">{BUILDER_LABELS[website.builderType]}</DetailRow>
+                  <DetailRow label="Builder">
+                    {BUILDER_LABELS[website.builderType]}
+                  </DetailRow>
                   <DetailRow label="Last published">
-                    {website.publishedAt ? formatDateTime(website.publishedAt) : "Never"}
+                    {website.publishedAt
+                      ? formatDateTime(website.publishedAt)
+                      : "Never"}
                   </DetailRow>
-                  <DetailRow label="Last edited">{formatDateTime(website.draft.draftUpdatedAt)}</DetailRow>
-                  <DetailRow label="Created">{formatDateTime(website.createdAt)}</DetailRow>
+                  <DetailRow label="Last edited">
+                    {formatDateTime(website.draft.draftUpdatedAt)}
+                  </DetailRow>
+                  <DetailRow label="Created">
+                    {formatDateTime(website.createdAt)}
+                  </DetailRow>
                 </dl>
               </Panel>
             </div>
@@ -228,18 +348,33 @@ export default function ProjectDashboardPage() {
               <Panel
                 title={`Pages · ${visiblePages.length}`}
                 action={
-                  <Link to={editUrl} className="inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink">
+                  <Link
+                    to={editUrl}
+                    className="inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink"
+                  >
                     Manage <ArrowUpRight className="size-3.5" aria-hidden />
                   </Link>
                 }
               >
                 <ul className="divide-y divide-line">
                   {website.draft.pages.map((page) => (
-                    <li key={page.id} className="flex items-center gap-3 px-5 py-3 text-sm">
-                      <FileText className="size-4 shrink-0 text-ink-muted" aria-hidden />
-                      <span className="min-w-0 flex-1 truncate font-medium text-ink">{page.name}</span>
-                      {!page.visible && <span className="text-xs text-ink-muted">Hidden</span>}
-                      <span className="font-mono text-xs text-ink-muted">{page.slug}</span>
+                    <li
+                      key={page.id}
+                      className="flex items-center gap-3 px-5 py-3 text-sm"
+                    >
+                      <FileText
+                        className="size-4 shrink-0 text-ink-muted"
+                        aria-hidden
+                      />
+                      <span className="min-w-0 flex-1 truncate font-medium text-ink">
+                        {page.name}
+                      </span>
+                      {!page.visible && (
+                        <span className="text-xs text-ink-muted">Hidden</span>
+                      )}
+                      <span className="font-mono text-xs text-ink-muted">
+                        {page.slug}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -259,7 +394,10 @@ export default function ProjectDashboardPage() {
                   )
                 }
               >
-                <DeploymentList versions={versions.slice(0, RECENT_DEPLOYMENTS)} embedded />
+                <DeploymentList
+                  versions={versions.slice(0, RECENT_DEPLOYMENTS)}
+                  embedded
+                />
               </Panel>
             </div>
           </div>
@@ -268,7 +406,11 @@ export default function ProjectDashboardPage() {
         {tab === "deployments" && <DeploymentList versions={versions} />}
 
         {tab === "settings" && (
-          <ProjectSettingsPanel website={website} onSaved={setWebsite} onDelete={() => setConfirmDelete(true)} />
+          <ProjectSettingsPanel
+            website={website}
+            onSaved={setWebsite}
+            onDelete={() => setConfirmDelete(true)}
+          />
         )}
       </div>
 
@@ -282,20 +424,70 @@ export default function ProjectDashboardPage() {
         }}
         iconTone="danger"
         size="sm"
-        primaryAction={{ label: "Delete website", onPress: handleDelete, isPending: deleting, tone: "danger" }}
-        secondaryAction={{ label: "Cancel", onPress: closeDelete, isDisabled: deleting }}
+        primaryAction={{
+          label: "Delete website",
+          onPress: handleDelete,
+          isPending: deleting,
+          tone: "danger",
+        }}
+        secondaryAction={{
+          label: "Cancel",
+          onPress: closeDelete,
+          isDisabled: deleting,
+        }}
       >
         <div className="space-y-2.5">
           <p>
-            Are you sure you want to delete <strong className="font-semibold text-ink">“{website.name}”</strong>? All pages
-            and deployments will be permanently removed. This can't be undone.
+            Are you sure you want to delete{" "}
+            <strong className="font-semibold text-ink">“{website.name}”</strong>
+            ? All pages and deployments will be permanently removed. This can't
+            be undone.
           </p>
           {deleteError && <FormAlert status="danger">{deleteError}</FormAlert>}
         </div>
       </CommonModal>
 
-      <DownloadCodeDialog websiteId={website.id} isOpen={downloadOpen} onClose={() => setDownloadOpen(false)} />
+      <CommonModal
+        isOpen={confirmPublish}
+        onClose={() => !publishing && setConfirmPublish(false)}
+        headerDetails={{
+          icon: <Rocket className="size-4.5" />,
+          title: "Publish website",
+          description: `${website.name} · ${website.subdomain}`,
+        }}
+        size="lg"
+        primaryAction={{
+          label: "Confirm & Publish",
+          onPress: handlePublish,
+          isPending: publishing,
+        }}
+        secondaryAction={{
+          label: "Cancel",
+          onPress: () => setConfirmPublish(false),
+          isDisabled: publishing,
+        }}
+      >
+        <div className="space-y-3.5">
+          <p className="text-xs text-ink-body">
+            A new production snapshot will be generated from your draft and
+            published live at{" "}
+            <strong className="font-mono text-ink">
+              {getLiveSiteDomain(website.subdomain, website.customDomain)}
+            </strong>
+            .
+          </p>
+          <PublishSeoAudit website={website} />
+          {publishError && (
+            <FormAlert status="danger">{publishError}</FormAlert>
+          )}
+        </div>
+      </CommonModal>
+
+      <DownloadCodeDialog
+        websiteId={website.id}
+        isOpen={downloadOpen}
+        onClose={() => setDownloadOpen(false)}
+      />
     </div>
   );
 }
-

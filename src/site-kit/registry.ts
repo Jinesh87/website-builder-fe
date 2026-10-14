@@ -24,7 +24,8 @@ export type SectionCategory =
   | "Team"
   | "Carousel"
   | "Marquee"
-  | "Auth";
+  | "Auth"
+  | "Blog";
 
 export type SectionDefinition<T extends SectionType> = {
   type: T;
@@ -137,12 +138,14 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
       type: "services",
       label: "Services grid",
       category: "Services",
-      description: "Modern cards for each service with badges, pricing, checklist, and buttons.",
+      description:
+        "Modern cards for each service with badges, pricing, checklist, and buttons.",
       createData: () => ({
         variant: "cards-grid",
         eyebrow: "OUR SERVICES",
         heading: "High-impact solutions for modern brands",
-        intro: "Tailored services engineered to accelerate growth, enhance performance, and elevate your presence.",
+        intro:
+          "Tailored services engineered to accelerate growth, enhance performance, and elevate your presence.",
         columns: 3,
         mobileColumns: 1,
         cardStyle: "surface",
@@ -155,7 +158,8 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
         items: [
           {
             title: "Brand Strategy & Identity",
-            description: "Distinctive positioning, messaging architectures, and memorable visual identities that stand out.",
+            description:
+              "Distinctive positioning, messaging architectures, and memorable visual identities that stand out.",
             badge: "Strategic",
             badgeColor: "blue",
             icon: "sparkles",
@@ -171,7 +175,8 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
           },
           {
             title: "Web Design & Development",
-            description: "High-converting, responsive websites and web applications built with modern frameworks and pixel perfection.",
+            description:
+              "High-converting, responsive websites and web applications built with modern frameworks and pixel perfection.",
             badge: "Popular",
             badgeColor: "purple",
             icon: "code",
@@ -188,7 +193,8 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
           },
           {
             title: "Growth & Digital Marketing",
-            description: "Data-driven acquisition channels, search optimization, and automated conversion funnels.",
+            description:
+              "Data-driven acquisition channels, search optimization, and automated conversion funnels.",
             badge: "Turnkey",
             badgeColor: "green",
             icon: "chart",
@@ -392,7 +398,8 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
       type: "carousel",
       label: "Carousel / Slider",
       category: "Carousel",
-      description: "Interactive slide deck, multi-card slider, or full-width hero banner.",
+      description:
+        "Interactive slide deck, multi-card slider, or full-width hero banner.",
       createData: () => ({
         variant: "cards",
         heading: "Featured Highlights",
@@ -406,21 +413,24 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
           {
             title: "Next-Gen Cloud Architecture",
             subtitle: "Infrastructure",
-            description: "Ultra-low latency microservices engineered for 99.999% uptime and elastic scalability.",
+            description:
+              "Ultra-low latency microservices engineered for 99.999% uptime and elastic scalability.",
             badge: "NEW RELEASE",
             button: { label: "Learn more", href: "/services" },
           },
           {
             title: "AI-Powered Automation",
             subtitle: "Intelligence",
-            description: "Empower your operations with frontier machine learning pipelines and real-time inference.",
+            description:
+              "Empower your operations with frontier machine learning pipelines and real-time inference.",
             badge: "ENTERPRISE",
             button: { label: "Explore AI", href: "/services" },
           },
           {
             title: "Design System Engineering",
             subtitle: "User Experience",
-            description: "Pixel-perfect tokenized component libraries that bridge design and engineering seamlessly.",
+            description:
+              "Pixel-perfect tokenized component libraries that bridge design and engineering seamlessly.",
             badge: "FEATURED",
             button: { label: "View Showcase", href: "/portfolio" },
           },
@@ -431,7 +441,8 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
       type: "marquee",
       label: "Marquee / Ticker",
       category: "Marquee",
-      description: "Smooth continuous scrolling ticker for headlines, badges, or capability streams.",
+      description:
+        "Smooth continuous scrolling ticker for headlines, badges, or capability streams.",
       createData: () => ({
         variant: "ticker-text",
         speed: "normal",
@@ -460,7 +471,8 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
       type: "custom",
       label: "Custom Layout",
       category: "Content",
-      description: "Free-form layout built from blocks. The AI Copilot uses it for designs no preset covers.",
+      description:
+        "Free-form layout built from blocks. The AI Copilot uses it for designs no preset covers.",
       createData: () => ({
         width: "contained",
         align: "start",
@@ -475,7 +487,11 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
                 gap: "md",
                 children: [
                   { type: "badge", text: "Custom layout" },
-                  { type: "heading", text: "Build any layout you can describe", level: 2 },
+                  {
+                    type: "heading",
+                    text: "Build any layout you can describe",
+                    level: 2,
+                  },
                   {
                     type: "text",
                     text: "Ask the AI Copilot for a design and it composes it from these blocks.",
@@ -487,8 +503,18 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
                     direction: "row",
                     gap: "sm",
                     children: [
-                      { type: "button", label: "Get started", href: "/contact", tone: "primary" },
-                      { type: "button", label: "Learn more", href: "#", tone: "secondary" },
+                      {
+                        type: "button",
+                        label: "Get started",
+                        href: "/contact",
+                        tone: "primary",
+                      },
+                      {
+                        type: "button",
+                        label: "Learn more",
+                        href: "#",
+                        tone: "secondary",
+                      },
                     ],
                   },
                 ],
@@ -499,12 +525,141 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
                 children: [
                   { type: "icon", name: "sparkles" },
                   { type: "heading", text: "Why it works", level: 3 },
-                  { type: "list", items: ["Follows your theme", "Fully responsive", "Editable text and links"] },
+                  {
+                    type: "list",
+                    items: [
+                      "Follows your theme",
+                      "Fully responsive",
+                      "Editable text and links",
+                    ],
+                  },
                 ],
               },
             ],
           },
         ],
+      }),
+    },
+    blog: {
+      type: "blog",
+      label: "Blog cards",
+      category: "Blog",
+      description:
+        "Responsive blog post cards with category filtering, reading times, and optional newsletter box.",
+      createData: () => ({
+        eyebrow: "Articles & Insights",
+        title: "The Kindsight Blog",
+        subtitle:
+          "Practical stories, industry observations, and guides to help you build and scale with intention.",
+        categories: ["All", "Design", "Architecture", "Technology", "Culture"],
+        layout: "grid-3",
+        showNewsletterCard: false,
+        posts: [
+          {
+            id: "post-1",
+            title: "The influence of modern architecture",
+            slug: "/blog/influence-of-modern-architecture",
+            excerpt:
+              "An exploration into how minimalist silhouettes and brutalist honesty redefine modern spaces.",
+            coverImage: {
+              url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
+              alt: "Modern architecture skyscrapers",
+            },
+            category: "Design",
+            authorName: "Jakob Gronberg",
+            date: "July 21, 2024",
+            readTime: "12 Min",
+            readMoreLabel: "Read More →",
+          },
+          {
+            id: "post-2",
+            title: "How to write a sponsorship letter that converts",
+            slug: "/blog/how-to-write-a-sponsorship-letter",
+            excerpt:
+              "Practical guidelines and a field-tested template to craft compelling partnership requests.",
+            coverImage: {
+              url: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80",
+              alt: "Working on laptop in office",
+            },
+            category: "Tips",
+            authorName: "Maya Lin",
+            date: "June 14, 2024",
+            readTime: "8 Min",
+            readMoreLabel: "Read More →",
+          },
+          {
+            id: "post-3",
+            title: "How to use your donor pyramid to build donation strategies",
+            slug: "/blog/donor-pyramid-strategies",
+            excerpt:
+              "Structure your outreach tiers to turn one-time contributors into lifelong supporters.",
+            coverImage: {
+              url: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?auto=format&fit=crop&w=1200&q=80",
+              alt: "Stone pyramid monument",
+            },
+            category: "Growth",
+            authorName: "Alex Rivera",
+            date: "May 29, 2024",
+            readTime: "10 Min",
+            readMoreLabel: "Read More →",
+          },
+        ],
+      }),
+    },
+    blog_detail: {
+      type: "blog_detail",
+      label: "Blog detail",
+      category: "Blog",
+      description:
+        "Full-page article layout with 10 modern designs, rich typography, author bio, and sharing tools.",
+      createData: () => ({
+        design: "minimalist-editorial",
+        title: "The influence of modern architecture",
+        subtitle:
+          "Nibh sed pulvinar proin gravida hendrerit lectus a. Consequat mauris nunc congue nisi vitae suscipit tellus mauris a. Cursus metus aliquam.",
+        category: "Design",
+        date: "July 21, 2024",
+        authorName: "Jakob Gronberg",
+        authorRole: "Lead Architectural Designer",
+        authorBio:
+          "Jakob Gronberg explores tectonic expression, geometric clarity, and material permanence in contemporary urban design.",
+        readTime: "12 Min",
+        coverImage: {
+          url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1400&q=80",
+          alt: "The influence of modern architecture",
+        },
+        coverImageCaption:
+          "Skyscrapers rising against a clear horizon in Copenhagen.",
+        content: [
+          {
+            heading: "Elit ullamcorper dignissim",
+            paragraphs: [
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Elit ullamcorper dignissim cras tincidunt. Enim neque volutpat ac tincidunt vitae. Dictum at tempor commodo ullamcorper a lacus vestibulum sed. Condimentum mattis pellentesque id nibh tortor id. Nisl condimentum id venenatis a condimentum.",
+              "Nunc sed blandit libero volutpat sed. Tristique sollicitudin nibh sit amet commodo. Sit amet justo donec enim diam vulputate ut pharetra. Quis imperdiet massa tincidunt nunc pulvinar sapien et ligula ullamcorper. Massa vitae tortor condimentum lacinia quis vel.",
+            ],
+            quote:
+              "Architecture is the learned game, correct and magnificent, of forms assembled in the light.",
+            quoteAuthor: "Le Corbusier",
+          },
+          {
+            heading: "Hendrerit dolor magna",
+            paragraphs: [
+              "Tristique sollicitudin nibh sit amet commodo. Sit amet justo donec enim diam vulputate ut pharetra. Quis imperdiet massa tincidunt nunc pulvinar sapien et ligula ullamcorper. Massa vitae tortor condimentum lacinia quis vel. Hendrerit dolor magna eget est lorem ipsum dolor. Mollis aliquam ut porttitor leo a diam sollicitudin tempor id.",
+            ],
+            callout:
+              "Simplicity in architectural geometry often requires the most complex structural precision behind the facade.",
+          },
+          {
+            heading: "Materiality and spatial balance",
+            paragraphs: [
+              "Suspendisse faucibus interdum posuere lorem ipsum dolor sit amet consectetur. Quis imperdiet massa tincidunt nunc pulvinar sapien et ligula ullamcorper. Dignissim cras tincidunt lobortis feugiat vivamus at augue eget arcu.",
+            ],
+          },
+        ],
+        tags: ["Architecture", "Modernism", "Design Systems", "Urbanism"],
+        showShareButtons: true,
+        showAuthorBio: true,
+        showNewsletter: true,
       }),
     },
   };
@@ -659,36 +814,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
       }),
   },
   {
-    key: "header-ecommerce",
-    type: "header",
-    label: "E-commerce header",
-    category: "Header",
-    description:
-      "Top utility bar with search, cart badge, and bottom category tabs.",
-    create: () =>
-      createSection("header", {
-        data: {
-          design: "ecommerce",
-          siteName: "Modulus",
-          menu: [
-            { label: "Products", href: "/products" },
-            { label: "Solutions", href: "/solutions" },
-            { label: "Categories", href: "/categories" },
-            { label: "App", href: "/app" },
-            { label: "Resources", href: "/resources" },
-            { label: "Affiliates", href: "/affiliates" },
-            { label: "About", href: "/about" },
-          ],
-          showSearch: true,
-          showAccount: true,
-          showCart: true,
-          cartCount: 1,
-          currency: "USD $",
-          sticky: true,
-        },
-      }),
-  },
-  {
     key: "header-floating",
     type: "header",
     label: "Floating pill header",
@@ -803,8 +928,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
               label: "Platform",
               href: "/platform",
               children: [
-                { label: "Compute Engine", href: "/compute", description: "Scalable virtual instances" },
-                { label: "Edge Functions", href: "/edge", description: "Sub-millisecond serverless" },
+                {
+                  label: "Compute Engine",
+                  href: "/compute",
+                  description: "Scalable virtual instances",
+                },
+                {
+                  label: "Edge Functions",
+                  href: "/edge",
+                  description: "Sub-millisecond serverless",
+                },
               ],
             },
             { label: "Solutions", href: "/solutions" },
@@ -813,32 +946,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
           ],
           secondaryCta: { label: "Contact Sales", href: "/contact" },
           cta: { label: "Start Free Trial", href: "/signup" },
-          sticky: true,
-        },
-      }),
-  },
-  {
-    key: "header-command-bar",
-    type: "header",
-    label: "Command bar header",
-    category: "Header",
-    description:
-      "Developer spotlight header with interactive ⌘K command search pill and modal.",
-    create: () =>
-      createSection("header", {
-        data: {
-          design: "command-bar",
-          siteName: "Modulus Dev",
-          badge: "API v3",
-          searchPlaceholder: "Search docs, components, APIs...",
-          menu: [
-            { label: "Documentation", href: "/docs" },
-            { label: "Components", href: "/components" },
-            { label: "Playground", href: "/playground" },
-            { label: "Changelog", href: "/changelog" },
-          ],
-          secondaryCta: { label: "GitHub", href: "https://github.com" },
-          cta: { label: "Deploy App", href: "/deploy" },
           sticky: true,
         },
       }),
@@ -860,19 +967,47 @@ export const SECTION_PRESETS: SectionPreset[] = [
               label: "Products",
               href: "/products",
               children: [
-                { label: "Payments", href: "/payments", description: "Accept global online transactions" },
-                { label: "Billing", href: "/billing", description: "Flexible subscriptions & recurring invoices" },
-                { label: "Connect", href: "/connect", description: "Multi-party platforms & marketplaces" },
-                { label: "Radar", href: "/radar", description: "AI-driven fraud detection & security" },
+                {
+                  label: "Payments",
+                  href: "/payments",
+                  description: "Accept global online transactions",
+                },
+                {
+                  label: "Billing",
+                  href: "/billing",
+                  description: "Flexible subscriptions & recurring invoices",
+                },
+                {
+                  label: "Connect",
+                  href: "/connect",
+                  description: "Multi-party platforms & marketplaces",
+                },
+                {
+                  label: "Radar",
+                  href: "/radar",
+                  description: "AI-driven fraud detection & security",
+                },
               ],
             },
             {
               label: "Developers",
               href: "/developers",
               children: [
-                { label: "API Reference", href: "/api", description: "Complete REST and GraphQL endpoints" },
-                { label: "SDKs & Libraries", href: "/sdks", description: "Client libraries for 12 languages" },
-                { label: "Webhooks", href: "/webhooks", description: "Real-time event streaming" },
+                {
+                  label: "API Reference",
+                  href: "/api",
+                  description: "Complete REST and GraphQL endpoints",
+                },
+                {
+                  label: "SDKs & Libraries",
+                  href: "/sdks",
+                  description: "Client libraries for 12 languages",
+                },
+                {
+                  label: "Webhooks",
+                  href: "/webhooks",
+                  description: "Real-time event streaming",
+                },
               ],
             },
             { label: "Customers", href: "/customers" },
@@ -898,11 +1033,31 @@ export const SECTION_PRESETS: SectionPreset[] = [
           siteName: "Atelier Studio",
           tagline: "Architecture & Spatial Design",
           menu: [
-            { label: "Selected Works", href: "/works", description: "2022 — 2026 Portfolio" },
-            { label: "Design Philosophy", href: "/philosophy", description: "Manifesto & Practices" },
-            { label: "Publications", href: "/publications", description: "Monographs & Press" },
-            { label: "The Studio", href: "/studio", description: "Team & Locations" },
-            { label: "Contact Inquiries", href: "/contact", description: "Commissions & Press" },
+            {
+              label: "Selected Works",
+              href: "/works",
+              description: "2022 — 2026 Portfolio",
+            },
+            {
+              label: "Design Philosophy",
+              href: "/philosophy",
+              description: "Manifesto & Practices",
+            },
+            {
+              label: "Publications",
+              href: "/publications",
+              description: "Monographs & Press",
+            },
+            {
+              label: "The Studio",
+              href: "/studio",
+              description: "Team & Locations",
+            },
+            {
+              label: "Contact Inquiries",
+              href: "/contact",
+              description: "Commissions & Press",
+            },
           ],
           cta: { label: "Book Commission", href: "/contact" },
           sticky: true,
@@ -934,61 +1089,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
           ],
           secondaryCta: { label: "Sign in", href: "/login" },
           cta: { label: "Subscribe $5/mo", href: "/subscribe" },
-          sticky: true,
-        },
-      }),
-  },
-  {
-    key: "header-luxury-editorial",
-    type: "header",
-    label: "Luxury editorial header",
-    category: "Header",
-    description:
-      "Hairline bordered grid layout with numbered index navigation, centered masthead, and atelier metadata.",
-    create: () =>
-      createSection("header", {
-        data: {
-          design: "luxury-editorial",
-          siteName: "CHRONICLE & CO.",
-          tagline: "Vol. XXIV — Global Architectural Journal",
-          statusText: "Spring / Summer 2026",
-          menu: [
-            { label: "Editorial", href: "/editorial" },
-            { label: "Architecture", href: "/architecture" },
-            { label: "Interiors", href: "/interiors" },
-            { label: "Exhibitions", href: "/exhibitions" },
-            { label: "Archive", href: "/archive" },
-          ],
-          secondaryCta: { label: "Index", href: "/index" },
-          cta: { label: "Subscribe Edition", href: "/subscribe" },
-          sticky: false,
-        },
-      }),
-  },
-  {
-    key: "header-saas-console",
-    type: "header",
-    label: "SaaS console header",
-    category: "Header",
-    description:
-      "Developer cloud console header with workspace selector pill, tabbed navigation, and utility cluster.",
-    create: () =>
-      createSection("header", {
-        data: {
-          design: "saas-console",
-          siteName: "Modulus Cloud",
-          badge: "ACME Corp",
-          statusText: "Healthy",
-          statusColor: "green",
-          searchPlaceholder: "Quick Jump...",
-          menu: [
-            { label: "Projects", href: "/projects" },
-            { label: "Deployments", href: "/deployments" },
-            { label: "Analytics", href: "/analytics" },
-            { label: "Logs", href: "/logs" },
-            { label: "Settings", href: "/settings" },
-          ],
-          cta: { label: "+ New Project", href: "/new" },
           sticky: true,
         },
       }),
@@ -1288,8 +1388,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "hero",
     label: "Hero · centered",
     category: "Hero",
-    description:
-      "Centered headline with badge and dual action buttons.",
+    description: "Centered headline with badge and dual action buttons.",
     create: () =>
       createSection("hero", {
         data: {
@@ -1404,11 +1503,56 @@ export const SECTION_PRESETS: SectionPreset[] = [
       }),
   },
   {
+    key: "hero-campaign-banner",
+    type: "hero",
+    label: "Hero · Interactive Video Banner",
+    category: "Hero",
+    description:
+      "Interactive hero banner with full-bleed looping video background, adjustable bottom shape divider, and floating stat cards.",
+    create: () =>
+      createSection("hero", {
+        data: {
+          variant: "campaign-banner",
+          contentAlign: "left",
+          heading: "Empower Your Next Breakthrough 2026",
+          subheading:
+            "Join over 25,000 innovators, creators, and teams scaling high-impact digital experiences worldwide.",
+          minHeight: "screen",
+          backgroundVideoUrl: "/bannervid.mp4",
+          backgroundImage: {
+            url: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1600&q=80",
+            alt: "Cinematic modern landscape backdrop",
+          },
+          bgOverlayType: "dark",
+          overlayOpacity: 25,
+          bottomShape: "curve",
+          bannerBottomShape: "curved",
+          bannerCurveDepth: 80,
+          bottomDividerColor: "var(--wb-bg, #ffffff)",
+          campaignStats: [
+            { label: "Active Members", value: "12,450", icon: "users" },
+            { label: "Milestones Hit", value: "320+", icon: "pin" },
+          ],
+          campaignProgress: {
+            currency: "$",
+            raisedAmount: "285,000",
+            targetAmount: "300,000",
+            raisedLabel: "funded",
+            targetLabel: "of $300,000 milestone",
+            percentage: 95,
+            donateButton: { label: "Explore Platform", href: "#explore" },
+            registerButton: { label: "Get Started Free →", href: "#start" },
+          },
+        },
+      }),
+  },
+  {
     key: "hero-split",
     type: "hero",
     label: "Hero · split screen",
     category: "Hero",
-    description: "Side-by-side headline, CTAs, and visual mockup with left/right toggle.",
+    description:
+      "Side-by-side headline, CTAs, and visual mockup with left/right toggle.",
     create: () =>
       createSection("hero", {
         data: {
@@ -1637,7 +1781,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "features",
     label: "Features · pastel highlights",
     category: "Features",
-    description: "4-column minimalist features with soft pastel circular icon badges and clean bottom link.",
+    description:
+      "4-column minimalist features with soft pastel circular icon badges and clean bottom link.",
     create: () =>
       createSection("features", {
         data: {
@@ -1662,7 +1807,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               icon: "user",
               iconColor: "green",
               title: "Our Clients Say",
-              description: "Read the reviews from some of our satisfied clients.",
+              description:
+                "Read the reviews from some of our satisfied clients.",
             },
             {
               icon: "mail",
@@ -1802,7 +1948,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "features",
     label: "Features · elevated modern cards",
     category: "Features",
-    description: "Modern container cards with subtle borders and smooth hover lift.",
+    description:
+      "Modern container cards with subtle borders and smooth hover lift.",
     create: () =>
       createSection("features", {
         data: {
@@ -1811,7 +1958,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
           cardStyle: "surface",
           align: "left",
           heading: "Engineered for speed and security",
-          intro: "Discover the cutting-edge features powering next-generation websites.",
+          intro:
+            "Discover the cutting-edge features powering next-generation websites.",
           columns: 3,
           mobileColumns: 1,
           items: [
@@ -1893,14 +2041,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "services",
     label: "Services · Bento grid",
     category: "Services",
-    description: "Modern 2026 asymmetric bento layout with a featured spotlight hero card.",
+    description:
+      "Modern 2026 asymmetric bento layout with a featured spotlight hero card.",
     create: () =>
       createSection("services", {
         data: {
           variant: "bento-grid",
           eyebrow: "CORE CAPABILITIES",
           heading: "Engineered for high performance",
-          intro: "Explore our modular suite of creative and technical services.",
+          intro:
+            "Explore our modular suite of creative and technical services.",
           columns: 3,
           mobileColumns: 1,
           cardStyle: "bordered",
@@ -1909,7 +2059,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               title: "Full-Stack Web Applications",
-              description: "Scalable cloud architectures, blazing fast interactive frontends, and robust API backends built to scale effortlessly.",
+              description:
+                "Scalable cloud architectures, blazing fast interactive frontends, and robust API backends built to scale effortlessly.",
               badge: "Flagship",
               badgeColor: "blue",
               icon: "code",
@@ -1927,7 +2078,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
             },
             {
               title: "Product Design & UX",
-              description: "User research, wireframing, and design systems in Figma.",
+              description:
+                "User research, wireframing, and design systems in Figma.",
               badge: "Design",
               badgeColor: "purple",
               icon: "sparkles",
@@ -1959,7 +2111,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "services",
     label: "Services · Split showcase",
     category: "Services",
-    description: "Sticky hero showcase on one side with structured service cards alongside.",
+    description:
+      "Sticky hero showcase on one side with structured service cards alongside.",
     create: () =>
       createSection("services", {
         data: {
@@ -1967,8 +2120,10 @@ export const SECTION_PRESETS: SectionPreset[] = [
           splitPosition: "left",
           eyebrow: "WHAT WE DELIVER",
           heading: "End-to-end digital excellence",
-          intro: "From concept to deployment, we partner with visionary teams to build market-defining digital products.",
-          splitTagline: "Trusted by 500+ forward-thinking organizations worldwide.",
+          intro:
+            "From concept to deployment, we partner with visionary teams to build market-defining digital products.",
+          splitTagline:
+            "Trusted by 500+ forward-thinking organizations worldwide.",
           splitCta: { label: "Start your project", href: "/contact" },
           secondaryCta: { label: "Our methodology", href: "/about" },
           cardStyle: "surface",
@@ -1976,35 +2131,50 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               title: "Experience Design",
-              description: "Creating intuitive interfaces that turn complex workflows into delightful customer journeys.",
+              description:
+                "Creating intuitive interfaces that turn complex workflows into delightful customer journeys.",
               badge: "UX / UI",
               badgeColor: "orange",
               icon: "pointer",
               iconColor: "orange",
               price: "From $1,500",
-              features: ["Journey mapping", "High-fidelity prototypes", "Usability testing"],
+              features: [
+                "Journey mapping",
+                "High-fidelity prototypes",
+                "Usability testing",
+              ],
               link: { label: "Explore UX", href: "/contact" },
             },
             {
               title: "Modern Engineering",
-              description: "Clean, maintainable codebases with state-of-the-art responsiveness and maximum uptime.",
+              description:
+                "Clean, maintainable codebases with state-of-the-art responsiveness and maximum uptime.",
               badge: "Dev",
               badgeColor: "cyan",
               icon: "layers",
               iconColor: "cyan",
               price: "From $2,800",
-              features: ["TypeScript & Tailwind", "Automated testing", "Zero-downtime deployment"],
+              features: [
+                "TypeScript & Tailwind",
+                "Automated testing",
+                "Zero-downtime deployment",
+              ],
               link: { label: "Explore Dev", href: "/contact" },
             },
             {
               title: "AI Integration & Automation",
-              description: "Embed intelligent workflows, automated pipelines, and generative assistants directly into your product.",
+              description:
+                "Embed intelligent workflows, automated pipelines, and generative assistants directly into your product.",
               badge: "AI 2026",
               badgeColor: "purple",
               icon: "sparkles",
               iconColor: "purple",
               price: "From $2,200",
-              features: ["LLM API orchestration", "Vector embeddings", "Autonomous background workers"],
+              features: [
+                "LLM API orchestration",
+                "Vector embeddings",
+                "Autonomous background workers",
+              ],
               link: { label: "Explore AI", href: "/contact" },
             },
           ],
@@ -2016,44 +2186,61 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "services",
     label: "Services · Interactive agency list",
     category: "Services",
-    description: "Awwwards-style full-width row list with live hover media preview.",
+    description:
+      "Awwwards-style full-width row list with live hover media preview.",
     create: () =>
       createSection("services", {
         data: {
           variant: "interactive-list",
           eyebrow: "AGENCY CAPABILITIES",
           heading: "Our specialized practices",
-          intro: "Hover over each practice to explore deliverables and engagement details.",
+          intro:
+            "Hover over each practice to explore deliverables and engagement details.",
           bottomCta: { label: "Request a custom proposal", href: "/contact" },
           items: [
             {
               title: "Digital Brand Positioning",
-              description: "Crafting distinct voice, tone, positioning pillars, and comprehensive visual systems.",
+              description:
+                "Crafting distinct voice, tone, positioning pillars, and comprehensive visual systems.",
               badge: "Strategy",
               badgeColor: "blue",
               icon: "star",
               price: "Sprint · $2,500",
-              features: ["Brand archetype definition", "Visual guidelines", "Asset library"],
+              features: [
+                "Brand archetype definition",
+                "Visual guidelines",
+                "Asset library",
+              ],
               link: { label: "Book sprint", href: "/contact" },
             },
             {
               title: "Flagship Web Platforms",
-              description: "Custom headless websites with cinematic interactions, fluid motion, and lightning-fast speed.",
+              description:
+                "Custom headless websites with cinematic interactions, fluid motion, and lightning-fast speed.",
               badge: "Production",
               badgeColor: "purple",
               icon: "rocket",
               price: "Project · $4,800",
-              features: ["Custom 3D / WebGL visuals", "CMS integration", "Global CDN delivery"],
+              features: [
+                "Custom 3D / WebGL visuals",
+                "CMS integration",
+                "Global CDN delivery",
+              ],
               link: { label: "Book project", href: "/contact" },
             },
             {
               title: "Growth Funnel Optimization",
-              description: "Systematic experimentation, landing page split-testing, and retention automation.",
+              description:
+                "Systematic experimentation, landing page split-testing, and retention automation.",
               badge: "Growth",
               badgeColor: "green",
               icon: "chart",
               price: "Monthly · $1,500",
-              features: ["A/B landing page testing", "Funnel analytics", "Conversion optimization"],
+              features: [
+                "A/B landing page testing",
+                "Funnel analytics",
+                "Conversion optimization",
+              ],
               link: { label: "Start growth", href: "/contact" },
             },
           ],
@@ -2065,20 +2252,23 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "services",
     label: "Services · Horizontal detailed cards",
     category: "Services",
-    description: "Expansive horizontal rows with side-by-side details, checklists, and dual buttons.",
+    description:
+      "Expansive horizontal rows with side-by-side details, checklists, and dual buttons.",
     create: () =>
       createSection("services", {
         data: {
           variant: "horizontal-cards",
           eyebrow: "ENTERPRISE SOLUTIONS",
           heading: "Full-cycle digital transformation",
-          intro: "Comprehensive service engagements designed for scale and enterprise reliability.",
+          intro:
+            "Comprehensive service engagements designed for scale and enterprise reliability.",
           cardStyle: "bordered",
           iconStyle: "square-badge",
           items: [
             {
               title: "Custom SaaS & Platform Engineering",
-              description: "End-to-end architecture and engineering of robust software-as-a-service platforms, multi-tenant portals, and secure cloud workflows.",
+              description:
+                "End-to-end architecture and engineering of robust software-as-a-service platforms, multi-tenant portals, and secure cloud workflows.",
               badge: "Enterprise",
               badgeColor: "blue",
               icon: "code",
@@ -2095,7 +2285,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
             },
             {
               title: "Design System & UI Component Library",
-              description: "Unified cross-platform design token architecture and accessible component libraries built for high velocity team execution.",
+              description:
+                "Unified cross-platform design token architecture and accessible component libraries built for high velocity team execution.",
               badge: "Design Ops",
               badgeColor: "purple",
               icon: "layers",
@@ -2119,40 +2310,57 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "services",
     label: "Services · Minimal numbered consulting",
     category: "Services",
-    description: "Luxury consulting style with large elegant numerals and structured deliverables.",
+    description:
+      "Luxury consulting style with large elegant numerals and structured deliverables.",
     create: () =>
       createSection("services", {
         data: {
           variant: "minimal-numbered",
           eyebrow: "PRACTICE AREAS",
           heading: "Advisory & Strategic Execution",
-          intro: "Discrete, high-impact consulting for leaders navigating digital transformation.",
+          intro:
+            "Discrete, high-impact consulting for leaders navigating digital transformation.",
           columns: 3,
           mobileColumns: 1,
           align: "left",
           items: [
             {
               title: "01. Technology Audit & Roadmap",
-              description: "Rigorous assessment of technical debt, cloud cost efficiency, and architecture modernization.",
+              description:
+                "Rigorous assessment of technical debt, cloud cost efficiency, and architecture modernization.",
               badge: "Advisory",
               badgeColor: "gray",
-              features: ["Architecture review", "Security risk report", "12-month tech roadmap"],
+              features: [
+                "Architecture review",
+                "Security risk report",
+                "12-month tech roadmap",
+              ],
               link: { label: "Request audit", href: "/contact" },
             },
             {
               title: "02. AI Strategy & Implementation",
-              description: "Pragmatic integration of machine learning and generative workflows that create real operational leverage.",
+              description:
+                "Pragmatic integration of machine learning and generative workflows that create real operational leverage.",
               badge: "Strategy",
               badgeColor: "indigo",
-              features: ["Workflow automation audit", "Model evaluation", "Custom fine-tuning plan"],
+              features: [
+                "Workflow automation audit",
+                "Model evaluation",
+                "Custom fine-tuning plan",
+              ],
               link: { label: "Learn more", href: "/contact" },
             },
             {
               title: "03. Fractional CTO & Tech Leadership",
-              description: "Executive-level engineering leadership to guide hiring, technical vision, and board alignment.",
+              description:
+                "Executive-level engineering leadership to guide hiring, technical vision, and board alignment.",
               badge: "Leadership",
               badgeColor: "orange",
-              features: ["Sprint cadence governance", "Team hiring & coaching", "Vendor evaluation"],
+              features: [
+                "Sprint cadence governance",
+                "Team hiring & coaching",
+                "Vendor evaluation",
+              ],
               link: { label: "Learn more", href: "/contact" },
             },
           ],
@@ -2164,7 +2372,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "services",
     label: "Services · Modern cards grid",
     category: "Services",
-    description: "A polished card grid with badges, price pills, and action buttons.",
+    description:
+      "A polished card grid with badges, price pills, and action buttons.",
     create: () => createSection("services"),
   },
   {
@@ -2172,7 +2381,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "services",
     label: "Services · 2 columns with links",
     category: "Services",
-    description: "Spacious 2-column cards, each linking directly to service details.",
+    description:
+      "Spacious 2-column cards, each linking directly to service details.",
     create: () =>
       createSection("services", {
         data: {
@@ -2181,22 +2391,32 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               title: "Design & Creative Direction",
-              description: "Holistic brand experiences that captivate audiences and establish market leadership.",
+              description:
+                "Holistic brand experiences that captivate audiences and establish market leadership.",
               badge: "Creative",
               badgeColor: "orange",
               icon: "sparkles",
               price: "From $1,500",
-              features: ["Visual identity design", "3D assets & animations", "Design token guidelines"],
+              features: [
+                "Visual identity design",
+                "3D assets & animations",
+                "Design token guidelines",
+              ],
               link: { label: "Explore creative", href: "/contact" },
             },
             {
               title: "Web & Software Engineering",
-              description: "Next-generation applications built with speed, accessibility, and clean scalable architecture.",
+              description:
+                "Next-generation applications built with speed, accessibility, and clean scalable architecture.",
               badge: "Engineering",
               badgeColor: "cyan",
               icon: "code",
               price: "From $2,800",
-              features: ["Modern component libraries", "API integrations & serverless", "Lighthouse 98+ guarantee"],
+              features: [
+                "Modern component libraries",
+                "API integrations & serverless",
+                "Lighthouse 98+ guarantee",
+              ],
               link: { label: "Explore engineering", href: "/contact" },
             },
           ],
@@ -2217,17 +2437,20 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "faq",
     label: "FAQ · Modern Accordion",
     category: "FAQ",
-    description: "Centered accordion with category pills, micro chevron transitions, and support footer.",
+    description:
+      "Centered accordion with category pills, micro chevron transitions, and support footer.",
     create: () =>
       createSection("faq", {
         data: {
           variant: "accordion-classic",
           eyebrow: "COMMON QUESTIONS",
           heading: "Frequently asked questions",
-          intro: "Everything you need to know about our product, pricing, and onboarding process.",
+          intro:
+            "Everything you need to know about our product, pricing, and onboarding process.",
           supportCta: {
             title: "Still have questions?",
-            description: "Can't find what you're looking for? Reach out to our dedicated support engineering team.",
+            description:
+              "Can't find what you're looking for? Reach out to our dedicated support engineering team.",
             link: { label: "Contact support", href: "/contact" },
           },
           items: [
@@ -2240,19 +2463,22 @@ export const SECTION_PRESETS: SectionPreset[] = [
               isOpenDefault: true,
             },
             {
-              question: "Can I upgrade, downgrade, or cancel my subscription at any time?",
+              question:
+                "Can I upgrade, downgrade, or cancel my subscription at any time?",
               answer:
                 "Yes, absolutely. There are no lock-in contracts. You can change plans or cancel anytime directly from your account settings with a single click.",
               category: "Billing",
             },
             {
-              question: "Is custom domain integration and SSL certificate included?",
+              question:
+                "Is custom domain integration and SSL certificate included?",
               answer:
                 "Yes. Every published website receives automatic SSL encryption with global edge CDN distribution for sub-second page loads worldwide.",
               category: "Security",
             },
             {
-              question: "Do you support custom integrations with CRMs and webhooks?",
+              question:
+                "Do you support custom integrations with CRMs and webhooks?",
               answer:
                 "Yes, our system supports turnkey integrations with HubSpot, Salesforce, Zapier, and custom HTTP webhooks for automated lead routing.",
               category: "Integrations",
@@ -2266,14 +2492,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "faq",
     label: "FAQ · 2-Column Matrix",
     category: "FAQ",
-    description: "Spacious two-column grid matrix for dense, well-organized documentation and support.",
+    description:
+      "Spacious two-column grid matrix for dense, well-organized documentation and support.",
     create: () =>
       createSection("faq", {
         data: {
           variant: "two-column-grid",
           eyebrow: "HELP CENTER",
           heading: "Answers to common questions",
-          intro: "Quickly browse our most frequent questions across product, engineering, and account management.",
+          intro:
+            "Quickly browse our most frequent questions across product, engineering, and account management.",
           items: [
             {
               question: "What web frameworks and technologies are supported?",
@@ -2282,7 +2510,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               category: "Engineering",
             },
             {
-              question: "How are software updates and security patches handled?",
+              question:
+                "How are software updates and security patches handled?",
               answer:
                 "All core libraries and security patches are automatically updated in the cloud with zero downtime.",
               category: "Security",
@@ -2308,14 +2537,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "faq",
     label: "FAQ · Sticky Sidebar + Stack",
     category: "FAQ",
-    description: "Asymmetric split layout with sticky sidebar heading, contact CTA, and clean accordion stack.",
+    description:
+      "Asymmetric split layout with sticky sidebar heading, contact CTA, and clean accordion stack.",
     create: () =>
       createSection("faq", {
         data: {
           variant: "split-sidebar",
           eyebrow: "SUPPORT & FAQS",
           heading: "Got questions? We've got answers.",
-          intro: "Find clear answers to standard questions, or get in touch with our team for personalized assistance.",
+          intro:
+            "Find clear answers to standard questions, or get in touch with our team for personalized assistance.",
           supportCta: {
             title: "Need custom advisory?",
             description: "Speak with a solutions architect today.",
@@ -2323,7 +2554,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
           },
           items: [
             {
-              question: "What is your typical turnaround time for custom setups?",
+              question:
+                "What is your typical turnaround time for custom setups?",
               answer:
                 "Standard deployments are live within 48 to 72 hours. Enterprise custom builds typically take 2 to 3 weeks depending on scope.",
               isOpenDefault: true,
@@ -2352,14 +2584,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "faq",
     label: "FAQ · Swiss Architectural",
     category: "FAQ",
-    description: "Minimalist editorial layout with hairline dividers, numbered indices (01, 02), and bold typography.",
+    description:
+      "Minimalist editorial layout with hairline dividers, numbered indices (01, 02), and bold typography.",
     create: () =>
       createSection("faq", {
         data: {
           variant: "minimal-numbered",
           eyebrow: "TRANSPARENCY",
           heading: "Questions & Insights",
-          intro: "A clear overview of our operational standards, agreements, and execution.",
+          intro:
+            "A clear overview of our operational standards, agreements, and execution.",
           items: [
             {
               question: "What makes your architectural approach different?",
@@ -2378,7 +2612,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
                 "Yes. Upon final delivery, all intellectual property, source code, designs, and assets belong entirely to you.",
             },
             {
-              question: "What SLA guarantees are provided for production outages?",
+              question:
+                "What SLA guarantees are provided for production outages?",
               answer:
                 "Enterprise tiers include 99.99% uptime SLAs with a guaranteed 1-hour critical response window 24/7.",
             },
@@ -2391,7 +2626,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "faq",
     label: "FAQ · Categorized Boxed Modules",
     category: "FAQ",
-    description: "Boxed 3-column surface cards with category tags, clean question headers, and direct answers.",
+    description:
+      "Boxed 3-column surface cards with category tags, clean question headers, and direct answers.",
     create: () =>
       createSection("faq", {
         data: {
@@ -2435,7 +2671,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "cta",
     label: "CTA · Centered Executive Banner",
     category: "CTA",
-    description: "Centered high-impact callout with live pulse dot, dual actions, and trust checklist.",
+    description:
+      "Centered high-impact callout with live pulse dot, dual actions, and trust checklist.",
     create: () =>
       createSection("cta", {
         data: {
@@ -2445,7 +2682,11 @@ export const SECTION_PRESETS: SectionPreset[] = [
           text: "Join thousands of product teams shipping delightful, high-converting digital experiences with our modern platform.",
           button: { label: "Get Started Free", href: "/contact" },
           secondaryButton: { label: "Book a Demo", href: "/contact" },
-          trustBadges: ["No credit card required", "Instant 2-minute setup", "Cancel anytime"],
+          trustBadges: [
+            "No credit card required",
+            "Instant 2-minute setup",
+            "Cancel anytime",
+          ],
         },
       }),
   },
@@ -2454,7 +2695,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "cta",
     label: "CTA · Split Metric Showcase",
     category: "CTA",
-    description: "Asymmetric split layout pairing a strong pitch with an architectural live metric card.",
+    description:
+      "Asymmetric split layout pairing a strong pitch with an architectural live metric card.",
     create: () =>
       createSection("cta", {
         data: {
@@ -2464,7 +2706,11 @@ export const SECTION_PRESETS: SectionPreset[] = [
           text: "Deploy production-grade experiences backed by automated global CDN routing and sovereign cloud encryption.",
           button: { label: "Start Free Trial", href: "/contact" },
           secondaryButton: { label: "Explore Platform", href: "/about" },
-          trustBadges: ["SOC2 Type II certified", "99.99% SLA guarantee", "Dedicated Slack channel"],
+          trustBadges: [
+            "SOC2 Type II certified",
+            "99.99% SLA guarantee",
+            "Dedicated Slack channel",
+          ],
           highlightMetric: {
             value: "99.99%",
             label: "Enterprise Uptime SLA",
@@ -2478,7 +2724,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "cta",
     label: "CTA · Floating Ambient Card",
     category: "CTA",
-    description: "Framed ambient glassmorphism card with prominent typography and dual action cluster.",
+    description:
+      "Framed ambient glassmorphism card with prominent typography and dual action cluster.",
     create: () =>
       createSection("cta", {
         data: {
@@ -2498,7 +2745,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "cta",
     label: "CTA · Swiss Architectural Line",
     category: "CTA",
-    description: "Stark editorial callout with top/bottom hairline borders and high-contrast typography.",
+    description:
+      "Stark editorial callout with top/bottom hairline borders and high-contrast typography.",
     create: () =>
       createSection("cta", {
         data: {
@@ -2533,7 +2781,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "contact",
     label: "Contact · Asymmetric Split Screen",
     category: "Contact",
-    description: "Modern split layout with live response badges, direct links, and inquiry form.",
+    description:
+      "Modern split layout with live response badges, direct links, and inquiry form.",
     create: () =>
       createSection("contact", {
         data: {
@@ -2563,7 +2812,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "contact",
     label: "Contact · Multi-Channel Hub Cards",
     category: "Contact",
-    description: "Dedicated cards for Sales, Support, Press, and Office locations.",
+    description:
+      "Dedicated cards for Sales, Support, Press, and Office locations.",
     create: () =>
       createSection("contact", {
         data: {
@@ -2578,13 +2828,15 @@ export const SECTION_PRESETS: SectionPreset[] = [
           channels: [
             {
               label: "Sales & Inquiries",
-              description: "Talk to our product specialists about custom solutions.",
+              description:
+                "Talk to our product specialists about custom solutions.",
               value: "sales@example.com",
               icon: "mail",
             },
             {
               label: "Customer Support",
-              description: "24/7 dedicated technical assistance for existing users.",
+              description:
+                "24/7 dedicated technical assistance for existing users.",
               value: "+1 (800) 555-0199",
               icon: "phone",
             },
@@ -2603,7 +2855,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "contact",
     label: "Contact · Minimal Architectural Editorial",
     category: "Contact",
-    description: "Swiss architectural minimalist layout with clean hairline dividers.",
+    description:
+      "Swiss architectural minimalist layout with clean hairline dividers.",
     create: () =>
       createSection("contact", {
         data: {
@@ -2618,7 +2871,11 @@ export const SECTION_PRESETS: SectionPreset[] = [
           showForm: true,
           formHeading: "Project details",
           submitLabel: "Request Consultation",
-          serviceOptions: ["Brand Strategy", "Digital Products", "Architecture"],
+          serviceOptions: [
+            "Brand Strategy",
+            "Digital Products",
+            "Architecture",
+          ],
         },
       }),
   },
@@ -2627,7 +2884,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "contact",
     label: "Contact · Floating Framed Glass",
     category: "Contact",
-    description: "Ambient frosted glass card with glowing backdrop and pill selectors.",
+    description:
+      "Ambient frosted glass card with glowing backdrop and pill selectors.",
     create: () =>
       createSection("contact", {
         settings: { background: "surface" },
@@ -2642,7 +2900,12 @@ export const SECTION_PRESETS: SectionPreset[] = [
           address: "Silicon Valley Tech Campus, San Jose, CA",
           showForm: true,
           submitLabel: "Send Message",
-          serviceOptions: ["Full-Stack", "Mobile App", "AI & ML", "Design System"],
+          serviceOptions: [
+            "Full-Stack",
+            "Mobile App",
+            "AI & ML",
+            "Design System",
+          ],
         },
       }),
   },
@@ -2725,17 +2988,20 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "pricing",
     label: "Pricing · 3 Executive tiers",
     category: "Pricing",
-    description: "Executive 3-tier card grid with annual discount pill and featured recommendation.",
+    description:
+      "Executive 3-tier card grid with annual discount pill and featured recommendation.",
     create: () =>
       createSection("pricing", {
         data: {
           variant: "cards-grid",
           eyebrow: "PRICING PLANS",
           heading: "Predictable plans for growing teams",
-          intro: "Scale with confidence. Change or cancel your plan at any time with no lock-in.",
+          intro:
+            "Scale with confidence. Change or cancel your plan at any time with no lock-in.",
           billingCycleLabel: "Billed annually",
           discountBadge: "Save 20%",
-          footerNote: "All plans include 14-day money-back guarantee • No credit card required to start",
+          footerNote:
+            "All plans include 14-day money-back guarantee • No credit card required to start",
           columns: 3,
           plans: [
             {
@@ -2744,14 +3010,18 @@ export const SECTION_PRESETS: SectionPreset[] = [
               period: "/ month",
               originalPrice: "$39",
               badge: "Individual",
-              description: "Essential toolset for solo creators and early prototypes.",
+              description:
+                "Essential toolset for solo creators and early prototypes.",
               features: [
                 "Up to 3 active projects",
                 "Community & email support",
                 "Standard analytics dashboard",
                 "1 GB cloud storage",
               ],
-              excludedFeatures: ["Custom domain SSL", "Dedicated account manager"],
+              excludedFeatures: [
+                "Custom domain SSL",
+                "Dedicated account manager",
+              ],
               cta: { label: "Start Free Trial", href: "/contact" },
               featured: false,
               highlightNote: "Free 14-day trial",
@@ -2762,7 +3032,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               period: "/ month",
               originalPrice: "$99",
               badge: "Most Popular",
-              description: "Advanced capabilities designed for scaling businesses and agencies.",
+              description:
+                "Advanced capabilities designed for scaling businesses and agencies.",
               features: [
                 "Unlimited active projects",
                 "Priority 24/7 Slack support",
@@ -2780,7 +3051,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               price: "$199",
               period: "/ month",
               badge: "Scale",
-              description: "Custom security, dedicated infrastructure, and tailored SLAs.",
+              description:
+                "Custom security, dedicated infrastructure, and tailored SLAs.",
               features: [
                 "Unlimited seats & workspaces",
                 "Dedicated technical account manager",
@@ -2801,22 +3073,26 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "pricing",
     label: "Pricing · Swiss architectural",
     category: "Pricing",
-    description: "Stark, ultra-clean editorial layout with subtle hairline accents and numbered tiers.",
+    description:
+      "Stark, ultra-clean editorial layout with subtle hairline accents and numbered tiers.",
     create: () =>
       createSection("pricing", {
         data: {
           variant: "minimal-monochrome",
           eyebrow: "TRANSPARENT VALUE",
           heading: "Straightforward investment",
-          intro: "No hidden fees, no opaque addons. Clear deliverables for every stage.",
-          footerNote: "Custom billing cycles and multi-year discounts available upon request.",
+          intro:
+            "No hidden fees, no opaque addons. Clear deliverables for every stage.",
+          footerNote:
+            "Custom billing cycles and multi-year discounts available upon request.",
           columns: 3,
           plans: [
             {
               name: "Foundational",
               price: "$1,200",
               period: "one-time",
-              description: "Core setup and brand alignment for focused product launches.",
+              description:
+                "Core setup and brand alignment for focused product launches.",
               features: [
                 "Design system specification",
                 "Mobile & desktop responsiveness",
@@ -2831,7 +3107,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               price: "$3,400",
               period: "one-time",
               badge: "Recommended",
-              description: "Full-scale custom digital experience with bespoke micro-interactions.",
+              description:
+                "Full-scale custom digital experience with bespoke micro-interactions.",
               features: [
                 "Custom architectural design",
                 "Interactive motion guidelines",
@@ -2847,7 +3124,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               name: "Retainer Partnership",
               price: "$2,800",
               period: "/ month",
-              description: "Ongoing engineering and product design bandwidth on demand.",
+              description:
+                "Ongoing engineering and product design bandwidth on demand.",
               features: [
                 "40 hours dedicated bandwidth",
                 "Direct Slack & weekly syncs",
@@ -2866,7 +3144,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "pricing",
     label: "Pricing · Asymmetric spotlight",
     category: "Pricing",
-    description: "High-contrast layout where the primary tier takes center stage with a subtle ambient focus.",
+    description:
+      "High-contrast layout where the primary tier takes center stage with a subtle ambient focus.",
     create: () =>
       createSection("pricing", {
         data: {
@@ -2883,7 +3162,11 @@ export const SECTION_PRESETS: SectionPreset[] = [
               price: "$49",
               period: "/ mo",
               description: "Standard access to platform primitives and docs.",
-              features: ["Single workspace", "Export to HTML/React", "Community forums"],
+              features: [
+                "Single workspace",
+                "Export to HTML/React",
+                "Community forums",
+              ],
               cta: { label: "Get Basic", href: "/contact" },
               featured: false,
             },
@@ -2892,7 +3175,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               price: "$119",
               period: "/ mo",
               badge: "RECOMMENDED",
-              description: "Complete unconstrained access with prioritized deployment pipelines.",
+              description:
+                "Complete unconstrained access with prioritized deployment pipelines.",
               features: [
                 "Unlimited workspaces",
                 "Full component source access",
@@ -2908,7 +3192,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               name: "Custom Enterprise",
               price: "Custom",
               period: "billed yearly",
-              description: "Dedicated cluster provisioning with sovereign security controls.",
+              description:
+                "Dedicated cluster provisioning with sovereign security controls.",
               features: [
                 "Private VPC hosting",
                 "Custom integration engineering",
@@ -2927,14 +3212,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "pricing",
     label: "Pricing · Detailed enterprise rows",
     category: "Pricing",
-    description: "Stacked horizontal cards with side-by-side feature columns, ideal for consultative pricing.",
+    description:
+      "Stacked horizontal cards with side-by-side feature columns, ideal for consultative pricing.",
     create: () =>
       createSection("pricing", {
         data: {
           variant: "horizontal-rows",
           eyebrow: "CONSULTING PACKAGES",
           heading: "Engagement models built for clarity",
-          intro: "Explore our fixed-scope packages and continuous retainer solutions.",
+          intro:
+            "Explore our fixed-scope packages and continuous retainer solutions.",
           columns: 1,
           plans: [
             {
@@ -2942,7 +3229,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               price: "$4,500",
               period: "per sprint",
               badge: "2-Week Sprint",
-              description: "Rapid architectural review, design audit, and performance roadmap.",
+              description:
+                "Rapid architectural review, design audit, and performance roadmap.",
               features: [
                 "Comprehensive code & system audit",
                 "Design system UI kit",
@@ -2957,7 +3245,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
               price: "$12,000",
               period: "fixed price",
               badge: "Turnkey",
-              description: "End-to-end design, custom engineering, CMS configuration, and launch management.",
+              description:
+                "End-to-end design, custom engineering, CMS configuration, and launch management.",
               features: [
                 "Custom bespoke UI & animations",
                 "Production headless CMS",
@@ -3003,14 +3292,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "team",
     label: "Team · Executive Cards Grid",
     category: "Team",
-    description: "Modern cards grid with department badges, credentials tags, location, and social links.",
+    description:
+      "Modern cards grid with department badges, credentials tags, location, and social links.",
     create: () =>
       createSection("team", {
         data: {
           variant: "grid-cards",
           eyebrow: "WORLD-CLASS LEADERSHIP",
           heading: "The minds shaping our vision.",
-          intro: "Meet our multidisciplinary team of engineers, designers, and strategists.",
+          intro:
+            "Meet our multidisciplinary team of engineers, designers, and strategists.",
           badge: "40+ Specialists Worldwide",
           columns: 3,
           mobileColumns: 1,
@@ -3060,14 +3351,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "team",
     label: "Team · Leader Spotlight + Roster",
     category: "Team",
-    description: "Prominent executive leader spotlight paired with a secondary leadership roster grid.",
+    description:
+      "Prominent executive leader spotlight paired with a secondary leadership roster grid.",
     create: () =>
       createSection("team", {
         data: {
           variant: "spotlight-featured",
           eyebrow: "OUR LEADERSHIP",
           heading: "Driven by principles, guided by experience.",
-          intro: "Direct stewardship from our founding partners and domain experts.",
+          intro:
+            "Direct stewardship from our founding partners and domain experts.",
           badge: "Founder-Led Organization",
           columns: 3,
           mobileColumns: 1,
@@ -3090,7 +3383,9 @@ export const SECTION_PRESETS: SectionPreset[] = [
               department: "Engineering",
               location: "Singapore",
               bio: "Directing global cloud scaling and cybersecurity frameworks.",
-              socialLinks: [{ platform: "linkedin", url: "https://linkedin.com/" }],
+              socialLinks: [
+                { platform: "linkedin", url: "https://linkedin.com/" },
+              ],
             },
             {
               name: "Sofia Morales",
@@ -3098,7 +3393,9 @@ export const SECTION_PRESETS: SectionPreset[] = [
               department: "Design Studio",
               location: "Madrid, ES",
               bio: "Leading award-winning brand transformations and identity systems.",
-              socialLinks: [{ platform: "twitter", url: "https://twitter.com/" }],
+              socialLinks: [
+                { platform: "twitter", url: "https://twitter.com/" },
+              ],
             },
             {
               name: "Liam O'Connor",
@@ -3106,7 +3403,9 @@ export const SECTION_PRESETS: SectionPreset[] = [
               department: "Advisory",
               location: "Dublin, IE",
               bio: "Overseeing enterprise delivery and strategic client roadmaps.",
-              socialLinks: [{ platform: "linkedin", url: "https://linkedin.com/" }],
+              socialLinks: [
+                { platform: "linkedin", url: "https://linkedin.com/" },
+              ],
             },
           ],
         },
@@ -3117,7 +3416,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "team",
     label: "Team · Minimal Architectural Roster",
     category: "Team",
-    description: "Swiss architectural minimalist roster with indexed rows and smooth hover animations.",
+    description:
+      "Swiss architectural minimalist roster with indexed rows and smooth hover animations.",
     create: () =>
       createSection("team", {
         data: {
@@ -3145,7 +3445,9 @@ export const SECTION_PRESETS: SectionPreset[] = [
               location: "Paris, FR",
               bio: "Crafting WebGL shaders, micro-animations, and fluid interactive 3D spaces.",
               tags: ["Three.js", "Creative Dev"],
-              socialLinks: [{ platform: "twitter", url: "https://twitter.com/" }],
+              socialLinks: [
+                { platform: "twitter", url: "https://twitter.com/" },
+              ],
             },
             {
               name: "Mateo Rossi",
@@ -3154,7 +3456,9 @@ export const SECTION_PRESETS: SectionPreset[] = [
               location: "Milan, IT",
               bio: "Shaping intuitive workflows for complex data dashboards and analytical tools.",
               tags: ["Design Systems"],
-              socialLinks: [{ platform: "linkedin", url: "https://linkedin.com/" }],
+              socialLinks: [
+                { platform: "linkedin", url: "https://linkedin.com/" },
+              ],
             },
           ],
         },
@@ -3165,7 +3469,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "team",
     label: "Team · Cinematic Glass Overlay",
     category: "Team",
-    description: "Cinematic portrait cards with glowing gradient vignettes and frosted glass slide-up sheets.",
+    description:
+      "Cinematic portrait cards with glowing gradient vignettes and frosted glass slide-up sheets.",
     create: () =>
       createSection("team", {
         settings: { background: "surface" },
@@ -3173,7 +3478,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
           variant: "glass-overlay",
           eyebrow: "SPECIALIZED TALENT",
           heading: "Passionate creators and deep domain experts.",
-          intro: "Hover over any team member to explore their background, focus, and channels.",
+          intro:
+            "Hover over any team member to explore their background, focus, and channels.",
           badge: "Full-Stack Excellence",
           columns: 3,
           mobileColumns: 1,
@@ -3231,14 +3537,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "carousel",
     label: "Carousel · Multi-Cards Slider",
     category: "Carousel",
-    description: "Interactive slider with card elevation, dot indicators, and chevron navigation.",
+    description:
+      "Interactive slider with card elevation, dot indicators, and chevron navigation.",
     create: () =>
       createSection("carousel", {
         data: {
           variant: "cards",
           eyebrow: "OUR CAPABILITIES",
           heading: "Engineered for excellence.",
-          intro: "Explore what makes our platform and services the industry benchmark.",
+          intro:
+            "Explore what makes our platform and services the industry benchmark.",
           badge: "Interactive Slider",
           autoPlay: false,
           interval: 5,
@@ -3248,21 +3556,24 @@ export const SECTION_PRESETS: SectionPreset[] = [
             {
               title: "Autonomous Agentic Pipelines",
               subtitle: "Artificial Intelligence",
-              description: "Self-healing workflows that execute complex tasks reliably in enterprise environments.",
+              description:
+                "Self-healing workflows that execute complex tasks reliably in enterprise environments.",
               badge: "ENTERPRISE",
               button: { label: "Explore Platform", href: "/services" },
             },
             {
               title: "Microsecond Edge Computing",
               subtitle: "Infrastructure",
-              description: "Deploy globally distributed logic within 50ms of your end users with zero cold starts.",
+              description:
+                "Deploy globally distributed logic within 50ms of your end users with zero cold starts.",
               badge: "INFRASTRUCTURE",
               button: { label: "View Architecture", href: "/services" },
             },
             {
               title: "Fluid Design Systems",
               subtitle: "User Interface",
-              description: "Harmonious token architecture supporting dynamic dark modes and micro-interactions.",
+              description:
+                "Harmonious token architecture supporting dynamic dark modes and micro-interactions.",
               badge: "DESIGN",
               button: { label: "Design Guide", href: "/portfolio" },
             },
@@ -3275,7 +3586,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "carousel",
     label: "Carousel · Cinematic Hero Slider",
     category: "Carousel",
-    description: "Full-width hero banner slider with rich dark overlays and call-to-actions.",
+    description:
+      "Full-width hero banner slider with rich dark overlays and call-to-actions.",
     create: () =>
       createSection("carousel", {
         data: {
@@ -3289,7 +3601,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
             {
               title: "Crafting digital experiences that transform industries.",
               subtitle: "Global Product Studio",
-              description: "We partner with visionary founders and global enterprises to design, build, and scale world-class software.",
+              description:
+                "We partner with visionary founders and global enterprises to design, build, and scale world-class software.",
               badge: "2026 BENCHMARK",
               image: {
                 url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1800&auto=format&fit=crop&q=80",
@@ -3301,19 +3614,24 @@ export const SECTION_PRESETS: SectionPreset[] = [
             {
               title: "High-throughput cloud systems built for resilience.",
               subtitle: "Infrastructure Excellence",
-              description: "Architecting cloud foundations that withstand mission-critical scale with zero downtime.",
+              description:
+                "Architecting cloud foundations that withstand mission-critical scale with zero downtime.",
               badge: "CLOUD PLATFORMS",
               image: {
                 url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1800&auto=format&fit=crop&q=80",
                 alt: "Cloud infrastructure and data network",
               },
               button: { label: "Explore Solutions", href: "/services" },
-              secondaryButton: { label: "Read Case Studies", href: "/portfolio" },
+              secondaryButton: {
+                label: "Read Case Studies",
+                href: "/portfolio",
+              },
             },
             {
               title: "Autonomous AI agents architected for enterprise scale.",
               subtitle: "Next-Gen Intelligence",
-              description: "Harness modern foundation models to automate intricate enterprise workflows with continuous evaluation.",
+              description:
+                "Harness modern foundation models to automate intricate enterprise workflows with continuous evaluation.",
               badge: "AI PLATFORM",
               image: {
                 url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1800&auto=format&fit=crop&q=80",
@@ -3331,31 +3649,36 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "carousel",
     label: "Carousel · 3D Showcase Focus",
     category: "Carousel",
-    description: "Perspective 3D active focus card showcase with counter and navigation.",
+    description:
+      "Perspective 3D active focus card showcase with counter and navigation.",
     create: () =>
       createSection("carousel", {
         data: {
           variant: "showcase",
           eyebrow: "FEATURED WORK",
           heading: "Spotlight on Innovation",
-          intro: "Click or swipe through our marquee case studies and products.",
+          intro:
+            "Click or swipe through our marquee case studies and products.",
           slides: [
             {
               title: "Aether AI Analytics",
               badge: "FINTECH",
-              description: "Real-time semantic risk analysis for institutional portfolio managers.",
+              description:
+                "Real-time semantic risk analysis for institutional portfolio managers.",
               button: { label: "Case Study", href: "/portfolio" },
             },
             {
               title: "Vanguard Design System",
               badge: "DESIGN SYSTEM",
-              description: "140+ accessible UI components powering 8 product verticals.",
+              description:
+                "140+ accessible UI components powering 8 product verticals.",
               button: { label: "View System", href: "/portfolio" },
             },
             {
               title: "Krypton Cloud Engine",
               badge: "INFRASTRUCTURE",
-              description: "Distributed message broker handling 40M requests/sec.",
+              description:
+                "Distributed message broker handling 40M requests/sec.",
               button: { label: "Deep Dive", href: "/portfolio" },
             },
           ],
@@ -3367,7 +3690,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "carousel",
     label: "Carousel · Minimal Editorial Slide Deck",
     category: "Carousel",
-    description: "Swiss split editorial slide deck with active slide lines and prominent typography.",
+    description:
+      "Swiss split editorial slide deck with active slide lines and prominent typography.",
     create: () =>
       createSection("carousel", {
         data: {
@@ -3378,21 +3702,24 @@ export const SECTION_PRESETS: SectionPreset[] = [
               title: "Precision in every interaction and pixel.",
               subtitle: "Pillar 01 — Quality",
               badge: "CRAFT",
-              description: "We don't settle for minimum viable. We build software that feels intuitive, robust, and delightful.",
+              description:
+                "We don't settle for minimum viable. We build software that feels intuitive, robust, and delightful.",
               button: { label: "Our Philosophy", href: "/about" },
             },
             {
               title: "Speed without sacrificing architectural integrity.",
               subtitle: "Pillar 02 — Velocity",
               badge: "EXECUTION",
-              description: "Continuous deployment and automated testing pipelines to ship value rapidly and safely.",
+              description:
+                "Continuous deployment and automated testing pipelines to ship value rapidly and safely.",
               button: { label: "Our Process", href: "/about" },
             },
             {
               title: "Long-term partnership and dedicated ownership.",
               subtitle: "Pillar 03 — Stewardship",
               badge: "PARTNERSHIP",
-              description: "We work alongside your leadership team as embedded architects, not disconnected vendors.",
+              description:
+                "We work alongside your leadership team as embedded architects, not disconnected vendors.",
               button: { label: "Contact Partners", href: "/contact" },
             },
           ],
@@ -3404,14 +3731,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "carousel",
     label: "Images Carousel · Full Visual Gallery",
     category: "Carousel",
-    description: "Cinematic full-frame photo showcase with thumbnail navigation bar and overlay captions.",
+    description:
+      "Cinematic full-frame photo showcase with thumbnail navigation bar and overlay captions.",
     create: () =>
       createSection("carousel", {
         data: {
           variant: "image-gallery",
           eyebrow: "VISUAL PORTFOLIO",
           heading: "Captured in Precision",
-          intro: "Explore our latest flagship spatial architecture and product releases.",
+          intro:
+            "Explore our latest flagship spatial architecture and product releases.",
           imageAspect: "16:9",
           showThumbnails: true,
           showArrows: true,
@@ -3421,7 +3750,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
           slides: [
             {
               title: "Nordic Minimalist Headquarters",
-              caption: "Architectural design with floor-to-ceiling glass and sustainably harvested Scandinavian timber.",
+              caption:
+                "Architectural design with floor-to-ceiling glass and sustainably harvested Scandinavian timber.",
               badge: "ARCHITECTURE",
               image: {
                 url: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&auto=format&fit=crop&q=80",
@@ -3431,7 +3761,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
             },
             {
               title: "Next-Gen Quantum Hardware Lab",
-              caption: "Sub-Kelvin cryogenic compute testing facilities operating at high coherence thresholds.",
+              caption:
+                "Sub-Kelvin cryogenic compute testing facilities operating at high coherence thresholds.",
               badge: "DEEP TECH",
               image: {
                 url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1600&auto=format&fit=crop&q=80",
@@ -3441,7 +3772,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
             },
             {
               title: "Spatial Interactive Experiences",
-              caption: "Zero-latency multi-user interactive canvas designed for precision engineering teams.",
+              caption:
+                "Zero-latency multi-user interactive canvas designed for precision engineering teams.",
               badge: "INTERFACE",
               image: {
                 url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1600&auto=format&fit=crop&q=80",
@@ -3451,7 +3783,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
             },
             {
               title: "Sustainable Urban Ecosystems",
-              caption: "Carbon-negative commercial campus powered by geothermal and photovoltaic arrays.",
+              caption:
+                "Carbon-negative commercial campus powered by geothermal and photovoltaic arrays.",
               badge: "ENERGY",
               image: {
                 url: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=1600&auto=format&fit=crop&q=80",
@@ -3468,7 +3801,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "carousel",
     label: "Images Carousel · Multi-Image Filmstrip",
     category: "Carousel",
-    description: "Continuous multi-column photography filmstrip reel for project works and showcases.",
+    description:
+      "Continuous multi-column photography filmstrip reel for project works and showcases.",
     create: () =>
       createSection("carousel", {
         data: {
@@ -3493,7 +3827,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
             {
               title: "Fintech Core Engine",
               subtitle: "02 / Platform",
-              caption: "High-frequency global settlement ledger processing 100k TPS.",
+              caption:
+                "High-frequency global settlement ledger processing 100k TPS.",
               badge: "FINANCE",
               image: {
                 url: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=1000&auto=format&fit=crop&q=80",
@@ -3529,7 +3864,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "carousel",
     label: "Images Carousel · 3D Coverflow Reel",
     category: "Carousel",
-    description: "3D perspective coverflow deck focusing on high-impact visual artwork and photography.",
+    description:
+      "3D perspective coverflow deck focusing on high-impact visual artwork and photography.",
     create: () =>
       createSection("carousel", {
         data: {
@@ -3574,7 +3910,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "marquee",
     label: "Marquee · Bold Infinite Ticker",
     category: "Marquee",
-    description: "Continuous typographic scroll with star separators and speed controls.",
+    description:
+      "Continuous typographic scroll with star separators and speed controls.",
     create: () =>
       createSection("marquee", {
         data: {
@@ -3599,7 +3936,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "marquee",
     label: "Marquee · Streaming Feature Cards",
     category: "Marquee",
-    description: "Streaming continuous stream of feature cards and capability pills.",
+    description:
+      "Streaming continuous stream of feature cards and capability pills.",
     create: () =>
       createSection("marquee", {
         data: {
@@ -3644,7 +3982,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "marquee",
     label: "Marquee · Glowing Capability Badges",
     category: "Marquee",
-    description: "Streaming badge pills for tech stack, certifications, and capabilities.",
+    description:
+      "Streaming badge pills for tech stack, certifications, and capabilities.",
     create: () =>
       createSection("marquee", {
         data: {
@@ -3660,7 +3999,11 @@ export const SECTION_PRESETS: SectionPreset[] = [
             { text: "PostgreSQL & Redis", icon: "box" },
             { text: "GraphQL & REST", icon: "cloud" },
             { text: "Tailwind & Design Tokens", icon: "tools" },
-            { text: "SOC2 & GDPR Compliant", badge: "CERTIFIED", icon: "shield" },
+            {
+              text: "SOC2 & GDPR Compliant",
+              badge: "CERTIFIED",
+              icon: "shield",
+            },
           ],
         },
       }),
@@ -3670,7 +4013,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
     type: "marquee",
     label: "Marquee · Dual Opposite Streams",
     category: "Marquee",
-    description: "Two stacked opposite-direction streaming tracks for dynamic layered movement.",
+    description:
+      "Two stacked opposite-direction streaming tracks for dynamic layered movement.",
     create: () =>
       createSection("marquee", {
         data: {
@@ -3695,14 +4039,285 @@ export const SECTION_PRESETS: SectionPreset[] = [
         },
       }),
   },
-  ...AUTH_PRESETS.map(
-    (preset): SectionPreset => ({
-      key: preset.key,
-      type: "auth",
-      label: preset.label,
-      category: "Auth",
-      description: preset.description,
-      create: () => createSection("auth", { data: preset.data(), settings: { spacing: "none", ...preset.settings } }),
-    }),
-  ),
+  ...AUTH_PRESETS.map((preset): SectionPreset => ({
+    key: preset.key,
+    type: "auth",
+    label: preset.label,
+    category: "Auth",
+    description: preset.description,
+    create: () =>
+      createSection("auth", {
+        data: preset.data(),
+        settings: { spacing: "none", ...preset.settings },
+      }),
+  })),
+  {
+    key: "blog-cards-grid",
+    type: "blog",
+    label: "Blog Cards Grid",
+    category: "Blog",
+    description:
+      "Responsive 3-column blog card grid with category pills, cover media, and read time.",
+    create: () => createSection("blog"),
+  },
+  {
+    key: "blog-detail-minimalist-editorial",
+    type: "blog_detail",
+    label: "Blog Detail · Minimalist Editorial",
+    category: "Blog",
+    description:
+      "Centered modern header, large rounded hero image, sticky social share, clean typography.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "minimalist-editorial",
+          title: "The influence of modern architecture",
+          subtitle:
+            "An exploration into how minimalist silhouettes and brutalist honesty redefine contemporary spaces.",
+          category: "Design",
+          date: "July 21, 2024",
+          authorName: "Jakob Gronberg",
+          authorRole: "Lead Architectural Designer",
+          readTime: "12 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1400&q=80",
+            alt: "Modern architecture skyscrapers",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-split-hero",
+    type: "blog_detail",
+    label: "Blog Detail · Split Hero Banner",
+    category: "Blog",
+    description:
+      "Dual-column hero header with title and author on left and featured image frame on right.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "split-hero",
+          title: "Crafting scalable design systems for modern teams",
+          subtitle:
+            "How consistent tokens, modular architecture, and documentation transform product velocity.",
+          category: "Systems",
+          date: "August 10, 2024",
+          authorName: "Maya Lin",
+          authorRole: "Head of Design",
+          readTime: "9 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80",
+            alt: "Design work",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-immersive-dark",
+    type: "blog_detail",
+    label: "Blog Detail · Immersive Dark Mode",
+    category: "Blog",
+    description:
+      "Dramatic full-width dark hero with atmospheric ambient glow, contrast typography, and reading column.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "immersive-dark",
+          title: "Building next-generation distributed systems",
+          subtitle:
+            "A deep dive into latency mitigation, consensus algorithms, and zero-downtime deployments.",
+          category: "Engineering",
+          date: "September 04, 2024",
+          authorName: "Marcus Vance",
+          authorRole: "Principal Systems Architect",
+          readTime: "14 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1400&q=80",
+            alt: "Hardware circuit tech",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-magazine-classic",
+    type: "blog_detail",
+    label: "Blog Detail · Magazine Classic Gazette",
+    category: "Blog",
+    description:
+      "Refined serif print editorial aesthetic with author sidebar and structured two-column layout.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "magazine-classic",
+          title: "The vanishing art of contemplative long-form journalism",
+          subtitle:
+            "Why depth, pacing, and editorial integrity matter more than ever in an era of micro-attention.",
+          category: "Journalism",
+          date: "October 02, 2024",
+          authorName: "Clara Kensington",
+          authorRole: "Senior Editor",
+          readTime: "16 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1200&q=80",
+            alt: "Vintage printing and reading",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-newsletter-tech",
+    type: "blog_detail",
+    label: "Blog Detail · Substack / Newsletter Style",
+    category: "Blog",
+    description:
+      "Creator profile header, read time, callout boxes, and bottom newsletter subscribe box.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "newsletter-tech",
+          title: "The founder's playbook for zero-to-one product growth",
+          subtitle:
+            "The metrics that actually matter before product-market fit, and the vanity metrics to ignore.",
+          category: "Startups",
+          date: "September 18, 2024",
+          authorName: "Alex Rivera",
+          authorRole: "Product Strategist",
+          readTime: "7 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
+            alt: "Analytics and strategy",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-floating-card",
+    type: "blog_detail",
+    label: "Blog Detail · Modernist Floating Card",
+    category: "Blog",
+    description:
+      "Wide cover image hero with the article header card floating and overlapping upward.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "floating-card",
+          title: "Urban sanctuaries: Reclaiming quiet in dense metropolises",
+          subtitle:
+            "How biophilic architecture and sound dampening materials create mental breathing room.",
+          category: "Urbanism",
+          date: "August 28, 2024",
+          authorName: "Elena Rostova",
+          authorRole: "Urban Researcher",
+          readTime: "11 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1400&q=80",
+            alt: "Urban landscape",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-sticky-sidebar",
+    type: "blog_detail",
+    label: "Blog Detail · Sticky Table of Contents",
+    category: "Blog",
+    description:
+      "Modern publication layout with sticky outline TOC, author bio widget, and share widget.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "sticky-sidebar",
+          title: "Comprehensive guide to sustainable web performance",
+          subtitle:
+            "Optimizing bundle budgets, server response latency, and carbon footprint for modern web apps.",
+          category: "Engineering",
+          date: "July 30, 2024",
+          authorName: "David Zhao",
+          authorRole: "Frontend Architect",
+          readTime: "13 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80",
+            alt: "Code and performance",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-swiss-brutalist",
+    type: "blog_detail",
+    label: "Blog Detail · Swiss Brutalist Grid",
+    category: "Blog",
+    description:
+      "High-contrast 1px border grid, tabular metadata, clean typography, and numbered blocks.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "swiss-brutalist",
+          title: "OBJECTIVE FORM: THE SWISS TYPOGRAPHIC LEGACY",
+          subtitle:
+            "ANALYZING MAX BILL, JOSEF MÜLLER-BROCKMANN, AND THE MATHEMATICAL FOUNDATIONS OF GRID SYSTEMS.",
+          category: "TYPOGRAPHY",
+          date: "JUNE 22, 2024",
+          authorName: "HANS WEBER",
+          authorRole: "GRAPHIC THEORIST",
+          readTime: "10 MIN",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80",
+            alt: "Geometric graphic art",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-visual-story",
+    type: "blog_detail",
+    label: "Blog Detail · Cinematic Photo Essay",
+    category: "Blog",
+    description:
+      "Panoramic media hero with overlay, oversized statement quotes, and storytelling rhythm.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "visual-story",
+          title: "Chasing the midnight sun across the Arctic archipelago",
+          subtitle:
+            "When the horizon never sleeps, time bends into an endless golden hour of light, ice, and silence.",
+          category: "Expeditions",
+          date: "August 14, 2024",
+          authorName: "Soren Lindqvist",
+          authorRole: "Documentary Photographer",
+          readTime: "8 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80",
+            alt: "Nordic coast landscape",
+          },
+        },
+      }),
+  },
+  {
+    key: "blog-detail-glassmorphism-deck",
+    type: "blog_detail",
+    label: "Blog Detail · Glassmorphism Card Deck",
+    category: "Blog",
+    description:
+      "Translucent frosted glass card container with subtle ambient glow and sleek floating elements.",
+    create: () =>
+      createSection("blog_detail", {
+        data: {
+          design: "glassmorphism-deck",
+          title: "Spatial interfaces and the future of human computing",
+          subtitle:
+            "How depth, physics, and ambient illumination are replacing traditional flat UI paradigms.",
+          category: "Future Tech",
+          date: "September 29, 2024",
+          authorName: "Aria Thorne",
+          authorRole: "Spatial Designer",
+          readTime: "9 Min",
+          coverImage: {
+            url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
+            alt: "Abstract glass and light",
+          },
+        },
+      }),
+  },
 ];

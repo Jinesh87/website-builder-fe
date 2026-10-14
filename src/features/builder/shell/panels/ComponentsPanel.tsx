@@ -2,6 +2,7 @@ import { useState, type ComponentType } from "react";
 import { Drawer } from "@puckeditor/core";
 import {
   BarChart3,
+  BookOpen,
   Briefcase,
   Columns,
   CreditCard,
@@ -51,6 +52,8 @@ const SECTION_ICONS: Record<SectionType, ComponentType<LucideProps>> = {
   marquee: MoveHorizontal,
   auth: LogIn,
   custom: LayoutDashboard,
+  blog: BookOpen,
+  blog_detail: FileText,
 };
 
 /** Drag-to-insert list backed by Puck's drawer, rendered with the builder's own styling and icons. */

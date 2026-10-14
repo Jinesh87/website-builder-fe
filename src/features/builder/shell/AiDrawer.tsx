@@ -14,6 +14,7 @@ import {
 import { AiSparklesIcon } from "../../../components/icons/AiSparklesIcon.tsx";
 import {
   DEFAULT_SECTION_SETTINGS,
+  HERO_VARIANTS,
   SECTION_DEFINITIONS,
   type Section,
   type SectionSettings,
@@ -170,21 +171,12 @@ function normalizeSection(raw: Section): Section {
   // Type-specific schema normalization
   if (type === "hero") {
     const validHeroVariants = [
-      "centered",
-      "split",
+      ...HERO_VARIANTS,
       "split-left",
-      "background-image",
-      "video-bg",
-      "gradient",
-      "curved-bottom",
-      "soft-card",
-      "minimal-typography",
-      "floating-cards",
-      "asymmetric",
     ];
     if (
       typeof mergedData.variant !== "string" ||
-      !validHeroVariants.includes(mergedData.variant)
+      !validHeroVariants.includes(mergedData.variant as any)
     ) {
       mergedData.variant = mergedData.backgroundImage
         ? "background-image"
@@ -238,7 +230,16 @@ function normalizeSection(raw: Section): Section {
     ) {
       delete mergedData.contentAlign;
     }
-    const validBottomShapes = ["none", "wave", "curve", "slant", "tilt"];
+    const validBottomShapes = [
+      "none",
+      "wave",
+      "curve",
+      "curved",
+      "slant",
+      "tilt",
+      "arch",
+      "normal",
+    ];
     if (
       mergedData.bottomShape &&
       !validBottomShapes.includes(mergedData.bottomShape as string)
@@ -477,16 +478,13 @@ function normalizeSection(raw: Section): Section {
       "classical",
       "minimalist",
       "comprehensive",
-      "ecommerce",
       "floating",
       "transparent",
       "glass-dock",
       "split-stacked",
-      "command-bar",
       "mega-menu-grid",
       "side-drawer",
       "headline-ticker",
-      "luxury-editorial",
       "clean-transparent",
     ];
     if (
