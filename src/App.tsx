@@ -5,11 +5,20 @@ import AuthProvider from "./auth/AuthProvider.tsx";
 import { GuestOnly, RequireAuth } from "./auth/RouteGuards.tsx";
 import AdminLayout from "./layouts/AdminLayout.tsx";
 import ClientLayout from "./layouts/ClientLayout.tsx";
-import PublicLayout from "./layouts/PublicLayout.tsx";
 import RoleLayout from "./layouts/RoleLayout.tsx";
 
 // Route-level code-splitting (Lazy loading)
-const LandingPage = lazy(() => import("./pages/public/LandingPage.tsx"));
+const PublicLayout = lazy(() => import("./layouts/PublicLayout.tsx"));
+// The marketing site is one chunk so moving between its pages never suspends.
+const marketing = () => import("./pages/marketing/index.ts");
+const MarketingLayout = lazy(() => marketing().then((m) => ({ default: m.MarketingLayout })));
+const HomePage = lazy(() => marketing().then((m) => ({ default: m.HomePage })));
+const FeaturesPage = lazy(() => marketing().then((m) => ({ default: m.FeaturesPage })));
+const TemplatesPage = lazy(() => marketing().then((m) => ({ default: m.TemplatesPage })));
+const PricingPage = lazy(() => marketing().then((m) => ({ default: m.PricingPage })));
+const AboutPage = lazy(() => marketing().then((m) => ({ default: m.AboutPage })));
+const ContactPage = lazy(() => marketing().then((m) => ({ default: m.ContactPage })));
+const LegalPage = lazy(() => marketing().then((m) => ({ default: m.LegalPage })));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage.tsx"));
 const TemplateDetailPage = lazy(() => import("./pages/public/TemplateDetailPage.tsx"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage.tsx"));
@@ -51,8 +60,16 @@ export default function App() {
       <AuthProvider>
         <Suspense fallback={<PageLoading />}>
           <Routes>
+            <Route element={<MarketingLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="features" element={<FeaturesPage />} />
+              <Route path="templates" element={<TemplatesPage />} />
+              <Route path="pricing" element={<PricingPage />} />
+              <Route path="about" element={<AboutPage />} />
+              <Route path="contact" element={<ContactPage />} />
+              <Route path="legal" element={<LegalPage />} />
+            </Route>
             <Route element={<PublicLayout />}>
-              <Route index element={<LandingPage />} />
               <Route path="templates/:templateKey" element={<TemplateDetailPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>

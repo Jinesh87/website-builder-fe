@@ -128,10 +128,62 @@
 
   /* ---------- Forms: these are demos until you give them an `action` ---------- */
 
+  /** Published sites name their contact endpoint on <body data-wb-contact="...">. */
+  function formStatus(form, text, ok) {
+    let status = form.querySelector(".wb-form-status");
+    if (!status) {
+      status = document.createElement("p");
+      status.className = "wb-form-status";
+      status.setAttribute("role", "status");
+      status.style.margin = "0";
+      status.style.fontSize = "0.9rem";
+      status.style.fontWeight = "600";
+      form.append(status);
+    }
+    status.style.color = ok ? "#047857" : "#b91c1c";
+    status.textContent = text;
+  }
+
+  async function submitContact(form, url) {
+    const data = new FormData(form);
+    const services = data.getAll("service").map(String).filter(Boolean);
+    const message = String(data.get("message") || "").trim();
+    const button = form.querySelector('[type="submit"]');
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(data.get("name") || "").trim(),
+          email: String(data.get("email") || "").trim(),
+          phone: String(data.get("phone") || "").trim(),
+          message: services.length ? `Interested in: ${services.join(", ")}\n\n${message}` : message,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const reason = typeof result.error === "string" ? result.error : result.error && result.error.message;
+        throw new Error(reason || "Your message couldn't be sent. Please try again.");
+      }
+      form.reset();
+      formStatus(form, result.message || "Thank you! Your message has been received.", true);
+    } catch (error) {
+      formStatus(form, error instanceof Error ? error.message : "Your message couldn't be sent. Please try again.", false);
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
   document.addEventListener("submit", (event) => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement) || form.hasAttribute("action")) return;
     event.preventDefault();
+    const contactUrl = document.body.getAttribute("data-wb-contact");
+    if (contactUrl && form.classList.contains("wb-contact-form")) {
+      void submitContact(form, contactUrl);
+      return;
+    }
     if (form.classList.contains("wb-newsletter-form")) {
       const thanks = document.createElement("p");
       thanks.className = "text-xs font-semibold text-emerald-500";

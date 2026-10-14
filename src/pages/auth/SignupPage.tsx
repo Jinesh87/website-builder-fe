@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Button, Checkbox, FieldError, Label } from "@heroui/react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { authApi, type SignupInput } from "../../api/auth.ts";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { validateEmail, validatePassword } from "../../auth/validation.ts";
@@ -60,6 +60,7 @@ function SignupSteps() {
 
 export default function SignupPage() {
   const navigate = useNavigate();
+  const notice = (useLocation().state as { notice?: string } | null)?.notice;
   const [form, setForm] = useState<SignupForm>(INITIAL_FORM);
   const [errors, setErrors] = useState<SignupErrors>({});
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +118,7 @@ export default function SignupPage() {
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="mt-7 flex flex-col gap-4">
+        {notice && <p className="rounded-lg bg-canvas px-4 py-3 text-sm text-ink-body">{notice}</p>}
         <TextInput
           label="Full name"
           name="fullName"

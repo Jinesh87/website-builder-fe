@@ -1,10 +1,11 @@
-import { Layers, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
+import { Globe, Layers, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
 
-export type ProjectTab = "overview" | "deployments" | "settings";
+export type ProjectTab = "overview" | "deployments" | "domains" | "settings";
 
 const TABS: { id: ProjectTab; label: string; icon: LucideIcon }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "deployments", label: "Deployments", icon: Layers },
+  { id: "domains", label: "Domains", icon: Globe },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
