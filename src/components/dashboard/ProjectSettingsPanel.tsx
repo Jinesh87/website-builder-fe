@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Button } from "@heroui/react";
-import { Trash2 } from "lucide-react";
+import { CloudOff, Trash2 } from "lucide-react";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { websitesApi, type UpdateWebsiteInput, type WebsiteDetail } from "../../api/websites.ts";
 import FormAlert from "../ui/FormAlert.tsx";
@@ -31,9 +31,10 @@ type ProjectSettingsPanelProps = {
   website: WebsiteDetail;
   onSaved: (website: WebsiteDetail) => void;
   onDelete: () => void;
+  onUnpublish: () => void;
 };
 
-export default function ProjectSettingsPanel({ website, onSaved, onDelete }: ProjectSettingsPanelProps) {
+export default function ProjectSettingsPanel({ website, onSaved, onDelete, onUnpublish }: ProjectSettingsPanelProps) {
   const [form, setForm] = useState<SettingsForm>(() => toForm(website));
   const [errors, setErrors] = useState<Partial<Record<keyof SettingsForm, string>>>({});
   const [status, setStatus] = useState<{ tone: "success" | "danger"; message: string } | null>(null);
@@ -144,6 +145,22 @@ export default function ProjectSettingsPanel({ website, onSaved, onDelete }: Pro
           </Button>
         </div>
       </form>
+
+      {website.status === "PUBLISHED" && (
+        <section className="rounded-xl border border-line bg-surface shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5">
+            <div>
+              <h2 className="text-base font-semibold text-ink">Unpublish website</h2>
+              <p className="mt-0.5 text-sm text-ink-muted">
+                Takes the live site offline on every address. Your draft and deployments are kept.
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onPress={onUnpublish}>
+              <CloudOff className="size-4" aria-hidden /> Unpublish
+            </Button>
+          </div>
+        </section>
+      )}
 
       <section className="rounded-xl border border-ed-danger/30 bg-surface shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5">

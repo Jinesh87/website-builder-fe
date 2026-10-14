@@ -91,6 +91,34 @@ export type WebsiteDetail = WebsiteSummary & {
   generation: WebsiteGeneration | null;
 };
 
+export type DomainStatus = "PENDING_DNS" | "ACTIVE" | "FAILED";
+
+/** A record the client adds at their DNS provider. `name` is the full record name. */
+export type DnsRecord = {
+  type: "TXT" | "A" | "AAAA" | "CNAME";
+  name: string;
+  value: string;
+  purpose: "ownership" | "routing";
+};
+
+export type WebsiteDomain = {
+  id: string;
+  hostname: string;
+  isPrimary: boolean;
+  status: DomainStatus;
+  verifiedAt: string | null;
+  lastCheckedAt: string | null;
+  lastError: string | null;
+  createdAt: string;
+  records: DnsRecord[];
+};
+
+export type DomainList = {
+  domains: WebsiteDomain[];
+  /** The free address, e.g. "shop.bytezora.site". */
+  defaultHostname: string;
+};
+
 export type WebsiteTemplate = {
   id: string;
   key: string;
@@ -287,8 +315,33 @@ export const websitesApi = {
       (data) => data.website,
     ),
 
+  /** Takes the site offline; publishing again restores it. */
+  unpublish: (id: string) =>
+    request<WebsiteResponse>(`${BASE}/${id}/unpublish`, { method: "POST" }).then((data) => data.website),
+
   versions: (id: string) =>
     request<{ versions: WebsiteVersion[] }>(`${BASE}/${id}/versions`).then((data) => data.versions),
+
+  domains: (id: string) => request<DomainList>(`${BASE}/${id}/domains`),
+
+  addDomain: (id: string, hostname: string) =>
+    request<{ domain: WebsiteDomain }>(`${BASE}/${id}/domains`, { method: "POST", body: { hostname } }).then(
+      (data) => data.domain,
+    ),
+
+  /** Checks the DNS records now; the domain goes live once both are found. */
+  verifyDomain: (id: string, domainId: string) =>
+    request<{ domain: WebsiteDomain }>(`${BASE}/${id}/domains/${domainId}/verify`, { method: "POST" }).then(
+      (data) => data.domain,
+    ),
+
+  makePrimaryDomain: (id: string, domainId: string) =>
+    request<{ domain: WebsiteDomain }>(`${BASE}/${id}/domains/${domainId}/primary`, { method: "POST" }).then(
+      (data) => data.domain,
+    ),
+
+  removeDomain: (id: string, domainId: string) =>
+    request<void>(`${BASE}/${id}/domains/${domainId}`, { method: "DELETE" }),
 
   /** Reports the planned layout via `onPlan` before content is generated, then resolves with the suggestion. */
   generateAiSuggestionStream: async (
