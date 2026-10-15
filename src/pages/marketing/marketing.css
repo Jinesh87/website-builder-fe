@@ -50,9 +50,15 @@
 .mk .link:hover {text-decoration:underline}
 .mk .top {position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
 .mk .top .wrap {display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:72px}
-.mk .brand {display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;color:var(--fg);text-decoration:none}
-.mk .mark {width:30px;height:30px;border-radius:8px;background:var(--accent);display:grid;place-items:center}
-.mk .mark span {width:12px;height:12px;border:2.5px solid var(--on-accent);border-radius:3px}
+.mk .brand {display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;color:var(--fg);text-decoration:none;letter-spacing:-0.02em}
+.mk .brand:hover {opacity:0.92}
+.mk .brand-mark {width:32px;height:32px;border-radius:9px;background:var(--color-brand, #2447c7);color:#FFFFFF;display:grid;place-items:center;flex-shrink:0;box-shadow:0 2px 6px -1px rgba(36,71,199,0.35);transition:transform 0.15s ease}
+.mk .brand:hover .brand-mark {transform:scale(1.04)}
+.mk .brand-mark svg,.mk .brand-mark-icon {width:18px;height:18px}
+.mk .brand-name {font-weight:700;font-size:20px;letter-spacing:-0.02em;color:var(--fg)}
+.mk .brand-badge {font-size:15px;font-weight:500;color:var(--muted);letter-spacing:normal;margin-left:2px}
+.mk .mark {width:32px;height:32px;border-radius:9px;background:var(--color-brand, #2447c7);color:#FFFFFF;display:grid;place-items:center;flex-shrink:0}
+.mk .mark span {width:14px;height:14px;border:2.5px solid #FFFFFF;border-radius:3px}
 .mk .nav {display:flex;gap:28px}
 .mk .nav a {color:var(--muted);text-decoration:none;font-weight:500;padding-block:6px;border-bottom:2px solid transparent}
 .mk .nav a:hover {color:var(--fg)}
@@ -331,7 +337,7 @@
   --bg-2:#151826; --line:#272C3C; --foot:#0A0D1E; --foot-fg:#B3B9D4; --foot-line:#20264A}
 .mk h1:where(:not(.wb-site *)),.mk h2:where(:not(.wb-site *)),.mk h3:where(:not(.wb-site *)),.mk .brand,.mk .price b {font-family:var(--display);letter-spacing:-.015em}
 .mk h1:where(:not(.wb-site *)) {font-weight:800}
-.mk .mark {background:linear-gradient(135deg,var(--accent) 0 50%,var(--coral) 50% 100%)}
+/* .mk .mark background kept solid brand */
 .mk .btn {border-radius:10px}
 .mk .btn.p {box-shadow:0 6px 18px -8px var(--accent)}
 .mk .btn.p:hover {transform:translateY(-1px)}

@@ -551,7 +551,7 @@ export default function HomePage() {
                   <th scope="col">Hire a developer</th>
                   <th scope="col">Code it yourself</th>
                   <th scope="col" className="us">
-                    [Your Brand]
+                    WebBuilder
                   </th>
                 </tr>
               </thead>
