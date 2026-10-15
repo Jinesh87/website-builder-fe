@@ -16,6 +16,22 @@ export type AiConfigInput = {
   model: string;
 };
 
+/** USD prices per 1M tokens for one model. */
+export type AiModelPrice = {
+  id: string;
+  label: string;
+  kind: "chat" | "image";
+  inputPerMillion: number;
+  outputPerMillion: number;
+  defaultInputPerMillion: number;
+  defaultOutputPerMillion: number;
+  /** True when it differs from the built-in list price. */
+  customized: boolean;
+  updatedAt: string | null;
+};
+
+export type AiModelPriceInput = { modelId: string; inputPerMillion: number; outputPerMillion: number };
+
 type ConfigResponse = { config?: AiConfig; data?: { config?: AiConfig } };
 
 const BASE = "/admin/settings/ai";
@@ -38,4 +54,9 @@ export const adminAiApi = {
       }
       return cfg;
     }),
+
+  pricing: () => request<{ prices: AiModelPrice[] }>(`${BASE}/pricing`).then((data) => data.prices),
+
+  updatePricing: (prices: AiModelPriceInput[]) =>
+    request<{ prices: AiModelPrice[] }>(`${BASE}/pricing`, { method: "PUT", body: { prices } }).then((data) => data.prices),
 };

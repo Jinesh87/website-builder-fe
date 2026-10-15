@@ -102,7 +102,7 @@ export default function PaymentSettingsPanel({ onLoaded }: { onLoaded?: (config:
           </div>
           <div>
             <h2 className="text-base font-semibold text-ink">Razorpay</h2>
-            <p className="text-xs text-ink-muted">Clients pay into their wallet through Razorpay Checkout.</p>
+            <p className="text-xs text-ink-muted">Clients buy connects through Razorpay Checkout.</p>
           </div>
         </div>
 
@@ -137,7 +137,7 @@ export default function PaymentSettingsPanel({ onLoaded }: { onLoaded?: (config:
             description={
               config.webhookConfigured
                 ? "Leave blank to keep the current secret."
-                : "The secret you choose when adding the webhook below. Recommended: it credits wallets even if the client closes the page mid-payment."
+                : "The secret you choose when adding the webhook below. Recommended: it adds connects even if the client closes the page mid-payment."
             }
             value={form.razorpayWebhookSecret}
             onChange={update("razorpayWebhookSecret")}
