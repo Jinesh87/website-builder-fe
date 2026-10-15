@@ -43,3 +43,16 @@ export function removeSection(dispatch: Dispatch, index: number) {
   dispatch({ type: "remove", index, zone: ROOT_ZONE });
   selectSection(dispatch, null);
 }
+
+export function setAllSections(dispatch: Dispatch, sections: Section[]) {
+  const items = sections.map(sectionToItem);
+  dispatch({
+    type: "setData",
+    data: (previous) => ({
+      ...previous,
+      root: previous.root ?? { props: {} },
+      content: items,
+    }),
+  });
+}
+

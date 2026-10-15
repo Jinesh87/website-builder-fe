@@ -2,12 +2,18 @@ import { useEffect, useId, useRef, useState } from "react";
 import {
   ArrowRight,
   Check,
+  Compass,
   Eye,
+  FileEdit,
+  FilePlus,
+  HelpCircle,
   History,
   Loader2,
   MessageSquarePlus,
+  Palette,
   RotateCcw,
   Square,
+  Trash2,
   Undo2,
   X,
 } from "lucide-react";
@@ -20,10 +26,10 @@ import {
   type SectionSettings,
   type SectionType,
 } from "../../../site-kit/index.ts";
-import { websitesApi, type AiLayoutSlot } from "../../../api/websites.ts";
+import { websitesApi, type AiLayoutSlot, type PageType } from "../../../api/websites.ts";
 import type { AiSuggestion } from "../schema/editor-document.ts";
 import { useEditor, type AiLock } from "../editor-context.ts";
-import { updatePageMeta } from "../../../pages/websites/editor/editor-state.ts";
+import { homePage, updatePageMeta } from "../../../pages/websites/editor/editor-state.ts";
 import { aiPlaceholderItem, itemAsSection, sectionToItem } from "../puck/adapter.ts";
 import { selectSection, useBuilderPuck } from "../puck/puck-api.ts";
 import { scrollCanvasToSection } from "./AiBuilderCanvasOverlay.tsx";
@@ -38,6 +44,14 @@ import {
   type ChatSession,
   type SuggestionStatus,
 } from "./ai-chat-history.ts";
+import {
+  ensureUniqueSlugs,
+  getKnownRoutes,
+  normalizeSlug,
+  reconcileHeaderMenu,
+  resolveInternalLink,
+  sanitizeSectionLinks,
+} from "../utils/link-validator.ts";
 
 /** Tells the AI what became of each change it proposed earlier in the chat. */
 const SUGGESTION_OUTCOMES: Record<SuggestionStatus, string> = {
@@ -619,7 +633,7 @@ const sameContent = (a: Section[], b: Section[]) =>
   JSON.stringify(a) === JSON.stringify(b);
 
 export default function AiDrawer() {
-  const { aiOpen, setAiOpen, website, draft, page, editDraft, notify, setAiBuilding, setAiLock } = useEditor();
+  const { aiOpen, setAiOpen, website, draft, page, editDraft, selectPage, notify, setAiBuilding, setAiLock } = useEditor();
   /** AI-built sites get the business-aware copilot (content, copy and SEO from the original brief). */
   const isAiSite = website.builderType === "AI";
   const dispatch = useBuilderPuck((state) => state.dispatch);
@@ -1009,23 +1023,26 @@ export default function AiDrawer() {
       );
 
       const target = result.target;
+      const hasClarification = Boolean(result.clarification);
+      const isChatOnly = target.scope === "chat" || hasClarification;
       const chatReply =
-        target.scope === "chat" ? result.chatReply || result.summary : null;
+        isChatOnly ? result.clarification?.question || result.chatReply || result.summary : null;
 
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
         content: chatReply ?? result.summary,
         timestamp: nowTime,
-        suggestion: chatReply === null ? result : null,
+        suggestion: !isChatOnly ? result : null,
         chatReply,
-        ...(chatReply === null ? { status: "pending" as const } : {}),
+        clarification: result.clarification ?? null,
+        ...(!isChatOnly ? { status: "pending" as const } : {}),
       };
 
       saveSession([...nextMessages, assistantMessage]);
-      setActiveMessageId(chatReply === null ? assistantMessage.id : null);
+      setActiveMessageId(!isChatOnly ? assistantMessage.id : null);
 
-      if (target.scope === "chat") {
+      if (isChatOnly) {
         setAiBuilding(null);
         setSuggestion(null);
         setOriginalCanvasContent(null);
@@ -1068,6 +1085,21 @@ export default function AiDrawer() {
             });
           }, 60);
         }
+      } else if (target.scope === "site") {
+        nextItems =
+          result.after.length > 0
+            ? result.after.map((s) =>
+                sectionToItem(normalizeSection(s as Section)),
+              )
+            : baseline;
+
+        setAiBuilding({
+          active: true,
+          step: "Reviewing multi-page site structure, navigation & pages...",
+          scope: "page",
+          progressPercent: 80,
+          pointerY: 50,
+        });
       } else if (!target.rebuild) {
         nextItems = result.after.map((s) =>
           sectionToItem(normalizeSection(s as Section)),
@@ -1209,35 +1241,187 @@ export default function AiDrawer() {
   };
 
   const handleAccept = () => {
-    if (!previewCanvasContent) return;
+    if (
+      !previewCanvasContent &&
+      !suggestion?.createdPages?.length &&
+      !suggestion?.navigationPatch &&
+      !suggestion?.updatedPages?.length
+    ) {
+      return;
+    }
 
     isAcceptedRef.current = true;
 
-    // Commit preview content as the permanent canvas state
-    dispatch({
-      type: "setData",
-      data: (previous) => ({
-        ...previous,
-        root: previous.root ?? { props: {} },
-        content: previewCanvasContent,
-      }),
-    });
+    // Commit preview content as the permanent canvas state for the current page
+    if (previewCanvasContent) {
+      dispatch({
+        type: "setData",
+        data: (previous) => ({
+          ...previous,
+          root: previous.root ?? { props: {} },
+          content: previewCanvasContent,
+        }),
+      });
+    }
 
     const seo = suggestion?.seo;
     const seoPage = seo ? draft.pages.find((candidate) => candidate.id === seo.pageId) : undefined;
-    if (seo && seoPage) {
-      editDraft((current) =>
-        updatePageMeta(current, seo.pageId, { seoTitle: seo.seoTitle || null, seoDescription: seo.seoDescription || null }),
-      );
-    }
 
-    if (activeMessageId && originalCanvasContent) {
+    // Full draft rollback snapshot for cross-page changes
+    const draftSnapshot = {
+      pages: structuredClone(draft.pages),
+      header: structuredClone(draft.header),
+      footer: structuredClone(draft.footer),
+      theme: structuredClone(draft.theme),
+    };
+
+    let firstCreatedPageId: string | null = null;
+
+    editDraft((current) => {
+      let nextPages = [...current.pages];
+      const validRoutes = getKnownRoutes(nextPages, suggestion?.createdPages ?? []);
+
+      // Update current open page's sections
+      if (previewCanvasContent) {
+        const sanitizedSections = previewCanvasContent
+          .map(itemAsSection)
+          .map((s) => sanitizeSectionLinks(normalizeSection(s), validRoutes));
+        nextPages = nextPages.map((p) =>
+          p.id === page.id ? { ...p, sections: sanitizedSections } : p,
+        );
+      }
+
+      // Apply SEO update if present
+      if (seo) {
+        nextPages = nextPages.map((p) =>
+          p.id === seo.pageId
+            ? { ...p, seoTitle: seo.seoTitle || null, seoDescription: seo.seoDescription || null }
+            : p,
+        );
+      }
+
+      // Handle newly created pages
+      if (suggestion?.createdPages && suggestion.createdPages.length > 0) {
+        const uniqueCreated = ensureUniqueSlugs(nextPages, suggestion.createdPages);
+        for (const cp of uniqueCreated) {
+          const sanitizedSections = cp.sections.map((s) =>
+            sanitizeSectionLinks(normalizeSection(s as Section), validRoutes),
+          );
+          nextPages.push({
+            id: cp.id,
+            name: cp.name,
+            slug: cp.slug,
+            pageType: (cp.pageType as PageType) || "CUSTOM",
+            visible: true,
+            showInNav: cp.showInNav ?? true,
+            seoTitle: cp.seoTitle ?? null,
+            seoDescription: cp.seoDescription ?? null,
+            seoKeywords: [],
+            sections: sanitizedSections,
+          });
+          if (!firstCreatedPageId) {
+            firstCreatedPageId = cp.id;
+          }
+        }
+      }
+
+      // Handle updated pages
+      if (suggestion?.updatedPages && suggestion.updatedPages.length > 0) {
+        for (const up of suggestion.updatedPages) {
+          const targetId = up.pageId || up.id;
+          nextPages = nextPages.map((p) => {
+            if (
+              (targetId && p.id === targetId) ||
+              (up.slug && p.slug === up.slug) ||
+              (up.name && p.name.toLowerCase() === up.name.toLowerCase())
+            ) {
+              return {
+                ...p,
+                name: up.name || p.name,
+                slug: up.slug ? normalizeSlug(up.slug) : p.slug,
+                showInNav: up.showInNav !== undefined ? up.showInNav : p.showInNav,
+                seoTitle: up.seoTitle !== undefined ? up.seoTitle : p.seoTitle,
+                seoDescription: up.seoDescription !== undefined ? up.seoDescription : p.seoDescription,
+                sections:
+                  up.sections && up.sections.length > 0
+                    ? up.sections.map((s) =>
+                        sanitizeSectionLinks(normalizeSection(s as Section), validRoutes),
+                      )
+                    : p.sections,
+              };
+            }
+            return p;
+          });
+        }
+      }
+
+      // Handle deleted pages (never delete home page)
+      if (suggestion?.deletedPageIds && suggestion.deletedPageIds.length > 0) {
+        const deleteSet = new Set(suggestion.deletedPageIds);
+        nextPages = nextPages.filter((p) => !deleteSet.has(p.id) || p.slug === "/");
+      }
+
+      // Handle navigation patch
+      let nextHeader = { ...current.header };
+      let nextFooter = { ...current.footer };
+
+      if (suggestion?.navigationPatch) {
+        const rawMenu = suggestion.navigationPatch.menu || suggestion.navigationPatch.headerMenu;
+        if (rawMenu && rawMenu.length > 0) {
+          nextHeader.menu = reconcileHeaderMenu(rawMenu, validRoutes);
+        }
+        const cta = suggestion.navigationPatch.cta ?? suggestion.navigationPatch.headerCta;
+        if (cta !== undefined) {
+          nextHeader.cta = cta
+            ? { label: cta.label, href: resolveInternalLink(cta.href, validRoutes) }
+            : undefined;
+        }
+        if (suggestion.navigationPatch.footerColumns && suggestion.navigationPatch.footerColumns.length > 0) {
+          nextFooter.columns = suggestion.navigationPatch.footerColumns.map((col) => ({
+            title: col.title,
+            links: col.links.map((link) => ({
+              label: link.label,
+              href: resolveInternalLink(link.href, validRoutes),
+            })),
+          }));
+        }
+      }
+
+      // Handle theme patch
+      let nextTheme = { ...current.theme };
+      if (suggestion?.themePatch) {
+        if (suggestion.themePatch.colors) {
+          nextTheme.colors = { ...nextTheme.colors, ...suggestion.themePatch.colors };
+        }
+        if (suggestion.themePatch.fonts) {
+          nextTheme.fonts = {
+            heading:
+              (suggestion.themePatch.fonts.heading as typeof nextTheme.fonts.heading) ||
+              nextTheme.fonts.heading,
+            body:
+              (suggestion.themePatch.fonts.body as typeof nextTheme.fonts.body) ||
+              nextTheme.fonts.body,
+          };
+        }
+      }
+
+      return {
+        ...current,
+        pages: nextPages,
+        header: nextHeader,
+        footer: nextFooter,
+        theme: nextTheme,
+      };
+    });
+
+    if (activeMessageId) {
       const rollback = {
-        before: originalCanvasContent.map(itemAsSection),
-        after: previewCanvasContent.map(itemAsSection),
+        before: (originalCanvasContent ?? allItems).map(itemAsSection),
+        after: (previewCanvasContent ?? allItems).map(itemAsSection),
         seo: seoPage
           ? { pageId: seoPage.id, seoTitle: seoPage.seoTitle, seoDescription: seoPage.seoDescription }
           : undefined,
+        draft: draftSnapshot,
       };
       // Rollback restores a whole-canvas snapshot, so only the latest accepted change may use it.
       saveSession(
@@ -1251,7 +1435,11 @@ export default function AiDrawer() {
       );
     }
 
-    notify("AI changes accepted and saved!", "success");
+    if (suggestion?.createdPages && suggestion.createdPages.length > 0) {
+      notify(`AI changes accepted! Created ${suggestion.createdPages.length} new page(s).`, "success");
+    } else {
+      notify("AI changes accepted and saved!", "success");
+    }
 
     setActiveMessageId(null);
     setSuggestion(null);
@@ -1298,24 +1486,43 @@ export default function AiDrawer() {
       notify("The rollback window for this change has expired.", "danger");
       return;
     }
-    const before = message.rollback.before;
-    dispatch({
-      type: "setData",
-      data: (previous) => ({
-        ...previous,
-        root: previous.root ?? { props: {} },
-        content: before.map(sectionToItem),
-      }),
-    });
-    const previousSeo = message.rollback.seo;
-    if (previousSeo) {
-      editDraft((current) =>
-        updatePageMeta(current, previousSeo.pageId, {
-          seoTitle: previousSeo.seoTitle,
-          seoDescription: previousSeo.seoDescription,
+
+    if (message.rollback.draft) {
+      const restored = message.rollback.draft;
+      editDraft(() => restored);
+      const currentPageRestored =
+        restored.pages.find((p) => p.id === page.id) ?? homePage(restored.pages);
+      if (currentPageRestored) {
+        dispatch({
+          type: "setData",
+          data: (previous) => ({
+            ...previous,
+            root: previous.root ?? { props: {} },
+            content: currentPageRestored.sections.map(sectionToItem),
+          }),
+        });
+      }
+    } else {
+      const before = message.rollback.before;
+      dispatch({
+        type: "setData",
+        data: (previous) => ({
+          ...previous,
+          root: previous.root ?? { props: {} },
+          content: before.map(sectionToItem),
         }),
-      );
+      });
+      const previousSeo = message.rollback.seo;
+      if (previousSeo) {
+        editDraft((current) =>
+          updatePageMeta(current, previousSeo.pageId, {
+            seoTitle: previousSeo.seoTitle,
+            seoDescription: previousSeo.seoDescription,
+          }),
+        );
+      }
     }
+
     saveSession(
       chatMessages.map((m) =>
         m.id === message.id
@@ -1521,6 +1728,36 @@ export default function AiDrawer() {
                       </div>
                     )}
                     <p className="whitespace-pre-line">{msg.content}</p>
+
+                    {/* Clarification Selectable Options & Custom Input */}
+                    {msg.clarification && (
+                      <div className="mt-2.5 flex flex-col gap-2 rounded-xl border border-brand/25 bg-brand/5 p-2.5">
+                        <div className="flex items-center gap-1.5 text-ed-2xs font-bold text-brand">
+                          <HelpCircle className="size-3.5 shrink-0" />
+                          <span>Choose an option to clarify:</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {msg.clarification.options.map((opt, optIdx) => (
+                            <button
+                              key={optIdx}
+                              type="button"
+                              onClick={() => handleGenerate(opt)}
+                              disabled={loading}
+                              className="group inline-flex items-center gap-1.5 rounded-lg border border-brand/30 bg-ed-panel px-2.5 py-1 text-ed-xs font-semibold text-ed-text shadow-2xs hover:border-brand hover:bg-brand hover:text-white active:scale-[0.98] transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              <span>{opt}</span>
+                              <ArrowRight className="size-3 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                          ))}
+                        </div>
+                        {msg.clarification.allowCustomInput !== false && (
+                          <span className="text-[10px] text-ed-muted">
+                            Or reply with custom requirements in the prompt box below.
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     <span
                       className={`mt-1 block text-[9.5px] font-mono ${
                         isUser
@@ -1538,6 +1775,7 @@ export default function AiDrawer() {
                       message={msg}
                       remainingMs={rollbackRemainingMs(msg, now)}
                       onRollback={() => handleRollback(msg)}
+                      onSelectPage={(pageId) => selectPage(pageId)}
                     />
                   )}
 
@@ -1593,6 +1831,75 @@ export default function AiDrawer() {
                           <span className="font-bold text-ed-text">SEO for this page</span>
                           <span className="text-ed-text">{suggestion.seo.seoTitle}</span>
                           <span className="text-ed-muted">{suggestion.seo.seoDescription}</span>
+                        </div>
+                      )}
+
+                      {/* Multi-page / Site Impact Summary */}
+                      {suggestion.createdPages && suggestion.createdPages.length > 0 && (
+                        <div className="flex flex-col gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-[11px]">
+                          <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+                            <FilePlus className="size-3.5" />
+                            <span>Pages to be Created ({suggestion.createdPages.length})</span>
+                          </div>
+                          <div className="flex flex-col gap-1 pl-1">
+                            {suggestion.createdPages.map((cp) => (
+                              <div key={cp.id} className="flex items-center justify-between text-ed-text">
+                                <span className="font-medium">
+                                  {cp.name} <code className="text-[10px] text-ed-muted font-mono">{cp.slug}</code>
+                                </span>
+                                <span className="text-[10px] text-ed-muted">{cp.sections.length} sections</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {suggestion.updatedPages && suggestion.updatedPages.length > 0 && (
+                        <div className="flex flex-col gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/5 p-2.5 text-[11px]">
+                          <div className="flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400">
+                            <FileEdit className="size-3.5" />
+                            <span>Other Pages Modified ({suggestion.updatedPages.length})</span>
+                          </div>
+                          <div className="flex flex-col gap-1 pl-1 text-ed-text">
+                            {suggestion.updatedPages.map((up, i) => (
+                              <span key={up.pageId || up.id || i} className="font-medium">
+                                {up.name || up.slug || "Existing page"}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {suggestion.deletedPageIds && suggestion.deletedPageIds.length > 0 && (
+                        <div className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/5 p-2 text-[11px] text-red-600 dark:text-red-400 font-bold">
+                          <Trash2 className="size-3.5" />
+                          <span>{suggestion.deletedPageIds.length} page(s) marked for removal</span>
+                        </div>
+                      )}
+
+                      {suggestion.navigationPatch && (
+                        <div className="flex flex-col gap-1 rounded-xl border border-purple-500/30 bg-purple-500/5 p-2.5 text-[11px]">
+                          <div className="flex items-center gap-1.5 font-bold text-purple-600 dark:text-purple-400">
+                            <Compass className="size-3.5" />
+                            <span>Navigation & Menus</span>
+                          </div>
+                          {(suggestion.navigationPatch.menu || suggestion.navigationPatch.headerMenu) && (
+                            <span className="text-ed-muted text-[10.5px]">
+                              Menu links: {(suggestion.navigationPatch.menu || suggestion.navigationPatch.headerMenu)?.map((m) => m.label).join(", ")}
+                            </span>
+                          )}
+                          {(suggestion.navigationPatch.cta || suggestion.navigationPatch.headerCta) && (
+                            <span className="text-ed-muted text-[10.5px]">
+                              CTA button: "{(suggestion.navigationPatch.cta || suggestion.navigationPatch.headerCta)?.label}"
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {suggestion.themePatch && (
+                        <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] text-amber-600 dark:text-amber-400 font-bold">
+                          <Palette className="size-3.5" />
+                          <span>Theme styling will be updated</span>
                         </div>
                       )}
 
@@ -1883,37 +2190,59 @@ function SuggestionStatusCard({
   message,
   remainingMs,
   onRollback,
+  onSelectPage,
 }: {
   message: ChatMessage;
   remainingMs: number;
   onRollback: () => void;
+  onSelectPage?: (pageId: string) => void;
 }) {
+  const createdPages = message.suggestion?.createdPages;
+
   if (message.status === "accepted" && remainingMs > 0) {
     return (
-      <div className="flex w-full items-center justify-between gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-900 dark:text-amber-200">
-        <div className="flex min-w-0 items-center gap-2">
-          <History
-            className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
-            aria-hidden
-          />
-          <span className="truncate text-ed-2xs">
-            Applied · rollback available
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={onRollback}
-          className="ml-2 flex shrink-0 items-center gap-1 rounded-lg bg-amber-500/20 px-2 py-1 text-[10.5px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/30 dark:text-amber-300 cursor-pointer"
-        >
-          <Undo2 className="size-3" aria-hidden />
-          Rollback
-          <span
-            className="font-mono tabular-nums"
-            aria-label={`${formatCountdown(remainingMs)} remaining`}
+      <div className="flex w-full flex-col gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-amber-900 dark:text-amber-200">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <History
+              className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
+              aria-hidden
+            />
+            <span className="truncate text-ed-2xs">
+              Applied · rollback available
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onRollback}
+            className="ml-2 flex shrink-0 items-center gap-1 rounded-lg bg-amber-500/20 px-2 py-1 text-[10.5px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/30 dark:text-amber-300 cursor-pointer"
           >
-            {formatCountdown(remainingMs)}
-          </span>
-        </button>
+            <Undo2 className="size-3" aria-hidden />
+            Rollback
+            <span
+              className="font-mono tabular-nums"
+              aria-label={`${formatCountdown(remainingMs)} remaining`}
+            >
+              {formatCountdown(remainingMs)}
+            </span>
+          </button>
+        </div>
+        {createdPages && createdPages.length > 0 && onSelectPage && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5 border-t border-amber-500/20">
+            <span className="text-[10px] text-amber-800 dark:text-amber-300 font-medium">Switch to created page:</span>
+            {createdPages.map((cp) => (
+              <button
+                key={cp.id}
+                type="button"
+                onClick={() => onSelectPage(cp.id)}
+                className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold hover:bg-amber-500/30 transition-colors cursor-pointer"
+              >
+                <span>{cp.name}</span>
+                <ArrowRight className="size-2.5 opacity-60" />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -1928,8 +2257,26 @@ function SuggestionStatusCard({
           : "Not applied";
 
   return (
-    <span className="px-1 text-[10.5px] font-medium text-ed-muted">
-      {label}
-    </span>
+    <div className="flex flex-col gap-1 px-1">
+      <span className="text-[10.5px] font-medium text-ed-muted">
+        {label}
+      </span>
+      {message.status === "accepted" && createdPages && createdPages.length > 0 && onSelectPage && (
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-[10px] text-ed-muted">Open page:</span>
+          {createdPages.map((cp) => (
+            <button
+              key={cp.id}
+              type="button"
+              onClick={() => onSelectPage(cp.id)}
+              className="inline-flex items-center gap-1 rounded-md bg-brand/10 text-brand px-1.5 py-0.5 text-[10px] font-semibold hover:bg-brand/20 transition-colors cursor-pointer"
+            >
+              <span>{cp.name}</span>
+              <ArrowRight className="size-2.5 opacity-60" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
