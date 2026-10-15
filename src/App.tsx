@@ -64,13 +64,13 @@ export default function App() {
               <Route index element={<HomePage />} />
               <Route path="features" element={<FeaturesPage />} />
               <Route path="templates" element={<TemplatesPage />} />
+              <Route path="templates/:templateKey" element={<TemplateDetailPage />} />
               <Route path="pricing" element={<PricingPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
               <Route path="legal" element={<LegalPage />} />
             </Route>
             <Route element={<PublicLayout />}>
-              <Route path="templates/:templateKey" element={<TemplateDetailPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
 

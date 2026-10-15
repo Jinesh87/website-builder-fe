@@ -1,0 +1,809 @@
+/* Hero Gallery Banner CSS - Pixel perfect replica */
+.ghero {
+  padding-block: 64px 72px;
+  background:
+    radial-gradient(600px 380px at 0% 0%, #3A2C0C, transparent 70%),
+    radial-gradient(640px 460px at 100% 0%, #271E4D, transparent 70%),
+    radial-gradient(600px 360px at 50% 120%, #0F3127, transparent 70%),
+    #0F1220;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  color: #E9ECF7;
+  font-family: var(--sans, 'IBM Plex Sans', system-ui, -apple-system, sans-serif);
+}
+
+.ghero .wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  gap: 48px;
+  align-items: center;
+  text-align: left;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-inline: 24px;
+}
+
+@media (max-width: 640px) {
+  .ghero .wrap {
+    padding-inline: 16px;
+  }
+}
+
+.ghero .gcopy {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.ghero .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 12px / 1 var(--mono, 'IBM Plex Mono', monospace);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #B3C0FF;
+  background: #1A1E2E;
+  border: 1px solid #272C3C;
+  padding: 8px 14px;
+  border-radius: 999px;
+  width: max-content;
+}
+
+.ghero .eyebrow::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4FD6AE;
+  box-shadow: 0 0 8px #4FD6AE;
+}
+
+.ghero h1 {
+  font-family: var(--display, 'Bricolage Grotesque', 'IBM Plex Sans', system-ui, sans-serif);
+  font-size: clamp(38px, 4.8vw, 58px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  color: #F8FAFC;
+  margin: 0;
+  text-align: left;
+}
+
+.ghero h1 span {
+  color: #8096FF;
+  background: linear-gradient(transparent 62%, #3A2C0C 62%);
+  display: inline;
+}
+
+.ghero .lead {
+  font-size: 17.5px;
+  line-height: 1.55;
+  color: #AAB1C9;
+  max-width: 580px;
+  margin: 0;
+  text-align: left;
+}
+
+.ghero .lead b {
+  color: #F8FAFC;
+  font-weight: 700;
+}
+
+.ghero .search {
+  position: relative;
+  width: min(540px, 100%);
+  margin-top: 4px;
+}
+
+.ghero .search svg {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #8C93AE;
+  pointer-events: none;
+}
+
+.ghero .search .in {
+  width: 100%;
+  min-height: 54px;
+  padding: 0 16px 0 50px;
+  border-radius: 14px;
+  border: 1px solid #272C3C;
+  background: #1A1E2E;
+  color: #E9ECF7;
+  font: 15px / 1 var(--sans, 'IBM Plex Sans', system-ui, sans-serif);
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6);
+  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+
+.ghero .search .in:focus {
+  outline: 2px solid #8096FF;
+  outline-offset: 0;
+  border-color: #8096FF;
+}
+
+.ghero .popular {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 13.5px;
+  color: #AAB1C9;
+}
+
+.ghero .popular button {
+  border: 1px solid #272C3C;
+  background: #1A1E2E;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: 500 13px var(--sans, 'IBM Plex Sans', system-ui, sans-serif);
+  color: #E9ECF7;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.ghero .popular button:hover {
+  border-color: #8096FF;
+  color: #B3C0FF;
+  background: #1E2752;
+}
+
+.ghero .gstats {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.ghero .gstats div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ghero .gstats b {
+  font: 800 30px / 1 var(--display, 'Bricolage Grotesque', system-ui, sans-serif);
+  background: linear-gradient(120deg, #8096FF, #A892FF);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.ghero .gstats span {
+  font-size: 13px;
+  color: #AAB1C9;
+}
+
+/* Fan Deck */
+.fan {
+  position: relative;
+  height: 440px;
+  user-select: none;
+}
+
+.fan .tframe {
+  position: absolute;
+  width: 64%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  box-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.65), 0 0 0 1px #272C3C;
+  overflow: hidden;
+  background: #1A1E2E;
+}
+
+.fan .tframe:nth-child(1) {
+  left: 0;
+  top: 70px;
+  transform: rotate(-6deg);
+  z-index: 1;
+}
+
+.fan .tframe:nth-child(2) {
+  right: 0;
+  top: 60px;
+  transform: rotate(5deg);
+  z-index: 1;
+}
+
+.fan .tframe:nth-child(3) {
+  left: 18%;
+  top: 0;
+  z-index: 2;
+  box-shadow: 0 36px 70px -24px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.fan .tframe > .ts {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.fan .badge2 {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(26, 30, 46, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #272C3C;
+  border-radius: 14px;
+  padding: 10px 16px;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.7);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #E9ECF7;
+  animation: fan-bob 6s ease-in-out infinite;
+}
+
+.fan .badge2 i {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.fan .badge2 i svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fan .badge2 span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.fan .badge2 small {
+  display: block;
+  font-weight: 400;
+  color: #AAB1C9;
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+
+.fan .b1 {
+  left: -10px;
+  bottom: 30px;
+}
+
+.fan .b2 {
+  right: -6px;
+  top: -10px;
+  animation-delay: -3s;
+}
+
+@keyframes fan-bob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (max-width: 980px) {
+  .ghero .wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fan {
+    height: 360px;
+    max-width: 540px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .fan {
+    height: 250px;
+  }
+  .fan .badge2 {
+    display: none;
+  }
+}
+
+/* Template Engine (.ts and internal elements) */
+.ts {
+  width: 1200px;
+  height: 900px;
+  overflow: hidden;
+  background: radial-gradient(900px 560px at 105% -10%, color-mix(in srgb,var(--a) 16%, transparent), transparent 62%), radial-gradient(700px 460px at -10% 40%, color-mix(in srgb,var(--a) 7%, transparent), transparent 60%), var(--b);
+  color: var(--i);
+  font-family: var(--f);
+  font-size: 17px;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.ts * {
+  box-sizing: border-box;
+}
+
+.ts h1, .ts h2, .ts h3 {
+  font-family: var(--hf);
+  margin: 0;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.ts-nav {
+  height: 82px;
+  padding: 0 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 0;
+}
+
+.ts-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 20px;
+  font-family: var(--hf);
+}
+
+.ts-logo i {
+  background: linear-gradient(135deg,var(--a),color-mix(in srgb,var(--a) 55%, var(--i)));
+  border-radius: 9px;
+  width: 30px;
+  height: 30px;
+  box-shadow: 0 6px 14px -6px var(--a);
+  display: block;
+}
+
+.ts-nav nav {
+  background: color-mix(in srgb,var(--i) 5%, transparent);
+  padding: 8px 10px;
+  border-radius: 999px;
+  gap: 6px;
+  opacity: 1;
+  display: flex;
+  font-size: 15px;
+}
+
+.ts-nav nav span {
+  padding: 6px 14px;
+  border-radius: 999px;
+  opacity: .75;
+}
+
+.ts-nav nav span.on {
+  background: var(--b);
+  opacity: 1;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+.ts.dk .ts-nav nav span.on {
+  background: color-mix(in srgb,var(--i) 12%, transparent);
+}
+
+.ts-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 24px;
+  border-radius: var(--rad);
+  background: var(--a);
+  color: var(--o);
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+  box-shadow: 0 10px 22px -12px var(--a);
+}
+
+.ts-btn.o {
+  background: transparent;
+  color: var(--i);
+  box-shadow: inset 0 0 0 1.5px var(--l2);
+}
+
+.ts-burger {
+  display: none;
+  width: 24px;
+  height: 16px;
+  border-block: 2.5px solid var(--i);
+  position: relative;
+}
+
+.ts-burger::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2.5px;
+  margin-top: -1.25px;
+  background: var(--i);
+}
+
+.ts-hero {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 56px;
+  align-items: center;
+  padding: 40px 56px 30px;
+}
+
+.ts-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.ts-eye {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb,var(--a) 13%, transparent);
+  letter-spacing: .08em;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  color: var(--a);
+  font-weight: 700;
+  width: max-content;
+}
+
+.ts-eye::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--a);
+}
+
+.ts-eye.sm {
+  padding: 5px 12px;
+  font-size: 11.5px;
+}
+
+.ts-hero h1 {
+  font-size: 58px;
+  letter-spacing: -.02em;
+  margin: 18px 0 18px;
+  line-height: 1.1;
+}
+
+.ts-hero h1 em {
+  font-style: normal;
+  color: var(--a);
+  background: linear-gradient(transparent 70%, color-mix(in srgb,var(--a) 18%, transparent) 70%);
+}
+
+.ts-hero p {
+  font-size: 19px;
+  opacity: .8;
+  margin: 0 0 28px;
+  max-width: 30em;
+}
+
+.ts-row {
+  display: flex;
+  gap: 12px;
+}
+
+.ts-trust {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 26px;
+  font-size: 13.5px;
+  line-height: 1.35;
+  opacity: .9;
+}
+
+.ts-avs {
+  display: flex;
+}
+
+.ts-avs i {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--b);
+  margin-left: -10px;
+  display: block;
+}
+
+.ts-avs i:first-child {
+  margin-left: 0;
+}
+
+.ts-stars {
+  color: #F5A300;
+  letter-spacing: 2px;
+  font-size: 14px;
+}
+
+.ts-visual {
+  position: relative;
+}
+
+.ts-visual::before {
+  content: '';
+  position: absolute;
+  inset: 22px -22px -22px 22px;
+  border-radius: 28px;
+  background: linear-gradient(135deg,var(--a),color-mix(in srgb,var(--a) 40%, var(--b)));
+  opacity: .28;
+  transform: rotate(3deg);
+}
+
+.ts-art {
+  position: relative;
+  border-radius: 26px;
+  box-shadow: 0 34px 60px -30px rgba(0,0,0,.5);
+  overflow: hidden;
+  background: var(--s);
+  aspect-ratio: 4 / 3;
+}
+
+.ts-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ts-chip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--b);
+  color: var(--i);
+  padding: 12px 16px 12px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  box-shadow: 0 20px 40px -14px rgba(0,0,0,.35), inset 0 0 0 1px var(--l);
+}
+
+.ts-chip.c1 {
+  left: -30px;
+  bottom: 30px;
+}
+
+.ts-chip.c2 {
+  right: -24px;
+  top: 24px;
+}
+
+.ts-chip i {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: var(--a);
+  color: var(--o);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.ts-chip i svg {
+  width: 19px;
+  height: 19px;
+}
+
+.ts-chip small {
+  display: block;
+  font-weight: 500;
+  opacity: .62;
+  font-size: 12px;
+}
+
+.ts-logos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 6px 56px 0;
+  padding: 22px 0;
+  border-block: 1px solid var(--l);
+  font: 800 19px var(--hf);
+  opacity: .55;
+  letter-spacing: .01em;
+}
+
+.ts-logos span {
+  font: 700 11.5px var(--f);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.ts-sec {
+  padding: 44px 56px 20px;
+}
+
+.ts-sh {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+.ts-sh h2 {
+  font-size: 34px;
+  margin: 0;
+}
+
+.ts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.ts-card {
+  padding: 28px;
+  gap: 8px;
+  border-radius: 20px;
+  background: var(--s);
+  display: flex;
+  flex-direction: column;
+}
+
+.ts-card i {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: linear-gradient(135deg,var(--a),color-mix(in srgb,var(--a) 55%, var(--i)));
+  color: var(--o);
+  box-shadow: 0 12px 22px -12px var(--a);
+  display: grid;
+  place-items: center;
+}
+
+.ts-card i svg {
+  width: 24px;
+  height: 24px;
+}
+
+.ts-card b {
+  font-size: 20px;
+  font-family: var(--hf);
+}
+
+.ts-card span {
+  font-size: 15px;
+  opacity: .78;
+}
+
+.ts-card a {
+  color: var(--a);
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.ts-quote {
+  margin: 28px 56px 8px;
+  padding: 34px 40px;
+  border-radius: 24px;
+  background: var(--s);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 26px;
+  align-items: start;
+}
+
+.ts-quote .q {
+  font: 700 88px / 0.8 Georgia, serif;
+  color: var(--a);
+}
+
+.ts-quote p {
+  font: 500 21px / 1.5 var(--hf);
+  margin: 0 0 14px;
+}
+
+.ts-quote span {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  opacity: .7;
+}
+
+.ts-quote span i {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: block;
+}
+
+.ts-band {
+  position: relative;
+  overflow: hidden;
+  margin: 28px 56px 44px;
+  border-radius: 26px;
+  padding: 40px 44px;
+  background: linear-gradient(120deg,var(--a),color-mix(in srgb,var(--a) 55%, var(--i)));
+  color: var(--o);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.ts-band::before {
+  content: '';
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  right: -60px;
+  top: -120px;
+  background: rgba(255,255,255,.16);
+}
+
+.ts-band::after {
+  content: '';
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  right: 180px;
+  bottom: -110px;
+  background: rgba(255,255,255,.12);
+}
+
+.ts-band > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ts-band h3 {
+  font-size: 30px;
+  margin: 0;
+}
+
+.ts-band p {
+  margin: 8px 0 0;
+  opacity: .85;
+  font-size: 16px;
+}
+
+.ts-band .ts-btn {
+  background: var(--o);
+  color: var(--a);
+}
+
+.ts-foot {
+  display: none;
+}
+
+/* Layout modifiers */
+.ts.Lrev .ts-hero > div:first-child {
+  order: 2;
+}
+
+.ts.Coutline .ts-card {
+  background: color-mix(in srgb,var(--b) 70%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--l2);
+}
+
+.ts.Coutline .ts-card i {
+  border-radius: 50%;
+}
+
+.ts.Csoft .ts-card {
+  background: var(--s);
+}

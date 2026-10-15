@@ -60,7 +60,8 @@ function SignupSteps() {
 
 export default function SignupPage() {
   const navigate = useNavigate();
-  const notice = (useLocation().state as { notice?: string } | null)?.notice;
+  const location = useLocation();
+  const { notice, from } = (location.state as { notice?: string; from?: string } | null) ?? {};
   const [form, setForm] = useState<SignupForm>(INITIAL_FORM);
   const [errors, setErrors] = useState<SignupErrors>({});
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +92,7 @@ export default function SignupPage() {
       const state: VerifyEmailState = {
         email: result.email,
         resendAvailableInSeconds: result.resendAvailableInSeconds,
+        from,
       };
       navigate("/verify-email", { state });
     } catch (err) {
@@ -112,7 +114,7 @@ export default function SignupPage() {
       <h2 className="text-2xl font-semibold text-ink">Sign up</h2>
       <p className="mt-1 text-sm text-ink-body">
         Already have an account?{" "}
-        <Link to="/login" className="font-medium text-brand hover:underline">
+        <Link to="/login" state={from ? { from } : undefined} className="font-medium text-brand hover:underline">
           Log in
         </Link>
       </p>
@@ -198,7 +200,7 @@ export default function SignupPage() {
             {emailTaken && (
               <>
                 {" "}
-                <Link to="/login" className="font-medium underline">
+                <Link to="/login" state={from ? { from } : undefined} className="font-medium underline">
                   Log in instead
                 </Link>
               </>

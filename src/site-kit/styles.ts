@@ -755,6 +755,16 @@ export const SITE_CSS = `
 .wb-ticker-link:hover {
   color: var(--wb-primary);
 }
+.wb-ticker-bar .wb-ticker-track {
+  display: block; min-width: 0; animation: none;
+}
+.wb-ticker-bar .wb-ticker-link {
+  color: var(--wb-primary);
+  font-weight: 700;
+}
+.wb-ticker-bar .wb-ticker-link:hover {
+  color: var(--wb-text);
+}
 .wb-ticker-main {
   background: var(--wb-bg);
 }
@@ -1115,16 +1125,6 @@ export const SITE_CSS = `
 }
 .wb-chart-bar:hover { opacity: 1; }
 
-.wb-hero-floating-card {
-  position: absolute; background: color-mix(in srgb, var(--wb-bg) 92%, transparent);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--wb-border); border-radius: calc(var(--wb-radius) + 4px);
-  padding: 12px 18px; box-shadow: 0 20px 40px -8px rgb(0 0 0 / 0.16);
-  display: flex; align-items: center; gap: 12px; z-index: 10;
-  animation: wbFloat 4s ease-in-out infinite alternate;
-}
-.wb-hero-floating-card-1 { top: -10px; left: -10px; }
-.wb-hero-floating-card-2 { bottom: -10px; right: -10px; animation-delay: 2s; }
 .wb-floating-icon {
   width: 36px; height: 36px; border-radius: 10px; background: var(--wb-primary); color: var(--wb-on-primary, #ffffff);
   display: grid; place-items: center; font-size: 16px; flex-shrink: 0;
@@ -1151,6 +1151,47 @@ export const SITE_CSS = `
 }
 .wb-hero-asymmetric .wb-hero-media { margin-top: 24px; transform: rotate(1deg); transition: transform 0.3s ease; }
 .wb-hero-asymmetric .wb-hero-media:hover { transform: rotate(0deg); }
+
+.wb-hero-floating-cards .wb-hero-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
+}
+.wb-hero-floating-cards .wb-floating-card-wrap { display: block; padding: 28px 0 28px 28px; }
+.wb-hero-floating-cards .wb-floating-card-wrap img {
+  aspect-ratio: 4 / 5; max-height: 600px; box-shadow: 0 30px 60px -24px rgb(15 23 42 / 0.35);
+}
+.wb-hero-floating-cards-list { list-style: none; margin: 0; padding: 0; }
+.wb-hero-floating-card {
+  position: absolute; display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  max-width: 260px; border-radius: calc(var(--wb-radius) + 4px);
+  background: color-mix(in srgb, var(--wb-bg) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wb-text) 8%, transparent);
+  box-shadow: 0 18px 40px -14px rgb(15 23 42 / 0.3);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  color: var(--wb-text); z-index: 2;
+  animation: wbHeroCardFloat 6s ease-in-out infinite;
+}
+.wb-hero-floating-card-1 { top: 10%; left: 0; }
+.wb-hero-floating-card-2 { top: 46%; right: -16px; animation-delay: -2s; }
+.wb-hero-floating-card-3 { bottom: 4%; left: 8%; animation-delay: -4s; }
+.wb-hero-floating-card-icon {
+  display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%;
+  background: color-mix(in srgb, var(--wb-primary) 14%, transparent); color: var(--wb-primary);
+}
+.wb-hero-floating-card-icon svg { width: 18px; height: 18px; }
+.wb-hero-floating-card-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.wb-hero-floating-card-text strong { font-size: 15px; font-weight: 700; }
+.wb-hero-floating-card-text span { font-size: 12.5px; color: var(--wb-muted); }
+.wb-hero-floating-card-badge {
+  padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  background: var(--wb-primary); color: var(--wb-on-primary, #ffffff);
+}
+@keyframes wbHeroCardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wb-hero-floating-card { animation: none; }
+}
 
 .wb-hero-soft-card { padding: calc(var(--wb-section-y) * 0.8) 0; }
 .wb-hero-card-container {
@@ -4439,6 +4480,7 @@ details[open] > summary .wb-faq-plus {
 }
 .wb-footer ul { list-style: none; padding: 0; margin: 0; }
 .wb-footer li + li { margin-top: 10px; }
+.wb-footer .wb-footer-nav-row li + li, .wb-footer .wb-legal-links li + li { margin-top: 0; }
 .wb-footer a { text-decoration: none; transition: color 0.15s ease, opacity 0.15s ease; }
 .wb-footer a:hover { color: var(--wb-primary); }
 
@@ -6857,6 +6899,11 @@ details[open] > summary .wb-faq-plus {
   .wb-site h2 { font-size: 28px; }
   .wb-grid { grid-template-columns: repeat(var(--wb-cols-tablet, 2), minmax(0, 1fr)); }
   .wb-hero-split .wb-hero-grid, .wb-hero-split-left .wb-hero-grid, .wb-contact-grid { grid-template-columns: 1fr; gap: 40px; }
+  .wb-hero-floating-cards .wb-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .wb-hero-floating-cards .wb-floating-card-wrap { padding: 0; }
+  .wb-hero-floating-cards .wb-floating-card-wrap img { aspect-ratio: 4 / 3; }
+  .wb-hero-floating-cards-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .wb-hero-floating-card { position: static; animation: none; box-shadow: none; }
   .wb-features-split-container { grid-template-columns: 1fr !important; gap: 40px; }
   .wb-features-split-title { font-size: 32px; }
   .wb-feature-card-stacked { padding: 20px 22px; gap: 16px; }
