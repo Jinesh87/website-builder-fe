@@ -4,6 +4,9 @@ export interface MarketingContextValue {
   toast: (message: string) => void;
   previewTemplate: (index: number) => void;
   startWithTemplate: (index: number) => void;
+  shortlist: number[];
+  toggleShortlist: (index: number) => void;
+  openShortlist: () => void;
 }
 
 export const MarketingContext = createContext<MarketingContextValue | null>(null);

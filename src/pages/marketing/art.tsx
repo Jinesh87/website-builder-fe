@@ -173,4 +173,142 @@ export const ART: Record<string, ArtFn> = {
       <path d="M64 292h352" stroke={i} strokeOpacity=".15" strokeWidth="2" />
     </>
   ),
+  law: (a, s, i, _b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <rect x="226" y="70" width="28" height="210" rx="6" fill={i} />
+      <rect x="160" y="280" width="160" height="22" rx="6" fill={i} />
+      <rect x="110" y="96" width="260" height="12" rx="6" fill={i} />
+      <circle cx="240" cy="70" r="16" fill={a} />
+      <path d="M130 108l-40 90h80z" fill="none" stroke={i} strokeWidth="5" />
+      <path d="M350 108l-40 90h80z" fill="none" stroke={i} strokeWidth="5" />
+      <path d="M84 198a46 22 0 0092 0z" fill={a} />
+      <path d="M304 198a46 22 0 0092 0z" fill={a} />
+    </>
+  ),
+  home: (a, s, i, b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <circle cx="390" cy="70" r="30" fill={a} opacity=".6" />
+      <rect x="0" y="300" width="480" height="60" fill="#5C8A3A" opacity=".55" />
+      <path d="M110 300V170l110-80 110 80v130z" fill={b} />
+      <path d="M90 178L220 82l130 96" stroke={i} strokeWidth="14" fill="none" strokeLinejoin="round" />
+      <rect x="196" y="226" width="48" height="74" rx="4" fill={a} />
+      <rect x="138" y="190" width="40" height="36" rx="3" fill={s} />
+      <rect x="262" y="190" width="40" height="36" rx="3" fill={s} />
+      <rect x="378" y="220" width="12" height="80" fill="#6B4A2E" />
+      <circle cx="384" cy="200" r="40" fill="#3E8E5A" />
+    </>
+  ),
+  fit: (a, s, i, b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <circle cx="240" cy="180" r="130" fill={b} />
+      <rect x="120" y="170" width="240" height="20" rx="8" fill={i} />
+      <rect x="128" y="130" width="26" height="100" rx="8" fill={a} />
+      <rect x="96" y="146" width="26" height="68" rx="8" fill={a} />
+      <rect x="326" y="130" width="26" height="100" rx="8" fill={a} />
+      <rect x="358" y="146" width="26" height="68" rx="8" fill={a} />
+      <path d="M200 250h80l10 40h-100z" fill={i} opacity=".8" />
+      <circle cx="240" cy="246" r="24" fill="none" stroke={i} strokeWidth="8" opacity=".8" />
+    </>
+  ),
+  beauty: (a, s, i, b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <ellipse cx="200" cy="160" rx="90" ry="110" fill={b} stroke={i} strokeWidth="10" />
+      <rect x="190" y="268" width="20" height="60" fill={i} />
+      <rect x="150" y="320" width="100" height="14" rx="7" fill={i} />
+      <path d="M160 120c20-30 60-30 80 0" stroke={a} strokeWidth="6" fill="none" strokeLinecap="round" opacity=".7" />
+      <rect x="330" y="150" width="46" height="120" rx="12" fill={a} />
+      <rect x="342" y="128" width="22" height="26" rx="4" fill={i} />
+      <circle cx="384" cy="96" r="6" fill={a} />
+      <circle cx="300" cy="80" r="4" fill={a} />
+    </>
+  ),
+  heart: (a, s, i, b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <circle cx="240" cy="180" r="130" fill={b} />
+      <path d="M240 270s-90-52-90-118c0-32 24-52 50-52 18 0 32 10 40 24 8-14 22-24 40-24 26 0 50 20 50 52 0 66-90 118-90 118z" fill={a} />
+      <path d="M110 250c30 20 70 30 130 30s100-10 130-30" stroke={i} strokeWidth="10" fill="none" strokeLinecap="round" />
+      <circle cx="96" cy="100" r="8" fill={a} opacity=".6" />
+      <circle cx="392" cy="110" r="6" fill={a} opacity=".6" />
+    </>
+  ),
+  music: (a, s, i, _b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <circle cx="210" cy="190" r="130" fill={i} />
+      <circle cx="210" cy="190" r="100" fill="none" stroke={s} strokeWidth="2" opacity=".4" />
+      <circle cx="210" cy="190" r="74" fill="none" stroke={s} strokeWidth="2" opacity=".4" />
+      <circle cx="210" cy="190" r="44" fill={a} />
+      <circle cx="210" cy="190" r="8" fill={s} />
+      <path d="M370 70v120a24 24 0 11-14-22V90l60-14v94a24 24 0 11-14-22V64z" fill={a} />
+    </>
+  ),
+  edu: (a, s, i, b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <path d="M60 140l180-70 180 70-180 70z" fill={i} />
+      <path d="M130 168v60c0 20 50 40 110 40s110-20 110-40v-60l-110 42z" fill={i} opacity=".85" />
+      <rect x="408" y="140" width="6" height="90" fill={a} />
+      <circle cx="411" cy="236" r="12" fill={a} />
+      <path d="M140 290h100v40H140zM240 290h100v40H240z" fill={b} />
+      <path d="M240 290v40" stroke={a} strokeWidth="4" />
+    </>
+  ),
+  event: (a, s, i, b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <rect x="120" y="70" width="240" height="230" rx="18" fill={b} />
+      <rect x="120" y="70" width="240" height="60" rx="18" fill={a} />
+      <rect x="120" y="110" width="240" height="20" fill={a} />
+      <rect x="170" y="52" width="14" height="40" rx="7" fill={i} />
+      <rect x="296" y="52" width="14" height="40" rx="7" fill={i} />
+      <circle cx="80" cy="90" r="8" fill={a} />
+      <rect x="400" y="70" width="14" height="14" fill={i} transform="rotate(20 407 77)" />
+      <circle cx="410" cy="270" r="10" fill={a} opacity=".7" />
+    </>
+  ),
+  car: (a, s, i, b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <rect x="0" y="270" width="480" height="90" fill={i} opacity=".15" />
+      <path d="M70 250v-40c0-12 8-20 20-22l50-8 50-50c8-8 18-12 30-12h90c12 0 22 4 30 14l40 48h40c16 0 30 14 30 30v40z" fill={a} />
+      <path d="M200 130h60v48h-100zM280 130h40l36 48h-76z" fill={b} opacity=".85" />
+      <circle cx="140" cy="258" r="34" fill={i} />
+      <circle cx="140" cy="258" r="14" fill={s} />
+      <circle cx="350" cy="258" r="34" fill={i} />
+      <circle cx="350" cy="258" r="14" fill={s} />
+      <rect x="408" y="210" width="20" height="12" rx="4" fill={b} />
+    </>
+  ),
+  pet: (a, s, i, b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <circle cx="240" cy="190" r="130" fill={b} />
+      <ellipse cx="240" cy="220" rx="54" ry="46" fill={a} />
+      <ellipse cx="180" cy="150" rx="22" ry="28" fill={a} />
+      <ellipse cx="220" cy="120" rx="22" ry="28" fill={a} />
+      <ellipse cx="262" cy="120" rx="22" ry="28" fill={a} />
+      <ellipse cx="302" cy="150" rx="22" ry="28" fill={a} />
+      <path d="M360 290h70" stroke={i} strokeWidth="14" strokeLinecap="round" />
+      <circle cx="356" cy="282" r="10" fill={i} />
+      <circle cx="356" cy="298" r="10" fill={i} />
+      <circle cx="434" cy="282" r="10" fill={i} />
+      <circle cx="434" cy="298" r="10" fill={i} />
+    </>
+  ),
+  travel: (a, s, i, b) => (
+    <>
+      <rect width="480" height="360" fill={s} />
+      <circle cx="360" cy="90" r="40" fill={a} />
+      <path d="M0 300l120-140 80 80 70-90 210 150z" fill={i} />
+      <path d="M220 210l50-60 40 50" fill={b} opacity=".35" />
+      <rect x="0" y="300" width="480" height="60" fill={i} opacity=".85" />
+      <path d="M60 110c80-50 160-50 230-20" stroke={b} strokeWidth="4" strokeDasharray="10 10" fill="none" />
+      <path d="M300 86l28 8-28 8-6-8z" fill={b} />
+    </>
+  ),
 };

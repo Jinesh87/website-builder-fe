@@ -3,21 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { HOME_TEMPLATES, TPLS } from "./data.ts";
 import Icon from "./Icon.tsx";
 import { prefersReducedMotion } from "./marketing-context.ts";
-import { MediaTile, MiniSite, TemplateFrame, type SitePart } from "./MiniSite.tsx";
+import { MediaTile, TemplateFrame, type SitePart } from "./MiniSite.tsx";
 import TemplateCard from "./TemplateCard.tsx";
+import HeroGalleryBanner from "./HeroGalleryBanner.tsx";
 
-const HERO_TEMPLATE = TPLS.findIndex((t) => t.biz === "Lumen Dental Care");
-const HERO_SECTIONS: [SitePart, string][] = [
-  ["hero", "Hero"],
-  ["cards", "Services"],
-  ["band", "Call to action"],
-];
-const HERO_COLOURS = [
-  ["Teal", "#0E7C9A"],
-  ["Blue", "#3550E8"],
-  ["Coral", "#E0553A"],
-  ["Plum", "#7A2E6E"],
-];
+
 
 const AI_TEMPLATE = 1;
 const AI_PROMPT = "A bold website for a design studio with services, portfolio and a contact page";
@@ -88,8 +78,6 @@ function useAiDemo() {
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [heroSection, setHeroSection] = useState<SitePart>("hero");
-  const [heroColour, setHeroColour] = useState(HERO_COLOURS[0][1]);
   const ai = useAiDemo();
   const { run: runAi } = ai;
   const aiStage = useRef<HTMLDivElement>(null);
@@ -126,106 +114,7 @@ export default function HomePage() {
 
   return (
     <div className="view" data-view="home">
-      <div className="hero hero4">
-        <div className="wrap">
-          <div className="stack" style={{ gap: "22px" }}>
-            <div className="eyebrow">Website builder for small businesses</div>
-            <h1>
-              Build your business website <span className="hl">by hand or with AI</span>
-            </h1>
-            <p className="lead">
-              Pick a template and edit every section yourself, or describe your business and let AI write the first
-              draft. Preview every device, then publish to your own domain.
-            </p>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <Link to="/signup" className="btn p lg">
-                Create your free account
-              </Link>
-              <Link to="/templates" className="btn lg">
-                Browse templates
-              </Link>
-            </div>
-            <div className="pills">
-              <span className="pill mint">No code needed</span>
-              <span className="pill sky">Free sub-domain to start</span>
-              <span className="pill coral">Mobile-ready templates</span>
-            </div>
-          </div>
-          <div className="hero-stage">
-            <div className="mock">
-              <div className="mock-bar">
-                <i />
-                <i />
-                <i />
-                <span className="mock-title">Lumen Dental Care · Home · Draft</span>
-              </div>
-              <div className="mock-body">
-                <div className="mock-side" id="mockSide" aria-label="Try the editor">
-                  <span className="lab">Sections</span>
-                  {HERO_SECTIONS.map(([key, label]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      aria-pressed={heroSection === key}
-                      onClick={() => setHeroSection(key)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                  <span className="lab">Theme colour</span>
-                  <div className="sw">
-                    {HERO_COLOURS.map(([name, colour]) => (
-                      <button
-                        key={colour}
-                        type="button"
-                        aria-label={name}
-                        aria-pressed={heroColour === colour}
-                        style={{ background: colour }}
-                        onClick={() => setHeroColour(colour)}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="mock-canvas">
-                  <TemplateFrame
-                    t={HERO_TEMPLATE}
-                    label="Preview of the Lumen Dental Care sample website"
-                    selected={heroSection}
-                    accent={heroColour}
-                  />
-                  <p className="hint" style={{ fontSize: "12px" }}>
-                    Try it: pick a section or a colour.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="float f-ai">
-              <span className="tile c4 sm">
-                <Icon name="sparkle" className="ico" />
-              </span>
-              <div>
-                <b>Ask AI</b>
-                <span>"Add a FAQ section"</span>
-              </div>
-              <em className="ui-pill mint">Done</em>
-            </div>
-            <div className="float f-pub">
-              <span className="tile c2 sm">
-                <Icon name="check" className="ico" />
-              </span>
-              <div>
-                <b>Published</b>
-                <span>lumendental.com</span>
-              </div>
-            </div>
-            <div className="float f-phone" aria-hidden="true">
-              <div className="fp-in">
-                <MiniSite t={TPLS[HERO_TEMPLATE]} mobile />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <HeroGalleryBanner />
       <div className="marquee" aria-label="Template previews">
         <div className="mq-track">
           {marquee(0)}
