@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { HOME_TEMPLATES, TPLS } from "./data.ts";
+import { TPLS } from "./data.ts";
 import Icon from "./Icon.tsx";
 import { prefersReducedMotion } from "./marketing-context.ts";
 import { MediaTile, TemplateFrame, type SitePart } from "./MiniSite.tsx";
@@ -76,8 +76,33 @@ function useAiDemo() {
   return { state, run, stepClass };
 }
 
+const SHOWCASE_COLLECTIONS = [
+  {
+    id: "featured",
+    label: "✨ Featured (2026 Flagships)",
+    indices: [17, 22, 21], // 2151 (UX Designer · Midnight), 2156 (Design Institute · Elegant), 2155 (Tech Academy · Modern)
+  },
+  {
+    id: "portfolio",
+    label: "💼 Portfolio & Personal",
+    indices: [17, 18, 19], // 2151, 2152, 2153
+  },
+  {
+    id: "education",
+    label: "🎓 Education & Community",
+    indices: [21, 22, 23], // 2155, 2156, 2157
+  },
+  {
+    id: "business",
+    label: "🏢 Business & Agency",
+    indices: [4, 8, 0], // 2138 (Architecture), 2142 (Marketing Agency), 2134 (Accounting)
+  },
+];
+
 export default function HomePage() {
   const navigate = useNavigate();
+  const [showcaseTab, setShowcaseTab] = useState("featured");
+  const activeCollection = SHOWCASE_COLLECTIONS.find((c) => c.id === showcaseTab) ?? SHOWCASE_COLLECTIONS[0];
   const ai = useAiDemo();
   const { run: runAi } = ai;
   const aiStage = useRef<HTMLDivElement>(null);
@@ -530,9 +555,23 @@ export default function HomePage() {
               Browse all templates
             </Link>
           </div>
+          <div className="home-tpl-tabs" role="tablist" aria-label="Template categories">
+            {SHOWCASE_COLLECTIONS.map((col) => (
+              <button
+                key={col.id}
+                type="button"
+                role="tab"
+                aria-selected={showcaseTab === col.id}
+                className={`home-tpl-tab ${showcaseTab === col.id ? "active" : ""}`}
+                onClick={() => setShowcaseTab(col.id)}
+              >
+                {col.label}
+              </button>
+            ))}
+          </div>
           <div className="grid g3">
-            {HOME_TEMPLATES.map((index) => (
-              <TemplateCard key={index} index={index} />
+            {activeCollection.indices.map((index) => (
+              <TemplateCard key={`${showcaseTab}-${index}`} index={index} />
             ))}
           </div>
         </div>
