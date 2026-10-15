@@ -13,6 +13,8 @@ import PageHeader from "../../components/app/PageHeader.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import PaymentSettingsPanel, { PaymentStatusChip } from "../../components/admin/PaymentSettingsPanel.tsx";
+import AiModelPricingPanel from "../../components/admin/AiModelPricingPanel.tsx";
+import AiBillingRatePanel from "../../components/admin/AiBillingRatePanel.tsx";
 import type { PaymentConfig } from "../../api/wallet.ts";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
@@ -503,6 +505,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </form>
+
+              <AiModelPricingPanel onSaved={() => void adminAiApi.get().then(setAiConfig).catch(() => undefined)} />
+              <AiBillingRatePanel />
             </div>
           )}
         </div>
