@@ -24,14 +24,21 @@ const NAV = [
   ["/contact", "Contact"],
 ] as const;
 
-const NO_CTA = ["/contact", "/legal"];
+const NO_CTA = ["/contact", "/legal", "/templates"];
 const SITE_TITLE = "Website Builder";
 
-export function MarketingHeader() {
+export function MarketingHeader({
+  shortlist = [],
+  onOpenShortlist,
+}: {
+  shortlist?: number[];
+  onOpenShortlist?: () => void;
+}) {
   const { pathname } = useLocation();
   // The drawer stays open only on the page it was opened on.
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
+  const isTemplates = pathname === "/templates";
 
   return (
     <header className="top">
@@ -41,6 +48,7 @@ export function MarketingHeader() {
             <span />
           </span>
           [Your Brand]
+          {isTemplates && <span className="brand-badge">Templates</span>}
         </Link>
         <nav className="nav" aria-label="Main">
           {NAV.map(([to, label]) => (
@@ -50,12 +58,42 @@ export function MarketingHeader() {
           ))}
         </nav>
         <div className="acts">
-          <Link to="/login" className="login">
-            Log in
-          </Link>
-          <Link to="/signup" className="btn p">
-            Sign up free
-          </Link>
+          {isTemplates ? (
+            <>
+              <button
+                className="btn sl-btn"
+                type="button"
+                onClick={onOpenShortlist}
+                aria-label="View shortlist"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ width: 16, height: 16 }}
+                >
+                  <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z" />
+                </svg>
+                Shortlist
+                {shortlist.length > 0 && <span className="sl-badge">{shortlist.length}</span>}
+              </button>
+              <Link to="/signup" className="btn p">
+                Start free
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="login">
+                Log in
+              </Link>
+              <Link to="/signup" className="btn p">
+                Sign up free
+              </Link>
+            </>
+          )}
         </div>
         <button
           className="burger"
@@ -239,12 +277,183 @@ function TemplatePreviewModal({
   );
 }
 
+function ShortlistModal({
+  shortlist,
+  onClose,
+  onRemove,
+  onUse,
+}: {
+  shortlist: number[];
+  onClose: () => void;
+  onRemove: (index: number) => void;
+  onUse: (index: number) => void;
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const lastFocus = document.activeElement as HTMLElement | null;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+      lastFocus?.focus?.();
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shortlistModalTitle"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="dlg"
+        style={{
+          width: "min(560px, 100%)",
+          background: "#151928",
+          color: "#E9ECF7",
+          border: "1px solid #272C3C",
+          borderRadius: "18px",
+        }}
+      >
+        <div className="dh" style={{ borderBottom: "1px solid #272C3C", padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 id="shortlistModalTitle" style={{ fontSize: "20px", fontWeight: 700, margin: 0, color: "#F8FAFC" }}>
+            Your shortlist ({shortlist.length})
+          </h2>
+          <button
+            ref={closeRef}
+            className="x"
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            style={{ background: "none", border: 0, color: "#8C93AE", fontSize: "20px", cursor: "pointer" }}
+          >
+            ✕
+          </button>
+        </div>
+        <div className="db" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          {shortlist.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "36px 16px", color: "#8C93AE" }}>
+              <p style={{ fontSize: "16px", fontWeight: 600, color: "#F1F4F9", margin: "0 0 6px 0" }}>Your shortlist is empty</p>
+              <p style={{ fontSize: "14px", margin: 0 }}>
+                Click the heart icon on any template card to save it to your shortlist.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "55vh", overflowY: "auto" }}>
+              {shortlist.map((index) => {
+                const item = TPLS[index];
+                if (!item) return null;
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "100px 1fr auto",
+                      gap: "14px",
+                      alignItems: "center",
+                      border: "1px solid #272C3C",
+                      borderRadius: "12px",
+                      padding: "10px",
+                      background: "#1A1F33",
+                    }}
+                  >
+                    <div style={{ width: "100px", aspectRatio: "4/3", borderRadius: "8px", overflow: "hidden" }}>
+                      <TemplateFrame t={index} />
+                    </div>
+                    <div>
+                      <b style={{ display: "block", fontSize: "15px", color: "#F8FAFC", marginBottom: "4px" }}>
+                        {item.n}
+                      </b>
+                      <span style={{ fontSize: "13px", color: "#8C93AE" }}>
+                        {item.c} · {item.style}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                      <button
+                        className="btn p sm"
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onUse(index);
+                        }}
+                      >
+                        Use
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Remove from shortlist"
+                        onClick={() => onRemove(index)}
+                        style={{
+                          background: "none",
+                          border: "1px solid #272C3C",
+                          borderRadius: "8px",
+                          color: "#8C93AE",
+                          width: "32px",
+                          height: "32px",
+                          cursor: "pointer",
+                          display: "grid",
+                          placeItems: "center",
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function MarketingLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [preview, setPreview] = useState<number | null>(null);
+  const [showShortlistModal, setShowShortlistModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
+
+  const [shortlist, setShortlist] = useState<number[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("tplShortlist") || "[]").filter(
+        (i: number) => typeof i === "number" && i >= 0 && i < TPLS.length,
+      );
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleShortlist = useCallback((index: number) => {
+    const t = TPLS[index];
+    if (!t) return;
+    setShortlist((prev) => {
+      const exists = prev.includes(index);
+      const next = exists ? prev.filter((i) => i !== index) : [...prev, index];
+      try {
+        localStorage.setItem("tplShortlist", JSON.stringify(next));
+      } catch {}
+      setToastMessage(exists ? `Removed ${t.n} from shortlist` : `Added ${t.n} to shortlist`);
+      window.clearTimeout(toastTimer.current);
+      toastTimer.current = window.setTimeout(() => setToastMessage(null), 2800);
+      return next;
+    });
+  }, []);
+
+  const openShortlist = useCallback(() => setShowShortlistModal(true), []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -266,18 +475,43 @@ export default function MarketingLayout() {
       previewTemplate: setPreview,
       startWithTemplate(index) {
         setPreview(null);
-        navigate("/signup", {
-          state: { notice: `Starting with the "${TPLS[index].n}" template. You can change it later.` },
-        });
+        const t = TPLS[index];
+        if (t?.id) {
+          navigate(`/templates/${t.id}`);
+        } else {
+          navigate("/templates");
+        }
       },
+      shortlist,
+      toggleShortlist,
+      openShortlist,
     }),
-    [navigate],
+    [navigate, shortlist, toggleShortlist, openShortlist],
   );
+
+  const isPreviewMode = pathname.startsWith("/templates/") && pathname !== "/templates";
+
+  if (isPreviewMode) {
+    return (
+      <MarketingContext.Provider value={context}>
+        <div className="mk mk-preview-mode" style={{ minHeight: "100vh", background: "#0B0E1B" }}>
+          <main id="app" style={{ minHeight: "100vh", padding: 0 }}>
+            <Suspense fallback={null}>
+              <Outlet />
+            </Suspense>
+          </main>
+          <div className="toast" hidden={!toastMessage} role="status" aria-live="polite">
+            {toastMessage}
+          </div>
+        </div>
+      </MarketingContext.Provider>
+    );
+  }
 
   return (
     <MarketingContext.Provider value={context}>
       <div className="mk">
-        <MarketingHeader />
+        <MarketingHeader shortlist={shortlist} onOpenShortlist={openShortlist} />
         <main id="app">
           <Suspense fallback={null}>
             <Outlet />
@@ -299,6 +533,14 @@ export default function MarketingLayout() {
         <MarketingFooter />
         {preview !== null && (
           <TemplatePreviewModal index={preview} onClose={closePreview} onUse={context.startWithTemplate} />
+        )}
+        {showShortlistModal && (
+          <ShortlistModal
+            shortlist={shortlist}
+            onClose={() => setShowShortlistModal(false)}
+            onRemove={toggleShortlist}
+            onUse={context.startWithTemplate}
+          />
         )}
         <div className="toast" hidden={!toastMessage} role="status" aria-live="polite">
           {toastMessage}

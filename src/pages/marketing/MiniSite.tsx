@@ -19,8 +19,9 @@ interface MiniSiteProps {
 
 /** A small sample website drawn from a template, laid out at 1200px wide. */
 export function MiniSite({ t, mobile, accent, selected, generating, shown = [], style }: MiniSiteProps) {
-  const line = t.b.toUpperCase() === "#FFFFFF" || t.b.startsWith("#F") ? "rgba(0,0,0,.08)" : "rgba(255,255,255,.1)";
-  const line2 = t.b.startsWith("#F") ? "rgba(0,0,0,.25)" : "rgba(255,255,255,.35)";
+  const dark = !/^#F/i.test(t.b);
+  const line = dark ? "rgba(255,255,255,.1)" : "rgba(0,0,0,.08)";
+  const line2 = dark ? "rgba(255,255,255,.35)" : "rgba(0,0,0,.25)";
   const vars = {
     "--b": t.b,
     "--i": t.i,
@@ -40,7 +41,16 @@ export function MiniSite({ t, mobile, accent, selected, generating, shown = [], 
 
   return (
     <div
-      className={["ts", mobile && "m", generating && "gen"].filter(Boolean).join(" ")}
+      className={[
+        "ts",
+        mobile && "m",
+        generating && "gen",
+        t.L && `L${t.L}`,
+        t.C && `C${t.C}`,
+        dark && "dk",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={vars}
       aria-hidden="true"
     >
@@ -59,7 +69,7 @@ export function MiniSite({ t, mobile, accent, selected, generating, shown = [], 
         <span className="ts-burger" />
       </div>
       <div className={part("hero", "ts-hero")} data-s="hero">
-        <div>
+        <div className="ts-copy">
           <span className="ts-eye">{t.eye}</span>
           <h1>{t.h}</h1>
           <p>{t.p}</p>
@@ -68,8 +78,10 @@ export function MiniSite({ t, mobile, accent, selected, generating, shown = [], 
             <span className="ts-btn o">Learn more</span>
           </div>
         </div>
-        <div className="ts-art">
-          <svg viewBox="0 0 480 360">{ART[t.art](t.a, t.s, t.i, t.b)}</svg>
+        <div className="ts-visual">
+          <div className="ts-art">
+            <svg viewBox="0 0 480 360">{ART[t.art] ? ART[t.art](accent ?? t.a, t.s, t.i, t.b) : null}</svg>
+          </div>
         </div>
       </div>
       <div className={part("cards", "ts-sec")} data-s="cards">

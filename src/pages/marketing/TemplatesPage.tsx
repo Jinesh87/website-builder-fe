@@ -1,158 +1,167 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { CATS, TPLS } from "./data.ts";
-import Icon from "./Icon.tsx";
-import { TemplateFrame } from "./MiniSite.tsx";
+import { CATS, CAT_LABEL, STYLES, TPLS } from "./data.ts";
+import { useMarketing } from "./marketing-context.ts";
 import TemplateCard from "./TemplateCard.tsx";
+import "./templates-gallery.css";
 
 export default function TemplatesPage() {
   const location = useLocation();
-  const [cat, setCat] = useState<string>((location.state as { cat?: string } | null)?.cat ?? "All");
-  const [query, setQuery] = useState("");
+  const { shortlist, toggleShortlist } = useMarketing();
 
-  const q = query.trim().toLowerCase();
-  const list = TPLS.flatMap((t, index) =>
-    (cat === "All" || t.c === cat) && (!q || [t.n, t.c, t.pages, t.biz].join(" ").toLowerCase().includes(q))
-      ? [index]
-      : [],
-  );
+  const [selectedCat, setSelectedCat] = useState<string>(() => {
+    const stateCat = (location.state as { cat?: string } | null)?.cat;
+    return stateCat && CATS.includes(stateCat as (typeof CATS)[number]) ? stateCat : "All";
+  });
+  const [styleFilter, setStyleFilter] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<"pop" | "az" | "new">("pop");
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { All: TPLS.length };
+    for (const c of CATS) {
+      if (c === "All") continue;
+      counts[c] = TPLS.filter((t) => t.c === c).length;
+    }
+    return counts;
+  }, []);
+
+  // Filtered and sorted templates list
+  const filteredIndices = useMemo(() => {
+    const result = TPLS.map((_, i) => i).filter((i) => {
+      const t = TPLS[i];
+      if (selectedCat !== "All" && t.c !== selectedCat) return false;
+      if (styleFilter && t.style !== styleFilter) return false;
+      return true;
+    });
+
+    if (sortOrder === "az") {
+      result.sort((a, b) => TPLS[a].n.localeCompare(TPLS[b].n));
+    } else if (sortOrder === "new") {
+      result.reverse();
+    }
+    // "pop" maintains the default curated order where row 1 and row 2 match the reference UI!
+
+    return result;
+  }, [selectedCat, styleFilter, sortOrder]);
 
   return (
-    <div className="view" data-view="templates">
-      <div className="page-hero split-hero">
-        <div className="wrap">
-          <div className="stack" style={{ gap: "16px" }}>
-            <div className="eyebrow">Templates</div>
-            <h1>Start from a template you like</h1>
-            <p className="lead">
-              Professional layouts for clinics, restaurants, agencies, consultants and more. Every template is fully
-              editable after you sign up.
-            </p>
-            <div className="pills">
-              <span className="pill mint">Mobile-ready</span>
-              <span className="pill sky">Change any colour or font</span>
-              <span className="pill coral">Add or remove sections</span>
+    <div className="gallery-view" data-view="templates">
+      <div className="gallery-wrap">
+        {/* Title */}
+        <div className="gallery-head">
+          <h1 className="gallery-title">All templates</h1>
+
+          {/* Category Chips with Counts */}
+          <div className="gallery-chips" role="group" aria-label="Filter templates by category">
+            {CATS.map((c) => {
+              const isAll = c === "All";
+              const label = isAll ? "All templates" : CAT_LABEL[c] ?? c;
+              const count = categoryCounts[c] ?? 0;
+              const isSelected = selectedCat === c;
+
+              return (
+                <button
+                  key={c}
+                  className="gallery-chip"
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => setSelectedCat(c)}
+                >
+                  <span>{label}</span>
+                  <span className="count">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Filter Controls Bar (.gbar) */}
+        <div className="gallery-bar">
+          <span className="gallery-count" aria-live="polite">
+            {filteredIndices.length} {filteredIndices.length === 1 ? "template" : "templates"}
+            {selectedCat !== "All" ? ` in ${CAT_LABEL[selectedCat] ?? selectedCat}` : ""}
+            {styleFilter ? ` · ${styleFilter} style` : ""}
+          </span>
+
+          <div className="gallery-filters">
+            {/* Style Filter */}
+            <div className="gallery-filter-group">
+              <label htmlFor="styleSelect" className="gallery-filter-label">
+                Style
+              </label>
+              <select
+                id="styleSelect"
+                className="gallery-select"
+                value={styleFilter}
+                onChange={(e) => setStyleFilter(e.target.value)}
+              >
+                {STYLES.map((st) => (
+                  <option key={st} value={st === "All styles" ? "" : st}>
+                    {st}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sort Filter */}
+            <div className="gallery-filter-group">
+              <label htmlFor="sortSelect" className="gallery-filter-label">
+                Sort
+              </label>
+              <select
+                id="sortSelect"
+                className="gallery-select"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as "pop" | "az" | "new")}
+              >
+                <option value="pop">Most popular</option>
+                <option value="az">Name A–Z</option>
+                <option value="new">Newest</option>
+              </select>
             </div>
           </div>
-          <div className="tcollage">
-            <TemplateFrame t={1} />
-            <TemplateFrame t={6} />
-            <TemplateFrame t={7} />
+        </div>
+
+        {/* 3-Column Template Grid */}
+        <div className="gallery-grid">
+          {filteredIndices.length > 0 ? (
+            filteredIndices.map((index) => (
+              <TemplateCard
+                key={index}
+                index={index}
+                isShortlisted={shortlist.includes(index)}
+                onToggleShortlist={toggleShortlist}
+              />
+            ))
+          ) : (
+            <div className="gallery-empty">
+              <p>No templates match your selected filters.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCat("All");
+                  setStyleFilter("");
+                  setSortOrder("pop");
+                }}
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* AI Callout Banner below grid */}
+        <div className="gallery-ai-cta">
+          <div>
+            <h3>Can't decide? Let AI build it for you.</h3>
+            <p>Describe your business in one sentence and get an editable website draft in minutes.</p>
           </div>
+          <Link to="/features" className="btn-ai">
+            Try the AI builder
+          </Link>
         </div>
       </div>
-      <section>
-        <div className="wrap stack" style={{ gap: "24px" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: "16px",
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
-            <div className="chips" role="group" aria-label="Filter templates by category">
-              {CATS.map((c) => (
-                <button key={c} className="chip" type="button" aria-pressed={c === cat} onClick={() => setCat(c)}>
-                  {c}
-                </button>
-              ))}
-            </div>
-            <div className="fld" style={{ width: "min(280px,100%)" }}>
-              <label htmlFor="tplSearch" className="sr">
-                Search templates
-              </label>
-              <input
-                id="tplSearch"
-                className="in"
-                type="search"
-                placeholder="Search templates"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </div>
-          </div>
-          <p className="hint" aria-live="polite">
-            {list.length} {list.length === 1 ? "template" : "templates"}
-          </p>
-          <div className="grid g3">
-            {list.length ? (
-              list.map((index) => <TemplateCard key={index} index={index} />)
-            ) : (
-              <div className="empty" style={{ gridColumn: "1/-1" }}>
-                No templates match "{q}". Try another word or{" "}
-                <button
-                  className="link"
-                  type="button"
-                  style={{
-                    border: 0,
-                    background: "none",
-                    color: "var(--accent)",
-                    font: "inherit",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                  onClick={() => {
-                    setCat("All");
-                    setQuery("");
-                  }}
-                >
-                  clear the filters
-                </button>
-                .
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-      <section className="band">
-        <div className="wrap">
-          <div className="sec-head center">
-            <div className="eyebrow">How templates work</div>
-            <h2>A starting point, not a straitjacket</h2>
-          </div>
-          <div className="grid g3">
-            <div className="card">
-              <span className="tile c0">
-                <Icon name="layout" className="ico" />
-              </span>
-              <h3>Pick a template</h3>
-              <p>Choose a layout made for your kind of business. Preview it on desktop and mobile first.</p>
-            </div>
-            <div className="card">
-              <span className="tile c3">
-                <Icon name="palette" className="ico" />
-              </span>
-              <h3>Make it yours</h3>
-              <p>Add your logo, colours, fonts, photos and words. Add or remove sections and pages.</p>
-            </div>
-            <div className="card">
-              <span className="tile c2">
-                <Icon name="globe" className="ico" />
-              </span>
-              <h3>Publish</h3>
-              <p>Go live on a free sub-domain or your own domain, then keep editing whenever you like.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section>
-        <div className="wrap">
-          <div className="ai-cta">
-            <span className="tile c4">
-              <Icon name="sparkle" className="ico" />
-            </span>
-            <div className="stack" style={{ gap: "6px" }}>
-              <h2>Can't find the right one?</h2>
-              <p>Describe your business and let AI build a website for you instead.</p>
-            </div>
-            <Link to="/features" className="btn p lg">
-              See the AI builder
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
