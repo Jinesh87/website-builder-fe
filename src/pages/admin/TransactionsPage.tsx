@@ -7,6 +7,7 @@ import { errorMessage } from "../../api/http.ts";
 import {
   adminWalletApi,
   formatConnects,
+  formatConnectsNumber,
   formatPaise,
   type AdminPaymentsResponse,
   type AdminTransactionsResponse,
@@ -175,28 +176,28 @@ export default function TransactionsPage() {
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Connects bought"
-            value={transactions.summary.purchased.toLocaleString("en-IN")}
+            value={formatConnectsNumber(transactions.summary.purchased)}
             hint={`${transactions.summary.purchaseCount} ${transactions.summary.purchaseCount === 1 ? "purchase" : "purchases"} in this period`}
             icon={<ArrowDownLeft className="size-4" aria-hidden />}
             tone="bg-emerald-50 text-emerald-600"
           />
           <StatCard
             label="Connects used on AI"
-            value={transactions.summary.aiUsage.toLocaleString("en-IN")}
+            value={formatConnectsNumber(transactions.summary.aiUsage)}
             hint="Spent by clients in this period"
             icon={<AiSparklesIcon className="size-4" variant="glossy" />}
             tone="bg-brand-soft text-brand"
           />
           <StatCard
             label="Adjustments"
-            value={transactions.summary.adjustments.toLocaleString("en-IN")}
+            value={formatConnectsNumber(transactions.summary.adjustments)}
             hint="Net manual credits minus debits, in connects"
             icon={<Scale className="size-4" aria-hidden />}
             tone="bg-amber-50 text-amber-600"
           />
           <StatCard
             label="Connects held"
-            value={transactions.summary.heldBalance.toLocaleString("en-IN")}
+            value={formatConnectsNumber(transactions.summary.heldBalance)}
             hint={`Across ${transactions.summary.fundedWallets} ${transactions.summary.fundedWallets === 1 ? "client" : "clients"} with a balance, right now`}
             icon={<Landmark className="size-4" aria-hidden />}
             tone="bg-indigo-50 text-indigo-600"
@@ -307,9 +308,9 @@ export default function TransactionsPage() {
                       <td className="whitespace-nowrap px-5 py-3 text-xs text-ink-body">{formatDate(item.createdAt)}</td>
                       <td className={`whitespace-nowrap px-5 py-3 text-right font-semibold ${credit ? "text-emerald-600" : "text-rose-600"}`}>
                         {credit ? "+" : "−"}
-                        {item.amount.toLocaleString("en-IN")}
+                        {formatConnectsNumber(item.amount)}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-right text-ink-body">{item.balanceAfter.toLocaleString("en-IN")}</td>
+                      <td className="whitespace-nowrap px-5 py-3 text-right text-ink-body">{formatConnectsNumber(item.balanceAfter)}</td>
                       <td className="px-5 py-3 font-mono text-xs text-ink-muted">{item.razorpayPaymentId ?? "—"}</td>
                     </tr>
                   );

@@ -5,6 +5,7 @@ import { errorMessage } from "../../api/http.ts";
 import {
   connectsPriceInPaise,
   formatConnects,
+  formatConnectsNumber,
   formatPaise,
   walletApi,
   type Wallet,
@@ -144,11 +145,18 @@ export default function ConnectsPage() {
                   <Coins className="size-4" aria-hidden />
                   Available connects
                 </div>
-                <p className="mt-2 text-5xl font-semibold tracking-tight">{wallet.balance.toLocaleString("en-IN")}</p>
+                <p className="mt-2 text-5xl font-semibold tracking-tight">{formatConnectsNumber(wallet.balance)}</p>
                 <p className="mt-2 text-sm text-white/70">
                   ₹1 = {wallet.connectsPerRupee} connects. Sold in packs of {wallet.packSize}.
                   {lastPurchase && ` Last bought ${formatConnects(lastPurchase.amount)} on ${formatDate(lastPurchase.createdAt, false)}.`}
                 </p>
+                {wallet.balance <= 0 && (
+                  <p className="mt-3 inline-flex rounded-lg bg-white/15 px-3 py-1.5 text-sm font-medium">
+                    {wallet.balance < 0
+                      ? "Your last AI request cost more than you had left. Buy connects to keep using AI."
+                      : "Buy connects to start using AI."}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col items-end gap-2">
                 <Button
@@ -230,10 +238,10 @@ export default function ConnectsPage() {
                             className={`whitespace-nowrap px-4 py-3.5 text-right font-semibold ${credit ? "text-emerald-600" : "text-ink"}`}
                           >
                             {credit ? "+" : "−"}
-                            {item.amount.toLocaleString("en-IN")}
+                            {formatConnectsNumber(item.amount)}
                           </td>
                           <td className="whitespace-nowrap px-6 py-3.5 text-right text-ink-body">
-                            {item.balanceAfter.toLocaleString("en-IN")}
+                            {formatConnectsNumber(item.balanceAfter)}
                           </td>
                         </tr>
                       );

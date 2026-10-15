@@ -79,9 +79,38 @@ export function formatPaise(paise: number, currency = "INR"): string {
   }).format(paise / 100);
 }
 
-export function formatConnects(connects: number): string {
-  return `${connects.toLocaleString("en-IN")} ${connects === 1 ? "connect" : "connects"}`;
+/** Connects are tracked to a thousandth, e.g. "1,234.567". */
+export function formatConnectsNumber(connects: number): string {
+  return connects.toLocaleString("en-IN", { maximumFractionDigits: 3 });
 }
+
+export function formatConnects(connects: number): string {
+  return `${formatConnectsNumber(connects)} ${connects === 1 ? "connect" : "connects"}`;
+}
+
+export type BillingSettings = {
+  market: {
+    /** Rupees per US dollar from the exchange-rate provider. */
+    rate: number;
+    rateDate: string | null;
+    source: string;
+    fetchedAt: string | null;
+  };
+  /** Rupees the super admin adds per US dollar. */
+  margin: number;
+  /** Market rate plus margin. */
+  effectiveRate: number;
+  connectsPerRupee: number;
+  connectsPerUsd: number;
+};
+
+export const adminBillingApi = {
+  get: () => request<{ billing: BillingSettings }>("/admin/settings/billing").then((data) => data.billing),
+  update: (margin: number) =>
+    request<{ billing: BillingSettings }>("/admin/settings/billing", { method: "PUT", body: { margin } }).then((data) => data.billing),
+  refreshRate: () =>
+    request<{ billing: BillingSettings }>("/admin/settings/billing/refresh-rate", { method: "POST" }).then((data) => data.billing),
+};
 
 /** Same rounding as the server: nearest paisa, so 50 connects = ₹16.67. */
 export function connectsPriceInPaise(connects: number, connectsPerRupee: number): number {
