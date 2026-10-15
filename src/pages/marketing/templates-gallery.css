@@ -984,6 +984,24 @@
   min-width: 0;
 }
 
+/* Plain classes instead of Tailwind utilities: the unlayered `.mk` reset overrides them. */
+.tpl-full-meta .tpl-full-chip {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+@media (max-width: 1023px) {
+  .tpl-full-meta .tpl-full-chip-lg {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .tpl-full-meta .tpl-full-chip-md {
+    display: none;
+  }
+}
+
 .tpl-full-title {
   font-size: 14px;
   font-weight: 700;

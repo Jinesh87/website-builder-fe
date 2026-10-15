@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -25,6 +25,7 @@ import { templatesApi, type TemplatePreview } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
 import { SitePage } from "../../site-kit/index.ts";
+import { getTemplateKey, getTemplateSite } from "../../site-kit/templates/index.ts";
 import { Spinner } from "@heroui/react";
 import "../marketing/templates-gallery.css";
 
@@ -424,11 +425,26 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
   const navigate = useNavigate();
   const { user } = useAuth();
   const { shortlist, toggleShortlist, toast } = useMarketing();
-  const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const pages = useMemo(() => template.pages.split(", "), [template.pages]);
+  const [device, setDevice] = useState<Device>("desktop");
+  const site = useMemo(() => getTemplateSite(template.id), [template.id]);
+  const pages = useMemo(
+    () => (site ? site.pages.map((page) => page.name) : template.pages.split(", ")),
+    [site, template.pages],
+  );
   const [selectedPage, setSelectedPage] = useState(pages[0] || "Home");
   const [copied, setCopied] = useState(false);
   const isShortlisted = shortlist.includes(index);
+  const canvasRef = useRef<HTMLElement>(null);
+  const sitePage = site?.pages.find((page) => page.name === selectedPage) ?? site?.pages[0];
+
+  useEffect(() => {
+    canvasRef.current?.scrollTo({ top: 0 });
+  }, [selectedPage]);
+
+  const handleSiteLinkClick = (href: string) => {
+    const target = site?.pages.find((page) => page.slug === href);
+    if (target) setSelectedPage(target.name);
+  };
 
   const handleCopyUrl = () => {
     const url = window.location.href;
@@ -447,12 +463,14 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
   };
 
   const handleUseTemplate = () => {
+    const createPath = `/websites/new?templateKey=${encodeURIComponent(getTemplateKey(template.id) ?? template.id)}`;
     if (user) {
-      navigate(`/websites/new?templateKey=${template.id}`);
+      navigate(createPath);
     } else {
       navigate("/signup", {
         state: {
           notice: `Starting with template "${template.n}" (ID: ${template.id}). Sign up to build your website.`,
+          from: createPath,
         },
       });
     }
@@ -473,7 +491,7 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
             <span className="tpl-full-title">{template.n}</span>
             <span className="tpl-full-badge-id">ID: {template.id}</span>
             <span
-              className="hidden md:inline-flex"
+              className="tpl-full-chip tpl-full-chip-md"
               style={{
                 fontSize: "12px",
                 padding: "2px 8px",
@@ -486,7 +504,7 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
               {template.style}
             </span>
             <span
-              className="hidden lg:inline-flex"
+              className="tpl-full-chip tpl-full-chip-lg"
               style={{
                 fontSize: "12px",
                 padding: "2px 8px",
@@ -612,8 +630,12 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
       </header>
 
       {/* Main Full-Page Preview Viewport Canvas */}
-      <main className={`tpl-full-canvas ${device}`}>
-        {device === "desktop" ? (
+      <main ref={canvasRef} className={`tpl-full-canvas ${site ? "desktop" : device}`}>
+        {site && sitePage ? (
+          <PreviewFrame device={device} onLinkClick={handleSiteLinkClick}>
+            <SitePage site={site} page={sitePage} />
+          </PreviewFrame>
+        ) : device === "desktop" ? (
           <FullTemplateSite
             template={template}
             selectedPage={selectedPage}
@@ -714,11 +736,15 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
   };
 
   const handleUseTemplate = () => {
+    const createPath = `/websites/new?templateKey=${encodeURIComponent(templateKey)}`;
     if (user) {
-      navigate(`/websites/new?templateKey=${encodeURIComponent(templateKey)}`);
+      navigate(createPath);
     } else {
       navigate("/signup", {
-        state: { notice: `Starting with template "${preview?.template.name ?? templateKey}". Sign up to continue.` },
+        state: {
+          notice: `Starting with template "${preview?.template.name ?? templateKey}". Sign up to continue.`,
+          from: createPath,
+        },
       });
     }
   };

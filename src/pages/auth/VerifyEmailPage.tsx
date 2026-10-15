@@ -12,6 +12,8 @@ import AuthCardLayout from "../../layouts/AuthCardLayout.tsx";
 export type VerifyEmailState = {
   email: string;
   resendAvailableInSeconds?: number;
+  /** In-app path to continue to once verified, e.g. creating a site from a chosen template. */
+  from?: string;
 };
 
 const CODE_LENGTH = 6;
@@ -34,10 +36,12 @@ function useCountdown(initialSeconds: number) {
 export default function VerifyEmailPage() {
   const state = useLocation().state as VerifyEmailState | null;
   if (!state?.email) return <Navigate to="/login" replace />;
-  return <VerifyEmailForm email={state.email} initialCooldown={state.resendAvailableInSeconds ?? 0} />;
+  return (
+    <VerifyEmailForm email={state.email} initialCooldown={state.resendAvailableInSeconds ?? 0} from={state.from} />
+  );
 }
 
-function VerifyEmailForm({ email, initialCooldown }: { email: string; initialCooldown: number }) {
+function VerifyEmailForm({ email, initialCooldown, from }: { email: string; initialCooldown: number; from?: string }) {
   const navigate = useNavigate();
   const { setSessionUser } = useAuth();
   const [code, setCode] = useState("");
@@ -59,7 +63,7 @@ function VerifyEmailForm({ email, initialCooldown }: { email: string; initialCoo
       setVerifiedUser(user);
     } catch (err) {
       if (err instanceof ApiError && err.code === "ALREADY_VERIFIED") {
-        navigate("/login", { replace: true });
+        navigate("/login", { replace: true, state: from ? { from } : undefined });
         return;
       }
       setError(errorMessage(err));
@@ -97,10 +101,12 @@ function VerifyEmailForm({ email, initialCooldown }: { email: string; initialCoo
           </span>
           <h1 className="mt-5 text-2xl font-semibold text-ink">Email verified</h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-body">
-            Your account and workspace are ready. Create your first website from the dashboard.
+            {from
+              ? "Your account and workspace are ready. Continue to set up your website from the template you chose."
+              : "Your account and workspace are ready. Create your first website from the dashboard."}
           </p>
-          <Button fullWidth className="mt-6" onPress={() => navigate(homeForRole(verifiedUser), { replace: true })}>
-            Go to dashboard
+          <Button fullWidth className="mt-6" onPress={() => navigate(from ?? homeForRole(verifiedUser), { replace: true })}>
+            {from ? "Continue" : "Go to dashboard"}
           </Button>
         </div>
       </AuthCardLayout>

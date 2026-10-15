@@ -26,9 +26,9 @@
   .mk * {transition:none!important;animation:none!important}
 }
 .mk {background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans)}
-.mk h1,.mk h2,.mk h3 {margin:0;text-wrap:balance;line-height:1.15}
-.mk p {margin:0}
-.mk a {color:var(--accent)}
+.mk h1:where(:not(.wb-site *)),.mk h2:where(:not(.wb-site *)),.mk h3:where(:not(.wb-site *)) {margin:0;text-wrap:balance;line-height:1.15}
+.mk p:where(:not(.wb-site *)) {margin:0}
+.mk a:where(:not(.wb-site *)) {color:var(--accent)}
 .mk :focus-visible {outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 .mk .wrap {max-width:1240px;margin:0 auto;padding-inline:24px}
 @media (max-width:640px) {
@@ -68,7 +68,7 @@
   .mk .nav,.mk .acts {display:none}
   .mk .burger {display:inline-flex}
 }
-.mk section {padding-block:80px}
+.mk section:where(:not(.wb-site *)) {padding-block:80px}
 .mk .band {background:var(--bg-2);border-block:1px solid var(--line)}
 .mk .page-hero {background:var(--bg-2);border-bottom:1px solid var(--line);padding-block:72px 60px}
 .mk .page-hero .wrap {display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center}
@@ -155,6 +155,7 @@
 .mk .empty {padding:40px;text-align:center;border:1px dashed var(--line-2);border-radius:12px;color:var(--muted)}
 .mk .tframe {position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:8px;background:#FFFFFF;box-shadow:0 0 0 1px var(--line)}
 .mk .tframe>.ts {position:absolute;top:0;left:0;transform-origin:0 0}
+.tframe>.tsite {position:absolute;top:0;left:0;width:1200px;height:900px;overflow:hidden;transform-origin:0 0;pointer-events:none;background:#FFFFFF}
 .mk .shotbtn {display:block;width:100%;padding:0;border:0;background:none;cursor:pointer;position:relative;border-radius:8px}
 .mk .shotbtn::after {content:'Preview';position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,12,16,.5);color:#FFFFFF;font:600 15px var(--sans);opacity:0;transition:opacity .2s;border-radius:8px}
 .mk .shotbtn:hover::after,.mk .shotbtn:focus-visible::after {opacity:1}
@@ -219,12 +220,12 @@
 .mk .price b {font-size:40px;line-height:1}
 .mk .badge {font:600 12px var(--sans);padding:4px 10px;border-radius:12px;background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap}
 .mk .plan ul {list-style:none;margin:0;padding:18px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
-.mk details {border-bottom:1px solid var(--line);padding-block:18px}
-.mk details summary {cursor:pointer;font-weight:600;font-size:17px;list-style:none;display:flex;justify-content:space-between;gap:16px}
-.mk details summary::-webkit-details-marker {display:none}
-.mk details summary::after {content:'+';color:var(--accent);font-size:22px;line-height:1}
-.mk details[open] summary::after {content:'–'}
-.mk details p {margin-top:10px;color:var(--muted);max-width:62ch}
+.mk details:where(:not(.wb-site *)) {border-bottom:1px solid var(--line);padding-block:18px}
+.mk details:where(:not(.wb-site *)) summary {cursor:pointer;font-weight:600;font-size:17px;list-style:none;display:flex;justify-content:space-between;gap:16px}
+.mk details:where(:not(.wb-site *)) summary::-webkit-details-marker {display:none}
+.mk details:where(:not(.wb-site *)) summary::after {content:'+';color:var(--accent);font-size:22px;line-height:1}
+.mk details:where(:not(.wb-site *))[open] summary::after {content:'–'}
+.mk details:where(:not(.wb-site *)) p {margin-top:10px;color:var(--muted);max-width:62ch}
 .mk .faq {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:48px}
 @media (max-width:820px) {
   .mk .faq {grid-template-columns:minmax(0,1fr);gap:16px}
@@ -293,16 +294,16 @@
 .mk .cta .wrap {display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
 .mk .cta h2 {font-size:clamp(24px,3vw,30px)}
 .mk .cta .btn {background:var(--on-accent);color:var(--accent);border-color:var(--on-accent)}
-.mk footer {background:var(--foot);color:var(--foot-fg);padding-block:56px 28px}
-.mk footer .cols4 {display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
-.mk footer a {color:var(--foot-fg);text-decoration:none;font-size:14px}
-.mk footer a:hover {color:#FFFFFF;text-decoration:underline}
-.mk footer h4 {margin:0 0 4px;color:#FFFFFF;font-size:14px}
-.mk footer .col {display:flex;flex-direction:column;gap:10px}
-.mk footer .base {border-top:1px solid var(--foot-line);margin-top:36px;padding-top:20px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px}
+.mk footer:where(:not(.wb-site *)) {background:var(--foot);color:var(--foot-fg);padding-block:56px 28px}
+.mk footer:where(:not(.wb-site *)) .cols4 {display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
+.mk footer:where(:not(.wb-site *)) a {color:var(--foot-fg);text-decoration:none;font-size:14px}
+.mk footer:where(:not(.wb-site *)) a:hover {color:#FFFFFF;text-decoration:underline}
+.mk footer:where(:not(.wb-site *)) h4 {margin:0 0 4px;color:#FFFFFF;font-size:14px}
+.mk footer:where(:not(.wb-site *)) .col {display:flex;flex-direction:column;gap:10px}
+.mk footer:where(:not(.wb-site *)) .base {border-top:1px solid var(--foot-line);margin-top:36px;padding-top:20px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px}
 @media (max-width:820px) {
-  .mk footer .cols4 {grid-template-columns:repeat(2,minmax(0,1fr))}
-  .mk footer .cols4>.col:first-child {grid-column:1/-1}
+  .mk footer:where(:not(.wb-site *)) .cols4 {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mk footer:where(:not(.wb-site *)) .cols4>.col:first-child {grid-column:1/-1}
 }
 .mk .modal {position:fixed;inset:0;z-index:50;background:rgba(10,12,16,.55);display:flex;align-items:center;justify-content:center;padding:24px}
 .mk .modal .dlg {background:var(--surface);color:var(--fg);border-radius:var(--r-lg);width:min(760px,100%);max-height:90vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.35)}
@@ -327,8 +328,8 @@
   --coral:#FF8E73; --coral-s:#3A1E17; --sun:#FFC24D; --sun-s:#3A2C0C; --mint:#4FD6AE; --mint-s:#0F3127;
   --violet:#A892FF; --violet-s:#271E4D; --sky:#5BB8FF; --sky-s:#0E2A42;
   --bg-2:#151826; --line:#272C3C; --foot:#0A0D1E; --foot-fg:#B3B9D4; --foot-line:#20264A}
-.mk h1,.mk h2,.mk h3,.mk .brand,.mk .price b {font-family:var(--display);letter-spacing:-.015em}
-.mk h1 {font-weight:800}
+.mk h1:where(:not(.wb-site *)),.mk h2:where(:not(.wb-site *)),.mk h3:where(:not(.wb-site *)),.mk .brand,.mk .price b {font-family:var(--display);letter-spacing:-.015em}
+.mk h1:where(:not(.wb-site *)) {font-weight:800}
 .mk .mark {background:linear-gradient(135deg,var(--accent) 0 50%,var(--coral) 50% 100%)}
 .mk .btn {border-radius:10px}
 .mk .btn.p {box-shadow:0 6px 18px -8px var(--accent)}
@@ -415,8 +416,8 @@
   .mk .cta::after {right:-40px}
 }
 .mk .auth .side {background:radial-gradient(400px 300px at 0% 100%, rgba(242,96,63,.35), transparent 70%),radial-gradient(400px 300px at 100% 0%, rgba(115,81,240,.45), transparent 70%),var(--foot)}
-.mk footer .base span:last-child {color:var(--foot-fg)}
-.mk section {padding-block:96px}
+.mk footer:where(:not(.wb-site *)) .base span:last-child {color:var(--foot-fg)}
+.mk section:where(:not(.wb-site *)) {padding-block:96px}
 .mk .sec-head.center {flex-direction:column;align-items:center;text-align:center;gap:12px;margin-bottom:40px}
 .mk .sec-head.center .lead {margin-inline:auto}
 .mk .sec-head h2 {font-size:clamp(28px,3.6vw,40px)}
