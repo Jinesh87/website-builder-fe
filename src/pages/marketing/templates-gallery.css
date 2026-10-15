@@ -111,6 +111,132 @@
   flex-wrap: wrap;
 }
 
+.gallery-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gallery-search-field {
+  position: relative;
+  min-width: 270px;
+  height: 40px;
+  padding: 0 12px 0 14px;
+  border: 1px solid #272D40;
+  border-radius: 12px;
+  background: #141827;
+  color: #8C93AE;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.18s ease,
+              box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.gallery-search-field:hover {
+  border-color: #38425F;
+  background: #171C2E;
+}
+
+.gallery-search-field:focus-within {
+  border-color: #3550E8;
+  background: #171D33;
+  box-shadow: 0 0 0 3px rgba(53, 80, 232, 0.22), 0 2px 8px -2px rgba(0, 0, 0, 0.5);
+}
+
+.gallery-search-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #727B97;
+  transition: color 0.18s ease;
+}
+
+.gallery-search-field:focus-within .gallery-search-icon {
+  color: #8298FD;
+}
+
+/* Explicitly reset all borders, outlines and background on inner input */
+.mk .gallery-search-input,
+.mk .gallery-search-input:focus,
+.mk .gallery-search-input:focus-visible,
+.gallery-search-input,
+.gallery-search-input:focus,
+.gallery-search-input:focus-visible {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  border: 0 !important;
+  outline: 0 !important;
+  outline-offset: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  color: #F1F4F9;
+  font-family: var(--sans, 'IBM Plex Sans', system-ui, sans-serif);
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: normal;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.gallery-search-input::placeholder {
+  color: #697087;
+  font-weight: 450;
+  transition: color 0.15s ease;
+}
+
+.gallery-search-field:focus-within .gallery-search-input::placeholder {
+  color: #8C93AE;
+}
+
+/* Hide default browser cancel button in WebKit browsers */
+.gallery-search-input::-webkit-search-cancel-button,
+.gallery-search-input::-webkit-search-decoration,
+.gallery-search-input::-webkit-search-results-button,
+.gallery-search-input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  display: none;
+}
+
+/* Sleek clear button */
+.gallery-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #23293D;
+  color: #8C93AE;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.gallery-search-clear:hover {
+  background: #343E5D;
+  color: #FFFFFF;
+  transform: scale(1.06);
+}
+
+.gallery-search-clear:active {
+  transform: scale(0.94);
+}
+
+.gallery-search-clear svg {
+  width: 11px;
+  height: 11px;
+}
+
 .gallery-filter-group {
   display: flex;
   align-items: center;
@@ -169,6 +295,15 @@
 @media (max-width: 640px) {
   .gallery-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gallery-search,
+  .gallery-search-field {
+    width: 100%;
+  }
+
+  .gallery-filters {
+    width: 100%;
   }
 }
 

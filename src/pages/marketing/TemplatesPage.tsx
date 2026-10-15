@@ -15,6 +15,7 @@ export default function TemplatesPage() {
   });
   const [styleFilter, setStyleFilter] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"pop" | "az" | "new">("pop");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -28,10 +29,15 @@ export default function TemplatesPage() {
 
   // Filtered and sorted templates list
   const filteredIndices = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
     const result = TPLS.map((_, i) => i).filter((i) => {
       const t = TPLS[i];
       if (selectedCat !== "All" && t.c !== selectedCat) return false;
       if (styleFilter && t.style !== styleFilter) return false;
+      if (query) {
+        const searchable = [t.id, t.n, t.type, t.style, t.c, t.biz].filter(Boolean).join(" ").toLowerCase();
+        if (!searchable.includes(query)) return false;
+      }
       return true;
     });
 
@@ -43,7 +49,7 @@ export default function TemplatesPage() {
     // "pop" maintains the default curated order where row 1 and row 2 match the reference UI!
 
     return result;
-  }, [selectedCat, styleFilter, sortOrder]);
+  }, [selectedCat, styleFilter, sortOrder, searchTerm]);
 
   return (
     <div className="gallery-view" data-view="templates">
@@ -82,9 +88,60 @@ export default function TemplatesPage() {
             {filteredIndices.length} {filteredIndices.length === 1 ? "template" : "templates"}
             {selectedCat !== "All" ? ` in ${CAT_LABEL[selectedCat] ?? selectedCat}` : ""}
             {styleFilter ? ` · ${styleFilter} style` : ""}
+            {searchTerm.trim() ? ` · matching "${searchTerm.trim()}"` : ""}
           </span>
 
           <div className="gallery-filters">
+            {/* Template Search */}
+            <div className="gallery-search" role="search">
+              <label htmlFor="templateSearch" className="gallery-filter-label">
+                Search
+              </label>
+              <div className="gallery-search-field">
+                <svg
+                  className="gallery-search-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+                <input
+                  id="templateSearch"
+                  className="gallery-search-input"
+                  type="search"
+                  inputMode="search"
+                  placeholder="Search ID, name, type"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setSearchTerm("");
+                  }}
+                  aria-label="Search templates by ID, name or type"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    className="gallery-search-clear"
+                    onClick={() => setSearchTerm("")}
+                    aria-label="Clear search"
+                    title="Clear search"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M18 6 6 18M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Style Filter */}
             <div className="gallery-filter-group">
               <label htmlFor="styleSelect" className="gallery-filter-label">
@@ -143,6 +200,7 @@ export default function TemplatesPage() {
                   setSelectedCat("All");
                   setStyleFilter("");
                   setSortOrder("pop");
+                  setSearchTerm("");
                 }}
               >
                 Clear all filters

@@ -29,7 +29,8 @@
 .mk h1:where(:not(.wb-site *)),.mk h2:where(:not(.wb-site *)),.mk h3:where(:not(.wb-site *)) {margin:0;text-wrap:balance;line-height:1.15}
 .mk p:where(:not(.wb-site *)) {margin:0}
 .mk a:where(:not(.wb-site *)) {color:var(--accent)}
-.mk :focus-visible {outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.mk :where(button, a, [tabindex]):focus-visible,
+.mk :focus-visible:not(input):not(textarea):not(select) {outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 .mk .wrap {max-width:1240px;margin:0 auto;padding-inline:24px}
 @media (max-width:640px) {
   .mk .wrap {padding-inline:16px}
