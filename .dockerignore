@@ -6,3 +6,4 @@ dist
 .dockerignore
 Dockerfile
 docker-compose.yml
+dist-renderer

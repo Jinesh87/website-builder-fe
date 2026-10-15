@@ -1,15 +1,19 @@
 import { Outlet } from "react-router-dom";
-import SiteFooter from "../components/public/SiteFooter.tsx";
-import SiteHeader from "../components/public/SiteHeader.tsx";
+import { MarketingFooter, MarketingHeader } from "../pages/marketing/MarketingLayout.tsx";
 
+/** Non-marketing public pages (template detail, 404) framed by the marketing header and footer. */
 export default function PublicLayout() {
   return (
     <div className="flex min-h-screen flex-col">
-      <SiteHeader />
+      <div className="mk contents">
+        <MarketingHeader />
+      </div>
       <main className="flex flex-1 flex-col">
         <Outlet />
       </main>
-      <SiteFooter />
+      <div className="mk contents">
+        <MarketingFooter />
+      </div>
     </div>
   );
 }

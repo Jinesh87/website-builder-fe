@@ -10,6 +10,7 @@ import { buttonVariants } from "@heroui/styles";
 import {
   ArrowLeft,
   ArrowUpRight,
+  CloudOff,
   Code2,
   Eye,
   FileText,
@@ -27,6 +28,7 @@ import {
 } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import DeploymentList from "../../components/dashboard/DeploymentList.tsx";
+import DomainsPanel from "../../components/dashboard/DomainsPanel.tsx";
 import ProjectSettingsPanel from "../../components/dashboard/ProjectSettingsPanel.tsx";
 import ProjectTabs, {
   type ProjectTab,
@@ -104,6 +106,9 @@ export default function ProjectDashboardPage() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [confirmUnpublish, setConfirmUnpublish] = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
+  const [unpublishError, setUnpublishError] = useState<string | null>(null);
 
   const loadVersions = useCallback(
     () => websitesApi.versions(id).then(setVersions),
@@ -160,6 +165,24 @@ export default function ProjectDashboardPage() {
       setPublishing(false);
     }
   }
+
+  async function handleUnpublish() {
+    if (!website) return;
+    setUnpublishing(true);
+    setUnpublishError(null);
+    try {
+      setWebsite(await websitesApi.unpublish(website.id));
+      setConfirmUnpublish(false);
+    } catch (err) {
+      setUnpublishError(errorMessage(err));
+    } finally {
+      setUnpublishing(false);
+    }
+  }
+
+  const refreshWebsite = useCallback(() => {
+    websitesApi.get(id).then(setWebsite).catch(() => {});
+  }, [id]);
 
   async function handleDelete() {
     if (!website) return;
@@ -405,11 +428,19 @@ export default function ProjectDashboardPage() {
 
         {tab === "deployments" && <DeploymentList versions={versions} />}
 
+        {tab === "domains" && (
+          <DomainsPanel website={website} onChanged={refreshWebsite} />
+        )}
+
         {tab === "settings" && (
           <ProjectSettingsPanel
             website={website}
             onSaved={setWebsite}
             onDelete={() => setConfirmDelete(true)}
+            onUnpublish={() => {
+              setUnpublishError(null);
+              setConfirmUnpublish(true);
+            }}
           />
         )}
       </div>
@@ -479,6 +510,40 @@ export default function ProjectDashboardPage() {
           <PublishSeoAudit website={website} />
           {publishError && (
             <FormAlert status="danger">{publishError}</FormAlert>
+          )}
+        </div>
+      </CommonModal>
+
+      <CommonModal
+        isOpen={confirmUnpublish}
+        onClose={() => !unpublishing && setConfirmUnpublish(false)}
+        headerDetails={{
+          icon: <CloudOff className="size-4.5" />,
+          title: "Unpublish website",
+          description: `${website.name} · ${website.subdomain}`,
+        }}
+        iconTone="danger"
+        size="sm"
+        primaryAction={{
+          label: "Unpublish",
+          onPress: handleUnpublish,
+          isPending: unpublishing,
+          tone: "danger",
+        }}
+        secondaryAction={{
+          label: "Cancel",
+          onPress: () => setConfirmUnpublish(false),
+          isDisabled: unpublishing,
+        }}
+      >
+        <div className="space-y-2.5">
+          <p>
+            Visitors will see a "not found" page on every address of this
+            website, including connected domains. Publish again at any time to
+            bring it back.
+          </p>
+          {unpublishError && (
+            <FormAlert status="danger">{unpublishError}</FormAlert>
           )}
         </div>
       </CommonModal>

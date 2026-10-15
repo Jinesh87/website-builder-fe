@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:renderer": "vite build -c vite.renderer.config.ts",
+    "start:renderer": "node dist-renderer/server.mjs",
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "test": "vitest run",
