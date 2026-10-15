@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Button, Chip, Spinner } from "@heroui/react";
-import { Check, Copy, CreditCard } from "lucide-react";
+import { Check, Copy, CreditCard, Eye, EyeOff } from "lucide-react";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { adminPaymentsApi, type PaymentConfig, type PaymentConfigInput } from "../../api/wallet.ts";
 import { env } from "../../config/env.ts";
@@ -18,6 +18,23 @@ export function PaymentStatusChip({ config }: { config: PaymentConfig }) {
   return <Chip color={config.mode === "live" ? "success" : "accent"}>{config.mode === "live" ? "Live mode" : "Test mode"}</Chip>;
 }
 
+type SecretField = "razorpayKeySecret" | "razorpayWebhookSecret";
+
+function RevealButton({ shown, disabled, onToggle }: { shown: boolean; disabled: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={disabled}
+      className="absolute right-3 top-8.5 cursor-pointer text-ink-muted transition-colors hover:text-ink disabled:cursor-wait disabled:opacity-50"
+      title={shown ? "Hide secret" : "Show secret"}
+      aria-label={shown ? "Hide secret" : "Show secret"}
+    >
+      {shown ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+    </button>
+  );
+}
+
 export default function PaymentSettingsPanel({ onLoaded }: { onLoaded?: (config: PaymentConfig) => void }) {
   const [config, setConfig] = useState<PaymentConfig | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -26,11 +43,50 @@ export default function PaymentSettingsPanel({ onLoaded }: { onLoaded?: (config:
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [copied, setCopied] = useState(false);
+  const [shown, setShown] = useState<Record<SecretField, boolean>>({ razorpayKeySecret: false, razorpayWebhookSecret: false });
+  /** Saved secrets, fetched the first time the admin clicks the eye. */
+  const [savedSecrets, setSavedSecrets] = useState<Record<SecretField, string | null> | null>(null);
+  const [revealing, setRevealing] = useState(false);
 
   function apply(loaded: PaymentConfig) {
     setConfig(loaded);
     setForm({ razorpayKeyId: loaded.razorpayKeyId ?? "", razorpayKeySecret: "", razorpayWebhookSecret: "" });
+    setShown({ razorpayKeySecret: false, razorpayWebhookSecret: false });
+    setSavedSecrets(null);
     onLoaded?.(loaded);
+  }
+
+  /** Shows what's typed, or the saved secret when the box is empty; hiding puts an untouched saved secret away again. */
+  async function toggleSecret(field: SecretField) {
+    if (shown[field]) {
+      setShown((current) => ({ ...current, [field]: false }));
+      if (savedSecrets && form[field] === savedSecrets[field]) setForm((current) => ({ ...current, [field]: "" }));
+      return;
+    }
+    if (!form[field]) {
+      let secrets = savedSecrets;
+      if (!secrets) {
+        setRevealing(true);
+        try {
+          secrets = await adminPaymentsApi.revealSecrets();
+          setSavedSecrets(secrets);
+        } catch (err) {
+          setFeedback({ status: "danger", message: errorMessage(err) });
+          return;
+        } finally {
+          setRevealing(false);
+        }
+      }
+      const value = secrets[field];
+      if (value) setForm((current) => ({ ...current, [field]: value }));
+    }
+    setShown((current) => ({ ...current, [field]: true }));
+  }
+
+  /** A revealed saved secret that wasn't edited is left out, so saving doesn't re-send it. */
+  function changedSecret(field: SecretField): string | undefined {
+    const value = form[field].trim();
+    return value && value !== savedSecrets?.[field] ? value : undefined;
   }
 
   useEffect(() => {
@@ -59,8 +115,8 @@ export default function PaymentSettingsPanel({ onLoaded }: { onLoaded?: (config:
     try {
       const saved = await adminPaymentsApi.update({
         razorpayKeyId: keyId,
-        razorpayKeySecret: form.razorpayKeySecret.trim() || undefined,
-        razorpayWebhookSecret: form.razorpayWebhookSecret.trim() || undefined,
+        razorpayKeySecret: changedSecret("razorpayKeySecret"),
+        razorpayWebhookSecret: changedSecret("razorpayWebhookSecret"),
       });
       apply(saved);
       setFeedback({ status: "success", message: "Razorpay settings saved. The keys were checked with Razorpay." });
@@ -117,32 +173,46 @@ export default function PaymentSettingsPanel({ onLoaded }: { onLoaded?: (config:
             onChange={update("razorpayKeyId")}
             error={errors.razorpayKeyId}
           />
-          <TextInput
-            label="Key secret"
-            name="razorpayKeySecret"
-            type="password"
-            autoComplete="off"
-            placeholder={config.razorpayKeySecretMasked ?? ""}
-            description={config.configured ? "Leave blank to keep the current secret." : "Shown once when you generate the key."}
-            value={form.razorpayKeySecret}
-            onChange={update("razorpayKeySecret")}
-            error={errors.razorpayKeySecret}
-          />
-          <TextInput
-            label="Webhook secret"
-            name="razorpayWebhookSecret"
-            type="password"
-            autoComplete="off"
-            placeholder={config.webhookConfigured ? "••••••••" : ""}
-            description={
-              config.webhookConfigured
-                ? "Leave blank to keep the current secret."
-                : "The secret you choose when adding the webhook below. Recommended: it adds connects even if the client closes the page mid-payment."
-            }
-            value={form.razorpayWebhookSecret}
-            onChange={update("razorpayWebhookSecret")}
-            error={errors.razorpayWebhookSecret}
-          />
+          <div className="relative">
+            <TextInput
+              label="Key secret"
+              name="razorpayKeySecret"
+              type={shown.razorpayKeySecret ? "text" : "password"}
+              autoComplete="off"
+              placeholder={config.razorpayKeySecretMasked ?? ""}
+              description={config.configured ? "Leave blank to keep the current secret." : "Shown once when you generate the key."}
+              value={form.razorpayKeySecret}
+              onChange={update("razorpayKeySecret")}
+              error={errors.razorpayKeySecret}
+            />
+            <RevealButton
+              shown={shown.razorpayKeySecret}
+              disabled={revealing}
+              onToggle={() => void toggleSecret("razorpayKeySecret")}
+            />
+          </div>
+          <div className="relative">
+            <TextInput
+              label="Webhook secret"
+              name="razorpayWebhookSecret"
+              type={shown.razorpayWebhookSecret ? "text" : "password"}
+              autoComplete="off"
+              placeholder={config.webhookConfigured ? "••••••••" : ""}
+              description={
+                config.webhookConfigured
+                  ? "Leave blank to keep the current secret."
+                  : "The secret you choose when adding the webhook below. Recommended: it adds connects even if the client closes the page mid-payment."
+              }
+              value={form.razorpayWebhookSecret}
+              onChange={update("razorpayWebhookSecret")}
+              error={errors.razorpayWebhookSecret}
+            />
+            <RevealButton
+              shown={shown.razorpayWebhookSecret}
+              disabled={revealing}
+              onToggle={() => void toggleSecret("razorpayWebhookSecret")}
+            />
+          </div>
 
           <div className="rounded-lg border border-line bg-canvas/60 p-3.5 text-xs text-ink-body">
             <p className="font-semibold text-ink">Webhook</p>
@@ -164,7 +234,7 @@ export default function PaymentSettingsPanel({ onLoaded }: { onLoaded?: (config:
 
           <div className="flex items-start gap-2.5 rounded-lg border border-line p-3.5 text-xs text-ink-body">
             <Check className="mt-0.5 size-4 shrink-0 text-emerald-500" aria-hidden />
-            <span>Secrets are encrypted at rest with AES-256-GCM and never shown again.</span>
+            <span>Secrets are encrypted at rest with AES-256-GCM. Only a super admin can reveal them, with the eye button.</span>
           </div>
 
           {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
