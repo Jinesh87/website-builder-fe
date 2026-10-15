@@ -43,7 +43,7 @@ export class CheckoutDismissedError extends Error {
 }
 
 /**
- * Opens Razorpay Checkout for a top-up order. Resolves with what the server needs to verify the payment;
+ * Opens Razorpay Checkout for a connects purchase. Resolves with what the server needs to verify the payment;
  * rejects with CheckoutDismissedError when the user closes it without paying.
  */
 export async function openRazorpayCheckout(checkout: TopupCheckout, description: string): Promise<TopupConfirmation> {

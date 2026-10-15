@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Button, SearchField, Spinner } from "@heroui/react";
-import { ArrowDownLeft, ArrowUpRight, CircleAlert, CreditCard, Landmark, Receipt, Scale, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CircleAlert, Coins, CreditCard, Landmark, Receipt, Scale } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import AiSparklesIcon from "../../components/icons/AiSparklesIcon.tsx";
 import { errorMessage } from "../../api/http.ts";
 import {
   adminWalletApi,
+  formatConnects,
   formatPaise,
   type AdminPaymentsResponse,
   type AdminTransactionsResponse,
@@ -37,7 +38,7 @@ const YEAR_OPTIONS: SelectOption<string>[] = [
 
 const SOURCE_OPTIONS: SelectOption<"" | WalletTransaction["source"]>[] = [
   { value: "", label: "All sources" },
-  { value: "TOPUP", label: "Top-ups" },
+  { value: "TOPUP", label: "Purchases" },
   { value: "AI_USAGE", label: "AI usage" },
   { value: "ADJUSTMENT", label: "Adjustments" },
 ];
@@ -56,7 +57,7 @@ const STATUS_OPTIONS: SelectOption<"" | PaymentStatus>[] = [
 ];
 
 const SOURCE_LABELS: Record<WalletTransaction["source"], string> = {
-  TOPUP: "Top-up",
+  TOPUP: "Purchase",
   AI_USAGE: "AI usage",
   ADJUSTMENT: "Adjustment",
 };
@@ -157,12 +158,12 @@ export default function TransactionsPage() {
 
   return (
     <div className="px-6 py-8 sm:px-8">
-      <PageHeader title="Transactions" description="Wallet top-ups, AI usage charges and Razorpay payments across all clients." />
+      <PageHeader title="Transactions" description="Connects bought and spent, and Razorpay payments across all clients." />
 
       <div className="mt-6 flex items-center gap-2 border-b border-line pb-px">
         <button type="button" onClick={() => switchTab("transactions")} className={tabClass(tab === "transactions")}>
-          <Wallet className="size-4" aria-hidden />
-          Wallet transactions
+          <Coins className="size-4" aria-hidden />
+          Connects activity
         </button>
         <button type="button" onClick={() => switchTab("payments")} className={tabClass(tab === "payments")}>
           <CreditCard className="size-4" aria-hidden />
@@ -173,30 +174,30 @@ export default function TransactionsPage() {
       {tab === "transactions" && transactions && (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="Top-ups"
-            value={formatPaise(transactions.summary.topupsPaise)}
-            hint={`${transactions.summary.topupCount} ${transactions.summary.topupCount === 1 ? "top-up" : "top-ups"} in this period`}
+            label="Connects bought"
+            value={transactions.summary.purchased.toLocaleString("en-IN")}
+            hint={`${transactions.summary.purchaseCount} ${transactions.summary.purchaseCount === 1 ? "purchase" : "purchases"} in this period`}
             icon={<ArrowDownLeft className="size-4" aria-hidden />}
             tone="bg-emerald-50 text-emerald-600"
           />
           <StatCard
-            label="AI usage charged"
-            value={formatPaise(transactions.summary.aiUsagePaise)}
-            hint="Deducted from wallets in this period"
+            label="Connects used on AI"
+            value={transactions.summary.aiUsage.toLocaleString("en-IN")}
+            hint="Spent by clients in this period"
             icon={<AiSparklesIcon className="size-4" variant="glossy" />}
             tone="bg-brand-soft text-brand"
           />
           <StatCard
             label="Adjustments"
-            value={formatPaise(transactions.summary.adjustmentsPaise)}
-            hint="Net manual credits minus debits"
+            value={transactions.summary.adjustments.toLocaleString("en-IN")}
+            hint="Net manual credits minus debits, in connects"
             icon={<Scale className="size-4" aria-hidden />}
             tone="bg-amber-50 text-amber-600"
           />
           <StatCard
-            label="Balance held"
-            value={formatPaise(transactions.summary.heldBalancePaise)}
-            hint={`Across ${transactions.summary.fundedWallets} funded ${transactions.summary.fundedWallets === 1 ? "wallet" : "wallets"}, right now`}
+            label="Connects held"
+            value={transactions.summary.heldBalance.toLocaleString("en-IN")}
+            hint={`Across ${transactions.summary.fundedWallets} ${transactions.summary.fundedWallets === 1 ? "client" : "clients"} with a balance, right now`}
             icon={<Landmark className="size-4" aria-hidden />}
             tone="bg-indigo-50 text-indigo-600"
           />
@@ -275,7 +276,7 @@ export default function TransactionsPage() {
               <Receipt className="size-6" aria-hidden />
             </span>
             <h2 className="mt-4 text-base font-semibold text-ink">
-              {tab === "transactions" ? "No wallet transactions" : "No Razorpay payments"}
+              {tab === "transactions" ? "No connects activity" : "No Razorpay payments"}
             </h2>
             <p className="mt-1 text-sm text-ink-body">Nothing matches these filters yet.</p>
           </div>
@@ -288,7 +289,7 @@ export default function TransactionsPage() {
                   <th className="px-5 py-3 font-medium">Description</th>
                   <th className="px-5 py-3 font-medium">Source</th>
                   <th className="px-5 py-3 font-medium">Date</th>
-                  <th className="px-5 py-3 text-right font-medium">Amount</th>
+                  <th className="px-5 py-3 text-right font-medium">Connects</th>
                   <th className="px-5 py-3 text-right font-medium">Balance after</th>
                   <th className="px-5 py-3 font-medium">Razorpay payment</th>
                 </tr>
@@ -306,9 +307,9 @@ export default function TransactionsPage() {
                       <td className="whitespace-nowrap px-5 py-3 text-xs text-ink-body">{formatDate(item.createdAt)}</td>
                       <td className={`whitespace-nowrap px-5 py-3 text-right font-semibold ${credit ? "text-emerald-600" : "text-rose-600"}`}>
                         {credit ? "+" : "−"}
-                        {formatPaise(item.amountPaise)}
+                        {item.amount.toLocaleString("en-IN")}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-right text-ink-body">{formatPaise(item.balanceAfterPaise)}</td>
+                      <td className="whitespace-nowrap px-5 py-3 text-right text-ink-body">{item.balanceAfter.toLocaleString("en-IN")}</td>
                       <td className="px-5 py-3 font-mono text-xs text-ink-muted">{item.razorpayPaymentId ?? "—"}</td>
                     </tr>
                   );
@@ -340,8 +341,9 @@ export default function TransactionsPage() {
                         </span>
                         {item.failureReason && <p className="mt-1 max-w-64 text-xs text-ink-muted">{item.failureReason}</p>}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-ink">
-                        {formatPaise(item.amountPaise, item.currency)}
+                      <td className="whitespace-nowrap px-5 py-3 text-right">
+                        <p className="font-semibold text-ink">{formatPaise(item.amountPaise, item.currency)}</p>
+                        <p className="text-xs text-ink-muted">{formatConnects(item.connects)}</p>
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 text-xs text-ink-body">{formatDate(item.createdAt)}</td>
                       <td className="whitespace-nowrap px-5 py-3 text-xs text-ink-body">{item.paidAt ? formatDate(item.paidAt) : "—"}</td>

@@ -1,20 +1,23 @@
 import { request } from "./http.ts";
 
+/** Connects balance; all amounts are whole connects. */
 export type Wallet = {
-  balancePaise: number;
-  currency: string;
+  balance: number;
   /** False until the platform admin has added Razorpay keys. */
   paymentsEnabled: boolean;
-  minTopupPaise: number;
-  maxTopupPaise: number;
+  connectsPerRupee: number;
+  /** Connects are bought in multiples of this. */
+  packSize: number;
+  minPurchase: number;
+  maxPurchase: number;
 };
 
 export type WalletTransaction = {
   id: string;
   type: "CREDIT" | "DEBIT";
   source: "TOPUP" | "AI_USAGE" | "ADJUSTMENT";
-  amountPaise: number;
-  balanceAfterPaise: number;
+  amount: number;
+  balanceAfter: number;
   description: string;
   createdAt: string;
 };
@@ -24,6 +27,7 @@ export type WalletTransactionPage = { transactions: WalletTransaction[]; total: 
 export type TopupCheckout = {
   orderId: string;
   keyId: string;
+  connects: number;
   amountPaise: number;
   currency: string;
   businessName: string;
@@ -54,8 +58,8 @@ export const walletApi = {
   get: () => request<{ wallet: Wallet }>(BASE).then((data) => data.wallet),
   transactions: (page = 1, pageSize = 20) =>
     request<WalletTransactionPage>(`${BASE}/transactions?${new URLSearchParams({ page: String(page), pageSize: String(pageSize) })}`),
-  createTopup: (amountPaise: number) =>
-    request<{ checkout: TopupCheckout }>(`${BASE}/topups`, { method: "POST", body: { amountPaise } }).then((data) => data.checkout),
+  createTopup: (connects: number) =>
+    request<{ checkout: TopupCheckout }>(`${BASE}/topups`, { method: "POST", body: { connects } }).then((data) => data.checkout),
   confirmTopup: (input: TopupConfirmation) =>
     request<{ wallet: Wallet; transaction: WalletTransaction | null }>(`${BASE}/topups/verify`, { method: "POST", body: input }),
 };
@@ -73,6 +77,15 @@ export function formatPaise(paise: number, currency = "INR"): string {
     minimumFractionDigits: paise % 100 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(paise / 100);
+}
+
+export function formatConnects(connects: number): string {
+  return `${connects.toLocaleString("en-IN")} ${connects === 1 ? "connect" : "connects"}`;
+}
+
+/** Same rounding as the server: nearest paisa, so 50 connects = ₹16.67. */
+export function connectsPriceInPaise(connects: number, connectsPerRupee: number): number {
+  return Math.round((connects * 100) / connectsPerRupee);
 }
 
 type ClientRef = { id: string; businessName: string };
@@ -95,12 +108,13 @@ export type AdminWalletTransaction = WalletTransaction & {
 
 export type AdminTransactionsResponse = {
   items: AdminWalletTransaction[];
+  /** In connects, except the counts. */
   summary: {
-    topupsPaise: number;
-    topupCount: number;
-    aiUsagePaise: number;
-    adjustmentsPaise: number;
-    heldBalancePaise: number;
+    purchased: number;
+    purchaseCount: number;
+    aiUsage: number;
+    adjustments: number;
+    heldBalance: number;
     fundedWallets: number;
   };
   total: number;
@@ -114,6 +128,7 @@ export type AdminPayment = {
   id: string;
   razorpayOrderId: string;
   razorpayPaymentId: string | null;
+  connects: number;
   amountPaise: number;
   currency: string;
   status: PaymentStatus;

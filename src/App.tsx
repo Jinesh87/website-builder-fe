@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Spinner } from "@heroui/react";
 import AuthProvider from "./auth/AuthProvider.tsx";
 import { GuestOnly, RequireAuth } from "./auth/RouteGuards.tsx";
@@ -29,7 +29,7 @@ const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage.tsx"
 const DashboardPage = lazy(() => import("./pages/client/DashboardPage.tsx"));
 const MyWebsitesPage = lazy(() => import("./pages/client/MyWebsitesPage.tsx"));
 const AccountSettingsPage = lazy(() => import("./pages/client/AccountSettingsPage.tsx"));
-const WalletPage = lazy(() => import("./pages/client/WalletPage.tsx"));
+const ConnectsPage = lazy(() => import("./pages/client/ConnectsPage.tsx"));
 const MediaLibraryPage = lazy(() => import("./pages/media/MediaLibraryPage.tsx"));
 const CreateWebsitePage = lazy(() => import("./pages/websites/CreateWebsitePage.tsx"));
 const WebsitePreviewPage = lazy(() => import("./pages/websites/WebsitePreviewPage.tsx"));
@@ -88,7 +88,8 @@ export default function App() {
                 <Route path="websites" element={<MyWebsitesPage />} />
                 <Route path="media" element={<MediaLibraryPage />} />
                 <Route path="account" element={<AccountSettingsPage />} />
-                <Route path="wallet" element={<WalletPage />} />
+                <Route path="connects" element={<ConnectsPage />} />
+                <Route path="wallet" element={<Navigate to="/connects" replace />} />
               </Route>
             </Route>
 

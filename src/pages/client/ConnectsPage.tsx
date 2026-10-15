@@ -1,46 +1,42 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, Spinner } from "@heroui/react";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Receipt,
-  ShieldCheck,
-  Wallet as WalletIcon,
-} from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Coins, Minus, Plus, Receipt, ShieldCheck } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
-import { formatPaise, walletApi, type Wallet, type WalletTransactionPage } from "../../api/wallet.ts";
+import {
+  connectsPriceInPaise,
+  formatConnects,
+  formatPaise,
+  walletApi,
+  type Wallet,
+  type WalletTransactionPage,
+} from "../../api/wallet.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
-import TextInput from "../../components/ui/TextInput.tsx";
 import { CheckoutDismissedError, openRazorpayCheckout } from "../../utils/razorpay-checkout.ts";
 
 type Feedback = { status: "success" | "danger" | "warning"; message: string } | null;
 
-const PRESETS_INR = [100, 500, 1000, 2000];
+const PRESET_CONNECTS = [150, 300, 1500, 3000];
 const PAGE_SIZE = 20;
 
 const SOURCE_LABELS: Record<WalletTransactionPage["transactions"][number]["source"], string> = {
-  TOPUP: "Top-up",
+  TOPUP: "Purchase",
   AI_USAGE: "AI usage",
   ADJUSTMENT: "Adjustment",
 };
 
-/** Whole rupees or rupees with up to 2 decimals → paise; null when it isn't a valid amount. */
-function parseInr(value: string): number | null {
-  const trimmed = value.trim().replace(/,/g, "");
-  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return null;
-  return Math.round(Number(trimmed) * 100);
+/** Nearest whole pack within the purchase limits, so 101 becomes 100 and 130 becomes 150. */
+function snapToPack(connects: number, wallet: Wallet): number {
+  const packs = Math.round(connects / wallet.packSize) * wallet.packSize;
+  return Math.min(wallet.maxPurchase, Math.max(wallet.minPurchase, packs));
 }
 
 function formatDate(iso: string, withTime = true): string {
   return new Date(iso).toLocaleString("en-IN", withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" });
 }
 
-export default function WalletPage() {
+export default function ConnectsPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [history, setHistory] = useState<WalletTransactionPage | null>(null);
   const [page, setPage] = useState(1);
@@ -48,8 +44,9 @@ export default function WalletPage() {
   const [pageFeedback, setPageFeedback] = useState<Feedback>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [amount, setAmount] = useState("500");
-  const [amountError, setAmountError] = useState<string>();
+  const [quantity, setQuantity] = useState(300);
+  /** What's typed in the box; snapped to a whole pack when it loses focus. */
+  const [draft, setDraft] = useState("300");
   const [modalFeedback, setModalFeedback] = useState<Feedback>(null);
   const [paying, setPaying] = useState(false);
 
@@ -65,40 +62,43 @@ export default function WalletPage() {
   }, [loadHistory]);
 
   function openModal() {
-    setAmountError(undefined);
     setModalFeedback(null);
     setModalOpen(true);
   }
 
-  function changeAmount(value: string) {
-    setAmount(value);
-    setAmountError(undefined);
+  function changeQuantity(value: number) {
+    if (!wallet) return;
+    const snapped = snapToPack(value, wallet);
+    setQuantity(snapped);
+    setDraft(String(snapped));
     setModalFeedback(null);
+  }
+
+  /** Applies whatever is typed, falling back to the last valid amount when the box is empty. */
+  function commitDraft(): number {
+    if (!wallet) return quantity;
+    const typed = Number(draft);
+    const snapped = draft && Number.isFinite(typed) ? snapToPack(typed, wallet) : quantity;
+    setQuantity(snapped);
+    setDraft(String(snapped));
+    return snapped;
   }
 
   async function pay() {
     if (!wallet) return;
-    const amountPaise = parseInr(amount);
-    const error =
-      amountPaise === null
-        ? "Enter an amount in rupees, e.g. 500"
-        : amountPaise < wallet.minTopupPaise || amountPaise > wallet.maxTopupPaise
-          ? `Enter an amount between ${formatPaise(wallet.minTopupPaise)} and ${formatPaise(wallet.maxTopupPaise)}`
-          : undefined;
-    setAmountError(error);
+    const connects = commitDraft();
     setModalFeedback(null);
-    if (error || amountPaise === null) return;
 
     setPaying(true);
     try {
-      const checkout = await walletApi.createTopup(amountPaise);
+      const checkout = await walletApi.createTopup(connects);
       // Razorpay opens its own window; ours would keep focus from it.
       setModalOpen(false);
-      const payment = await openRazorpayCheckout(checkout, `Wallet top-up of ${formatPaise(amountPaise)}`);
+      const payment = await openRazorpayCheckout(checkout, formatConnects(connects));
       const result = await walletApi.confirmTopup(payment);
       setWallet(result.wallet);
       await loadHistory(1);
-      setPageFeedback({ status: "success", message: `${formatPaise(amountPaise)} added to your wallet.` });
+      setPageFeedback({ status: "success", message: `${formatConnects(connects)} added to your account.` });
     } catch (err) {
       const message =
         err instanceof CheckoutDismissedError
@@ -114,12 +114,12 @@ export default function WalletPage() {
   }
 
   const totalPages = history ? Math.max(1, Math.ceil(history.total / history.pageSize)) : 1;
-  const amountPaise = parseInr(amount);
-  const lastTopup = history?.transactions.find((item) => item.source === "TOPUP");
+  const price = wallet ? connectsPriceInPaise(quantity, wallet.connectsPerRupee) : 0;
+  const lastPurchase = history?.transactions.find((item) => item.source === "TOPUP");
 
   return (
     <div className="px-6 py-8 sm:px-8">
-      <PageHeader title="Wallet" description="Add money to your wallet to pay for AI usage." />
+      <PageHeader title="Connects" description="Buy connects to use AI website building and the AI assistant." />
 
       {loadError && (
         <div className="mt-6">
@@ -129,7 +129,7 @@ export default function WalletPage() {
 
       {!wallet && !loadError && (
         <div className="grid place-items-center py-20">
-          <Spinner aria-label="Loading wallet" />
+          <Spinner aria-label="Loading connects" />
         </div>
       )}
 
@@ -141,13 +141,13 @@ export default function WalletPage() {
             <div className="relative flex flex-wrap items-center justify-between gap-6">
               <div>
                 <div className="flex items-center gap-2 text-sm font-medium text-white/80">
-                  <WalletIcon className="size-4" aria-hidden />
-                  Available balance
+                  <Coins className="size-4" aria-hidden />
+                  Available connects
                 </div>
-                <p className="mt-2 text-5xl font-semibold tracking-tight">{formatPaise(wallet.balancePaise, wallet.currency)}</p>
+                <p className="mt-2 text-5xl font-semibold tracking-tight">{wallet.balance.toLocaleString("en-IN")}</p>
                 <p className="mt-2 text-sm text-white/70">
-                  Used for AI website building and the AI assistant in the editor.
-                  {lastTopup && ` Last top-up ${formatPaise(lastTopup.amountPaise)} on ${formatDate(lastTopup.createdAt, false)}.`}
+                  ₹1 = {wallet.connectsPerRupee} connects. Sold in packs of {wallet.packSize}.
+                  {lastPurchase && ` Last bought ${formatConnects(lastPurchase.amount)} on ${formatDate(lastPurchase.createdAt, false)}.`}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-2">
@@ -157,7 +157,7 @@ export default function WalletPage() {
                   isDisabled={!wallet.paymentsEnabled || paying}
                   className="bg-white font-semibold text-indigo-700 shadow-sm hover:bg-white/90"
                 >
-                  <Plus className="size-4" aria-hidden /> Add money
+                  <Plus className="size-4" aria-hidden /> Buy connects
                 </Button>
                 {!wallet.paymentsEnabled && (
                   <p className="text-xs text-white/70">Online payments aren't available yet. Please contact support.</p>
@@ -170,25 +170,25 @@ export default function WalletPage() {
 
           <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-xs">
             <div className="flex items-center justify-between border-b border-line px-6 py-4">
-              <h2 className="text-base font-semibold text-ink">Transaction history</h2>
+              <h2 className="text-base font-semibold text-ink">Connects history</h2>
               {history && history.total > 0 && (
                 <span className="text-xs text-ink-muted">
-                  {history.total} {history.total === 1 ? "transaction" : "transactions"}
+                  {history.total} {history.total === 1 ? "entry" : "entries"}
                 </span>
               )}
             </div>
 
             {!history ? (
               <div className="grid place-items-center py-16">
-                <Spinner aria-label="Loading transactions" />
+                <Spinner aria-label="Loading history" />
               </div>
             ) : history.transactions.length === 0 ? (
               <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
                 <span className="grid size-10 place-items-center rounded-full bg-canvas text-ink-muted" aria-hidden>
                   <Receipt className="size-5" />
                 </span>
-                <p className="text-sm font-medium text-ink">No transactions yet</p>
-                <p className="text-xs text-ink-muted">Top-ups and AI usage charges will appear here.</p>
+                <p className="text-sm font-medium text-ink">No activity yet</p>
+                <p className="text-xs text-ink-muted">Connects you buy and spend on AI will appear here.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -198,7 +198,7 @@ export default function WalletPage() {
                       <th className="px-6 py-2.5 font-medium">Description</th>
                       <th className="px-4 py-2.5 font-medium">Type</th>
                       <th className="px-4 py-2.5 font-medium">Date</th>
-                      <th className="px-4 py-2.5 text-right font-medium">Amount</th>
+                      <th className="px-4 py-2.5 text-right font-medium">Connects</th>
                       <th className="px-6 py-2.5 text-right font-medium">Balance</th>
                     </tr>
                   </thead>
@@ -230,10 +230,10 @@ export default function WalletPage() {
                             className={`whitespace-nowrap px-4 py-3.5 text-right font-semibold ${credit ? "text-emerald-600" : "text-ink"}`}
                           >
                             {credit ? "+" : "−"}
-                            {formatPaise(item.amountPaise)}
+                            {item.amount.toLocaleString("en-IN")}
                           </td>
                           <td className="whitespace-nowrap px-6 py-3.5 text-right text-ink-body">
-                            {formatPaise(item.balanceAfterPaise)}
+                            {item.balanceAfter.toLocaleString("en-IN")}
                           </td>
                         </tr>
                       );
@@ -265,14 +265,14 @@ export default function WalletPage() {
           isOpen={modalOpen}
           onClose={() => !paying && setModalOpen(false)}
           headerDetails={{
-            icon: <WalletIcon className="size-4.5" />,
-            title: "Add money",
-            description: `Current balance ${formatPaise(wallet.balancePaise, wallet.currency)}`,
+            icon: <Coins className="size-4.5" />,
+            title: "Buy connects",
+            description: `You have ${formatConnects(wallet.balance)}`,
           }}
           iconTone="brand"
           size="sm"
           primaryAction={{
-            label: amountPaise ? `Pay ${formatPaise(amountPaise)}` : "Pay",
+            label: `Pay ${formatPaise(price)}`,
             onPress: pay,
             isPending: paying,
           }}
@@ -280,34 +280,66 @@ export default function WalletPage() {
         >
           <div className="flex flex-col gap-5">
             <div className="grid grid-cols-2 gap-3">
-              {PRESETS_INR.map((preset) => {
-                const selected = amountPaise === preset * 100;
+              {PRESET_CONNECTS.map((preset) => {
+                const selected = quantity === preset;
                 return (
                   <button
                     key={preset}
                     type="button"
                     aria-pressed={selected}
                     disabled={paying}
-                    onClick={() => changeAmount(String(preset))}
-                    className={`rounded-xl border px-4 py-3 text-left text-lg font-semibold text-ink transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+                    onClick={() => changeQuantity(preset)}
+                    className={`rounded-xl border px-4 py-3 text-left transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
                       selected ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-line bg-surface hover:border-ink-muted/40"
                     }`}
                   >
-                    {formatPaise(preset * 100)}
+                    <span className="block text-lg font-semibold text-ink">{preset.toLocaleString("en-IN")}</span>
+                    <span className="block text-xs text-ink-muted">
+                      {formatPaise(connectsPriceInPaise(preset, wallet.connectsPerRupee))}
+                    </span>
                   </button>
                 );
               })}
             </div>
 
-            <TextInput
-              label="Or enter an amount (₹)"
-              name="amount"
-              value={amount}
-              onChange={changeAmount}
-              description={`Between ${formatPaise(wallet.minTopupPaise)} and ${formatPaise(wallet.maxTopupPaise)}`}
-              error={amountError}
-              isDisabled={paying}
-            />
+            <div>
+              <label htmlFor="connects-quantity" className="mb-1 block text-sm font-medium text-ink">
+                Or choose how many
+              </label>
+              <div className="inline-flex h-9 items-stretch overflow-hidden rounded-lg border border-ed-border bg-surface shadow-ed-xs focus-within:border-ed-accent focus-within:ring-2 focus-within:ring-ed-accent/15">
+                <button
+                  type="button"
+                  aria-label={`${wallet.packSize} fewer connects`}
+                  disabled={paying || quantity <= wallet.minPurchase}
+                  onClick={() => changeQuantity(quantity - wallet.packSize)}
+                  className="grid w-9 cursor-pointer place-items-center text-ink transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Minus className="size-4" aria-hidden />
+                </button>
+                <input
+                  id="connects-quantity"
+                  inputMode="numeric"
+                  value={draft}
+                  disabled={paying}
+                  onChange={(event) => setDraft(event.target.value.replace(/\D/g, "").slice(0, 7))}
+                  onBlur={commitDraft}
+                  onKeyDown={(event) => event.key === "Enter" && commitDraft()}
+                  className="w-24 border-x border-ed-border bg-transparent text-center text-sm font-semibold text-ink focus:outline-none disabled:bg-canvas"
+                />
+                <button
+                  type="button"
+                  aria-label={`${wallet.packSize} more connects`}
+                  disabled={paying || quantity >= wallet.maxPurchase}
+                  onClick={() => changeQuantity(quantity + wallet.packSize)}
+                  className="grid w-9 cursor-pointer place-items-center text-ink transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Plus className="size-4" aria-hidden />
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-ink-muted">
+                In steps of {wallet.packSize}. {formatConnects(quantity)} for {formatPaise(price)}.
+              </p>
+            </div>
 
             {modalFeedback && <FormAlert status={modalFeedback.status}>{modalFeedback.message}</FormAlert>}
 
