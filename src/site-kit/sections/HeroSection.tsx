@@ -11,6 +11,7 @@ import {
   PlayIcon,
   SectionShell,
   SiteButton,
+  SiteIcon,
   SiteImage,
   SiteLink,
 } from "../primitives.tsx";
@@ -942,6 +943,9 @@ export default function HeroSection({
     data.variant === "split-left" ||
     data.variant === "asymmetric";
 
+  const isFloatingCards = data.variant === "floating-cards";
+  const floatingCards = data.floatingCards?.slice(0, 3) ?? [];
+
   const mediaContent = hasAnyMedia && (
     <div
       className={`wb-hero-media ${data.imageStyle === "mockup" ? "wb-hero-media-mockup" : ""} ${
@@ -969,6 +973,24 @@ export default function HeroSection({
         ) : (
           <HeroMockupPlaceholder />
         )}
+        {isFloatingCards && floatingCards.length > 0 && (
+          <ul className="wb-hero-floating-cards-list">
+            {floatingCards.map((card, index) => (
+              <li key={`${card.title}-${index}`} className={`wb-hero-floating-card wb-hero-floating-card-${index + 1}`}>
+                {card.icon && (
+                  <span className="wb-hero-floating-card-icon">
+                    <SiteIcon name={card.icon} />
+                  </span>
+                )}
+                <span className="wb-hero-floating-card-text">
+                  <strong>{card.title}</strong>
+                  {card.subtitle && <span>{card.subtitle}</span>}
+                </span>
+                {card.badge && <span className="wb-hero-floating-card-badge">{card.badge}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
@@ -980,7 +1002,8 @@ export default function HeroSection({
     data.variant === "split-left" ||
     data.imagePosition === "left" ||
     data.imagePosition === "right" ||
-    data.variant === "asymmetric";
+    data.variant === "asymmetric" ||
+    isFloatingCards;
 
   const bgPosClass = data.bgImagePosition
     ? `wb-bg-pos-${data.bgImagePosition}`

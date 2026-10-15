@@ -1,6 +1,6 @@
 /* Generated from Marketing_Website_Prototype.html, scoped to .mk.
    The prototype was written against browser defaults, so undo Tailwind's preflight inside .mk. */
-.mk :where(*:not(svg, svg *)) {all:revert}
+.mk :where(*:not(svg, svg *, .wb-site, .wb-site *)) {all:revert}
 .mk :where(*)::before,.mk :where(*)::after {box-sizing:content-box;border:medium none currentcolor}
 .mk :where(svg, img, video) {display:revert;vertical-align:revert}
 .mk :where(img) {max-width:100%}
