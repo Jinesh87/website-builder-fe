@@ -144,7 +144,7 @@ export default function AboutPage() {
         <div className="wrap">
           <div className="sec-head center">
             <div className="eyebrow">Team</div>
-            <h2>The people behind [Your Brand]</h2>
+            <h2>The people behind WebBuilder</h2>
           </div>
           <div className="grid g4">
             <div className="stack" style={{ gap: "8px" }}>

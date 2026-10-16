@@ -129,6 +129,44 @@ function fitForWidth(width: number): number {
   return 0.62;
 }
 
+export function calculateCurvedCardLayout(
+  idx: number,
+  offset: number,
+  viewportWidth: number,
+  step: number,
+  totalWidth: number,
+  cardW: number,
+  curveFactor: number,
+  fit: number
+) {
+  const viewportCenter = viewportWidth / 2;
+  const naturalCenter = idx * step + offset + cardW / 2;
+  const diff = naturalCenter - viewportCenter;
+  const wrappedDiff = (((diff % totalWidth) + totalWidth * 1.5) % totalWidth) - totalWidth / 2;
+  const cardCenter = viewportCenter + wrappedDiff;
+  const cardX = cardCenter - cardW / 2;
+  const normDistance = (cardCenter - viewportCenter) / Math.max(1, viewportCenter);
+
+  // Cylindrical arc: rotate towards center, tilt along the arc, lift and recede the outer cards
+  const rotY = Number((normDistance * 20 * curveFactor).toFixed(2));
+  const rotZ = Number((normDistance * 3.8 * curveFactor).toFixed(2));
+  const archElevation = Number((-Math.pow(Math.abs(normDistance), 1.6) * 16 * fit * curveFactor).toFixed(2));
+  const scale = Number((1 - Math.min(0.12, Math.abs(normDistance) * 0.05 * curveFactor)).toFixed(3));
+  const transZ = Number((-Math.abs(normDistance) * 36 * curveFactor).toFixed(2));
+  const zIndex = 100 - Math.min(90, Math.round(Math.abs(normDistance) * 40));
+
+  return {
+    cardX,
+    archElevation,
+    transZ,
+    rotY,
+    rotZ,
+    scale,
+    zIndex,
+    transform: `translate3d(${cardX.toFixed(1)}px, ${archElevation}px, ${transZ}px) rotateY(${rotY}deg) rotateZ(${rotZ}deg) scale(${scale})`,
+  };
+}
+
 export default function CurvedBannerCarousel({
   items = DEFAULT_BANNER_ITEMS,
   direction = "left-to-right",
@@ -155,10 +193,15 @@ export default function CurvedBannerCarousel({
   // Duplicated items for endless looping (3 sets)
   const duplicatedItems = items.concat(items, items);
   const totalItemCount = duplicatedItems.length;
-  const setWidth = items.length * (cardW + cardGap);
+  const step = cardW + cardGap;
+  const totalWidth = totalItemCount * step;
+  const setWidth = items.length * step;
+
+  const defaultViewportWidth = 1200;
+  const initialOffset = (defaultViewportWidth / 2) - (items.length * step + cardW / 2);
 
   // Position and momentum refs (avoiding React state re-render loop for 60/120fps)
-  const offsetRef = useRef(0);
+  const offsetRef = useRef<number | null>(null);
   const isHoveredRef = useRef(false);
   const isDraggingRef = useRef(false);
   const dragStartXRef = useRef(0);
@@ -183,48 +226,40 @@ export default function CurvedBannerCarousel({
       const container = containerRef.current;
       if (!container) return;
 
-      const viewportWidth = container.clientWidth || container.offsetWidth || 1040;
-      const viewportCenter = viewportWidth / 2;
-      const step = cardW + cardGap;
-      const totalWidth = totalItemCount * step;
+      const viewportWidth = container.clientWidth || container.offsetWidth || defaultViewportWidth;
+      const currentStep = cardW + cardGap;
+      const currentTotalWidth = totalItemCount * currentStep;
 
       for (let i = 0; i < totalItemCount; i++) {
         const el = cardRefs.current[i];
         if (!el) continue;
 
-        // Card X wrapped in an infinite seamless window
-        let cardX = (i * step + offset) % totalWidth;
-        if (cardX < -step * 2) {
-          cardX += totalWidth;
-        } else if (cardX > totalWidth - step) {
-          cardX -= totalWidth;
-        }
+        const layout = calculateCurvedCardLayout(
+          i,
+          offset,
+          viewportWidth,
+          currentStep,
+          currentTotalWidth,
+          cardW,
+          curveFactor,
+          fit
+        );
 
-        const cardCenter = cardX + cardW / 2;
-        const normDistance = (cardCenter - viewportCenter) / Math.max(1, viewportCenter);
-
-        // Cylindrical arc: rotate towards center, tilt along the arc, lift and recede the outer cards
-        const rotY = normDistance * 20 * curveFactor;
-        const rotZ = normDistance * 3.8 * curveFactor;
-        const archElevation = -Math.pow(Math.abs(normDistance), 1.6) * 16 * fit * curveFactor;
-        const scale = 1 - Math.min(0.12, Math.abs(normDistance) * 0.05 * curveFactor);
-        const transZ = -Math.abs(normDistance) * 36 * curveFactor;
-
-        el.style.transform = `translate3d(${cardX}px, ${archElevation}px, ${transZ}px) rotateY(${rotY}deg) rotateZ(${rotZ}deg) scale(${scale})`;
-        el.style.zIndex = String(100 - Math.min(90, Math.round(Math.abs(normDistance) * 40)));
+        el.style.transform = layout.transform;
+        el.style.zIndex = String(layout.zIndex);
       }
     },
-    [cardW, cardGap, totalItemCount, curveFactor, fit]
+    [cardW, cardGap, totalItemCount, curveFactor, fit, defaultViewportWidth]
   );
 
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
     const update = () => {
-      const w = container.clientWidth || container.offsetWidth || 1040;
+      const w = container.clientWidth || container.offsetWidth || defaultViewportWidth;
       const newFit = fitForWidth(w);
       setFit(newFit);
-      if (offsetRef.current === 0) {
+      if (offsetRef.current === null) {
         const curCardW = Math.round(cardWidth * newFit);
         const curCardGap = Math.round(gap * newFit);
         const curStep = curCardW + curCardGap;
@@ -237,10 +272,20 @@ export default function CurvedBannerCarousel({
     observer.observe(container);
     update();
     return () => observer.disconnect();
-  }, [items.length, cardWidth, gap, updateTransforms]);
+  }, [items.length, cardWidth, gap, updateTransforms, defaultViewportWidth]);
 
   useEffect(() => {
     let running = true;
+
+    if (offsetRef.current === null) {
+      const container = containerRef.current;
+      const w = container ? (container.clientWidth || container.offsetWidth || defaultViewportWidth) : defaultViewportWidth;
+      const curCardW = Math.round(cardWidth * fit);
+      const curCardGap = Math.round(gap * fit);
+      const curStep = curCardW + curCardGap;
+      const centerIdx = items.length;
+      offsetRef.current = (w / 2) - (centerIdx * curStep + curCardW / 2);
+    }
 
     const tick = (now: number) => {
       if (!running) return;
@@ -251,7 +296,7 @@ export default function CurvedBannerCarousel({
       const dt = Math.min(0.1, (now - lastTimeRef.current) / 1000);
       lastTimeRef.current = now;
 
-      if (!isDraggingRef.current) {
+      if (!isDraggingRef.current && offsetRef.current !== null) {
         if (Math.abs(dragVelocityRef.current) > 0.5) {
           offsetRef.current += dragVelocityRef.current * dt;
           dragVelocityRef.current *= Math.pow(0.88, dt * 60);
@@ -268,13 +313,15 @@ export default function CurvedBannerCarousel({
         if (setWidth > 0) {
           if (offsetRef.current >= setWidth) {
             offsetRef.current -= setWidth;
-          } else if (offsetRef.current < 0) {
+          } else if (offsetRef.current < -setWidth) {
             offsetRef.current += setWidth;
           }
         }
       }
 
-      updateTransforms(offsetRef.current);
+      if (offsetRef.current !== null) {
+        updateTransforms(offsetRef.current);
+      }
       animFrameIdRef.current = requestAnimationFrame(tick);
     };
 
@@ -287,7 +334,7 @@ export default function CurvedBannerCarousel({
         cancelAnimationFrame(animFrameIdRef.current);
       }
     };
-  }, [direction, speed, fit, pauseOnHover, setWidth, updateTransforms]);
+  }, [direction, speed, fit, pauseOnHover, setWidth, updateTransforms, defaultViewportWidth, cardWidth, gap, items.length]);
 
   const handlePointerDown = (clientX: number) => {
     if (!interactive) return;
@@ -301,9 +348,11 @@ export default function CurvedBannerCarousel({
     if (!interactive || !isDraggingRef.current) return;
     const delta = clientX - lastDragXRef.current;
     lastDragXRef.current = clientX;
-    offsetRef.current += delta;
-    dragVelocityRef.current = delta * 50;
-    updateTransforms(offsetRef.current);
+    if (offsetRef.current !== null) {
+      offsetRef.current += delta;
+      dragVelocityRef.current = delta * 50;
+      updateTransforms(offsetRef.current);
+    }
   };
 
   const handlePointerUp = () => {
@@ -365,41 +414,59 @@ export default function CurvedBannerCarousel({
           className="wb-reel-stage"
           style={{ height: cardH + stagePad * 2 }}
         >
-          {duplicatedItems.map((item, idx) => (
-            <div
-              key={`${item.id}-${idx}`}
-              ref={(el) => {
-                cardRefs.current[idx] = el;
-              }}
-              onClick={() => handleCardClick(item)}
-              className="wb-reel-card"
-              style={{ width: cardW, height: cardH, top: stagePad }}
-            >
-              <div className="wb-reel-card-inner">
-                <img
-                  src={item.image}
-                  alt={item.alt || item.title}
-                  loading={idx < 8 ? "eager" : "lazy"}
-                  draggable={false}
-                  className="wb-reel-img"
-                />
-                <div className="wb-reel-shade" aria-hidden />
+          {duplicatedItems.map((item, idx) => {
+            const initialLayout = calculateCurvedCardLayout(
+              idx,
+              initialOffset,
+              defaultViewportWidth,
+              step,
+              totalWidth,
+              cardW,
+              curveFactor,
+              fit
+            );
+            return (
+              <div
+                key={`${item.id}-${idx}`}
+                ref={(el) => {
+                  cardRefs.current[idx] = el;
+                }}
+                onClick={() => handleCardClick(item)}
+                className="wb-reel-card"
+                style={{
+                  width: cardW,
+                  height: cardH,
+                  top: stagePad,
+                  transform: initialLayout.transform,
+                  zIndex: initialLayout.zIndex,
+                }}
+              >
+                <div className="wb-reel-card-inner">
+                  <img
+                    src={item.image}
+                    alt={item.alt || item.title}
+                    loading={idx < 8 ? "eager" : "lazy"}
+                    draggable={false}
+                    className="wb-reel-img"
+                  />
+                  <div className="wb-reel-shade" aria-hidden />
 
-                {item.badge && <span className="wb-reel-badge">{item.badge}</span>}
+                  {item.badge && <span className="wb-reel-badge">{item.badge}</span>}
 
-                <span className="wb-reel-play" aria-hidden>
-                  <Play width={18} height={18} fill="currentColor" />
-                </span>
+                  <span className="wb-reel-play" aria-hidden>
+                    <Play width={18} height={18} fill="currentColor" />
+                  </span>
 
-                <div className="wb-reel-meta">
-                  {item.author && <p className="wb-reel-author">{item.author}</p>}
+                  <div className="wb-reel-meta">
+                    {item.author && <p className="wb-reel-author">{item.author}</p>}
                   <h4 className="wb-reel-title">{item.title}</h4>
                 </div>
 
                 <div className="wb-reel-ring" aria-hidden />
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       </div>
 

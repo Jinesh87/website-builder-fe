@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { TPLS, CAT_LABEL } from "./data.ts";
 import { useMarketing } from "./marketing-context.ts";
 import { TemplateFrame } from "./MiniSite.tsx";
+import "./templates-gallery.css";
 
 interface TemplateCardProps {
   index: number;
@@ -29,6 +30,8 @@ export default function TemplateCard({ index, isShortlisted, onToggleShortlist }
     }
   };
 
+  const templateDomain = `${(t.biz || t.n).toLowerCase().replace(/[^a-z0-9]/g, "")}.com`;
+
   return (
     <article className="tcard">
       <Link
@@ -36,27 +39,52 @@ export default function TemplateCard({ index, isShortlisted, onToggleShortlist }
         className="tcard-thumb"
         aria-label={`Open ${t.n} (ID: ${t.id})`}
       >
-        <TemplateFrame t={index} />
+        {/* Browser Mockup Chrome Bar */}
+        <div className="tcard-browser-bar">
+          <div className="tcard-dots">
+            <span className="dot dot-r" />
+            <span className="dot dot-y" />
+            <span className="dot dot-g" />
+          </div>
+          <div className="tcard-url-bar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="tcard-lock" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            <span className="tcard-url-text">{templateDomain}</span>
+          </div>
+          <span className="tcard-badge-pill">{t.style ?? "2026"}</span>
+        </div>
+
+        {/* Viewport Area */}
+        <div className="tcard-viewport">
+          <TemplateFrame t={index} />
+        </div>
+
+        {/* Floating Hover Glass Pill */}
         <div className="tcard-ov">
           <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
             </svg>
-            Expand preview
+            Live Preview
           </span>
         </div>
       </Link>
 
       <div className="tmeta">
         <div className="trow">
-          <Link
-            to={templatePath}
-            className="tname"
-            title={`${t.n} (ID: ${t.id})`}
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            {t.n}
-          </Link>
+          <div className="tname-wrap">
+            <Link
+              to={templatePath}
+              className="tname"
+              title={`${t.n} (ID: ${t.id})`}
+            >
+              {t.n}
+            </Link>
+            <span className="tid-badge">#{t.id}</span>
+          </div>
           <span className={`tag ${styleClass}`}>
             {t.style ?? "Classic"}
           </span>
@@ -76,17 +104,21 @@ export default function TemplateCard({ index, isShortlisted, onToggleShortlist }
         <div className="tacts">
           <Link
             to={templatePath}
-            className="btn-details"
-            title={`Open template (ID: ${t.id})`}
+            className="btn-preview"
+            title={`Preview ${t.n}`}
           >
-            ID: {t.id}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ width: 14, height: 14 }}>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            Preview
           </Link>
           <Link
             to={templatePath}
             className="btn-use"
             title={`Preview and use ${t.n}`}
           >
-            Use template
+            Use template →
           </Link>
           <button
             className="btn-fav"
@@ -95,7 +127,7 @@ export default function TemplateCard({ index, isShortlisted, onToggleShortlist }
             aria-pressed={isShortlisted}
             onClick={handleHeartClick}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg viewBox="0 0 24 24" fill={isShortlisted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 20s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.5-7 10-7 10z" />
             </svg>
           </button>

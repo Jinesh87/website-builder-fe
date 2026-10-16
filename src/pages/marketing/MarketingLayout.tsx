@@ -4,6 +4,8 @@ import { TPLS } from "./data.ts";
 import { MarketingContext, type MarketingContextValue } from "./marketing-context.ts";
 import { MiniSite, TemplateFrame } from "./MiniSite.tsx";
 import Tabs from "./Tabs.tsx";
+import { LayoutTemplate } from "lucide-react";
+import { env } from "../../config/env.ts";
 import "./marketing.css";
 
 const FONTS_HREF =
@@ -43,11 +45,11 @@ export function MarketingHeader({
   return (
     <header className="top">
       <div className="wrap">
-        <Link to="/" className="brand" aria-label="[Your Brand] home">
-          <span className="mark">
-            <span />
+        <Link to="/" className="brand" aria-label={`${env.appName} home`}>
+          <span className="brand-mark" aria-hidden="true">
+            <LayoutTemplate className="brand-mark-icon" aria-hidden="true" />
           </span>
-          [Your Brand]
+          <span className="brand-name">{env.appName}</span>
           {isTemplates && <span className="brand-badge">Templates</span>}
         </Link>
         <nav className="nav" aria-label="Main">
@@ -146,11 +148,11 @@ export function MarketingFooter() {
       <div className="wrap">
         <div className="cols4">
           <div className="col" style={{ maxWidth: "320px" }}>
-            <Link to="/" className="brand" style={{ color: "#FFFFFF" }}>
-              <span className="mark">
-                <span />
+            <Link to="/" className="brand" aria-label={`${env.appName} home`} style={{ color: "#FFFFFF" }}>
+              <span className="brand-mark" aria-hidden="true">
+                <LayoutTemplate className="brand-mark-icon" aria-hidden="true" />
               </span>
-              [Your Brand]
+              <span className="brand-name">{env.appName}</span>
             </Link>
             <p style={{ fontSize: "14px" }}>Build and publish your business website by hand or with AI.</p>
           </div>

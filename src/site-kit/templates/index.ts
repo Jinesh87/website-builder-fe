@@ -12,8 +12,14 @@ import { MARKETING_AGENCY_SITE } from "./marketing-agency.ts";
 import { PLUMBING_SITE } from "./plumbing.ts";
 import { RESTAURANT_SITE } from "./restaurant.ts";
 import { ROOFING_SITE } from "./roofing.ts";
+import { DEVELOPER_PORTFOLIO_SITE } from "./developer-portfolio.ts";
+import { PHOTOGRAPHER_SITE } from "./photographer.ts";
+import { UX_DESIGNER_SITE } from "./ux-designer.ts";
 import { VIDEO_PRODUCTION_SITE } from "./video-production.ts";
 import { YOGA_STUDIO_SITE } from "./yoga-studio.ts";
+import { TECH_ACADEMY_SITE } from "./tech-academy.ts";
+import { DESIGN_INSTITUTE_SITE } from "./design-institute.ts";
+import { COMMUNITY_HUB_SITE } from "./community-hub.ts";
 
 type TemplateSite = {
   /** Key of the matching platform template seeded by the backend. */
@@ -38,6 +44,12 @@ const TEMPLATE_SITES: Readonly<Record<string, TemplateSite>> = {
   "2147": { key: "yoga-studio-forest", site: YOGA_STUDIO_SITE },
   "2148": { key: "restaurant-rose", site: RESTAURANT_SITE },
   "2149": { key: "bakery-coral", site: BAKERY_SITE },
+  "2150": { key: "photographer-mono", site: PHOTOGRAPHER_SITE },
+  "2151": { key: "ux-designer-midnight", site: UX_DESIGNER_SITE },
+  "2152": { key: "developer-portfolio-ocean", site: DEVELOPER_PORTFOLIO_SITE },
+  "2155": { key: "tech-academy-indigo", site: TECH_ACADEMY_SITE },
+  "2156": { key: "design-institute-editorial", site: DESIGN_INSTITUTE_SITE },
+  "2157": { key: "community-hub-emerald", site: COMMUNITY_HUB_SITE },
 };
 
 function find(templateId: string): TemplateSite | null {

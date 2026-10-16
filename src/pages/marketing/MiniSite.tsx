@@ -118,13 +118,15 @@ interface TemplateFrameProps extends Omit<MiniSiteProps, "t" | "mobile" | "style
 }
 
 const homeMarkupCache = new Map<string, string>();
+const MARKUP_VERSION = "2026-v6";
 
 /**
  * Static HTML of a template's real home page. Rendered as markup rather than live
  * components so the thumbnail can sit inside links and buttons without nesting them.
  */
 function templateHomeMarkup(templateId: string, site: SiteData): string {
-  let markup = homeMarkupCache.get(templateId);
+  const cacheKey = `${templateId}-${MARKUP_VERSION}`;
+  let markup = homeMarkupCache.get(cacheKey);
   if (markup === undefined) {
     markup = renderToStaticMarkup(
       <>
@@ -132,7 +134,7 @@ function templateHomeMarkup(templateId: string, site: SiteData): string {
         <SitePage site={site} page={site.pages[0]} />
       </>,
     );
-    homeMarkupCache.set(templateId, markup);
+    homeMarkupCache.set(cacheKey, markup);
   }
   return markup;
 }
@@ -155,7 +157,13 @@ export function TemplateFrame({ t, className, label, ...siteProps }: TemplateFra
     return () => observer.disconnect();
   }, []);
 
-  const scaleStyle = scale === null ? undefined : { transform: `scale(${scale})` };
+  const scaleStyle =
+    scale === null
+      ? undefined
+      : ({
+          "--preview-scale": scale,
+          transform: `scale(${scale})`,
+        } as CSSProperties);
 
   return (
     <div ref={ref} className={className ? `${className} tframe` : "tframe"} aria-label={label}>
