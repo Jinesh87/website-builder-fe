@@ -96,6 +96,9 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
   const hasSelection = useBuilderPuck((state) => state.appState.ui.itemSelector !== null);
   const isEmpty = useBuilderPuck((state) => state.appState.data.content.length === 0);
 
+  const pagesRef = useRef(draft.pages);
+  pagesRef.current = draft.pages;
+
   const site = useMemo<BuilderSiteValue>(
     () => ({
       theme: draft.theme,
@@ -111,7 +114,7 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
       navigateToHref: (href: string) => {
         if (!href || href === "#") return;
         const clean = href.startsWith("/") ? href : `/${href}`;
-        const target = draft.pages.find(
+        const target = pagesRef.current.find(
           (p) =>
             p.slug === clean ||
             p.slug === href ||
@@ -124,7 +127,7 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
         }
       },
     }),
-    [draft.theme, draft.header, draft.footer, draft.pages, hasSelection, siteArea, isEmpty, dispatch, setSiteArea, setLeftPanel, selectPage, notify],
+    [draft.theme, draft.header, draft.footer, hasSelection, siteArea, isEmpty, dispatch, setSiteArea, setLeftPanel, selectPage, notify],
   );
 
   const handleDeselect = useCallback(() => {

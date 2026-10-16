@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import { memo, type ComponentType, type ReactNode } from "react";
 import { Files, Images, Layers, LayoutTemplate, Plus, type LucideProps } from "lucide-react";
 import AppTooltip from "../../../components/ui/AppTooltip.tsx";
 import { AiSparklesIcon } from "../../../components/icons/AiSparklesIcon.tsx";
@@ -48,7 +48,7 @@ function RailButton({
   );
 }
 
-export default function LeftRail() {
+export default memo(function LeftRail() {
   const { leftPanel, setLeftPanel, aiOpen, setAiOpen, aiLock } = useEditor();
   const active = PANELS.find((panel) => panel.id === leftPanel);
   const Panel = active?.render;
@@ -87,4 +87,4 @@ export default function LeftRail() {
       )}
     </div>
   );
-}
+});
