@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { isExternalHref, safeHref } from "./links.ts";
 import { sectionFontStyle } from "./theme.ts";
 import type { GridColumns, IconName, ImageRef, LinkRef, SectionSettings } from "./types.ts";
+import { isLightColor, normalizeHexColor } from "../utils/colors.ts";
 
 type SiteLinkProps = {
   link: LinkRef;
@@ -401,17 +402,41 @@ type SectionShellProps = {
 
 export function SectionShell({ sectionId, settings, className, label, children, fullWidth }: SectionShellProps) {
   const customColors = settings.customColors;
+
+  const bg = normalizeHexColor(customColors?.background) ?? customColors?.background;
+  let text = normalizeHexColor(customColors?.text) ?? customColors?.text;
+  let muted = normalizeHexColor(customColors?.muted) ?? customColors?.muted;
+  let border = normalizeHexColor(customColors?.border) ?? customColors?.border;
+  const primary = normalizeHexColor(customColors?.primary) ?? customColors?.primary;
+  const gradFrom = normalizeHexColor(customColors?.gradientFrom) ?? customColors?.gradientFrom;
+  const gradTo = normalizeHexColor(customColors?.gradientTo) ?? customColors?.gradientTo;
+
+  // Auto-Contrast Guard:
+  // If the user set a custom background (e.g. white #FFFFFF) but text color is missing/invalid,
+  // automatically set readable high-contrast text and border so content is never invisible!
+  if (bg && !text) {
+    if (isLightColor(bg)) {
+      text = "#0F172A";
+      if (!muted) muted = "#64748B";
+      if (!border) border = "rgba(15, 23, 42, 0.12)";
+    } else {
+      text = "#F8FAFC";
+      if (!muted) muted = "#94A3B8";
+      if (!border) border = "rgba(255, 255, 255, 0.12)";
+    }
+  }
+
   const customStyle: CSSProperties = {
     ...sectionFontStyle(settings.font),
-    ...(customColors?.background ? { "--wb-bg": customColors.background, backgroundColor: customColors.background } : {}),
-    ...(customColors?.text ? { "--wb-text": customColors.text, color: customColors.text } : {}),
-    ...(customColors?.primary ? { "--wb-primary": customColors.primary } : {}),
-    ...(customColors?.muted ? { "--wb-muted": customColors.muted } : {}),
-    ...(customColors?.border ? { "--wb-border": customColors.border } : {}),
-    ...(customColors?.gradientFrom || customColors?.gradientTo
+    ...(bg ? { "--wb-bg": bg, backgroundColor: bg } : {}),
+    ...(text ? { "--wb-text": text, color: text } : {}),
+    ...(primary ? { "--wb-primary": primary } : {}),
+    ...(muted ? { "--wb-muted": muted } : {}),
+    ...(border ? { "--wb-border": border } : {}),
+    ...(gradFrom || gradTo
       ? {
-          "--wb-gradient": `linear-gradient(135deg, ${customColors.gradientFrom ?? "var(--wb-primary)"}, ${
-            customColors.gradientTo ?? customColors.gradientFrom
+          "--wb-gradient": `linear-gradient(135deg, ${gradFrom ?? "var(--wb-primary)"}, ${
+            gradTo ?? gradFrom
           })`,
         }
       : {}),
@@ -419,9 +444,9 @@ export function SectionShell({ sectionId, settings, className, label, children, 
 
   const classes = [
     "wb-section",
-    settings.background !== "default" && !customColors?.background && `wb-bg-${settings.background}`,
-    customColors?.text && "wb-custom-text",
-    customColors?.muted && "wb-custom-muted",
+    settings.background !== "default" && !bg && `wb-bg-${settings.background}`,
+    text && "wb-custom-text",
+    muted && "wb-custom-muted",
     settings.spacing && settings.spacing !== "default" && `wb-space-${settings.spacing}`,
     settings.align === "left" && "wb-align-left",
     settings.hideOnMobile && "wb-hide-mobile",
