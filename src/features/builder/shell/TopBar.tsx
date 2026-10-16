@@ -1,9 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ChevronDown, ChevronRight, Code2, ExternalLink, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppTooltip from "../../../components/ui/AppTooltip.tsx";
-import DownloadCodeDialog from "../../../components/websites/DownloadCodeDialog.tsx";
+import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
 import type { Device } from "../../../components/websites/DevicePreview.tsx";
+
+const DownloadCodeDialog = lazyWithRetry(
+  () => import("../../../components/websites/DownloadCodeDialog.tsx"),
+  { reloadKey: "topbar_download_code" },
+);
 import { useEditor } from "../editor-context.ts";
 import { useBuilderPuck } from "../puck/puck-api.ts";
 import AutosaveIndicator from "./AutosaveIndicator.tsx";
@@ -208,6 +213,8 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
         <button
           type="button"
           onClick={() => setDownloadOpen(true)}
+          onMouseEnter={() => void DownloadCodeDialog.preload()}
+          onFocus={() => void DownloadCodeDialog.preload()}
           disabled={autosave.status === "conflict"}
           aria-label="Download code"
           className="grid size-8 place-items-center rounded-ed border border-ed-border text-ed-muted hover:bg-ed-hover hover:text-ed-text disabled:opacity-50"
@@ -231,12 +238,16 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
       >
         Publish
       </button>
-      <DownloadCodeDialog
-        websiteId={website.id}
-        isOpen={downloadOpen}
-        onClose={() => setDownloadOpen(false)}
-        beforeExport={autosave.flush}
-      />
+      {downloadOpen && (
+        <Suspense fallback={null}>
+          <DownloadCodeDialog
+            websiteId={website.id}
+            isOpen={downloadOpen}
+            onClose={() => setDownloadOpen(false)}
+            beforeExport={autosave.flush}
+          />
+        </Suspense>
+      )}
     </header>
   );
 }

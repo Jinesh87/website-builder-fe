@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BookmarkPlus, Copy, MousePointerClick, Trash2, X } from "lucide-react";
 import { websitesApi } from "../../../api/websites.ts";
 import ConfirmDialog from "../../../components/ui/ConfirmDialog.tsx";
@@ -45,14 +45,56 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const [tab, setTab] = useState<SectionTab>("content");
   const [saving, setSaving] = useState(false);
-  const section = itemAsSection(item);
-  const definition = SECTION_DEFINITIONS[section.type];
 
-  const change = (next: Section) => replaceSection(dispatch, index, next);
-  const changeSettings = (settings: SectionSettings) => change({ ...section, settings });
+  const initialSection = itemAsSection(item);
+  const [localSection, setLocalSection] = useState<Section>(initialSection);
+  const localSectionRef = useRef<Section>(localSection);
+  localSectionRef.current = localSection;
+
+  const lastItemIdRef = useRef<string>(item.props.id);
+  useEffect(() => {
+    if (item.props.id !== lastItemIdRef.current) {
+      lastItemIdRef.current = item.props.id;
+      const nextSec = itemAsSection(item);
+      setLocalSection(nextSec);
+      localSectionRef.current = nextSec;
+    }
+  }, [item]);
+
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushChange = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+      replaceSection(dispatch, index, localSectionRef.current);
+    }
+  }, [dispatch, index]);
+
+  useEffect(() => {
+    return () => {
+      flushChange();
+    };
+  }, [flushChange]);
+
+  const change = useCallback((next: Section) => {
+    setLocalSection(next);
+    localSectionRef.current = next;
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef.current = null;
+      replaceSection(dispatch, index, next);
+    }, 60);
+  }, [dispatch, index]);
+
+  const definition = SECTION_DEFINITIONS[localSection.type];
+  const changeSettings = (settings: SectionSettings) => change({ ...localSection, settings });
 
   async function saveToLibrary({ name }: { name: string }) {
-    const saved = await websitesApi.saveSection(website.id, { name, section });
+    flushChange();
+    const saved = await websitesApi.saveSection(website.id, { name, section: localSectionRef.current });
     setSavedSections((current) => [saved, ...current]);
     setSaving(false);
     notify(`“${saved.name}” saved to your library`);
@@ -88,7 +130,7 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
       <div role="tabpanel" aria-label={SECTION_TABS.find((candidate) => candidate.id === tab)?.label} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {tab === "content" && (
           <div className="flex flex-col">
-            <SectionContentForm key={section.id} section={section} onChange={change} />
+            <SectionContentForm key={localSection.id} section={localSection} onChange={change} />
             <div className="border-t border-ed-border/70 p-4 mt-2">
               <button
                 type="button"
@@ -101,9 +143,9 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
             </div>
           </div>
         )}
-        {tab === "style" && <SectionStyleForm settings={section.settings} siteFont={siteFont} onChange={changeSettings} />}
-        {tab === "responsive" && <SectionResponsiveForm settings={section.settings} onChange={changeSettings} />}
-        {tab === "advanced" && <SectionAdvancedForm settings={section.settings} onChange={changeSettings} />}
+        {tab === "style" && <SectionStyleForm settings={localSection.settings} siteFont={siteFont} onChange={changeSettings} />}
+        {tab === "responsive" && <SectionResponsiveForm settings={localSection.settings} onChange={changeSettings} />}
+        {tab === "advanced" && <SectionAdvancedForm settings={localSection.settings} onChange={changeSettings} />}
       </div>
       {saving && (
         <SaveNameDialog

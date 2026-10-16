@@ -2,6 +2,7 @@ import { useState, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import {
   Check,
+  Coins,
   Copy,
   RotateCw,
   Search,
@@ -484,13 +485,33 @@ export default function PageSeoContentReviewModal({
               <div className="flex-1">
                 <p className="font-semibold">Review couldn't be generated</p>
                 <p className="mt-0.5 text-rose-700">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => void runAudit()}
-                  className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs transition cursor-pointer"
-                >
-                  <RotateCw className="size-3" /> Retry Audit
-                </button>
+                {error.toLowerCase().includes("connect") ? (
+                  <div className="mt-3 flex items-center gap-2">
+                    <a
+                      href="/connects"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+                    >
+                      <Coins className="size-3.5" /> Buy Connects
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => void runAudit()}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-white hover:bg-rose-50 text-rose-700 font-medium text-xs transition cursor-pointer"
+                    >
+                      <RotateCw className="size-3" /> Retry Audit
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void runAudit()}
+                    className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs transition cursor-pointer"
+                  >
+                    <RotateCw className="size-3" /> Retry Audit
+                  </button>
+                )}
               </div>
             </div>
           )}

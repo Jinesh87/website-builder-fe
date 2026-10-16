@@ -1,6 +1,6 @@
 import "@puckeditor/core/no-external.css";
 import "./builder.css";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Puck, useGetPuck, type Data, type Permissions } from "@puckeditor/core";
 import { AlertTriangle, CheckCircle2, RotateCw, X } from "lucide-react";
 import type { SavedSection, ThemeOption, WebsiteDetail, WebsitePage } from "../../api/websites.ts";
@@ -23,7 +23,12 @@ import {
 import { builderConfig } from "./puck/config.tsx";
 import { EditorDataError, hasAiPlaceholder, puckDataToSections, sectionsToPuckData } from "./puck/adapter.ts";
 import { selectSection, useBuilderPuck } from "./puck/puck-api.ts";
-import AiDrawer from "./shell/AiDrawer.tsx";
+import { lazyWithRetry } from "../../utils/lazy-with-retry.ts";
+import AiDrawerSkeleton from "./shell/AiDrawerSkeleton.tsx";
+
+export const AiDrawer = lazyWithRetry(() => import("./shell/AiDrawer.tsx"), {
+  reloadKey: "ai_drawer",
+});
 import CanvasViewport from "./shell/CanvasViewport.tsx";
 import Inspector from "./shell/Inspector.tsx";
 import LeftRail from "./shell/LeftRail.tsx";
@@ -72,7 +77,7 @@ function blockHistoryHotkeys(): () => void {
 
 /** Lives inside <Puck> so it can reach editor state; draws the canvas and site chrome. */
 function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublish: () => void; onCommit: (data: Data) => void }) {
-  const { draft, siteArea, setSiteArea, setLeftPanel, device, aiOpen, aiLock, selectPage, notify } = useEditor();
+  const { draft, siteArea, setSiteArea, setLeftPanel, device, aiOpen, setAiOpen, aiLock, selectPage, notify } = useEditor();
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const getPuck = useGetPuck();
   const wasLocked = useRef(false);
@@ -96,6 +101,9 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
   const hasSelection = useBuilderPuck((state) => state.appState.ui.itemSelector !== null);
   const isEmpty = useBuilderPuck((state) => state.appState.data.content.length === 0);
 
+  const pagesRef = useRef(draft.pages);
+  pagesRef.current = draft.pages;
+
   const site = useMemo<BuilderSiteValue>(
     () => ({
       theme: draft.theme,
@@ -111,7 +119,7 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
       navigateToHref: (href: string) => {
         if (!href || href === "#") return;
         const clean = href.startsWith("/") ? href : `/${href}`;
-        const target = draft.pages.find(
+        const target = pagesRef.current.find(
           (p) =>
             p.slug === clean ||
             p.slug === href ||
@@ -124,7 +132,7 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
         }
       },
     }),
-    [draft.theme, draft.header, draft.footer, draft.pages, hasSelection, siteArea, isEmpty, dispatch, setSiteArea, setLeftPanel, selectPage, notify],
+    [draft.theme, draft.header, draft.footer, hasSelection, siteArea, isEmpty, dispatch, setSiteArea, setLeftPanel, selectPage, notify],
   );
 
   const handleDeselect = useCallback(() => {
@@ -151,7 +159,13 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
           <CanvasViewport device={device} onDeselect={handleDeselect}>
             <Puck.Preview />
           </CanvasViewport>
-          {aiOpen ? <AiDrawer /> : <Inspector />}
+          {aiOpen ? (
+            <Suspense fallback={<AiDrawerSkeleton onClose={() => setAiOpen(false)} />}>
+              <AiDrawer />
+            </Suspense>
+          ) : (
+            <Inspector />
+          )}
         </div>
       </div>
     </BuilderSiteContext.Provider>

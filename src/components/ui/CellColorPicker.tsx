@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { Check, RotateCcw } from "lucide-react";
+import { normalizeHexColor } from "../../utils/colors.ts";
 
 const PRESET_SWATCHES = [
   // Neutrals / Darks / Lights
@@ -163,7 +164,7 @@ CellColorPicker.Trigger = function CellColorPickerTrigger({
   className?: string;
 }) {
   const { value, isOpen, setIsOpen, fallback } = useCellColorPicker();
-  const displayColor = value || fallback;
+  const displayColor = normalizeHexColor(value) || value || fallback;
 
   return (
     <button
@@ -195,6 +196,18 @@ CellColorPicker.ValueDisplay = function CellColorPickerValueDisplay({
 }) {
   const { value, onChange, fallback, id } = useCellColorPicker();
 
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const raw = e.target.value.trim();
+    if (!raw) {
+      onChange(undefined);
+      return;
+    }
+    const normalized = normalizeHexColor(raw);
+    if (normalized) {
+      onChange(normalized);
+    }
+  };
+
   return (
     <div className="relative flex-1 min-w-0">
       <input
@@ -204,10 +217,21 @@ CellColorPicker.ValueDisplay = function CellColorPickerValueDisplay({
         placeholder={fallback}
         onChange={(e) => {
           const val = e.target.value.trim();
-          onChange(val ? val : undefined);
+          if (!val) {
+            onChange(undefined);
+            return;
+          }
+          // Auto-heal common typo e.g. #00F172A (extra 0) or missing hash
+          if (val.length === 8 && val.startsWith("#00")) {
+            const fixed = normalizeHexColor(val);
+            onChange(fixed || val);
+          } else {
+            onChange(val);
+          }
         }}
+        onBlur={handleBlur}
         className={`h-7 w-full rounded-md border border-ed-border bg-ed-panel px-2 font-mono text-ed-xs text-ed-text placeholder:text-ed-faint shadow-ed-xs transition-all duration-150 hover:border-ed-border-strong focus:border-ed-accent focus:outline-none focus:ring-1 focus:ring-ed-accent/30 uppercase ${className}`}
-        maxLength={30}
+        maxLength={16}
       />
     </div>
   );
@@ -244,7 +268,7 @@ CellColorPicker.Swatch = function CellColorPickerSwatch({
   className?: string;
 }) {
   const { value, onChange, fallback } = useCellColorPicker();
-  const currentColor = value || fallback;
+  const currentColor = normalizeHexColor(value) || value || fallback;
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
@@ -286,8 +310,11 @@ CellColorPicker.Swatch = function CellColorPickerSwatch({
           <label className="relative flex items-center gap-1.5 cursor-pointer text-ed-xs text-ed-text hover:text-ed-accent transition-colors font-medium">
             <input
               type="color"
-              value={value && value.startsWith("#") && value.length === 7 ? value : "#6366f1"}
-              onChange={(e) => onChange(e.target.value)}
+              value={(() => {
+                const norm = normalizeHexColor(value);
+                return norm && norm.length === 7 ? norm : "#6366f1";
+              })()}
+              onChange={(e) => onChange(e.target.value.toUpperCase())}
               className="size-6 cursor-pointer rounded border-0 bg-transparent p-0 opacity-0 absolute inset-0"
             />
             <span

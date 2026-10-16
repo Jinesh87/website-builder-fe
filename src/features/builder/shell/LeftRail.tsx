@@ -1,4 +1,4 @@
-import type { ComponentType, ReactNode } from "react";
+import { memo, type ComponentType, type ReactNode } from "react";
 import { Files, Images, Layers, LayoutTemplate, Plus, type LucideProps } from "lucide-react";
 import AppTooltip from "../../../components/ui/AppTooltip.tsx";
 import { AiSparklesIcon } from "../../../components/icons/AiSparklesIcon.tsx";
@@ -22,12 +22,16 @@ function RailButton({
   active,
   disabled = false,
   onClick,
+  onMouseEnter,
+  onFocus,
   children,
 }: {
   label: string;
   active: boolean;
   disabled?: boolean;
   onClick: () => void;
+  onMouseEnter?: () => void;
+  onFocus?: () => void;
   children: ReactNode;
 }) {
   return (
@@ -38,6 +42,8 @@ function RailButton({
         aria-pressed={active}
         disabled={disabled}
         onClick={onClick}
+        onMouseEnter={onMouseEnter}
+        onFocus={onFocus}
         className={`relative grid size-9 place-items-center rounded-ed transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
           active ? "bg-ed-accent-soft text-ed-accent" : "text-ed-muted hover:bg-ed-hover hover:text-ed-text"
         }`}
@@ -48,10 +54,14 @@ function RailButton({
   );
 }
 
-export default function LeftRail() {
+export default memo(function LeftRail() {
   const { leftPanel, setLeftPanel, aiOpen, setAiOpen, aiLock } = useEditor();
   const active = PANELS.find((panel) => panel.id === leftPanel);
   const Panel = active?.render;
+
+  const preloadAi = () => {
+    void import("./AiDrawer.tsx");
+  };
 
   return (
     <div className="z-(--z-ed-panel) flex h-full min-h-0 shrink-0 select-none">
@@ -62,14 +72,21 @@ export default function LeftRail() {
           </RailButton>
         ))}
         <span className="my-1 h-px w-6 shrink-0 bg-ed-border" aria-hidden />
-        <RailButton label="AI assistant" active={aiOpen} disabled={aiLock !== null} onClick={() => setAiOpen(!aiOpen)}>
+        <RailButton
+          label="AI assistant"
+          active={aiOpen}
+          disabled={aiLock !== null}
+          onClick={() => setAiOpen(!aiOpen)}
+          onMouseEnter={preloadAi}
+          onFocus={preloadAi}
+        >
           <AiSparklesIcon className="size-4.5" variant="glossy" aria-hidden />
         </RailButton>
       </nav>
       {active && Panel && (
         <aside
           aria-label={active.label}
-          className={`relative flex h-full min-h-0 ${leftPanel === "add" ? "w-96" : "w-72"} shrink-0 flex-col border-r border-ed-border bg-ed-panel overflow-hidden transition-[width] duration-150`}
+          className={`relative flex h-full min-h-0 ${leftPanel === "add" ? "w-[400px]" : "w-72"} shrink-0 flex-col border-r border-ed-border bg-ed-panel overflow-hidden transition-[width] duration-150`}
         >
           <div inert={aiLock !== null} className={`flex min-h-0 flex-1 flex-col ${aiLock ? "opacity-40" : ""}`}>
             <Panel />
@@ -87,4 +104,4 @@ export default function LeftRail() {
       )}
     </div>
   );
-}
+});

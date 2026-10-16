@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal } from "@heroui/react";
-import { AlertCircle, Check, ChevronRight, Copy, Eye, Globe, Plus, X } from "lucide-react";
+import { AlertCircle, Check, ChevronRight, Coins, Copy, Eye, Globe, Plus, X } from "lucide-react";
 import { errorMessage } from "../../../api/http.ts";
 import {
   websitesApi,
@@ -1508,7 +1508,19 @@ Sitemap: ${dom}/sitemap.xml`;
         {error && (
           <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-2.5 text-ed-2xs text-red-600 dark:text-red-400">
             <AlertCircle className="size-3.5 shrink-0 mt-0.5" />
-            <p className="flex-1 leading-tight">{error}</p>
+            <div className="flex-1 space-y-1">
+              <p className="leading-tight">{error}</p>
+              {error.toLowerCase().includes("connect") && (
+                <a
+                  href="/connects"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 hover:underline pt-0.5"
+                >
+                  <Coins className="size-3" /> Buy Connects &rarr;
+                </a>
+              )}
+            </div>
           </div>
         )}
 

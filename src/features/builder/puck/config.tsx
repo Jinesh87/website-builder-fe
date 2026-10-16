@@ -1,5 +1,5 @@
 import type { ComponentConfig, Config } from "@puckeditor/core";
-import type { MouseEvent, ReactNode } from "react";
+import { memo, useMemo, type MouseEvent, type ReactNode } from "react";
 import {
   DEFAULT_SECTION_SETTINGS,
   SECTION_DEFINITIONS,
@@ -9,10 +9,69 @@ import {
   SiteStyles,
   type Section,
   type SectionDataMap,
+  type SectionSettings,
   type SectionType,
 } from "../../../site-kit/index.ts";
 import { useBuilderSite } from "../editor-context.ts";
 import { isAiPlaceholderData, itemToSection, type BuilderComponents, type BuilderRootProps, type SectionProps } from "./adapter.ts";
+
+type SectionWrapperProps<T extends SectionType> = {
+  id: string;
+  type: T;
+  data: SectionDataMap[T];
+  settings?: SectionSettings;
+  hidden?: boolean;
+  isEditing?: boolean;
+};
+
+const SectionWrapper = memo(
+  function SectionWrapper<T extends SectionType>({
+    id,
+    type,
+    data,
+    settings,
+    hidden,
+    isEditing,
+  }: SectionWrapperProps<T>) {
+    const section = useMemo(
+      () =>
+        itemToSection(type, {
+          id,
+          data,
+          settings: settings ?? DEFAULT_SECTION_SETTINGS,
+          hidden: Boolean(hidden),
+        }),
+      [type, id, data, settings, hidden],
+    );
+
+    const view = <SectionView section={section} />;
+    if (!hidden) {
+      return (
+        <div id={id} className="wb-editor-section-wrap w-full">
+          {view}
+        </div>
+      );
+    }
+    return isEditing ? (
+      <div id={id} className="wb-editor-hidden wb-editor-section-wrap w-full">
+        {view}
+      </div>
+    ) : null;
+  },
+  (prev, next) => {
+    if (prev.id !== next.id) return false;
+    if (prev.type !== next.type) return false;
+    if (prev.hidden !== next.hidden) return false;
+    if (prev.isEditing !== next.isEditing) return false;
+    if (prev.settings !== next.settings) {
+      if (JSON.stringify(prev.settings) !== JSON.stringify(next.settings)) return false;
+    }
+    if (prev.data !== next.data) {
+      if (JSON.stringify(prev.data) !== JSON.stringify(next.data)) return false;
+    }
+    return true;
+  },
+);
 
 function sectionComponent<T extends SectionType>(type: T): ComponentConfig<SectionProps<T>> {
   const definition = SECTION_DEFINITIONS[type];
@@ -42,10 +101,16 @@ function sectionComponent<T extends SectionType>(type: T): ComponentConfig<Secti
           </div>
         );
       }
-      const section = itemToSection(type, { id, data: data as SectionDataMap[T], settings, hidden });
-      const view = <SectionView section={section} />;
-      if (!hidden) return <div id={id} className="wb-editor-section-wrap w-full">{view}</div>;
-      return puck.isEditing ? <div id={id} className="wb-editor-hidden wb-editor-section-wrap w-full">{view}</div> : <></>;
+      return (
+        <SectionWrapper
+          id={id}
+          type={type}
+          data={data as SectionDataMap[T]}
+          settings={settings}
+          hidden={hidden}
+          isEditing={puck.isEditing}
+        />
+      );
     },
   };
 }

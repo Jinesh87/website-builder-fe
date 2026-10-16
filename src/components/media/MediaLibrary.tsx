@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { Button, SearchField, Spinner } from "@heroui/react";
 import { AlertCircle, CheckCircle2, FileText, Film, Folder, FolderPlus, Images, Pencil, Trash2, Upload, X } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
@@ -20,9 +20,17 @@ import ConfirmDialog from "../ui/ConfirmDialog.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../ui/SelectInput.tsx";
 import { optimizeImageToWebP } from "../../utils/image-optimizer.ts";
-import MediaDeleteDialog from "./MediaDeleteDialog.tsx";
-import ImageUploadDialog from "./ImageUploadDialog.tsx";
-import MediaDetailsDialog from "./MediaDetailsDialog.tsx";
+import { lazyWithRetry } from "../../utils/lazy-with-retry.ts";
+
+const MediaDeleteDialog = lazyWithRetry(() => import("./MediaDeleteDialog.tsx"), {
+  reloadKey: "media_delete_dialog",
+});
+const ImageUploadDialog = lazyWithRetry(() => import("./ImageUploadDialog.tsx"), {
+  reloadKey: "image_upload_dialog",
+});
+const MediaDetailsDialog = lazyWithRetry(() => import("./MediaDetailsDialog.tsx"), {
+  reloadKey: "media_details_dialog",
+});
 
 const PAGE_SIZE = 24;
 
@@ -399,42 +407,48 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
       </div>
 
       {selected && (
-        <MediaDetailsDialog
-          key={selected.id}
-          file={selected}
-          folders={folders}
-          onSaved={(updated) => {
-            setSelected(null);
-            setFiles((current) => current.map((file) => (file.id === updated.id ? updated : file)));
-            if (updated.folderId !== selected.folderId) void Promise.all([load(1), loadFolders()]);
-          }}
-          onDelete={(file) => {
-            setSelected(null);
-            setPendingDelete(file);
-          }}
-          onClose={() => setSelected(null)}
-        />
+        <Suspense fallback={null}>
+          <MediaDetailsDialog
+            key={selected.id}
+            file={selected}
+            folders={folders}
+            onSaved={(updated) => {
+              setSelected(null);
+              setFiles((current) => current.map((file) => (file.id === updated.id ? updated : file)));
+              if (updated.folderId !== selected.folderId) void Promise.all([load(1), loadFolders()]);
+            }}
+            onDelete={(file) => {
+              setSelected(null);
+              setPendingDelete(file);
+            }}
+            onClose={() => setSelected(null)}
+          />
+        </Suspense>
       )}
       {pendingImage && (
-        <ImageUploadDialog
-          file={pendingImage}
-          clientId={clientId}
-          websiteId={websiteId}
-          folderId={uploadFolderId}
-          onSaved={() => {
-            setPendingImage(null);
-            void Promise.all([load(1), loadFolders()]);
-          }}
-          onClose={() => setPendingImage(null)}
-        />
+        <Suspense fallback={null}>
+          <ImageUploadDialog
+            file={pendingImage}
+            clientId={clientId}
+            websiteId={websiteId}
+            folderId={uploadFolderId}
+            onSaved={() => {
+              setPendingImage(null);
+              void Promise.all([load(1), loadFolders()]);
+            }}
+            onClose={() => setPendingImage(null)}
+          />
+        </Suspense>
       )}
       {pendingDelete && (
-        <MediaDeleteDialog
-          key={pendingDelete.id}
-          file={pendingDelete}
-          onDeleted={() => void afterDelete()}
-          onClose={() => setPendingDelete(null)}
-        />
+        <Suspense fallback={null}>
+          <MediaDeleteDialog
+            key={pendingDelete.id}
+            file={pendingDelete}
+            onDeleted={() => void afterDelete()}
+            onClose={() => setPendingDelete(null)}
+          />
+        </Suspense>
       )}
       {folderDialog && (
         <SaveNameDialog

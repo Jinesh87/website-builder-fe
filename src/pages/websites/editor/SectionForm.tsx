@@ -46,7 +46,10 @@ import type {
   TeamMember,
   TeamSocialLink,
   TeamVariant,
+  TestimonialsCardStyle,
   TestimonialsData,
+  TestimonialItem,
+  TestimonialsVariant,
   TextData,
 } from "../../../site-kit/index.ts";
 import {
@@ -2029,10 +2032,72 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
   );
 }
 
+const TESTIMONIALS_VARIANT_OPTIONS: { value: TestimonialsVariant; label: string }[] = [
+  { value: "cards-grid", label: "Cards grid · Multi-column testimonial matrix" },
+  { value: "carousel-slider", label: "Carousel slider · Smooth interactive stage" },
+  { value: "marquee-wall", label: "Marquee wall · 60fps infinite social proof ticker" },
+  { value: "spotlight-featured", label: "Executive spotlight · Hero quote & proof stack" },
+  { value: "minimal-editorial", label: "Swiss editorial · Hairline typography minimalist" },
+];
+
+const TESTIMONIALS_CARD_STYLE_OPTIONS: { value: TestimonialsCardStyle; label: string }[] = [
+  { value: "default", label: "Surface (Clean neutral)" },
+  { value: "bordered", label: "Bordered (Crisp hairline outline)" },
+  { value: "flat", label: "Flat (Transparent background)" },
+  { value: "glass", label: "Glassmorphism (Frosted blur)" },
+  { value: "elevated", label: "Elevated (Floating shadow)" },
+];
+
 function TestimonialsForm({ data, onChange }: DataFormProps<TestimonialsData>) {
+  const currentVariant = data.variant || "cards-grid";
+
   return (
     <>
-      <FormGroup title="Content">
+      <FormGroup title="Layout & Variant">
+        <SelectField
+          label="Display variant"
+          value={currentVariant}
+          options={TESTIMONIALS_VARIANT_OPTIONS}
+          onChange={(variant) => onChange({ ...data, variant })}
+        />
+        <SelectField
+          label="Card style"
+          value={data.cardStyle || "default"}
+          options={TESTIMONIALS_CARD_STYLE_OPTIONS}
+          onChange={(cardStyle) => onChange({ ...data, cardStyle })}
+        />
+        <SelectField
+          label="Header alignment"
+          value={data.align || "center"}
+          options={[
+            { value: "center", label: "Center" },
+            { value: "left", label: "Left" },
+          ]}
+          onChange={(align) => onChange({ ...data, align: align as "left" | "center" })}
+        />
+        {currentVariant === "cards-grid" && (
+          <SelectField
+            label="Grid columns"
+            value={String(data.columns || 3)}
+            options={[
+              { value: "1", label: "1 column (Single column focus)" },
+              { value: "2", label: "2 columns (Spacious)" },
+              { value: "3", label: "3 columns (Balanced standard)" },
+              { value: "4", label: "4 columns (Compact showcase)" },
+            ]}
+            onChange={(cols) => onChange({ ...data, columns: Number(cols) as GridColumns })}
+          />
+        )}
+      </FormGroup>
+
+      <FormGroup title="Header & Proof Metric">
+        <TextField
+          label="Eyebrow text"
+          value={data.eyebrow}
+          onChange={(eyebrow) => onChange({ ...data, eyebrow })}
+          maxLength={80}
+          placeholder="e.g. TRUSTED BY 10,000+ CUSTOMERS"
+        />
         <TextField
           label="Heading"
           value={data.heading}
@@ -2040,18 +2105,88 @@ function TestimonialsForm({ data, onChange }: DataFormProps<TestimonialsData>) {
           maxLength={200}
           required
         />
+        <TextAreaField
+          label="Intro description"
+          value={data.intro}
+          onChange={(intro) => onChange({ ...data, intro })}
+          maxLength={500}
+          hint="Brief intro about customer satisfaction or testimonials..."
+        />
+        <div className="pt-2 border-t border-ed-border">
+          <span className="text-ed-xs font-semibold text-ed-text block mb-2">Rating Summary Pill (Optional)</span>
+          <div className="grid grid-cols-2 gap-2">
+            <TextField
+              label="Rating Score"
+              value={data.ratingMetric?.score}
+              onChange={(score) =>
+                onChange({
+                  ...data,
+                  ratingMetric: { ...data.ratingMetric, score },
+                })
+              }
+              placeholder="e.g. 4.9/5"
+            />
+            <TextField
+              label="Testimonial Count / Rating Badge"
+              value={data.ratingMetric?.count}
+              onChange={(count) =>
+                onChange({
+                  ...data,
+                  ratingMetric: { ...data.ratingMetric, count },
+                })
+              }
+              placeholder="e.g. 2,500+ ratings"
+            />
+          </div>
+          <TextField
+            label="Rating Label"
+            value={data.ratingMetric?.label}
+            onChange={(label) =>
+              onChange({
+                ...data,
+                ratingMetric: { ...data.ratingMetric, label },
+              })
+            }
+            placeholder="e.g. Customer Rating"
+          />
+        </div>
       </FormGroup>
-      <FormGroup title="Quotes">
-        <ItemList<TestimonialsData["items"][number]>
+
+      <FormGroup title="Visual Elements & Badges">
+        <CheckboxField
+          label="Show Star Ratings"
+          checked={data.showRatings ?? true}
+          onChange={(showRatings) => onChange({ ...data, showRatings })}
+        />
+        <CheckboxField
+          label="Show Author Avatars"
+          checked={data.showAvatars ?? true}
+          onChange={(showAvatars) => onChange({ ...data, showAvatars })}
+        />
+        <CheckboxField
+          label="Show Verified Badges"
+          checked={data.showBadges ?? true}
+          onChange={(showBadges) => onChange({ ...data, showBadges })}
+        />
+      </FormGroup>
+
+      <FormGroup title="Customer Quotes">
+        <ItemList<TestimonialItem>
           label="Testimonials"
           items={data.items}
           max={24}
           onChange={(items) => onChange({ ...data, items })}
           create={() => ({
-            quote: "Add a short quote from a happy customer.",
-            name: "Customer name",
+            quote: "This platform completely transformed our workflow. Setup took under 10 minutes and support is world-class.",
+            name: "Alex Morgan",
+            role: "Head of Product",
+            company: "Acme Studio",
+            rating: 5,
+            verified: true,
+            badge: "Verified Buyer",
+            highlight: "+240% Growth",
           })}
-          itemTitle={(item) => item.name}
+          itemTitle={(item) => item.name || "Customer testimonial"}
           addLabel="Add testimonial"
           renderItem={(item, update) => (
             <>
@@ -2062,18 +2197,65 @@ function TestimonialsForm({ data, onChange }: DataFormProps<TestimonialsData>) {
                 maxLength={800}
                 required
               />
-              <TextField
-                label="Name"
-                value={item.name}
-                onChange={(name) => update({ ...item, name })}
-                maxLength={120}
-                required
+              <div className="grid grid-cols-2 gap-2">
+                <TextField
+                  label="Name"
+                  value={item.name}
+                  onChange={(name) => update({ ...item, name })}
+                  maxLength={120}
+                  required
+                />
+                <TextField
+                  label="Role"
+                  value={item.role}
+                  onChange={(role) => update({ ...item, role })}
+                  maxLength={120}
+                  placeholder="e.g. Founder & CEO"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <TextField
+                  label="Company"
+                  value={item.company}
+                  onChange={(company) => update({ ...item, company })}
+                  maxLength={120}
+                  placeholder="e.g. Stripe, Linear"
+                />
+                <SelectField
+                  label="Star Rating"
+                  value={String(item.rating ?? 5)}
+                  options={[
+                    { value: "5", label: "★★★★★ (5 Stars)" },
+                    { value: "4", label: "★★★★☆ (4 Stars)" },
+                    { value: "3", label: "★★★☆☆ (3 Stars)" },
+                  ]}
+                  onChange={(r) => update({ ...item, rating: Number(r) })}
+                />
+              </div>
+              <ImageField
+                label="Author photo (Avatar)"
+                value={item.avatar}
+                onChange={(avatar) => update({ ...item, avatar })}
+                optional
               />
-              <TextField
-                label="Role or company"
-                value={item.role}
-                onChange={(role) => update({ ...item, role })}
-                maxLength={120}
+              <div className="grid grid-cols-2 gap-2">
+                <TextField
+                  label="Outcome / Highlight Tag"
+                  value={item.highlight}
+                  onChange={(highlight) => update({ ...item, highlight })}
+                  placeholder="e.g. +340% ROI, Saved 20 hrs"
+                />
+                <TextField
+                  label="Badge Label"
+                  value={item.badge}
+                  onChange={(badge) => update({ ...item, badge })}
+                  placeholder="e.g. Verified Buyer"
+                />
+              </div>
+              <CheckboxField
+                label="Show Verified Checkmark"
+                checked={item.verified !== false}
+                onChange={(verified) => update({ ...item, verified })}
               />
             </>
           )}

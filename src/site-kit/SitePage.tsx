@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment, memo, type ReactNode } from "react";
 import SiteFooter from "./layout/SiteFooter.tsx";
 import SiteHeader from "./layout/SiteHeader.tsx";
 import AuthSection from "./sections/AuthSection.tsx";
@@ -28,7 +28,7 @@ import { SITE_CSS } from "./styles.ts";
 import { themeToCssVars } from "./theme.ts";
 import type { FooterData, HeaderData, PageData, Section, SectionOf, SiteData, ThemeSettings } from "./types.ts";
 
-export function SectionView({ section }: { section: Section }) {
+export const SectionView = memo(function SectionView({ section }: { section: Section }) {
   switch (section.type) {
     case "header":
       return <HeaderSection section={section} />;
@@ -77,7 +77,19 @@ export function SectionView({ section }: { section: Section }) {
     case "blog_detail":
       return <BlogDetailSection section={section} />;
   }
-}
+}, (prev, next) => {
+  if (prev.section === next.section) return true;
+  if (prev.section.id !== next.section.id) return false;
+  if (prev.section.type !== next.section.type) return false;
+  if (prev.section.hidden !== next.section.hidden) return false;
+  if (prev.section.settings !== next.section.settings) {
+    if (JSON.stringify(prev.section.settings) !== JSON.stringify(next.section.settings)) return false;
+  }
+  if (prev.section.data !== next.section.data) {
+    if (JSON.stringify(prev.section.data) !== JSON.stringify(next.section.data)) return false;
+  }
+  return true;
+});
 
 type SiteFrameProps = {
   theme: ThemeSettings;

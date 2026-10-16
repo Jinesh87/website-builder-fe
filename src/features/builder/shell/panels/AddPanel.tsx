@@ -1,5 +1,10 @@
 import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ComponentType,
@@ -92,8 +97,8 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: "social-proof",
     category: "Social proof",
-    label: "Testimonials & Social",
-    shortLabel: "Proof",
+    label: "Testimonials",
+    shortLabel: "Testimonials",
     icon: MessageSquareQuote,
   },
   {
@@ -203,7 +208,37 @@ const HEADER_PREVIEW_WIDTH = 1360;
 const HEADER_PREVIEW_SCALE =
   (PREVIEW_WIDTH * PREVIEW_SCALE) / HEADER_PREVIEW_WIDTH;
 
-function SectionLivePreview({
+function useInView(options?: IntersectionObserverInit) {
+  const [inView, setInView] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || inView) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "300px", ...options },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [inView, options]);
+
+  return { ref, inView };
+}
+
+const SectionLivePreview = memo(function SectionLivePreview({
   preset,
   theme,
 }: {
@@ -241,38 +276,48 @@ function SectionLivePreview({
     return s;
   }, [preset.key, isCurvedHero]);
 
+  const { ref, inView } = useInView();
+
   return (
     <div
+      ref={ref}
       className={`relative ${heightClass} w-full overflow-hidden rounded-md border border-ed-border/70 bg-white dark:bg-zinc-950 pointer-events-none select-none`}
       aria-hidden
       inert
     >
-      <SiteStyles />
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 origin-top"
-        style={{ width, transform: `scale(${scale})` }}
-      >
+      {inView ? (
         <div
-          className={`wb-site wb-buttons-${theme.buttonStyle} wb-cards-${theme.cardStyle}`}
-          style={
-            {
-              ...themeToCssVars(theme),
-              "--wb-section-y": isCurvedHero
-                ? "14px"
-                : isHeaderOrFooter
-                  ? "16px"
-                  : "24px",
-              "--wb-container": isWide ? "1280px" : "1000px",
-              "--wb-auth-screen-h": "680px",
-            } as CSSProperties
-          }
+          className="absolute top-0 left-1/2 -translate-x-1/2 origin-top"
+          style={{ width, transform: `scale(${scale})` }}
         >
-          <SectionView section={section} />
+          <div
+            className={`wb-site wb-buttons-${theme.buttonStyle} wb-cards-${theme.cardStyle}`}
+            style={
+              {
+                ...themeToCssVars(theme),
+                "--wb-section-y": isCurvedHero
+                  ? "14px"
+                  : isHeaderOrFooter
+                    ? "16px"
+                    : "24px",
+                "--wb-container": isWide ? "1280px" : "1000px",
+                "--wb-auth-screen-h": "680px",
+              } as CSSProperties
+            }
+          >
+            <SectionView section={section} />
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-ed-subtle/30 text-ed-faint">
+          <span className="text-[10px] font-medium tracking-wider uppercase opacity-50">
+            {preset.label}
+          </span>
+        </div>
+      )}
     </div>
   );
-}
+});
 
 function matches(preset: SectionPreset, query: string): boolean {
   const text =
@@ -283,6 +328,148 @@ function matches(preset: SectionPreset, query: string): boolean {
     .every((word) => text.includes(word));
 }
 
+type PresetCardItemProps = {
+  preset: SectionPreset;
+  theme: ThemeSettings;
+  full: boolean;
+  onAdd: (preset: SectionPreset) => void;
+};
+
+const PresetCardItem = memo(
+  function PresetCardItem({ preset, theme, full, onAdd }: PresetCardItemProps) {
+    return (
+      <Drawer.Item
+        name={preset.key}
+        label={preset.label}
+        isDragDisabled={full}
+      >
+        {() => (
+          <div
+            onClick={() => onAdd(preset)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onAdd(preset);
+              }
+            }}
+            aria-label={`Add ${preset.label}`}
+            style={{ contentVisibility: "auto", containIntrinsicSize: "160px" }}
+            className="group relative flex flex-col overflow-hidden rounded-lg border border-ed-border/90 bg-ed-panel p-2 text-left transition-all hover:border-ed-accent/60 hover:shadow-xs focus:border-ed-accent focus:outline-none focus:ring-2 focus:ring-ed-accent/15 cursor-grab active:cursor-grabbing select-none"
+          >
+            {/* Live Rendered Section Preview matching actual page design 1:1 */}
+            <div className="mb-2 w-full transition-transform duration-150 group-hover:scale-[1.01] pointer-events-none">
+              <SectionLivePreview preset={preset} theme={theme} />
+            </div>
+
+            {/* Section Title, Description & Action Button */}
+            <div className="flex items-start justify-between gap-2 px-0.5">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-ed-xs font-semibold text-ed-text group-hover:text-ed-accent transition-colors">
+                  {preset.label}
+                </p>
+                <p className="line-clamp-1 text-ed-2xs leading-tight text-ed-muted">
+                  {preset.description}
+                </p>
+              </div>
+
+              <div className="flex size-5 shrink-0 items-center justify-center rounded-ed bg-ed-subtle text-ed-muted border border-ed-border shadow-2xs transition-colors group-hover:bg-ed-accent group-hover:border-ed-accent group-hover:text-white">
+                <Plus className="size-3" aria-hidden />
+              </div>
+            </div>
+          </div>
+        )}
+      </Drawer.Item>
+    );
+  },
+  (prev, next) => {
+    if (prev.preset.key !== next.preset.key) return false;
+    if (prev.full !== next.full) return false;
+    if (prev.onAdd !== next.onAdd) return false;
+    if (prev.theme !== next.theme) {
+      if (JSON.stringify(prev.theme) !== JSON.stringify(next.theme)) return false;
+    }
+    return true;
+  },
+);
+
+const PresetsList = memo(function PresetsList({
+  presets,
+  theme,
+  full,
+  onAdd,
+}: {
+  presets: SectionPreset[];
+  theme: ThemeSettings;
+  full: boolean;
+  onAdd: (preset: SectionPreset) => void;
+}) {
+  return (
+    <Drawer>
+      <div className="flex flex-col gap-2.5">
+        {presets.map((preset) => (
+          <PresetCardItem
+            key={preset.key}
+            preset={preset}
+            theme={theme}
+            full={full}
+            onAdd={onAdd}
+          />
+        ))}
+      </div>
+    </Drawer>
+  );
+});
+
+const CategoryRail = memo(function CategoryRail({
+  selectedId,
+  isSearching,
+  onSelect,
+}: {
+  selectedId: string;
+  isSearching: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <nav
+      aria-label="Section categories"
+      className="flex w-[70px] shrink-0 flex-col gap-1 border-r border-ed-border bg-ed-subtle/40 p-1 overflow-y-auto overscroll-contain"
+    >
+      {VISIBLE_CATEGORIES.map(({ id, shortLabel, label, icon: Icon }) => {
+        const isSelected = selectedId === id && !isSearching;
+        return (
+          <AppTooltip key={id} content={label} placement="right" offset={8}>
+            <button
+              type="button"
+              aria-label={label}
+              aria-pressed={isSelected}
+              onClick={() => onSelect(id)}
+              className={`group flex w-full flex-col items-center justify-center rounded-ed py-1.5 px-0.5 text-center transition-all ${
+                isSelected
+                  ? "bg-white text-ed-accent shadow-xs dark:bg-zinc-800"
+                  : "text-ed-muted hover:bg-ed-hover hover:text-ed-text"
+              }`}
+            >
+              <Icon
+                className={`size-4 transition-transform group-hover:scale-105 ${
+                  isSelected
+                    ? "text-ed-accent"
+                    : "text-ed-muted group-hover:text-ed-text"
+                }`}
+                aria-hidden
+              />
+              <span className="mt-0.5 block w-full truncate text-[8px] font-medium leading-tight tracking-tight">
+                {shortLabel}
+              </span>
+            </button>
+          </AppTooltip>
+        );
+      })}
+    </nav>
+  );
+});
+
 export default function AddPanel() {
   const { notify, draft } = useEditor();
   const dispatch = useBuilderPuck((state) => state.dispatch);
@@ -291,13 +478,14 @@ export default function AddPanel() {
   );
   const count = useBuilderPuck((state) => state.appState.data.content.length);
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [selectedCategoryId, setSelectedCategoryId] = useState("hero");
 
   const selectedCategory =
     VISIBLE_CATEGORIES.find((c) => c.id === selectedCategoryId) ?? VISIBLE_CATEGORIES[0]!;
 
   const filteredPresets = useMemo(() => {
-    const trimmed = query.trim();
+    const trimmed = deferredQuery.trim();
     const availablePresets = SECTION_PRESETS.filter(
       (preset) => !HIDDEN_CATEGORIES.has(preset.category),
     );
@@ -310,19 +498,33 @@ export default function AddPanel() {
     return availablePresets.filter(
       (preset) => preset.category === selectedCategory.category,
     );
-  }, [query, selectedCategory]);
+  }, [deferredQuery, selectedCategory]);
 
   const full = count >= LIMITS.sectionsPerPage;
   const insertAt = selectedIndex === null ? count : selectedIndex + 1;
 
-  function add(preset: SectionPreset) {
-    if (full) return;
-    insertSections(dispatch, [preset.create()], insertAt);
-    notify(`${preset.label} added`);
-  }
+  const insertAtRef = useRef(insertAt);
+  insertAtRef.current = insertAt;
+  const fullRef = useRef(full);
+  fullRef.current = full;
+
+  const handleAdd = useCallback(
+    (preset: SectionPreset) => {
+      if (fullRef.current) return;
+      insertSections(dispatch, [preset.create()], insertAtRef.current);
+      notify(`${preset.label} added`);
+    },
+    [dispatch, notify],
+  );
+
+  const handleSelectCategory = useCallback((id: string) => {
+    setSelectedCategoryId(id);
+    setQuery("");
+  }, []);
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <SiteStyles />
       <PanelHeader
         title="Add sections"
         description={
@@ -346,44 +548,11 @@ export default function AddPanel() {
       {/* Dual pane container: Categories Left Rail + Section Cards Main Area */}
       <div className="flex min-h-0 flex-1 overflow-hidden border-t border-ed-border">
         {/* Compact Category Icons Left Sub-Sidebar */}
-        <nav
-          aria-label="Section categories"
-          className="flex w-14 shrink-0 flex-col gap-1 border-r border-ed-border bg-ed-subtle/40 p-1 overflow-y-auto overscroll-contain"
-        >
-          {VISIBLE_CATEGORIES.map(({ id, shortLabel, label, icon: Icon }) => {
-            const isSelected = selectedCategoryId === id && !query.trim();
-            return (
-              <AppTooltip key={id} content={label} placement="right" offset={8}>
-                <button
-                  type="button"
-                  aria-label={label}
-                  aria-pressed={isSelected}
-                  onClick={() => {
-                    setSelectedCategoryId(id);
-                    if (query) setQuery("");
-                  }}
-                  className={`group flex w-full flex-col items-center justify-center rounded-ed py-1.5 px-0.5 text-center transition-all ${
-                    isSelected
-                      ? "bg-white text-ed-accent shadow-xs dark:bg-zinc-800"
-                      : "text-ed-muted hover:bg-ed-hover hover:text-ed-text"
-                  }`}
-                >
-                  <Icon
-                    className={`size-4 transition-transform group-hover:scale-105 ${
-                      isSelected
-                        ? "text-ed-accent"
-                        : "text-ed-muted group-hover:text-ed-text"
-                    }`}
-                    aria-hidden
-                  />
-                  <span className="mt-0.5 block w-full truncate text-[9px] font-medium leading-none">
-                    {shortLabel}
-                  </span>
-                </button>
-              </AppTooltip>
-            );
-          })}
-        </nav>
+        <CategoryRail
+          selectedId={selectedCategoryId}
+          isSearching={Boolean(query.trim())}
+          onSelect={handleSelectCategory}
+        />
 
         {/* Section Cards Area with Live Layout Previews */}
         <div className="flex-1 overflow-y-auto overscroll-contain p-2.5">
@@ -407,58 +576,12 @@ export default function AddPanel() {
               Try a different search term like “pricing” or “hero”.
             </EmptyState>
           ) : (
-            <Drawer>
-              <div className="flex flex-col gap-2.5">
-                {filteredPresets.map((preset) => (
-                  <Drawer.Item
-                    key={preset.key}
-                    name={preset.key}
-                    label={preset.label}
-                    isDragDisabled={full}
-                  >
-                    {() => (
-                      <div
-                        onClick={() => add(preset)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            add(preset);
-                          }
-                        }}
-                        aria-label={`Add ${preset.label}`}
-                        className="group relative flex flex-col overflow-hidden rounded-lg border border-ed-border/90 bg-ed-panel p-2 text-left transition-all hover:border-ed-accent/60 hover:shadow-xs focus:border-ed-accent focus:outline-none focus:ring-2 focus:ring-ed-accent/15 cursor-grab active:cursor-grabbing select-none"
-                      >
-                        {/* Live Rendered Section Preview matching actual page design 1:1 */}
-                        <div className="mb-2 w-full transition-transform duration-150 group-hover:scale-[1.01] pointer-events-none">
-                          <SectionLivePreview
-                            preset={preset}
-                            theme={draft.theme}
-                          />
-                        </div>
-
-                        {/* Section Title, Description & Action Button */}
-                        <div className="flex items-start justify-between gap-2 px-0.5">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-ed-xs font-semibold text-ed-text group-hover:text-ed-accent transition-colors">
-                              {preset.label}
-                            </p>
-                            <p className="line-clamp-1 text-ed-2xs leading-tight text-ed-muted">
-                              {preset.description}
-                            </p>
-                          </div>
-
-                          <div className="flex size-5 shrink-0 items-center justify-center rounded-ed bg-ed-subtle text-ed-muted border border-ed-border shadow-2xs transition-colors group-hover:bg-ed-accent group-hover:border-ed-accent group-hover:text-white">
-                            <Plus className="size-3" aria-hidden />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </Drawer.Item>
-                ))}
-              </div>
-            </Drawer>
+            <PresetsList
+              presets={filteredPresets}
+              theme={draft.theme}
+              full={full}
+              onAdd={handleAdd}
+            />
           )}
         </div>
       </div>

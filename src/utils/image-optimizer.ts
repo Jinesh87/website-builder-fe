@@ -1,8 +1,17 @@
 /**
- * Modern 2026 Image Optimization Engine for WebBuilder
- * Converts standard web images (PNG, JPEG, BMP, etc.) into ultra-lightweight WebP
- * with near-lossless visual quality (88-90%), preserving transparency and high-DPI clarity.
+ * Modern High-Performance Image Optimization & Responsive WebP Engine
+ * Converts web images (PNG, JPEG, BMP, etc.) into ultra-lightweight WebP
+ * with near-lossless visual quality (85-90%), preserving transparency,
+ * high-DPI clarity, and responsive size presets.
  */
+
+export const RESPONSIVE_PRESETS = {
+  thumbnail: { maxWidth: 400, maxHeight: 400, quality: 0.82 },
+  tablet: { maxWidth: 960, maxHeight: 960, quality: 0.86 },
+  desktop: { maxWidth: 1920, maxHeight: 1920, quality: 0.88 },
+} as const;
+
+export type ResponsivePresetName = keyof typeof RESPONSIVE_PRESETS;
 
 export type OptimizationProgressCallback = (
   progress: number,
@@ -12,10 +21,12 @@ export type OptimizationProgressCallback = (
 export type OptimizeImageOptions = {
   /** Target quality between 0.1 and 1.0 (default: 0.88 for near-lossless clarity) */
   quality?: number;
-  /** Maximum width constraint (default: 2560px for high-DPI displays) */
+  /** Maximum width constraint (default: 1920px for high-DPI displays) */
   maxWidth?: number;
-  /** Maximum height constraint (default: 2560px) */
+  /** Maximum height constraint (default: 1920px) */
   maxHeight?: number;
+  /** Whether to generate responsive variants (thumbnail, tablet, desktop) */
+  generateVariants?: boolean;
   /** Progress notification callback */
   onProgress?: OptimizationProgressCallback;
 };
@@ -28,22 +39,92 @@ export type OptimizedImageResult = {
   width: number;
   height: number;
   mimeType: string;
+  variants?: Record<ResponsivePresetName, ResponsiveVariant>;
 };
 
+export type ResponsiveVariant = {
+  name: ResponsivePresetName;
+  file: File;
+  width: number;
+  height: number;
+  size: number;
+};
+
+/**
+ * Resizes an image element to fit within maxWidth and maxHeight
+ * while strictly preserving the aspect ratio.
+ */
+export function calculateFitDimensions(
+  width: number,
+  height: number,
+  maxWidth: number,
+  maxHeight: number,
+): { width: number; height: number } {
+  if (width <= maxWidth && height <= maxHeight) {
+    return { width, height };
+  }
+  const ratio = Math.min(maxWidth / width, maxHeight / height);
+  return {
+    width: Math.max(1, Math.round(width * ratio)),
+    height: Math.max(1, Math.round(height * ratio)),
+  };
+}
+
+/**
+ * Draws an image to a high-precision Canvas and exports as a WebP blob.
+ */
+async function renderToWebPBlob(
+  img: HTMLImageElement,
+  targetWidth: number,
+  targetHeight: number,
+  quality: number,
+): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const ctx = canvas.getContext("2d", { willReadFrequently: false });
+
+  if (!ctx) {
+    throw new Error("Unable to create 2D canvas context for image optimization.");
+  }
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((b) => resolve(b), "image/webp", quality);
+  });
+
+  // Free canvas GPU memory
+  canvas.width = 0;
+  canvas.height = 0;
+
+  if (!blob) {
+    throw new Error("Failed to render image to WebP format.");
+  }
+
+  return blob;
+}
+
+/**
+ * Optimizes an uploaded image into clean WebP format with optional responsive downscaling.
+ */
 export async function optimizeImageToWebP(
   file: File,
   options: OptimizeImageOptions = {},
 ): Promise<OptimizedImageResult> {
   const {
     quality = 0.88,
-    maxWidth = 2560,
-    maxHeight = 2560,
+    maxWidth = 1920,
+    maxHeight = 1920,
+    generateVariants = false,
     onProgress,
   } = options;
 
   const originalSize = file.size;
 
-  // If file is SVG, animated GIF, or not a static image, return as-is
+  // Pass SVG, animated GIF, or non-images through unchanged
   if (
     file.type === "image/svg+xml" ||
     file.type === "image/gif" ||
@@ -62,86 +143,91 @@ export async function optimizeImageToWebP(
   }
 
   onProgress?.(15, "Reading image data…");
-
-  // Load image safely
   const img = await loadImageFromFile(file);
 
   onProgress?.(45, "Optimizing to WebP…");
+  const target = calculateFitDimensions(img.width, img.height, maxWidth, maxHeight);
+  const primaryBlob = await renderToWebPBlob(img, target.width, target.height, quality);
 
-  let { width, height } = img;
-
-  // Calculate scaled dimensions while preserving aspect ratio
-  if (width > maxWidth || height > maxHeight) {
-    const ratio = Math.min(maxWidth / width, maxHeight / height);
-    width = Math.round(width * ratio);
-    height = Math.round(height * ratio);
-  }
-
-  // Draw to high-precision Canvas
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d", { willReadFrequently: false });
-
-  if (!ctx) {
-    throw new Error("Unable to create 2D canvas context for image optimization.");
-  }
-
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img, 0, 0, width, height);
-
-  onProgress?.(75, "Compressing WebP…");
-
-  // Convert canvas to WebP Blob
-  const webpBlob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), "image/webp", quality);
-  });
-
-  if (!webpBlob) {
-    throw new Error("Failed to convert image to WebP format.");
-  }
-
-  // If converted WebP is somehow larger than original (rare for small icons), keep original
-  if (webpBlob.size >= originalSize && file.type === "image/webp") {
+  // If converted WebP is larger than original WebP, retain original
+  if (primaryBlob.size >= originalSize && file.type === "image/webp") {
     onProgress?.(100, "Optimization complete");
     return {
       file,
       originalSize,
       optimizedSize: originalSize,
       savedPercent: 0,
-      width,
-      height,
+      width: img.width,
+      height: img.height,
       mimeType: file.type,
     };
   }
 
-  // Generate clean .webp filename
   const baseName = file.name.replace(/\.[^/.]+$/, "");
-  const newFileName = `${baseName}.webp`;
+  const primaryFileName = `${baseName}.webp`;
 
-  const optimizedFile = new File([webpBlob], newFileName, {
+  const primaryFile = new File([primaryBlob], primaryFileName, {
     type: "image/webp",
     lastModified: Date.now(),
   });
 
-  const optimizedSize = optimizedFile.size;
+  const optimizedSize = primaryFile.size;
   const savedPercent = Math.max(
     0,
     Math.round(((originalSize - optimizedSize) / originalSize) * 100),
   );
 
-  onProgress?.(100, `Optimized: ${savedPercent}% smaller`);
+  let variants: Record<ResponsivePresetName, ResponsiveVariant> | undefined;
+
+  // Optionally generate responsive variants (thumbnail, tablet, desktop)
+  if (generateVariants) {
+    onProgress?.(80, "Generating responsive sizes…");
+    variants = {} as Record<ResponsivePresetName, ResponsiveVariant>;
+
+    for (const [presetKey, preset] of Object.entries(RESPONSIVE_PRESETS) as [
+      ResponsivePresetName,
+      (typeof RESPONSIVE_PRESETS)[ResponsivePresetName],
+    ][]) {
+      const variantDim = calculateFitDimensions(img.width, img.height, preset.maxWidth, preset.maxHeight);
+      const variantBlob = await renderToWebPBlob(img, variantDim.width, variantDim.height, preset.quality);
+      const variantFileName = `${baseName}-${presetKey}.webp`;
+      const variantFile = new File([variantBlob], variantFileName, {
+        type: "image/webp",
+        lastModified: Date.now(),
+      });
+
+      variants[presetKey] = {
+        name: presetKey,
+        file: variantFile,
+        width: variantDim.width,
+        height: variantDim.height,
+        size: variantFile.size,
+      };
+    }
+  }
+
+  onProgress?.(100, savedPercent > 0 ? `Optimized: ${savedPercent}% smaller` : "Ready");
 
   return {
-    file: optimizedFile,
+    file: primaryFile,
     originalSize,
     optimizedSize,
     savedPercent,
-    width,
-    height,
+    width: target.width,
+    height: target.height,
     mimeType: "image/webp",
+    variants,
   };
+}
+
+/**
+ * Helper to generate responsive WebP variants directly from a source image.
+ */
+export async function generateResponsiveWebPVariants(
+  file: File,
+  onProgress?: OptimizationProgressCallback,
+): Promise<OptimizedImageResult> {
+  return optimizeImageToWebP(file, { generateVariants: true, onProgress });
 }
 
 function loadImageFromFile(file: File): Promise<HTMLImageElement> {
