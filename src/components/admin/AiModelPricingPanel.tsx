@@ -39,7 +39,7 @@ function PriceInput({
   return (
     <div>
       <div
-        className={`flex h-9 w-28 items-center rounded-lg border bg-surface shadow-ed-xs focus-within:ring-2 ${
+                    className={`flex h-9 w-28 items-center rounded-lg border bg-surface shadow-ed-xs focus-within:ring-2 ${
           error ? "border-ed-danger focus-within:ring-ed-danger/15" : "border-ed-border focus-within:border-ed-accent focus-within:ring-ed-accent/15"
         }`}
       >
