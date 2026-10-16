@@ -1,13 +1,16 @@
 import { useState, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import {
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
   Check,
   Coins,
   Copy,
+  ListChecks,
   RotateCw,
   Search,
   X,
-  AlertCircle,
 } from "lucide-react";
 import { AiSparklesIcon } from "../icons/AiSparklesIcon.tsx";
 import type {
@@ -35,6 +38,7 @@ export default function PageSeoContentReviewModal({
   onUpdateSections,
 }: PageSeoContentReviewModalProps) {
   const [loading, setLoading] = useState(false);
+  const [auditStep, setAuditStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [customKeyword, setCustomKeyword] = useState("");
   const [reviewData, setReviewData] = useState<PageSeoContentReviewResult | null>(null);
@@ -43,6 +47,17 @@ export default function PageSeoContentReviewModal({
   const [appliedAll, setAppliedAll] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [activeSections, setActiveSections] = useState<Section[]>(() => page.sections);
+
+  useEffect(() => {
+    if (!loading) {
+      setAuditStep(0);
+      return;
+    }
+    const timer = setInterval(() => {
+      setAuditStep((prev) => (prev < 3 ? prev + 1 : prev));
+    }, 1100);
+    return () => clearInterval(timer);
+  }, [loading]);
 
   useEffect(() => {
     setActiveSections(page.sections);
@@ -434,10 +449,10 @@ export default function PageSeoContentReviewModal({
                 type="button"
                 disabled={allAlreadyApplied || loading}
                 onClick={applyAllSuggestions}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   allAlreadyApplied
                     ? "bg-emerald-50 text-emerald-700 border border-emerald-200/80 cursor-default"
-                    : "bg-slate-900 hover:bg-black text-white shadow-xs cursor-pointer active:scale-98"
+                    : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-xs hover:shadow cursor-pointer active:scale-98"
                 }`}
               >
                 {allAlreadyApplied ? (
@@ -466,16 +481,69 @@ export default function PageSeoContentReviewModal({
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {loading && !reviewData && (
-            <div className="py-20 flex flex-col items-center justify-center text-center space-y-3">
-              <div className="flex items-center justify-center size-12 rounded-2xl bg-slate-100 border border-slate-200 shadow-xs text-slate-700">
-                <AiSparklesIcon className="size-6 animate-pulse" variant="glossy" />
+            <div className="py-16 sm:py-20 flex flex-col items-center justify-center text-center px-4 animate-in fade-in duration-300">
+              {/* Animated Glowing Radar / Spinner */}
+              <div className="relative flex items-center justify-center size-20 mb-5">
+                <div className="absolute inset-0 rounded-full bg-blue-500/15 animate-ping duration-1000" />
+                <div className="absolute -inset-1 rounded-full border-2 border-transparent border-t-blue-600 border-r-indigo-500 animate-spin" />
+                <div className="relative flex items-center justify-center size-14 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 shadow-sm text-blue-600">
+                  <AiSparklesIcon className="size-7 animate-pulse" variant="glossy" />
+                </div>
               </div>
-              <p className="text-sm font-semibold text-slate-800">
-                Auditing page copy for search rankings...
-              </p>
-              <p className="text-xs text-slate-400 max-w-sm">
+
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                Auditing Page for Google Ranking
+              </h3>
+              <p className="text-xs text-slate-500 max-w-sm mt-1 mb-6 leading-relaxed">
                 Analyzing heading tags, keyword placements, value propositions, and competitor benchmarks.
               </p>
+
+              {/* Sequential live audit steps */}
+              <div className="w-full max-w-sm rounded-xl border border-slate-200/90 bg-slate-50/80 p-3.5 space-y-2.5 text-left text-xs shadow-2xs">
+                {[
+                  "Scanning section headlines & page copy",
+                  "Evaluating Google search intent & keywords",
+                  "Identifying missing SEO steps & ranking score",
+                  "Formulating high-converting copy suggestions",
+                ].map((stepText, idx) => {
+                  const isDone = auditStep > idx;
+                  const isCurrent = auditStep === idx;
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex items-center gap-2.5 transition-all duration-300 ${
+                        isDone
+                          ? "text-slate-800 font-medium"
+                          : isCurrent
+                          ? "text-blue-700 font-semibold"
+                          : "text-slate-400"
+                      }`}
+                    >
+                      {isDone ? (
+                        <div className="flex items-center justify-center size-4 rounded-full bg-emerald-100 text-emerald-700 shrink-0">
+                          <Check className="size-2.5 stroke-[3]" />
+                        </div>
+                      ) : isCurrent ? (
+                        <div className="size-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin shrink-0" />
+                      ) : (
+                        <div className="size-4 rounded-full border border-slate-300 bg-white shrink-0" />
+                      )}
+                      <span className="truncate">{stepText}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Animated Progress Bar */}
+              <div className="mt-5 w-full max-w-xs bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${Math.min(95, (auditStep + 1) * 25)}%` }}
+                />
+              </div>
+              <span className="text-[11px] text-slate-400 mt-2">
+                Usually takes 3 to 5 seconds…
+              </span>
             </div>
           )}
 
@@ -518,80 +586,190 @@ export default function PageSeoContentReviewModal({
 
           {reviewData && (
             <>
-              {/* Strategic Assessment & Metrics Strip */}
-              <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 overflow-hidden shadow-2xs">
-                {/* Key Metrics Row */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-200/70 border-b border-slate-200/70 bg-white text-xs">
-                  <div className="p-3">
-                    <span className="text-[11px] font-medium text-slate-400">SEO Content Score</span>
+              {/* Strategic Assessment & Score Overview */}
+              <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs">
+                {/* Clean Metrics Strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-slate-200/70 border-b border-slate-100 bg-slate-50/50 text-xs">
+                  <div className="p-3.5">
+                    <span className="text-[11px] font-medium text-slate-500">SEO Health Score</span>
                     <div className="mt-1 flex items-baseline gap-2">
-                      <span className="text-base font-bold text-slate-900">
+                      <span className="text-xl font-bold text-slate-900">
                         {reviewData.overallScore}
                         <span className="text-xs font-normal text-slate-400">/100</span>
                       </span>
-                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                        {reviewData.grade}
+                      <span
+                        className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                          reviewData.overallScore >= 80
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : reviewData.overallScore >= 65
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}
+                      >
+                        {reviewData.overallScore >= 80
+                          ? "Great Shape"
+                          : reviewData.overallScore >= 65
+                          ? "Good Start"
+                          : "Needs Attention"}
                       </span>
                     </div>
                   </div>
 
-                  <div className="p-3">
-                    <span className="text-[11px] font-medium text-slate-400">Primary Keyword</span>
-                    <p className="mt-1 font-semibold text-slate-800 truncate" title={reviewData.primaryKeyword}>
+                  <div className="p-3.5">
+                    <span className="text-[11px] font-medium text-slate-500">Target Search Keyword</span>
+                    <p className="mt-1 font-semibold text-slate-900 truncate" title={reviewData.primaryKeyword}>
                       "{reviewData.primaryKeyword}"
                     </p>
+                    <span className="text-[10px] text-slate-400">What users search on Google</span>
                   </div>
 
-                  <div className="p-3">
-                    <span className="text-[11px] font-medium text-slate-400">Search Intent</span>
-                    <p className="mt-1 font-semibold text-slate-800">
+                  <div className="p-3.5">
+                    <span className="text-[11px] font-medium text-slate-500">Visitor Intent</span>
+                    <p className="mt-1 font-semibold text-slate-900">
                       {reviewData.searchIntent}
                     </p>
+                    <span className="text-[10px] text-slate-400">Audience searching behavior</span>
                   </div>
 
-                  <div className="p-3">
-                    <span className="text-[11px] font-medium text-slate-400">Content Length</span>
-                    <p className="mt-1 font-semibold text-slate-800">
-                      ~{reviewData.totalWordCount} words <span className="text-[11px] font-normal text-slate-400">({reviewData.sectionSuggestions.length} sections)</span>
+                  <div className="p-3.5">
+                    <span className="text-[11px] font-medium text-slate-500">Total Page Content</span>
+                    <p className="mt-1 font-semibold text-slate-900">
+                      ~{reviewData.totalWordCount} words
                     </p>
+                    <span className="text-[10px] text-slate-400">
+                      Across {reviewData.sectionSuggestions.length} section{reviewData.sectionSuggestions.length === 1 ? "" : "s"}
+                    </span>
                   </div>
                 </div>
 
-                {/* Ranking Assessment & Actionable Steps */}
-                <div className="p-4 space-y-3 text-xs bg-slate-50/50">
-                  <div className="flex items-start gap-2">
-                    <AiSparklesIcon className="size-4 shrink-0 mt-0.5 text-slate-700" variant="glossy" />
-                    <div>
-                      <span className="font-semibold text-slate-900">Strategic Assessment: </span>
-                      <span className="text-slate-600 leading-relaxed">{reviewData.pageOverview}</span>
+                {/* Friendly Plain-English Assessment Note */}
+                <div className="p-4 bg-white text-xs space-y-2">
+                  <div className="flex items-start gap-2.5">
+                    <div className="size-6 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 mt-0.5 text-blue-600">
+                      <AiSparklesIcon className="size-3.5" variant="glossy" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-slate-900">Summary of this page:</p>
+                      <p className="text-slate-600 mt-0.5 leading-relaxed">
+                        {reviewData.pageOverview}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Missing Steps & Action Checklist */}
+              <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs">
+                <div className="px-4 py-3 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ListChecks className="size-4 text-blue-600" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                      Missing Steps & What Needs Fixing
+                    </h3>
+                  </div>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Simple checklist to rank higher
+                  </span>
+                </div>
+
+                <div className="p-4 space-y-3.5 text-xs">
+                  {/* Status checklist items: Title & Meta Description */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Page SEO Title Status */}
+                    <div className="flex items-start gap-2.5 p-3 rounded-lg border border-slate-100 bg-slate-50/60">
+                      {page.seoTitle ? (
+                        <div className="size-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <Check className="size-3 stroke-[2.5]" />
+                        </div>
+                      ) : (
+                        <div className="size-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <AlertTriangle className="size-3" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-slate-900">Page SEO Title</span>
+                          {page.seoTitle ? (
+                            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                              ✓ Configured
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                              Missing · Action Needed
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                          {page.seoTitle
+                            ? `"${page.seoTitle}"`
+                            : "Your page has no search title yet. Search engines use this as the primary blue headline in Google."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Page SEO Description Status */}
+                    <div className="flex items-start gap-2.5 p-3 rounded-lg border border-slate-100 bg-slate-50/60">
+                      {page.seoDescription ? (
+                        <div className="size-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <Check className="size-3 stroke-[2.5]" />
+                        </div>
+                      ) : (
+                        <div className="size-5 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                          <AlertTriangle className="size-3" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-slate-900">Meta Description</span>
+                          {page.seoDescription ? (
+                            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                              ✓ Configured
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                              Missing · Action Needed
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                          {page.seoDescription
+                            ? "Page summary snippet is configured."
+                            : "Your page has no summary preview yet. Searchers read this snippet on Google to decide whether to visit your website."}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
+                  {/* AI Ranking Tips / Action Checklist */}
                   {reviewData.topRankingTips && reviewData.topRankingTips.length > 0 && (
-                    <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
+                    <div className="pt-2 border-t border-slate-100 space-y-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Key Steps for Google #1 Ranking:
+                        Clear Steps to Rank Higher on Google:
                       </span>
-                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-slate-600">
+                      <ul className="space-y-1.5">
                         {reviewData.topRankingTips.map((tip, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5">
-                            <Check className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                            <span>{tip}</span>
+                          <li
+                            key={idx}
+                            className="flex items-start gap-2 text-xs text-slate-700 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100/90"
+                          >
+                            <ArrowRight className="size-3.5 text-blue-600 shrink-0 mt-0.5" />
+                            <span className="leading-snug">{tip}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
                   )}
 
+                  {/* Related search phrases */}
                   {reviewData.secondaryKeywords && reviewData.secondaryKeywords.length > 0 && (
-                    <div className="pt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 mr-1">
-                        Semantic Keywords:
+                    <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="text-[11px] font-semibold text-slate-500 mr-1">
+                        People also search for:
                       </span>
                       {reviewData.secondaryKeywords.map((kw, idx) => (
                         <span
                           key={idx}
-                          className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-white border border-slate-200 text-slate-700 shadow-2xs"
+                          className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50/70 text-blue-800 border border-blue-100"
                         >
                           #{kw}
                         </span>
@@ -660,10 +838,10 @@ export default function PageSeoContentReviewModal({
                                 type="button"
                                 onClick={() => applySectionSuggestion(suggestion)}
                                 disabled={isAlreadyApplied}
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition ${
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
                                   isAlreadyApplied
                                     ? "bg-emerald-50 text-emerald-700 border border-emerald-200/80 cursor-default"
-                                    : "bg-slate-900 hover:bg-black text-white shadow-2xs cursor-pointer active:scale-95"
+                                    : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-2xs hover:shadow-xs cursor-pointer active:scale-95"
                                 }`}
                               >
                                 {isAlreadyApplied ? (
@@ -786,7 +964,7 @@ export default function PageSeoContentReviewModal({
                                   <p className="text-[10px] text-slate-500 font-medium">
                                     Suggested Action Button:
                                   </p>
-                                  <span className="inline-block mt-0.5 px-2.5 py-1 rounded text-[11px] font-semibold bg-slate-900 text-white shadow-2xs">
+                                  <span className="inline-block mt-0.5 px-2.5 py-1 rounded text-[11px] font-semibold bg-blue-600 text-white shadow-2xs">
                                     {suggestion.suggestedCtaLabel}
                                   </span>
                                 </div>

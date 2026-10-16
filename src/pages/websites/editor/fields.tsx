@@ -677,7 +677,7 @@ export function VideoField({
 
       setUploadProgress({
         percent: 100,
-        statusText: `Saved ${rawFile.name} (${formatBytes(rawFile.size)})`,
+        statusText: `Saved & stream-optimized ${rawFile.name} (${formatBytes(rawFile.size)})`,
       });
 
       setTimeout(() => {
@@ -713,13 +713,19 @@ export function VideoField({
       {videoUrl && (
         <div className="group/preview relative overflow-hidden rounded-ed border border-ed-border bg-black/90 shadow-ed-xs">
           {isDirectVideo ? (
-            <video
-              src={videoUrl}
-              controls
-              preload="metadata"
-              playsInline
-              className="max-h-36 w-full rounded-ed object-contain bg-black"
-            />
+            <div className="relative">
+              <video
+                src={videoUrl}
+                controls
+                preload="metadata"
+                playsInline
+                className="max-h-36 w-full rounded-ed object-contain bg-black"
+              />
+              <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 rounded bg-black/75 px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-emerald-400 border border-emerald-500/30 backdrop-blur-xs">
+                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Stream-Optimized
+              </span>
+            </div>
           ) : isYouTubeOrVimeo ? (
             <div className="flex items-center gap-2.5 bg-zinc-950 p-2.5 text-ed-xs text-zinc-300">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-ed bg-red-600/20 text-red-500 border border-red-500/30">
