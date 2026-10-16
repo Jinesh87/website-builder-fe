@@ -13,6 +13,8 @@ import PageHeader from "../../components/app/PageHeader.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import PaymentSettingsPanel, { PaymentStatusChip } from "../../components/admin/PaymentSettingsPanel.tsx";
+import AiModelPricingPanel from "../../components/admin/AiModelPricingPanel.tsx";
+import AiBillingRatePanel from "../../components/admin/AiBillingRatePanel.tsx";
 import type { PaymentConfig } from "../../api/wallet.ts";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
@@ -203,7 +205,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="px-6 py-8 sm:px-8 max-w-5xl">
+    <div className={`px-6 py-8 sm:px-8 ${activeTab === "ai" ? "" : "max-w-5xl"}`}>
       <PageHeader
         title="Settings"
         description="Manage system communications, the AI Copilot generation engine and payments."
@@ -415,7 +417,7 @@ export default function SettingsPage() {
           )}
 
           {aiConfig && (
-            <div className="grid max-w-2xl gap-6">
+            <div className="grid gap-6">
               <form
                 onSubmit={handleAiSave}
                 noValidate
@@ -434,7 +436,6 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="mt-6 flex flex-col gap-5">
-                  {/* API Key Input */}
                   <div className="flex flex-col gap-1">
                     <div className="relative">
                       <TextInput
@@ -463,7 +464,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Default Model Selection */}
                   <div className="flex flex-col gap-2">
                     <span className="text-sm font-medium text-ink flex items-center gap-1.5">
                       <Sliders className="size-3.5 text-cyan-500" />
@@ -482,7 +482,6 @@ export default function SettingsPage() {
                     {aiErrors.model && <p className="text-xs text-danger">{aiErrors.model}</p>}
                   </div>
 
-                  {/* Security Note */}
                   <div className="rounded-lg border border-line bg-surface-muted/30 p-3.5 text-xs text-ink-body flex items-start gap-2.5">
                     <Check className="size-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span>
@@ -503,6 +502,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </form>
+
+              <AiModelPricingPanel onSaved={() => void adminAiApi.get().then(setAiConfig).catch(() => undefined)} />
+              <AiBillingRatePanel />
             </div>
           )}
         </div>
