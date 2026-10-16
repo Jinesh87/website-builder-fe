@@ -79,22 +79,27 @@ function useAiDemo() {
 const SHOWCASE_COLLECTIONS = [
   {
     id: "featured",
-    label: "✨ Featured (2026 Flagships)",
-    indices: [17, 22, 21], // 2151 (UX Designer · Midnight), 2156 (Design Institute · Elegant), 2155 (Tech Academy · Modern)
+    label: "Featured (2026 Flagships)",
+    indices: [19, 20, 3], // 2153 (Nexus AI), 2154 (Aura Pay), 2137 (Apex Summit)
+  },
+  {
+    id: "landing",
+    label: "Landing Pages",
+    indices: [19, 20, 3], // 2153 (Nexus AI · Cyber), 2154 (Aura Pay · Fresh), 2137 (Apex Summit · Coral)
   },
   {
     id: "portfolio",
-    label: "💼 Portfolio & Personal",
-    indices: [17, 18, 19], // 2151, 2152, 2153
+    label: "Portfolio & Personal",
+    indices: [16, 17, 18], // 2150 (Photographer), 2151 (UX Designer), 2152 (Developer Portfolio)
   },
   {
     id: "education",
-    label: "🎓 Education & Community",
-    indices: [21, 22, 23], // 2155, 2156, 2157
+    label: "Education & Community",
+    indices: [21, 22, 23], // 2155 (Tech Academy), 2156 (Design Institute), 2157 (Community Hub)
   },
   {
     id: "business",
-    label: "🏢 Business & Agency",
+    label: "Business & Agency",
     indices: [4, 8, 0], // 2138 (Architecture), 2142 (Marketing Agency), 2134 (Accounting)
   },
 ];

@@ -20,6 +20,7 @@ import SelectInput, { type SelectOption } from "../../components/ui/SelectInput.
 import TextAreaInput from "../../components/ui/TextAreaInput.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import TemplateThumbnail from "../../components/websites/TemplateThumbnail.tsx";
+import { getTemplateKey } from "../../site-kit/templates/index.ts";
 
 type Step = 1 | 2 | 3;
 
@@ -106,7 +107,9 @@ export default function CreateWebsitePage() {
   const isAdmin = user?.role === "SUPER_ADMIN";
   const backTo = isAdmin ? "/admin/websites" : "/websites";
 
-  const [step, setStep] = useState<Step>(1);
+  const rawRequested = searchParams.get("templateKey") ?? "";
+  const [requestedTemplateKey] = useState(() => getTemplateKey(rawRequested) ?? rawRequested);
+  const [step, setStep] = useState<Step>(() => (searchParams.get("templateKey") ? 2 : 1));
   const [mode, setMode] = useState<BuilderMode>(searchParams.get("builder") === "ai" ? "AI" : "MANUAL");
   const [aiBrief, setAiBrief] = useState<AiBrief>(EMPTY_AI_BRIEF);
   const [aiErrors, setAiErrors] = useState<AiBriefErrors>({});
@@ -128,7 +131,6 @@ export default function CreateWebsitePage() {
   const [themes, setThemes] = useState<ThemeOption[] | null>(null);
   const [category, setCategory] = useState("All");
   /** Empty = start blank. */
-  const [requestedTemplateKey] = useState(() => searchParams.get("templateKey") ?? "");
   const [templateKey, setTemplateKey] = useState(requestedTemplateKey);
   const [themeId, setThemeId] = useState("");
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -147,15 +149,27 @@ export default function CreateWebsitePage() {
       .then((loaded) => {
         if (cancelled) return;
         setTemplates(loaded);
-        setTemplateKey((current) => (loaded.some((template) => template.key === current) ? current : ""));
-        const requested = loaded.find((template) => template.key === requestedTemplateKey);
+        const requested = loaded.find(
+          (template) =>
+            template.key === requestedTemplateKey ||
+            (rawRequested && template.key === getTemplateKey(rawRequested)),
+        );
+        const resolvedKey = requested?.key ?? (loaded.some((candidate) => candidate.key === templateKey) ? templateKey : "");
+        setTemplateKey(resolvedKey);
         if (requested?.themeId && !requested.isCustom) setThemeId(requested.themeId);
+        if (requested?.name) {
+          setForm((prev) => ({
+            ...prev,
+            name: prev.name || requested.name,
+            websiteType: prev.websiteType || requested.category || "",
+          }));
+        }
       })
       .catch((err: unknown) => !cancelled && setLoadError(errorMessage(err)));
     return () => {
       cancelled = true;
     };
-  }, [templateOwner, requestedTemplateKey]);
+  }, [templateOwner, requestedTemplateKey, rawRequested]);
 
   useEffect(() => {
     let cancelled = false;
