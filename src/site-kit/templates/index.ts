@@ -20,6 +20,9 @@ import { YOGA_STUDIO_SITE } from "./yoga-studio.ts";
 import { TECH_ACADEMY_SITE } from "./tech-academy.ts";
 import { DESIGN_INSTITUTE_SITE } from "./design-institute.ts";
 import { COMMUNITY_HUB_SITE } from "./community-hub.ts";
+import { SAAS_PLATFORM_SITE } from "./saas-platform.ts";
+import { MOBILE_APP_SITE } from "./mobile-app.ts";
+import { EVENT_SUMMIT_SITE } from "./event-summit.ts";
 
 type TemplateSite = {
   /** Key of the matching platform template seeded by the backend. */
@@ -32,6 +35,7 @@ const TEMPLATE_SITES: Readonly<Record<string, TemplateSite>> = {
   "2134": { key: "accounting-firm-classic", site: ACCOUNTING_FIRM_SITE },
   "2135": { key: "electrician-classic", site: ELECTRICIAN_SITE },
   "2136": { key: "food-truck-sunny", site: FOOD_TRUCK_SITE },
+  "2137": { key: "event-summit-coral", site: EVENT_SUMMIT_SITE },
   "2138": { key: "architecture-firm-minimal", site: ARCHITECTURE_FIRM_SITE },
   "2139": { key: "roofing-velvet", site: ROOFING_SITE },
   "2140": { key: "law-firm-elegant", site: LAW_FIRM_SITE },
@@ -47,6 +51,8 @@ const TEMPLATE_SITES: Readonly<Record<string, TemplateSite>> = {
   "2150": { key: "photographer-mono", site: PHOTOGRAPHER_SITE },
   "2151": { key: "ux-designer-midnight", site: UX_DESIGNER_SITE },
   "2152": { key: "developer-portfolio-ocean", site: DEVELOPER_PORTFOLIO_SITE },
+  "2153": { key: "saas-platform-cyber", site: SAAS_PLATFORM_SITE },
+  "2154": { key: "mobile-app-fresh", site: MOBILE_APP_SITE },
   "2155": { key: "tech-academy-indigo", site: TECH_ACADEMY_SITE },
   "2156": { key: "design-institute-editorial", site: DESIGN_INSTITUTE_SITE },
   "2157": { key: "community-hub-emerald", site: COMMUNITY_HUB_SITE },
