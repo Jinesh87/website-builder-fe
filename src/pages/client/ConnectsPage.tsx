@@ -150,11 +150,13 @@ export default function ConnectsPage() {
                   ₹1 = {wallet.connectsPerRupee} connects. Sold in packs of {wallet.packSize}.
                   {lastPurchase && ` Last bought ${formatConnects(lastPurchase.amount)} on ${formatDate(lastPurchase.createdAt, false)}.`}
                 </p>
-                {wallet.balance <= 0 && (
+                {(wallet.balance <= 0 || (wallet.minAiBalance > 0 && wallet.balance < wallet.minAiBalance)) && (
                   <p className="mt-3 inline-flex rounded-lg bg-white/15 px-3 py-1.5 text-sm font-medium">
-                    {wallet.balance < 0
-                      ? "Your last AI request cost more than you had left. Buy connects to keep using AI."
-                      : "Buy connects to start using AI."}
+                    {wallet.minAiBalance > 0 && wallet.balance < wallet.minAiBalance
+                      ? `You need at least ${formatConnects(wallet.minAiBalance)} to use AI.`
+                      : wallet.balance < 0
+                        ? "Your last AI request cost more than you had left. Buy connects to keep using AI."
+                        : "Buy connects to start using AI."}
                   </p>
                 )}
               </div>
