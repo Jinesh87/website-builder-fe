@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { TPLS, CAT_LABEL } from "./data.ts";
 import { useMarketing } from "./marketing-context.ts";
 import { TemplateFrame } from "./MiniSite.tsx";
+import { getTemplateKey } from "../../site-kit/templates/index.ts";
 import "./templates-gallery.css";
 
 interface TemplateCardProps {
@@ -19,6 +20,8 @@ export default function TemplateCard({ index, isShortlisted, onToggleShortlist }
   const pagesList = t.pages.split(", ");
   const pageCount = pagesList.length;
   const templatePath = `/templates/${t.id}`;
+  const templateKey = getTemplateKey(t.id) ?? t.id;
+  const useTemplatePath = `/websites/new?templateKey=${encodeURIComponent(templateKey)}`;
 
   const handleHeartClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -114,9 +117,9 @@ export default function TemplateCard({ index, isShortlisted, onToggleShortlist }
             Preview
           </Link>
           <Link
-            to={templatePath}
+            to={useTemplatePath}
             className="btn-use"
-            title={`Preview and use ${t.n}`}
+            title={`Use template ${t.n}`}
           >
             Use template →
           </Link>
