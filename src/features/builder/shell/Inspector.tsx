@@ -191,7 +191,14 @@ function SiteInspector() {
               page={page}
               pages={draft.pages}
               website={website}
-              onChange={(patch) => editDraft((current) => updatePageMeta(current, page.id, patch))}
+              onChange={(patch) => {
+                const nextDraft = updatePageMeta(draft, page.id, patch);
+                editDraft(() => nextDraft);
+                const updatedCurrentPage = nextDraft.pages.find((p) => p.id === page.id);
+                if (updatedCurrentPage) {
+                  setAllSections(dispatch, updatedCurrentPage.sections);
+                }
+              }}
               onUpdateSections={(sections) => {
                 setAllSections(dispatch, sections);
                 editDraft((current) =>
