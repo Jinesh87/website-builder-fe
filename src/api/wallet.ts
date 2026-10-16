@@ -68,6 +68,10 @@ export const adminPaymentsApi = {
   get: () => request<{ config: PaymentConfig }>("/admin/settings/payments").then((data) => data.config),
   update: (input: PaymentConfigInput) =>
     request<{ config: PaymentConfig }>("/admin/settings/payments", { method: "PUT", body: input }).then((data) => data.config),
+  revealSecrets: () =>
+    request<{ secrets: { razorpayKeySecret: string | null; razorpayWebhookSecret: string | null } }>(
+      "/admin/settings/payments/secrets",
+    ).then((data) => data.secrets),
 };
 
 export function formatPaise(paise: number, currency = "INR"): string {
