@@ -491,9 +491,53 @@ export type ServicesData = {
   showNumbers?: boolean;
 };
 
+export const TESTIMONIALS_VARIANTS = [
+  "cards-grid",
+  "carousel-slider",
+  "marquee-wall",
+  "spotlight-featured",
+  "minimal-editorial",
+] as const;
+export type TestimonialsVariant = (typeof TESTIMONIALS_VARIANTS)[number];
+
+export const TESTIMONIALS_CARD_STYLES = [
+  "default",
+  "bordered",
+  "flat",
+  "glass",
+  "elevated",
+] as const;
+export type TestimonialsCardStyle = (typeof TESTIMONIALS_CARD_STYLES)[number];
+
+export type TestimonialItem = {
+  quote: string;
+  name: string;
+  role?: string;
+  company?: string;
+  avatar?: ImageRef;
+  rating?: number;
+  verified?: boolean;
+  badge?: string;
+  highlight?: string;
+};
+
 export type TestimonialsData = {
+  variant?: TestimonialsVariant;
+  eyebrow?: string;
   heading: string;
-  items: { quote: string; name: string; role?: string }[];
+  intro?: string;
+  cardStyle?: TestimonialsCardStyle;
+  align?: "left" | "center";
+  columns?: GridColumns;
+  showRatings?: boolean;
+  showAvatars?: boolean;
+  showBadges?: boolean;
+  ratingMetric?: {
+    score?: string;
+    label?: string;
+    count?: string;
+  };
+  items: TestimonialItem[];
 };
 
 export const FAQ_VARIANTS = [

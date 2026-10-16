@@ -92,8 +92,8 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: "social-proof",
     category: "Social proof",
-    label: "Testimonials & Social",
-    shortLabel: "Proof",
+    label: "Testimonials",
+    shortLabel: "Testimonials",
     icon: MessageSquareQuote,
   },
   {
@@ -348,7 +348,7 @@ export default function AddPanel() {
         {/* Compact Category Icons Left Sub-Sidebar */}
         <nav
           aria-label="Section categories"
-          className="flex w-14 shrink-0 flex-col gap-1 border-r border-ed-border bg-ed-subtle/40 p-1 overflow-y-auto overscroll-contain"
+          className="flex w-[70px] shrink-0 flex-col gap-1 border-r border-ed-border bg-ed-subtle/40 p-1 overflow-y-auto overscroll-contain"
         >
           {VISIBLE_CATEGORIES.map(({ id, shortLabel, label, icon: Icon }) => {
             const isSelected = selectedCategoryId === id && !query.trim();
@@ -376,7 +376,7 @@ export default function AddPanel() {
                     }`}
                     aria-hidden
                   />
-                  <span className="mt-0.5 block w-full truncate text-[9px] font-medium leading-none">
+                  <span className="mt-0.5 block w-full truncate text-[8px] font-medium leading-tight tracking-tight">
                     {shortLabel}
                   </span>
                 </button>

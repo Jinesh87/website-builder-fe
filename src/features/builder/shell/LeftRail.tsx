@@ -69,7 +69,7 @@ export default function LeftRail() {
       {active && Panel && (
         <aside
           aria-label={active.label}
-          className={`relative flex h-full min-h-0 ${leftPanel === "add" ? "w-96" : "w-72"} shrink-0 flex-col border-r border-ed-border bg-ed-panel overflow-hidden transition-[width] duration-150`}
+          className={`relative flex h-full min-h-0 ${leftPanel === "add" ? "w-[400px]" : "w-72"} shrink-0 flex-col border-r border-ed-border bg-ed-panel overflow-hidden transition-[width] duration-150`}
         >
           <div inert={aiLock !== null} className={`flex min-h-0 flex-1 flex-col ${aiLock ? "opacity-40" : ""}`}>
             <Panel />

@@ -3250,10 +3250,439 @@ export const SITE_CSS = `
 .wb-services-bottom-cta.wb-align-center { justify-content: center; }
 .wb-services-bottom-cta.wb-align-left { justify-content: flex-start; }
 
-/* Testimonials */
-.wb-quote blockquote { font-size: 17px; color: var(--wb-text); }
-.wb-quote figcaption { margin-top: 20px; font-size: 14px; }
-.wb-quote figcaption strong { display: block; font-size: 15px; color: var(--wb-text); }
+/* ==========================================================================
+   Testimonials Section (Modern Multi-Variant Architectural System)
+   ========================================================================== */
+
+/* Shared Elements: Rating Stars, Badges & Avatars */
+.wb-testimonials-rating-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--wb-text) 5%, var(--wb-surface));
+  border: 1px solid var(--wb-border);
+  margin-bottom: 24px;
+}
+.wb-testimonials-rating-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.wb-testimonial-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #f59e0b;
+}
+.wb-testimonial-star {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.wb-star-filled {
+  color: #f59e0b;
+}
+.wb-star-empty {
+  color: color-mix(in srgb, var(--wb-text) 18%, transparent);
+}
+.wb-testimonials-rating-score {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--wb-text);
+}
+.wb-testimonials-rating-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--wb-border);
+}
+.wb-testimonials-rating-count {
+  font-size: 13px;
+  color: var(--wb-muted);
+  font-weight: 500;
+}
+
+/* Verified Badge */
+.wb-testimonial-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #10b981;
+  background: color-mix(in srgb, #10b981 12%, transparent);
+  border: 1px solid color-mix(in srgb, #10b981 22%, transparent);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}
+.wb-verified-check {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Highlight Outcome Tag */
+.wb-testimonial-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wb-primary);
+  background: color-mix(in srgb, var(--wb-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wb-primary) 20%, transparent);
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+/* Avatar Components */
+.wb-testimonial-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid color-mix(in srgb, var(--wb-text) 8%, transparent);
+  background: color-mix(in srgb, var(--wb-text) 6%, var(--wb-surface));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wb-testimonial-avatar-lg {
+  width: 60px;
+  height: 60px;
+}
+.wb-testimonial-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.wb-testimonial-avatar-initials {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--wb-primary);
+  background: color-mix(in srgb, var(--wb-primary) 12%, var(--wb-surface));
+  letter-spacing: -0.02em;
+}
+
+/* Author Details */
+.wb-testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+.wb-testimonial-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.wb-testimonial-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.wb-testimonial-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--wb-text);
+  line-height: 1.3;
+}
+.wb-testimonial-role {
+  font-size: 13px;
+  color: var(--wb-muted);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Card Shell Styles & Hover Effects */
+.wb-testimonial-card {
+  border-radius: var(--wb-radius);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+}
+.wb-testimonial-card:hover {
+  transform: translateY(-4px);
+}
+.wb-testimonial-card-default {
+  background: var(--wb-surface);
+  border: 1px solid var(--wb-border);
+}
+.wb-testimonial-card-bordered {
+  background: var(--wb-bg);
+  border: 1px solid var(--wb-border);
+}
+.wb-testimonial-card-flat {
+  background: transparent;
+  border: 1px solid transparent;
+}
+.wb-testimonial-card-glass {
+  background: color-mix(in srgb, var(--wb-surface) 60%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--wb-border);
+}
+.wb-testimonial-card-elevated {
+  background: var(--wb-bg);
+  border: 1px solid var(--wb-border);
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.08);
+}
+.wb-testimonial-card-elevated:hover {
+  box-shadow: 0 20px 40px -6px rgba(0, 0, 0, 0.12);
+}
+
+.wb-testimonial-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.wb-testimonial-quote {
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--wb-text);
+  margin: 0;
+  flex-grow: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Variant 1: Cards Grid (Balanced Multi-Column Review Matrix)
+   -------------------------------------------------------------------------- */
+.wb-testimonials-grid {
+  display: grid;
+  gap: 24px;
+  margin-top: 40px;
+}
+.wb-testimonials-grid-1 { grid-template-columns: minmax(0, 1fr); max-width: 680px; margin-left: auto; margin-right: auto; }
+.wb-testimonials-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wb-testimonials-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.wb-testimonials-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+@media (max-width: 1024px) {
+  .wb-testimonials-grid-3, .wb-testimonials-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .wb-testimonials-grid-2, .wb-testimonials-grid-3, .wb-testimonials-grid-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Variant 2: Carousel Slider (Interactive Smooth Pull-Quote Stage)
+   -------------------------------------------------------------------------- */
+.wb-testimonials-slider-stage {
+  max-width: 880px;
+  margin: 40px auto 0 auto;
+  position: relative;
+}
+.wb-testimonials-slider-track {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--wb-radius) * 1.2);
+}
+.wb-testimonials-slide-card {
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+}
+.wb-testimonials-slide-quote-icon {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  width: 72px;
+  height: 72px;
+  color: color-mix(in srgb, var(--wb-text) 5%, transparent);
+  pointer-events: none;
+}
+.wb-testimonials-slide-text {
+  font-family: var(--wb-font-heading);
+  font-size: clamp(20px, 2.5vw, 28px);
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--wb-text);
+  margin: 18px 0 28px 0;
+  letter-spacing: -0.015em;
+}
+.wb-testimonials-slider-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  gap: 16px;
+}
+.wb-testimonials-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wb-testimonials-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--wb-text) 20%, transparent);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.wb-testimonials-dot.active {
+  width: 24px;
+  background: var(--wb-primary);
+}
+.wb-testimonials-arrows {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wb-testimonials-arrow-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  border: 1px solid var(--wb-border);
+  background: var(--wb-surface);
+  color: var(--wb-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.wb-testimonials-arrow-btn:hover {
+  background: var(--wb-bg);
+  border-color: var(--wb-primary);
+  color: var(--wb-primary);
+  transform: scale(1.05);
+}
+@media (max-width: 640px) {
+  .wb-testimonials-slide-card {
+    padding: 32px 24px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Variant 3: Marquee Wall (Infinite Hardware-Accelerated 60fps Ticker)
+   -------------------------------------------------------------------------- */
+.wb-testimonials-marquee-wrap {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: 30px 0;
+  margin-top: 30px;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+.wb-testimonials-marquee-track {
+  display: flex;
+  gap: 20px;
+  width: max-content;
+  animation: wb-testi-scroll 45s linear infinite;
+  will-change: transform;
+}
+.wb-testimonials-marquee-track:hover {
+  animation-play-state: paused;
+}
+.wb-testimonials-marquee-item {
+  width: 360px;
+  flex-shrink: 0;
+}
+@keyframes wb-testi-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* --------------------------------------------------------------------------
+   Variant 4: Spotlight Featured (Executive Hero Split & Proof Matrix)
+   -------------------------------------------------------------------------- */
+.wb-testimonials-spotlight-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 32px;
+  margin-top: 40px;
+  align-items: stretch;
+}
+.wb-testimonials-hero-card {
+  padding: 40px;
+  border-radius: var(--wb-radius);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+.wb-testimonials-hero-quote {
+  font-family: var(--wb-font-heading);
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.38;
+  font-weight: 600;
+  color: var(--wb-text);
+  letter-spacing: -0.02em;
+  margin: 20px 0 28px 0;
+}
+.wb-testimonials-side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: space-between;
+}
+.wb-testimonials-side-card {
+  padding: 24px;
+}
+@media (max-width: 900px) {
+  .wb-testimonials-spotlight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Variant 5: Minimal Editorial (Swiss Architectural Hairline Minimalism)
+   -------------------------------------------------------------------------- */
+.wb-testimonials-editorial-frame {
+  max-width: 1080px;
+  margin: 40px auto 0 auto;
+  border-top: 1px solid var(--wb-border);
+}
+.wb-testimonials-editorial-item {
+  padding: 36px 0;
+  border-bottom: 1px solid var(--wb-border);
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 40px;
+  align-items: baseline;
+  transition: background-color 0.18s ease;
+}
+.wb-testimonials-editorial-author {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wb-testimonials-editorial-quote {
+  font-family: var(--wb-font-heading);
+  font-size: clamp(19px, 2vw, 24px);
+  line-height: 1.5;
+  color: var(--wb-text);
+  font-style: italic;
+  margin: 0;
+}
+@media (max-width: 768px) {
+  .wb-testimonials-editorial-item {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 28px 0;
+  }
+}
 
 /* ==========================================================================
    FAQ Section (Clean Modern & Architectural System)
