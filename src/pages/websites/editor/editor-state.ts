@@ -1,5 +1,5 @@
 import type { SaveDraftInput, WebsiteDetail, WebsitePage } from "../../../api/websites.ts";
-import type { FooterData, HeaderData, LinkRef, Section, ThemeSettings } from "../../../site-kit/index.ts";
+import type { FooterData, HeaderData, HeaderMenuItem, LinkRef, Section, ThemeSettings } from "../../../site-kit/index.ts";
 
 export type EditorDraft = {
   theme: ThemeSettings;
@@ -89,8 +89,105 @@ function replaceHref<T>(value: T, from: string, to: string): T {
   return value;
 }
 
+function isSameHref(a?: string, b?: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const normA = a === "/" || a === "" ? "/" : a.replace(/\/+$/, "");
+  const normB = b === "/" || b === "" ? "/" : b.replace(/\/+$/, "");
+  return normA === normB;
+}
+
 function withoutHref(links: LinkRef[], href: string): LinkRef[] {
-  return links.filter((link) => link.href !== href);
+  return links.filter((link) => !isSameHref(link.href, href));
+}
+
+function syncHeaderMenu(
+  header: HeaderData,
+  page: Pick<WebsitePage, "name" | "slug">,
+  action: "add" | "remove" | "rename",
+  oldName?: string,
+): HeaderData {
+  const currentMenu: HeaderMenuItem[] = Array.isArray(header.menu) ? header.menu : [];
+
+  if (action === "rename" && oldName) {
+    const updated = currentMenu.map((item) => {
+      let nextItem = item;
+      if (isSameHref(item.href, page.slug) && (item.label === oldName || item.label === page.name)) {
+        nextItem = { ...nextItem, label: page.name };
+      }
+      if (Array.isArray(item.children) && item.children.length > 0) {
+        const nextChildren = item.children.map((child) =>
+          isSameHref(child.href, page.slug) && (child.label === oldName || child.label === page.name)
+            ? { ...child, label: page.name }
+            : child,
+        );
+        nextItem = { ...nextItem, children: nextChildren };
+      }
+      return nextItem;
+    });
+    return { ...header, menu: updated };
+  }
+
+  if (action === "remove") {
+    const updated = currentMenu
+      .filter((item) => !isSameHref(item.href, page.slug))
+      .map((item) => {
+        if (Array.isArray(item.children) && item.children.length > 0) {
+          return {
+            ...item,
+            children: item.children.filter((child) => !isSameHref(child.href, page.slug)),
+          };
+        }
+        return item;
+      });
+    return { ...header, menu: updated };
+  }
+
+  if (action === "add") {
+    const exists = currentMenu.some(
+      (item) =>
+        isSameHref(item.href, page.slug) ||
+        (Array.isArray(item.children) && item.children.some((child) => isSameHref(child.href, page.slug))),
+    );
+    if (!exists && currentMenu.length < LIMITS.menuLinks) {
+      const isHome = page.slug === "/" || page.slug === "";
+      const newItem: HeaderMenuItem = { label: page.name, href: page.slug };
+      const updatedMenu = isHome ? [newItem, ...currentMenu] : [...currentMenu, newItem];
+      return {
+        ...header,
+        menu: updatedMenu,
+      };
+    }
+    return header;
+  }
+
+  return header;
+}
+
+function syncHeaderAcrossDraft(
+  draft: EditorDraft,
+  syncFn: (header: HeaderData) => HeaderData,
+): EditorDraft {
+  const nextHeader = syncFn(draft.header);
+  const nextPages = draft.pages.map((p) => {
+    const hasHeaderSection = p.sections.some((s) => s.type === "header");
+    if (!hasHeaderSection) return p;
+    return {
+      ...p,
+      sections: p.sections.map((s) => {
+        if (s.type !== "header") return s;
+        return {
+          ...s,
+          data: syncFn((s.data || {}) as HeaderData),
+        };
+      }),
+    };
+  });
+  return {
+    ...draft,
+    header: nextHeader,
+    pages: nextPages,
+  };
 }
 
 function removeNavLinks(draft: EditorDraft, href: string): EditorDraft {
@@ -102,11 +199,6 @@ function removeNavLinks(draft: EditorDraft, href: string): EditorDraft {
       columns: draft.footer.columns.map((column) => ({ ...column, links: withoutHref(column.links, href) })),
     },
   };
-}
-
-function addMenuLink(header: HeaderData, link: LinkRef): HeaderData {
-  if (header.menu.some((item) => item.href === link.href) || header.menu.length >= LIMITS.menuLinks) return header;
-  return { ...header, menu: [...header.menu, link] };
 }
 
 export function addPage(draft: EditorDraft, name: string): { draft: EditorDraft; pageId: string } {
@@ -123,13 +215,14 @@ export function addPage(draft: EditorDraft, name: string): { draft: EditorDraft;
     seoKeywords: [],
     sections: [],
   };
+  const draftWithPage: EditorDraft = {
+    ...draft,
+    pages: [...draft.pages, page],
+  };
+  const finalDraft = syncHeaderAcrossDraft(draftWithPage, (h) => syncHeaderMenu(h, page, "add"));
   return {
     pageId: page.id,
-    draft: {
-      ...draft,
-      header: addMenuLink(draft.header, { label: page.name, href: page.slug }),
-      pages: [...draft.pages, page],
-    },
+    draft: finalDraft,
   };
 }
 
@@ -147,29 +240,37 @@ export function updatePageMeta(draft: EditorDraft, pageId: string, patch: PageMe
   if (after.slug !== before.slug) {
     next = replaceHref(next, before.slug, after.slug);
   }
+
   if (after.name !== before.name) {
-    next = {
-      ...next,
-      header: {
-        ...next.header,
-        menu: next.header.menu.map((link) =>
-          link.href === after.slug && link.label === before.name ? { ...link, label: after.name } : link,
-        ),
-      },
-    };
+    next = syncHeaderAcrossDraft(next, (h) => syncHeaderMenu(h, after, "rename", before.name));
   }
+
   if (after.showInNav !== before.showInNav) {
     next = after.showInNav
-      ? { ...next, header: addMenuLink(next.header, { label: after.name, href: after.slug }) }
-      : { ...next, header: { ...next.header, menu: withoutHref(next.header.menu, after.slug) } };
+      ? syncHeaderAcrossDraft(next, (h) => syncHeaderMenu(h, after, "add"))
+      : syncHeaderAcrossDraft(next, (h) => syncHeaderMenu(h, after, "remove"));
   }
+
+  if (after.visible !== before.visible) {
+    if (!after.visible) {
+      next = syncHeaderAcrossDraft(next, (h) => syncHeaderMenu(h, after, "remove"));
+    } else if (after.showInNav) {
+      next = syncHeaderAcrossDraft(next, (h) => syncHeaderMenu(h, after, "add"));
+    }
+  }
+
   return next;
 }
 
 export function deletePage(draft: EditorDraft, pageId: string): EditorDraft {
   const page = draft.pages.find((candidate) => candidate.id === pageId);
   if (!page || page.slug === "/") return draft;
-  return removeNavLinks({ ...draft, pages: draft.pages.filter((candidate) => candidate.id !== pageId) }, page.slug);
+  const withoutPage: EditorDraft = {
+    ...draft,
+    pages: draft.pages.filter((candidate) => candidate.id !== pageId),
+  };
+  const synced = syncHeaderAcrossDraft(withoutPage, (h) => syncHeaderMenu(h, page, "remove"));
+  return removeNavLinks(synced, page.slug);
 }
 
 /** Header menu rebuilt from the pages marked "show in menu", in page order. */
