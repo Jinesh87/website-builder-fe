@@ -1,4 +1,5 @@
 import {
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -36,7 +37,12 @@ import ProjectTabs, {
 import SitePreviewCard from "../../components/dashboard/SitePreviewCard.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
-import DownloadCodeDialog from "../../components/websites/DownloadCodeDialog.tsx";
+import { lazyWithRetry } from "../../utils/lazy-with-retry.ts";
+
+const DownloadCodeDialog = lazyWithRetry(
+  () => import("../../components/websites/DownloadCodeDialog.tsx"),
+  { reloadKey: "dashboard_download_code" },
+);
 import {
   BUILDER_LABELS,
   WebsiteStatusChip,
@@ -293,6 +299,8 @@ export default function ProjectDashboardPage() {
               size="sm"
               variant="outline"
               onPress={() => setDownloadOpen(true)}
+              onMouseEnter={() => void DownloadCodeDialog.preload()}
+              onFocus={() => void DownloadCodeDialog.preload()}
             >
               <Code2 className="size-4" aria-hidden /> Download code
             </Button>
@@ -548,11 +556,15 @@ export default function ProjectDashboardPage() {
         </div>
       </CommonModal>
 
-      <DownloadCodeDialog
-        websiteId={website.id}
-        isOpen={downloadOpen}
-        onClose={() => setDownloadOpen(false)}
-      />
+      {downloadOpen && (
+        <Suspense fallback={null}>
+          <DownloadCodeDialog
+            websiteId={website.id}
+            isOpen={downloadOpen}
+            onClose={() => setDownloadOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

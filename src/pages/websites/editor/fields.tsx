@@ -1,4 +1,5 @@
 import {
+  Suspense,
   createContext,
   useContext,
   useId,
@@ -10,7 +11,12 @@ import { Button, Checkbox, Dropdown, Label } from "@heroui/react";
 import { Check, ChevronDown, ChevronUp, Eye, Film, Images, Plus, Trash2, Upload } from "lucide-react";
 import { errorMessage } from "../../../api/http.ts";
 import { ACCEPT_BY_KIND, formatBytes, mediaApi, uploadProblem, type MediaFile } from "../../../api/media.ts";
-import MediaPickerDialog from "../../../components/media/MediaPickerDialog.tsx";
+import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
+
+const MediaPickerDialog = lazyWithRetry(
+  () => import("../../../components/media/MediaPickerDialog.tsx"),
+  { reloadKey: "fields_media_picker" },
+);
 import { CellColorPicker } from "../../../components/ui/CellColorPicker.tsx";
 import { Lightbox } from "../../../components/ui/Lightbox.tsx";
 import { optimizeImageToWebP } from "../../../utils/image-optimizer.ts";
@@ -541,6 +547,8 @@ export function ImageField({
             <button
               type="button"
               onClick={() => setPicking(true)}
+              onMouseEnter={() => void MediaPickerDialog.preload()}
+              onFocus={() => void MediaPickerDialog.preload()}
               disabled={uploading}
               className="flex h-8 items-center justify-center gap-1.5 rounded-ed border border-ed-border bg-ed-panel px-2 text-ed-xs font-medium text-ed-text shadow-ed-xs transition hover:bg-ed-hover hover:border-ed-border-strong disabled:opacity-60 truncate"
             >
@@ -573,16 +581,18 @@ export function ImageField({
         </div>
       )}
       {picking && media && (
-        <MediaPickerDialog
-          clientId={media.clientId}
-          websiteId={media.websiteId}
-          kind="IMAGE"
-          onPick={(file) => {
-            applyFile(file);
-            setPicking(false);
-          }}
-          onClose={() => setPicking(false)}
-        />
+        <Suspense fallback={null}>
+          <MediaPickerDialog
+            clientId={media.clientId}
+            websiteId={media.websiteId}
+            kind="IMAGE"
+            onPick={(file) => {
+              applyFile(file);
+              setPicking(false);
+            }}
+            onClose={() => setPicking(false)}
+          />
+        </Suspense>
       )}
       <TextField
         label="Image link"
@@ -772,6 +782,8 @@ export function VideoField({
             <button
               type="button"
               onClick={() => setPicking(true)}
+              onMouseEnter={() => void MediaPickerDialog.preload()}
+              onFocus={() => void MediaPickerDialog.preload()}
               disabled={uploading}
               className="flex h-8 items-center justify-center gap-1.5 rounded-ed border border-ed-border bg-ed-panel px-2 text-ed-xs font-medium text-ed-text shadow-ed-xs transition hover:bg-ed-hover hover:border-ed-border-strong disabled:opacity-60 truncate"
             >
@@ -815,16 +827,18 @@ export function VideoField({
 
       {/* Media Picker Dialog for Video */}
       {picking && media && (
-        <MediaPickerDialog
-          clientId={media.clientId}
-          websiteId={media.websiteId}
-          kind="VIDEO"
-          onPick={(file) => {
-            onChange(file.url);
-            setPicking(false);
-          }}
-          onClose={() => setPicking(false)}
-        />
+        <Suspense fallback={null}>
+          <MediaPickerDialog
+            clientId={media.clientId}
+            websiteId={media.websiteId}
+            kind="VIDEO"
+            onPick={(file) => {
+              onChange(file.url);
+              setPicking(false);
+            }}
+            onClose={() => setPicking(false)}
+          />
+        </Suspense>
       )}
     </div>
   );

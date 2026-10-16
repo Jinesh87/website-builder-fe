@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import { Suspense, useState, type KeyboardEvent } from "react";
 import { Button } from "@heroui/react";
 import { ImagePlus, Lock, Plus, X } from "lucide-react";
 import type { MediaFile } from "../../api/media.ts";
@@ -9,7 +9,12 @@ import {
   type GenerationTone,
   type ThemeOption,
 } from "../../api/websites.ts";
-import MediaPickerDialog from "../media/MediaPickerDialog.tsx";
+import { lazyWithRetry } from "../../utils/lazy-with-retry.ts";
+
+const MediaPickerDialog = lazyWithRetry(
+  () => import("../media/MediaPickerDialog.tsx"),
+  { reloadKey: "aibrief_media_picker" },
+);
 import FormAlert from "../ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../ui/SelectInput.tsx";
 import TextAreaInput from "../ui/TextAreaInput.tsx";
@@ -200,6 +205,8 @@ export default function AiBriefStep({ brief, onChange, errors, themes, mediaClie
             <button
               type="button"
               onClick={() => setPicker("image")}
+              onMouseEnter={() => void MediaPickerDialog.preload()}
+              onFocus={() => void MediaPickerDialog.preload()}
               disabled={!mediaClientId}
               className="grid size-24 place-items-center rounded-lg border-2 border-dashed border-line-strong text-ink-body hover:border-brand hover:text-brand disabled:opacity-50"
             >
@@ -227,7 +234,14 @@ export default function AiBriefStep({ brief, onChange, errors, themes, mediaClie
               </button>
             </figure>
           ) : null}
-          <Button size="sm" variant="outline" onPress={() => setPicker("logo")} isDisabled={!mediaClientId}>
+          <Button
+            size="sm"
+            variant="outline"
+            onPress={() => setPicker("logo")}
+            onMouseEnter={() => void MediaPickerDialog.preload()}
+            onFocus={() => void MediaPickerDialog.preload()}
+            isDisabled={!mediaClientId}
+          >
             {brief.logo ? "Change logo" : "Choose a logo (optional)"}
           </Button>
         </div>
@@ -284,7 +298,9 @@ export default function AiBriefStep({ brief, onChange, errors, themes, mediaClie
       {!mediaClientId && <FormAlert status="warning">Choose a client in Website info to use their media library.</FormAlert>}
 
       {picker && mediaClientId && (
-        <MediaPickerDialog clientId={mediaClientId} kind="IMAGE" onPick={pick} onClose={() => setPicker(null)} />
+        <Suspense fallback={null}>
+          <MediaPickerDialog clientId={mediaClientId} kind="IMAGE" onPick={pick} onClose={() => setPicker(null)} />
+        </Suspense>
       )}
     </div>
   );
