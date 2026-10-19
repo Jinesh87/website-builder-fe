@@ -8,6 +8,7 @@ import FormAlert from "../ui/FormAlert.tsx";
 type Feedback = { status: "success" | "danger"; message: string } | null;
 
 const MARGIN_PATTERN = /^\d{1,4}(\.\d{1,2})?$/;
+const BALANCE_PATTERN = /^\d{1,7}(\.\d{1,3})?$/;
 
 function formatRupees(value: number): string {
   return `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -21,7 +22,9 @@ function formatFetched(iso: string): string {
 export default function AiBillingRatePanel() {
   const [billing, setBilling] = useState<BillingSettings | null>(null);
   const [margin, setMargin] = useState("");
+  const [minBalance, setMinBalance] = useState("");
   const [marginError, setMarginError] = useState<string>();
+  const [minBalanceError, setMinBalanceError] = useState<string>();
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -30,6 +33,7 @@ export default function AiBillingRatePanel() {
   function apply(loaded: BillingSettings) {
     setBilling(loaded);
     setMargin(String(loaded.margin));
+    setMinBalance(String(loaded.minAiBalance));
   }
 
   useEffect(() => {
@@ -42,15 +46,18 @@ export default function AiBillingRatePanel() {
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = margin.trim();
+    const balanceText = minBalance.trim();
     const error = MARGIN_PATTERN.test(trimmed) ? undefined : "Enter rupees with up to 2 decimals, e.g. 5 or 4.50";
+    const balanceError = BALANCE_PATTERN.test(balanceText) ? undefined : "Enter connects, up to 3 decimals";
     setMarginError(error);
+    setMinBalanceError(balanceError);
     setFeedback(null);
-    if (error) return;
+    if (error || balanceError) return;
 
     setSaving(true);
     try {
-      apply(await adminBillingApi.update(Number(trimmed)));
-      setFeedback({ status: "success", message: "Margin saved. New AI requests use it straight away." });
+      apply(await adminBillingApi.update({ margin: Number(trimmed), minBalance: Number(balanceText) }));
+      setFeedback({ status: "success", message: "Saved. New AI requests use these settings straight away." });
     } catch (err) {
       setFeedback({ status: "danger", message: errorMessage(err) });
     } finally {
@@ -155,6 +162,36 @@ export default function AiBillingRatePanel() {
             )}
           </div>
 
+          <div>
+            <label htmlFor="min-ai-balance" className="mb-1 block text-sm font-medium text-ink">
+              Minimum connects to use AI
+            </label>
+            <input
+              id="min-ai-balance"
+              inputMode="decimal"
+              value={minBalance}
+              disabled={saving}
+              aria-invalid={Boolean(minBalanceError)}
+              onChange={(event) => {
+                setMinBalance(event.target.value.replace(/[^\d.]/g, ""));
+                setMinBalanceError(undefined);
+                setFeedback(null);
+              }}
+              className={`h-9 w-36 rounded-lg border bg-surface px-3 text-sm text-ink shadow-ed-xs focus:outline-none focus:ring-2 ${
+                minBalanceError
+                  ? "border-ed-danger focus:ring-ed-danger/15"
+                  : "border-ed-border focus:border-ed-accent focus:ring-ed-accent/15"
+              }`}
+            />
+            {minBalanceError ? (
+              <p className="mt-1 text-xs text-ed-danger">{minBalanceError}</p>
+            ) : (
+              <p className="mt-1 text-xs text-ink-muted">
+                Applies to every company. 0 means any balance above zero. AI still deducts the real cost afterwards.
+              </p>
+            )}
+          </div>
+
           <div className="rounded-lg bg-brand-soft/60 p-4 text-sm text-ink">
             <p>
               Clients are charged <span className="font-semibold">$1 = {formatRupees(previewRate)}</span>
@@ -172,8 +209,12 @@ export default function AiBillingRatePanel() {
           {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
 
           <div>
-            <Button type="submit" isPending={saving} isDisabled={refreshing || Number(margin) === billing.margin}>
-              Save margin
+            <Button
+              type="submit"
+              isPending={saving}
+              isDisabled={refreshing || (Number(margin) === billing.margin && Number(minBalance) === billing.minAiBalance)}
+            >
+              Save
             </Button>
           </div>
         </div>

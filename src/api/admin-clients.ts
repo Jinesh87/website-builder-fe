@@ -1,3 +1,4 @@
+import type { AiModelPrice, AiModelPriceInput } from "./admin-ai.ts";
 import type { UserStatus } from "./auth.ts";
 import { request } from "./http.ts";
 
@@ -91,4 +92,9 @@ export const adminClientsApi = {
 
   resendEmail: (id: string) =>
     request<{ emailSent: boolean }>(`${BASE}/${id}/resend-email`, { method: "POST" }),
+
+  aiPrices: (id: string) => request<{ prices: AiModelPrice[] }>(`${BASE}/${id}/ai-prices`).then((data) => data.prices),
+
+  updateAiPrices: (id: string, prices: AiModelPriceInput[]) =>
+    request<{ prices: AiModelPrice[] }>(`${BASE}/${id}/ai-prices`, { method: "PUT", body: { prices } }).then((data) => data.prices),
 };

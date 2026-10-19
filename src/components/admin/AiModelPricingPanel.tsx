@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Button, Chip, Spinner } from "@heroui/react";
 import { DollarSign, RotateCcw } from "lucide-react";
-import { adminAiApi, type AiModelPrice } from "../../api/admin-ai.ts";
+import { adminAiApi, type AiModelPrice, type AiModelPriceInput } from "../../api/admin-ai.ts";
+import { adminClientsApi } from "../../api/admin-clients.ts";
 import { errorMessage } from "../../api/http.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 
@@ -61,8 +62,14 @@ function PriceInput({
   );
 }
 
-/** Super Admin's USD price per 1M tokens for every AI model, including image generation. */
-export default function AiModelPricingPanel({ onSaved }: { onSaved?: () => void }) {
+type AiModelPricingPanelProps = {
+  onSaved?: () => void;
+  /** When set, these prices apply only to this company and fall back to the platform prices. */
+  clientId?: string;
+};
+
+/** USD price per 1M tokens. Without `clientId`, these are the platform prices. */
+export default function AiModelPricingPanel({ onSaved, clientId }: AiModelPricingPanelProps) {
   const [prices, setPrices] = useState<AiModelPrice[] | null>(null);
   const [draft, setDraft] = useState<Draft>({});
   const [errors, setErrors] = useState<DraftErrors>({});
@@ -77,11 +84,9 @@ export default function AiModelPricingPanel({ onSaved }: { onSaved?: () => void 
   }
 
   useEffect(() => {
-    adminAiApi
-      .pricing()
-      .then(apply)
-      .catch((err: unknown) => setLoadError(errorMessage(err)));
-  }, []);
+    const load = clientId ? adminClientsApi.aiPrices(clientId) : adminAiApi.pricing();
+    load.then(apply).catch((err: unknown) => setLoadError(errorMessage(err)));
+  }, [clientId]);
 
   function update(modelId: string, side: "input" | "output", value: string) {
     setDraft((current) => ({ ...current, [modelId]: { ...current[modelId], [side]: value } }));
@@ -115,13 +120,12 @@ export default function AiModelPricingPanel({ onSaved }: { onSaved?: () => void 
 
     setSaving(true);
     try {
-      const saved = await adminAiApi.updatePricing(
-        prices.map((price) => ({
-          modelId: price.id,
-          inputPerMillion: Number(draft[price.id].input),
-          outputPerMillion: Number(draft[price.id].output),
-        })),
-      );
+      const input: AiModelPriceInput[] = prices.map((price) => ({
+        modelId: price.id,
+        inputPerMillion: Number(draft[price.id].input),
+        outputPerMillion: Number(draft[price.id].output),
+      }));
+      const saved = clientId ? await adminClientsApi.updateAiPrices(clientId, input) : await adminAiApi.updatePricing(input);
       apply(saved);
       setFeedback({ status: "success", message: "Model prices saved." });
       onSaved?.();
@@ -139,8 +143,12 @@ export default function AiModelPricingPanel({ onSaved }: { onSaved?: () => void 
           <DollarSign className="size-5" aria-hidden />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-ink">Model prices</h2>
-          <p className="text-xs text-ink-muted">US dollars per 1 million tokens. Used for AI cost estimates across the platform.</p>
+          <h2 className="text-base font-semibold text-ink">{clientId ? "Company model prices" : "Model prices"}</h2>
+          <p className="text-xs text-ink-muted">
+            {clientId
+              ? "US dollars per 1 million tokens for this company. A model left at the platform price follows the platform price."
+              : "US dollars per 1 million tokens. Used for AI cost estimates across the platform."}
+          </p>
         </div>
       </div>
 
@@ -188,7 +196,7 @@ export default function AiModelPricingPanel({ onSaved }: { onSaved?: () => void 
                         <p className="mt-0.5 font-mono text-xs text-ink-muted">{price.id}</p>
                         {!isDefault && (
                           <p className="mt-0.5 text-xs text-ink-muted">
-                            List price ${price.defaultInputPerMillion} / ${price.defaultOutputPerMillion}
+                            {clientId ? "Platform price" : "List price"} ${price.defaultInputPerMillion} / ${price.defaultOutputPerMillion}
                           </p>
                         )}
                       </td>
@@ -215,7 +223,7 @@ export default function AiModelPricingPanel({ onSaved }: { onSaved?: () => void 
                           size="sm"
                           variant="ghost"
                           isIconOnly
-                          aria-label={`Reset ${price.label} to list price`}
+                          aria-label={`Reset ${price.label} to ${clientId ? "platform" : "list"} price`}
                           isDisabled={saving || isDefault}
                           onPress={() => resetToDefault(price)}
                         >

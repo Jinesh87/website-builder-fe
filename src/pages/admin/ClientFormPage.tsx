@@ -13,6 +13,7 @@ import {
   validateUsername,
 } from "../../auth/validation.ts";
 import { ClientStatusChip, formatDate, SOURCE_LABELS } from "../../components/admin/client-labels.tsx";
+import AiModelPricingPanel from "../../components/admin/AiModelPricingPanel.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextAreaInput from "../../components/ui/TextAreaInput.tsx";
@@ -176,7 +177,8 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
   const title = isNew ? "Add client" : `Edit client: ${client?.businessName}`;
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="px-6 py-8 sm:px-8">
+    <div className="px-6 py-8 sm:px-8">
+    <form onSubmit={handleSubmit} noValidate>
       <BackLink />
       <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
         <h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>
@@ -316,6 +318,13 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
         {client && <ClientSidebar client={client} onChange={setClient} onFeedback={setFeedback} />}
       </div>
     </form>
+
+    {client && (
+      <div className="mt-6">
+        <AiModelPricingPanel clientId={client.id} />
+      </div>
+    )}
+    </div>
   );
 }
 

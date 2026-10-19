@@ -10,6 +10,8 @@ export type Wallet = {
   packSize: number;
   minPurchase: number;
   maxPurchase: number;
+  /** Connects required before AI features. 0 means any balance above zero. */
+  minAiBalance: number;
 };
 
 export type WalletTransaction = {
@@ -106,12 +108,14 @@ export type BillingSettings = {
   effectiveRate: number;
   connectsPerRupee: number;
   connectsPerUsd: number;
+  /** Connects required before AI features. 0 means any balance above zero. */
+  minAiBalance: number;
 };
 
 export const adminBillingApi = {
   get: () => request<{ billing: BillingSettings }>("/admin/settings/billing").then((data) => data.billing),
-  update: (margin: number) =>
-    request<{ billing: BillingSettings }>("/admin/settings/billing", { method: "PUT", body: { margin } }).then((data) => data.billing),
+  update: (input: { margin: number; minBalance: number }) =>
+    request<{ billing: BillingSettings }>("/admin/settings/billing", { method: "PUT", body: input }).then((data) => data.billing),
   refreshRate: () =>
     request<{ billing: BillingSettings }>("/admin/settings/billing/refresh-rate", { method: "POST" }).then((data) => data.billing),
 };
