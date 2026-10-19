@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { CustomBlock, CustomData } from "../../../site-kit/index.ts";
 import { FormGroup, ImageField, ItemList, LinkField, SelectField, TextAreaField, TextField } from "./fields.tsx";
+import { blockImageSize } from "./media-dimensions.ts";
 
 type Path = number[];
 
@@ -73,6 +74,7 @@ function BlockFields({ block, onChange }: { block: CustomBlock; onChange: (block
           label="Image"
           value={{ url: block.url, alt: block.alt }}
           onChange={(image) => image && onChange({ ...block, url: image.url, alt: image.alt })}
+          dimensionHint={blockImageSize(block.aspect)}
         />
       );
     case "list":

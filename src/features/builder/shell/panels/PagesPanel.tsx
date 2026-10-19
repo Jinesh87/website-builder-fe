@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from "react";
-import { ChevronDown, ChevronUp, EyeOff, FileText, Home, Plus } from "lucide-react";
-import { addPage, LIMITS, moveItem } from "../../../../pages/websites/editor/editor-state.ts";
+import { ChevronDown, ChevronUp, EyeOff, FileText, Home, Plus, Trash2 } from "lucide-react";
+import ConfirmDialog from "../../../../components/ui/ConfirmDialog.tsx";
+import { addPage, deletePage, homePage, LIMITS, moveItem } from "../../../../pages/websites/editor/editor-state.ts";
+import type { WebsitePage } from "../../../../api/websites.ts";
 import { useEditor } from "../../editor-context.ts";
 import { PanelHeader, ToolButton } from "../ui.tsx";
 
 export default function PagesPanel() {
-  const { draft, page: current, editDraft, selectPage, setSiteArea } = useEditor();
+  const { draft, page: current, editDraft, selectPage, setSiteArea, notify } = useEditor();
   const [newName, setNewName] = useState<string | null>(null);
+  const [pageToDelete, setPageToDelete] = useState<WebsitePage | null>(null);
   const pages = draft.pages;
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -17,6 +20,18 @@ export default function PagesPanel() {
     setNewName(null);
     selectPage(result.pageId);
     setSiteArea("page");
+  }
+
+  function removePage() {
+    if (!pageToDelete) return;
+    const remaining = deletePage(draft, pageToDelete.id);
+    editDraft(() => remaining);
+    if (current.id === pageToDelete.id) {
+      const home = homePage(remaining.pages);
+      if (home) selectPage(home.id);
+    }
+    notify(`Deleted “${pageToDelete.name}” page`);
+    setPageToDelete(null);
   }
 
   return (
@@ -63,6 +78,7 @@ export default function PagesPanel() {
         <ul className="flex flex-col gap-0.5 px-1.5">
           {pages.map((candidate, index) => {
             const active = candidate.id === current.id;
+            const isHome = candidate.slug === "/";
             return (
               <li key={candidate.id} className="group flex items-center rounded-ed transition-colors hover:bg-ed-hover has-[button[aria-current]]:bg-ed-accent-soft">
                 <button
@@ -74,7 +90,7 @@ export default function PagesPanel() {
                   aria-current={active ? "page" : undefined}
                   className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-1.5 text-left"
                 >
-                  {candidate.slug === "/" ? (
+                  {isHome ? (
                     <Home className={`size-3.5 shrink-0 ${active ? "text-ed-accent" : "text-ed-faint"}`} aria-hidden />
                   ) : (
                     <FileText className={`size-3.5 shrink-0 ${active ? "text-ed-accent" : "text-ed-faint"}`} aria-hidden />
@@ -102,12 +118,32 @@ export default function PagesPanel() {
                   >
                     <ChevronDown className="size-3.5" aria-hidden />
                   </ToolButton>
+                  {!isHome && (
+                    <ToolButton
+                      label={`Delete ${candidate.name}`}
+                      size="sm"
+                      tone="danger"
+                      onClick={() => setPageToDelete(candidate)}
+                    >
+                      <Trash2 className="size-3.5" aria-hidden />
+                    </ToolButton>
+                  )}
                 </span>
               </li>
             );
           })}
         </ul>
       </div>
+      <ConfirmDialog
+        isOpen={pageToDelete !== null}
+        title={`Delete “${pageToDelete?.name}”?`}
+        confirmLabel="Delete page"
+        tone="danger"
+        onConfirm={removePage}
+        onCancel={() => setPageToDelete(null)}
+      >
+        The page &ldquo;{pageToDelete?.name}&rdquo; ({pageToDelete?.slug}) and its sections are removed from the draft, along with any menu links to it. The live site changes only when you publish.
+      </ConfirmDialog>
     </>
   );
 }

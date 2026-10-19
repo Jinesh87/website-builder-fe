@@ -21,6 +21,7 @@ import {
   TextAreaField,
   TextField,
 } from "./fields.tsx";
+import { MEDIA_HINT, MEDIA_SIZE } from "./media-dimensions.ts";
 
 type Props = { data: AuthData; onChange: (data: AuthData) => void };
 
@@ -222,7 +223,14 @@ function PanelEditor({ panel, onChange }: { panel: AuthPanel; onChange: (panel: 
         maxLength={400}
         rows={2}
       />
-      <ImageField label="Panel image" value={panel.image} onChange={(image) => onChange({ ...panel, image })} optional />
+      <ImageField
+        label="Panel image"
+        value={panel.image}
+        onChange={(image) => onChange({ ...panel, image })}
+        optional
+        dimensionHint={MEDIA_SIZE.authPanel}
+        hint={MEDIA_HINT.cropped}
+      />
       <ItemList<string>
         label="Highlights"
         items={panel.highlights ?? []}
@@ -282,6 +290,8 @@ function PanelEditor({ panel, onChange }: { panel: AuthPanel; onChange: (panel: 
             value={testimonial.avatar}
             onChange={(avatar) => onChange({ ...panel, testimonial: { ...testimonial, avatar } })}
             optional
+            dimensionHint={MEDIA_SIZE.avatar}
+            hint={MEDIA_HINT.avatar}
           />
         </>
       )}

@@ -17,6 +17,7 @@ import {
   TextAreaField,
   TextField,
 } from "./fields.tsx";
+import { MEDIA_HINT, MEDIA_SIZE } from "./media-dimensions.ts";
 
 function BlogPostLinkField({
   value,
@@ -267,6 +268,8 @@ export function BlogForm({
                     coverImage: coverImage || { url: "", alt: "" },
                   })
                 }
+                dimensionHint={MEDIA_SIZE.blogCover}
+                hint={MEDIA_HINT.cropped}
               />
               <TextAreaField
                 label="Excerpt summary"
@@ -364,6 +367,8 @@ export function BlogDetailForm({
           label="Cover Image"
           value={data.coverImage}
           onChange={(v) => update("coverImage", v || { url: "", alt: "" })}
+          dimensionHint={MEDIA_SIZE.blogArticleCover}
+          hint={MEDIA_HINT.cropped}
         />
         <TextField
           label="Image caption (optional)"
@@ -390,6 +395,8 @@ export function BlogDetailForm({
           label="Author Avatar"
           value={data.authorAvatar || { url: "", alt: "" }}
           onChange={(v) => update("authorAvatar", v || { url: "", alt: "" })}
+          dimensionHint={MEDIA_SIZE.avatar}
+          hint={MEDIA_HINT.avatar}
         />
         <TextAreaField
           label="Author Bio"

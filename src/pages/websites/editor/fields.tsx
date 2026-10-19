@@ -659,6 +659,7 @@ type VideoFieldProps = {
   hint?: string;
   placeholder?: string;
   optional?: boolean;
+  dimensionHint?: string;
 };
 
 export function VideoField({
@@ -668,6 +669,7 @@ export function VideoField({
   hint,
   placeholder = "https://www.youtube.com/watch?v=... or https://.../video.mp4",
   optional = true,
+  dimensionHint,
 }: VideoFieldProps) {
   const media = useContext(MediaTargetContext);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -730,9 +732,14 @@ export function VideoField({
   return (
     <div className="flex flex-col gap-3 rounded-ed-lg border border-ed-border/90 bg-ed-subtle/40 p-3 shadow-2xs">
       <div className="flex items-center justify-between">
-        <span className="text-ed-xs font-semibold text-ed-text flex items-center gap-1.5">
-          <Film className="size-3.5 text-ed-accent" />
-          {label}
+        <span className="text-ed-xs font-semibold text-ed-text flex items-center gap-1.5 flex-wrap">
+          <Film className="size-3.5 text-ed-accent shrink-0" />
+          <span>{label}</span>
+          {dimensionHint && (
+            <span className="inline-flex items-center rounded bg-brand/10 px-1.5 py-0.5 text-[10px] font-medium text-brand">
+              {dimensionHint}
+            </span>
+          )}
         </span>
         {optional && value && (
           <button
