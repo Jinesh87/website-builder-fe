@@ -31,7 +31,7 @@ export type TopupCheckout = {
   amountPaise: number;
   currency: string;
   businessName: string;
-  prefill: { name: string; email: string; contact?: string };
+  prefill: { name: string; email?: string; contact?: string };
 };
 
 export type TopupConfirmation = { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string };
@@ -122,7 +122,7 @@ export function connectsPriceInPaise(connects: number, connectsPerRupee: number)
 }
 
 type ClientRef = { id: string; businessName: string };
-type UserRef = { id: string; fullName: string; email: string } | null;
+type UserRef = { id: string; fullName: string; email: string | null } | null;
 
 export type AdminListParams = {
   search?: string;

@@ -5,7 +5,8 @@ export type UserStatus = "PENDING_VERIFICATION" | "ACTIVE" | "SUSPENDED";
 
 export type AuthUser = {
   id: string;
-  email: string;
+  email: string | null;
+  username: string | null;
   fullName: string;
   phone: string | null;
   role: UserRole;
@@ -33,9 +34,14 @@ export type SignupInput = {
 };
 
 export type LoginInput = {
-  email: string;
+  /** Email or username. */
+  identifier: string;
   password: string;
   remember: boolean;
+};
+
+export type ChangePasswordInput = {
+  newPassword: string;
 };
 
 export const authApi = {
@@ -63,4 +69,20 @@ export const authApi = {
 
   resetPassword: (token: string, password: string) =>
     request<SessionResponse>("/auth/reset-password", { method: "POST", body: { token, password } }),
+
+  changePassword: (input: ChangePasswordInput) =>
+    request<SessionResponse>("/auth/change-password", { method: "POST", body: input }),
+
+  /** An empty string clears the phone number. */
+  updatePhone: (phone: string) =>
+    request<SessionResponse>("/auth/me", { method: "PATCH", body: { phone } }).then((data) => data.user),
+
+  /** Emails a code to the new address; the email only changes after `confirmEmailChange`. */
+  requestEmailChange: (email: string) =>
+    request<VerificationDispatch>("/auth/me/email", { method: "POST", body: { email } }),
+
+  confirmEmailChange: (code: string) =>
+    request<SessionResponse>("/auth/me/email/verify", { method: "POST", body: { code } }).then((data) => data.user),
+
+  removeEmail: () => request<SessionResponse>("/auth/me/email", { method: "DELETE" }).then((data) => data.user),
 };

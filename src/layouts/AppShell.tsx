@@ -59,13 +59,13 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
   }
 
   return (
-    <div className="flex min-h-screen bg-canvas">
+    <div className="flex h-screen overflow-hidden bg-canvas">
       <aside
-        className={`sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r px-3 py-5 ${
+        className={`flex h-full w-64 shrink-0 flex-col border-r px-3 py-5 ${
           dark ? "border-transparent bg-ink text-white" : "border-line bg-surface"
         }`}
       >
-        <div className="px-2">
+        <div className="shrink-0 px-2">
           <BrandLogo tone={dark ? "light" : "dark"} />
           {caption && (
             <p
@@ -78,7 +78,7 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
           )}
         </div>
 
-        <nav aria-label="Main" className="mt-6 flex flex-1 flex-col gap-1">
+        <nav aria-label="Main" className="mt-6 flex flex-1 flex-col gap-1 overflow-y-auto pr-1">
           {nav.map(({ label, icon: Icon, to, end, activePrefixes }) =>
             to ? (
               <NavLink
@@ -91,8 +91,8 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
                   })
                 }
               >
-                <Icon className="size-4" aria-hidden />
-                {label}
+                <Icon className="size-4 shrink-0" aria-hidden />
+                <span className="truncate">{label}</span>
               </NavLink>
             ) : (
               <span
@@ -103,8 +103,8 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
                   dark ? "text-white/35" : "text-ink-muted/70"
                 }`}
               >
-                <Icon className="size-4" aria-hidden />
-                {label}
+                <Icon className="size-4 shrink-0" aria-hidden />
+                <span className="truncate">{label}</span>
                 <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wider">Soon</span>
               </span>
             ),
@@ -112,7 +112,7 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
         </nav>
 
         {user && (
-          <div className={`flex items-center gap-3 border-t px-2 pt-4 ${dark ? "border-white/10" : "border-line"}`}>
+          <div className={`mt-auto shrink-0 flex items-center gap-3 border-t px-2 pt-4 ${dark ? "border-white/10" : "border-line"}`}>
             <span
               className={`grid size-9 shrink-0 place-items-center rounded-full text-xs font-semibold ${
                 dark ? "bg-white/10 text-white" : "bg-canvas text-ink-body"
@@ -140,9 +140,9 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
         )}
       </aside>
 
-      <div className="min-w-0 flex-1">
+      <main className="min-w-0 flex-1 overflow-y-auto">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }

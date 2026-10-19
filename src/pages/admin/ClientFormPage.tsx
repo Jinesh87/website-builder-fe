@@ -1,40 +1,73 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { Button, Checkbox, Label, Spinner } from "@heroui/react";
+import { Button, Spinner } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
 import { ArrowLeft } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { adminClientsApi, type Client, type ClientDetailsInput } from "../../api/admin-clients.ts";
 import { ApiError, errorMessage } from "../../api/http.ts";
-import { validateEmail } from "../../auth/validation.ts";
+import {
+  PASSWORD_HINT,
+  USERNAME_HINT,
+  validateEmail,
+  validatePassword,
+  validateUsername,
+} from "../../auth/validation.ts";
 import { ClientStatusChip, formatDate, SOURCE_LABELS } from "../../components/admin/client-labels.tsx";
+import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextAreaInput from "../../components/ui/TextAreaInput.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 
 type Feedback = { status: "success" | "danger" | "warning"; message: string } | null;
-type FieldErrors = Partial<Record<keyof ClientDetailsInput, string>>;
+type FormState = Required<ClientDetailsInput>;
+type Credentials = { password: string; confirmPassword: string };
+type FieldErrors = Partial<Record<keyof FormState | keyof Credentials, string>>;
 type FeedbackState = { feedback?: Feedback };
 
-const EMPTY_FORM: ClientDetailsInput = { businessName: "", fullName: "", email: "", phone: "", address: "" };
+const EMPTY_FORM: FormState = { businessName: "", fullName: "", email: "", phone: "", address: "", username: "" };
+const EMPTY_CREDENTIALS: Credentials = { password: "", confirmPassword: "" };
 
-function toForm(client: Client): ClientDetailsInput {
+/** Server error codes that belong to a single form field. */
+const FIELD_ERROR_CODES: Record<string, keyof FieldErrors> = {
+  EMAIL_TAKEN: "email",
+  EMAIL_REQUIRED: "email",
+  USERNAME_TAKEN: "username",
+  USERNAME_NOT_ALLOWED: "username",
+};
+
+function toForm(client: Client): FormState {
   return {
     businessName: client.businessName,
     fullName: client.owner?.fullName ?? "",
     email: client.owner?.email ?? "",
     phone: client.owner?.phone ?? "",
     address: client.address ?? "",
+    username: client.owner?.username ?? "",
   };
 }
 
-function validate(form: ClientDetailsInput): FieldErrors {
+/** `usesUsername`: the client logs in with a username, so email is optional. */
+function validate(form: FormState, usesUsername: boolean): FieldErrors {
   return {
     businessName: form.businessName.trim().length < 2 ? "Enter the business name" : undefined,
     fullName: form.fullName.trim().length < 2 ? "Enter the contact person's name" : undefined,
-    email: validateEmail(form.email),
+    email: form.email.trim() || !usesUsername ? validateEmail(form.email) : undefined,
+    username: usesUsername ? validateUsername(form.username) : undefined,
     phone:
       form.phone.trim() && !/^\+?[0-9 ()-]{7,20}$/.test(form.phone.trim()) ? "Enter a valid phone number" : undefined,
   };
+}
+
+function validateCredentials({ password, confirmPassword }: Credentials): FieldErrors {
+  return {
+    password: validatePassword(password),
+    confirmPassword: confirmPassword !== password ? "Passwords don't match" : undefined,
+  };
+}
+
+function apiFieldErrors(err: ApiError): FieldErrors {
+  const field = FIELD_ERROR_CODES[err.code];
+  return field ? { [field]: err.message } : err.fieldErrors();
 }
 
 export default function ClientFormPage() {
@@ -50,8 +83,8 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
 
   const [client, setClient] = useState<Client | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [form, setForm] = useState<ClientDetailsInput>(EMPTY_FORM);
-  const [sendInvite, setSendInvite] = useState(true);
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [credentials, setCredentials] = useState<Credentials>(EMPTY_CREDENTIALS);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>((location.state as FeedbackState | null)?.feedback ?? null);
@@ -72,34 +105,43 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
     };
   }, [clientId]);
 
-  function update<K extends keyof ClientDetailsInput>(key: K) {
-    return (value: ClientDetailsInput[K]) => setForm((current) => ({ ...current, [key]: value }));
+  // New clients always get admin-issued credentials; existing ones keep the login they were created with.
+  const usesUsername = isNew || Boolean(client?.owner?.username);
+
+  function update<K extends keyof FormState>(key: K) {
+    return (value: FormState[K]) => setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateCredential(key: keyof Credentials) {
+    return (value: string) => setCredentials((current) => ({ ...current, [key]: value }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const nextErrors = validate(form);
+    const nextErrors = { ...validate(form, usesUsername), ...(isNew ? validateCredentials(credentials) : {}) };
     setErrors(nextErrors);
     setFeedback(null);
     if (Object.values(nextErrors).some(Boolean)) return;
 
+    const username = form.username.trim().toLowerCase();
     const input: ClientDetailsInput = {
       businessName: form.businessName.trim(),
       fullName: form.fullName.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
       address: form.address.trim(),
+      ...(usesUsername ? { username } : {}),
     };
 
     setSaving(true);
     try {
       if (isNew) {
-        const result = await adminClientsApi.create({ ...input, sendInvite });
-        const created: Feedback =
-          result.inviteSent === false
-            ? { status: "warning", message: "Client created, but the invite email couldn't be sent. Check Email settings, then use “Resend invite”." }
-            : { status: "success", message: result.inviteSent ? `Client created and invite sent to ${input.email}.` : "Client created." };
-        navigate(`/admin/clients/${result.client.id}`, { replace: true, state: { feedback: created } satisfies FeedbackState });
+        const created = await adminClientsApi.create({ ...input, username, password: credentials.password });
+        const feedback: Feedback = {
+          status: "success",
+          message: `Client created. They can log in now with the username “${created.owner?.username}” and the password you set.`,
+        };
+        navigate(`/admin/clients/${created.id}`, { replace: true, state: { feedback } satisfies FeedbackState });
         return;
       }
       const saved = await adminClientsApi.update(clientId, input);
@@ -107,9 +149,7 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
       setForm(toForm(saved));
       setFeedback({ status: "success", message: "Client saved." });
     } catch (err) {
-      if (err instanceof ApiError) {
-        setErrors(err.code === "EMAIL_TAKEN" ? { email: err.message } : err.fieldErrors());
-      }
+      if (err instanceof ApiError) setErrors(apiFieldErrors(err));
       setFeedback({ status: "danger", message: errorMessage(err) });
     } finally {
       setSaving(false);
@@ -168,6 +208,7 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
                 onChange={update("businessName")}
                 error={errors.businessName}
                 autoFocus={isNew}
+                isRequired
               />
               <TextInput
                 label="Contact person"
@@ -175,18 +216,38 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
                 value={form.fullName}
                 onChange={update("fullName")}
                 error={errors.fullName}
+                isRequired
               />
+              {usesUsername && !isNew && (
+                <TextInput
+                  label="Username (login)"
+                  name="username"
+                  autoComplete="off"
+                  value={form.username}
+                  onChange={update("username")}
+                  error={errors.username}
+                  description={USERNAME_HINT}
+                  isRequired
+                />
+              )}
               <TextInput
-                label="Email (login)"
+                label={usesUsername ? "Email (optional)" : "Email (login)"}
                 name="email"
                 type="email"
                 value={form.email}
                 onChange={update("email")}
                 error={errors.email}
-                description={isNew ? undefined : "Changing it cancels any pending invite link."}
+                isRequired={!usesUsername}
+                description={
+                  usesUsername
+                    ? "Used for contact form messages and receipts. Not verified."
+                    : isNew
+                      ? undefined
+                      : "Changing it cancels any pending invite link."
+                }
               />
               <TextInput
-                label="Phone"
+                label="Phone (optional)"
                 name="phone"
                 type="tel"
                 placeholder="+91"
@@ -196,7 +257,7 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
               />
               <div className="sm:col-span-2">
                 <TextAreaInput
-                  label="Address"
+                  label="Address (optional)"
                   name="address"
                   value={form.address}
                   onChange={update("address")}
@@ -208,18 +269,46 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
 
           {isNew && (
             <section className="rounded-xl border border-line bg-surface p-6">
-              <h2 className="text-base font-semibold text-ink">Account access</h2>
+              <h2 className="text-base font-semibold text-ink">Login credentials</h2>
               <p className="mt-1 text-sm text-ink-body">
-                The client logs in with the email above after setting their own password.
+                The account is active right away. Share these details with the client privately; no email or phone
+                verification is needed.
               </p>
-              <Checkbox className="mt-4" isSelected={sendInvite} onChange={setSendInvite}>
-                <Checkbox.Content>
-                  <Checkbox.Control>
-                    <Checkbox.Indicator />
-                  </Checkbox.Control>
-                  <Label className="text-sm text-ink">Send invite email to set password (link valid for 72 hours)</Label>
-                </Checkbox.Content>
-              </Checkbox>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <TextInput
+                    label="Username"
+                    name="username"
+                    autoComplete="off"
+                    value={form.username}
+                    onChange={update("username")}
+                    error={errors.username}
+                    description={USERNAME_HINT}
+                    isRequired
+                  />
+                </div>
+                <TextInput
+                  label="Password"
+                  name="password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={credentials.password}
+                  onChange={updateCredential("password")}
+                  error={errors.password}
+                  description={PASSWORD_HINT}
+                  isRequired
+                />
+                <TextInput
+                  label="Confirm password"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  value={credentials.confirmPassword}
+                  onChange={updateCredential("confirmPassword")}
+                  error={errors.confirmPassword}
+                  isRequired
+                />
+              </div>
             </section>
           )}
         </div>
@@ -298,7 +387,10 @@ function ClientSidebar({
           </SummaryRow>
           <SummaryRow label="Source">{SOURCE_LABELS[client.source]}</SummaryRow>
           <SummaryRow label="Joined">{formatDate(client.createdAt)}</SummaryRow>
-          <SummaryRow label="Email verified">{owner?.emailVerified ? "Yes" : "No"}</SummaryRow>
+          {owner?.username && <SummaryRow label="Username">@{owner.username}</SummaryRow>}
+          <SummaryRow label="Email verified">
+            {owner?.username ? "Not required" : owner?.emailVerified ? "Yes" : "No"}
+          </SummaryRow>
           <SummaryRow label="Last login">{owner?.lastSignedInAt ? formatDate(owner.lastSignedInAt) : "Never"}</SummaryRow>
         </dl>
         {owner?.status === "PENDING_VERIFICATION" && (
@@ -306,7 +398,15 @@ function ClientSidebar({
             {client.source === "ADMIN_CREATED" ? "Resend invite" : "Resend verification code"}
           </Button>
         )}
+        <Link
+          to={`/websites/new?clientId=${encodeURIComponent(client.id)}`}
+          className={`${buttonVariants({ variant: "outline", size: "sm", fullWidth: true })} mt-3`}
+        >
+          Create website for this client
+        </Link>
       </section>
+
+      {owner?.username && <ResetPasswordSection client={client} onChange={onChange} onFeedback={onFeedback} />}
 
       {owner && (
         <section className="rounded-xl border border-red-200 bg-surface p-5">
@@ -344,5 +444,92 @@ function ClientSidebar({
         </section>
       )}
     </aside>
+  );
+}
+
+/** Admin-issued logins have no reset email, so the admin sets a new password here. */
+function ResetPasswordSection({
+  client,
+  onChange,
+  onFeedback,
+}: {
+  client: Client;
+  onChange: (client: Client) => void;
+  onFeedback: (feedback: Feedback) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [credentials, setCredentials] = useState<Credentials>(EMPTY_CREDENTIALS);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [saving, setSaving] = useState(false);
+
+  function close() {
+    setOpen(false);
+    setCredentials(EMPTY_CREDENTIALS);
+    setErrors({});
+  }
+
+  async function save() {
+    const nextErrors = validateCredentials(credentials);
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) return;
+
+    setSaving(true);
+    try {
+      onChange(await adminClientsApi.setPassword(client.id, credentials.password));
+      onFeedback({ status: "success", message: "Password updated. The client was signed out of every device." });
+      close();
+    } catch (err) {
+      if (err instanceof ApiError) setErrors(err.fieldErrors());
+      onFeedback({ status: "danger", message: errorMessage(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-line bg-surface p-5">
+      <h2 className="text-base font-semibold text-ink">Password</h2>
+      <p className="mt-2 text-xs leading-relaxed text-ink-body">
+        This client logs in with a username, so they can't reset their password by email. Set a new one here and share
+        it privately.
+      </p>
+      <Button fullWidth variant="outline" size="sm" className="mt-4" onPress={() => setOpen(true)}>
+        Reset password
+      </Button>
+
+      <CommonModal
+        isOpen={open}
+        onClose={close}
+        title="Reset password"
+        subtitle={`For @${client.owner?.username}`}
+        primaryAction={{ label: "Save password", onPress: save, isPending: saving }}
+        secondaryAction={{ label: "Cancel", onPress: close }}
+      >
+        <div className="flex flex-col gap-4">
+          <TextInput
+            label="New password"
+            name="newPassword"
+            type="password"
+            autoComplete="new-password"
+            value={credentials.password}
+            onChange={(password) => setCredentials((current) => ({ ...current, password }))}
+            error={errors.password}
+            description={PASSWORD_HINT}
+            autoFocus
+            isRequired
+          />
+          <TextInput
+            label="Confirm password"
+            name="confirmNewPassword"
+            type="password"
+            autoComplete="new-password"
+            value={credentials.confirmPassword}
+            onChange={(confirmPassword) => setCredentials((current) => ({ ...current, confirmPassword }))}
+            error={errors.confirmPassword}
+            isRequired
+          />
+        </div>
+      </CommonModal>
+    </section>
   );
 }

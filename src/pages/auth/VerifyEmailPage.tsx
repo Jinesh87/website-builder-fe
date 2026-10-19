@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button, InputOTP, REGEXP_ONLY_DIGITS } from "@heroui/react";
 import { Check, Mail } from "lucide-react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import { ApiError, errorMessage } from "../../api/http.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { homeForRole } from "../../auth/home-for-role.ts";
 import FormAlert from "../../components/ui/FormAlert.tsx";
+import { formatCountdown, useCountdown } from "../../hooks/use-countdown.ts";
 import AuthCardLayout from "../../layouts/AuthCardLayout.tsx";
 
 export type VerifyEmailState = {
@@ -17,21 +18,6 @@ export type VerifyEmailState = {
 };
 
 const CODE_LENGTH = 6;
-
-function formatCountdown(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
-function useCountdown(initialSeconds: number) {
-  const [seconds, setSeconds] = useState(initialSeconds);
-  useEffect(() => {
-    if (seconds <= 0) return;
-    const timer = window.setTimeout(() => setSeconds((value) => value - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [seconds]);
-  return [seconds, setSeconds] as const;
-}
 
 export default function VerifyEmailPage() {
   const state = useLocation().state as VerifyEmailState | null;
