@@ -161,4 +161,26 @@ describe("link-validator", () => {
       expect(reconciled[3].href).toBe("https://docs.example.com");
     });
   });
+
+  describe("SAFE_IMAGE_URL", () => {
+    it("accepts https and relative image URLs", async () => {
+      const { SAFE_IMAGE_URL } = await import("../../../pages/websites/editor/fields.tsx");
+      expect(SAFE_IMAGE_URL.test("https://images.unsplash.com/photo-123")).toBe(true);
+      expect(SAFE_IMAGE_URL.test("/assets/logo.png")).toBe(true);
+    });
+
+    it("accepts valid SVG and raster data URIs", async () => {
+      const { SAFE_IMAGE_URL } = await import("../../../pages/websites/editor/fields.tsx");
+      expect(SAFE_IMAGE_URL.test("data:image/svg+xml;charset=utf-8,%3Csvg%3E%3C/svg%3E")).toBe(true);
+      expect(SAFE_IMAGE_URL.test("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")).toBe(true);
+      expect(SAFE_IMAGE_URL.test("data:image/webp;base64,UklGRkAAAABXRUJQVlA4IDQAAADwAQCdASoBAAEAAQAcJaACdLoB+AA/v3AAAA==")).toBe(true);
+    });
+
+    it("rejects dangerous or non-image URIs", async () => {
+      const { SAFE_IMAGE_URL } = await import("../../../pages/websites/editor/fields.tsx");
+      expect(SAFE_IMAGE_URL.test("javascript:alert(1)")).toBe(false);
+      expect(SAFE_IMAGE_URL.test("data:text/html,<script>alert(1)</script>")).toBe(false);
+      expect(SAFE_IMAGE_URL.test("//cdn.malicious.com/hack")).toBe(false);
+    });
+  });
 });

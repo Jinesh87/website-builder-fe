@@ -58,15 +58,17 @@ const TEMPLATE_SITES: Readonly<Record<string, TemplateSite>> = {
   "2157": { key: "community-hub-emerald", site: COMMUNITY_HUB_SITE },
 };
 
-function find(templateId: string): TemplateSite | null {
-  return Object.hasOwn(TEMPLATE_SITES, templateId) ? TEMPLATE_SITES[templateId] : null;
+function find(templateIdOrKey: string): TemplateSite | null {
+  if (Object.hasOwn(TEMPLATE_SITES, templateIdOrKey)) return TEMPLATE_SITES[templateIdOrKey];
+  return Object.values(TEMPLATE_SITES).find((candidate) => candidate.key === templateIdOrKey) ?? null;
 }
 
-export function getTemplateSite(templateId: string): SiteData | null {
-  return find(templateId)?.site ?? null;
+export function getTemplateSite(templateIdOrKey: string): SiteData | null {
+  return find(templateIdOrKey)?.site ?? null;
 }
 
 /** Backend template key to create a website from, or null when the template has no seeded site. */
-export function getTemplateKey(templateId: string): string | null {
-  return find(templateId)?.key ?? null;
+export function getTemplateKey(templateIdOrKey: string): string | null {
+  return find(templateIdOrKey)?.key ?? null;
 }
+

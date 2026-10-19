@@ -1,11 +1,14 @@
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
 import { buildPages, photo, section } from "./build.ts";
+import { VIDEO_PRODUCTION_LOGO } from "./logos.ts";
 
 const NAME = "Velvet Films";
 
 const header: HeaderData = {
   design: "minimalist",
   siteName: NAME,
+  logo: VIDEO_PRODUCTION_LOGO,
+  logoDisplay: "logo_only",
   menu: [
     { label: "Home", href: "/" },
     { label: "Portfolio", href: "/portfolio" },
@@ -20,6 +23,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "split",
   siteName: NAME,
+  logo: VIDEO_PRODUCTION_LOGO,
   tagline: "Brand films, ads and social video",
   description: "A boutique production company making videos people actually watch.",
   columns: [

@@ -118,7 +118,7 @@ interface TemplateFrameProps extends Omit<MiniSiteProps, "t" | "mobile" | "style
 }
 
 const homeMarkupCache = new Map<string, string>();
-const MARKUP_VERSION = "2026-v6";
+const MARKUP_VERSION = "2026-v9";
 
 /**
  * Static HTML of a template's real home page. Rendered as markup rather than live

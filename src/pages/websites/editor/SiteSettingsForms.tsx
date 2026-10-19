@@ -565,10 +565,21 @@ export function HeaderForm({
             })
           }
         />
+        <div className="rounded-ed border border-brand/20 bg-brand/5 p-2.5 text-ed-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-brand">
+            <AiSparklesIcon className="size-3.5" />
+            Recommended logo dimension
+          </div>
+          <p className="mt-1 text-[11px] leading-relaxed text-ed-muted">
+            Upload an image of <b>200 × 50 px</b> to <b>250 × 60 px</b> (4:1 to 5:1 horizontal ratio, rendered at ~38px height) or <b>60 × 60 px</b> (square icon). Use transparent <b>PNG, SVG, or WebP</b> for maximum sharpness.
+          </p>
+        </div>
         <ImageField
           label="Logo image"
           value={header.logo}
           onChange={(logo) => onChange({ ...header, logo })}
+          dimensionHint="200 × 50 px (horizontal) or 60 × 60 px (square)"
+          hint="Horizontal transparent PNG, SVG, or WebP recommended"
           optional
         />
       </FormGroup>
@@ -780,10 +791,21 @@ export function FooterForm({
             })
           }
         />
+        <div className="rounded-ed border border-brand/20 bg-brand/5 p-2.5 text-ed-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-brand">
+            <AiSparklesIcon className="size-3.5" />
+            Recommended footer logo dimension
+          </div>
+          <p className="mt-1 text-[11px] leading-relaxed text-ed-muted">
+            Recommended size: <b>200 × 50 px</b> to <b>250 × 60 px</b> (max height ~38px). Transparent <b>PNG, SVG, or WebP</b> recommended.
+          </p>
+        </div>
         <ImageField
           label="Footer logo image"
           value={footer.logo}
           onChange={(logo) => onChange({ ...footer, logo })}
+          dimensionHint="200 × 50 px (horizontal) or 60 × 60 px (square)"
+          hint="Horizontal transparent PNG, SVG, or WebP recommended"
           optional
         />
       </FormGroup>

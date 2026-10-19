@@ -52,14 +52,19 @@ export default function WebsitePreviewPage() {
 
   function openLink(href: string) {
     if (!href || href === "#") return;
-    const clean = href.startsWith("/") ? href : `/${href}`;
-    const target = pages.find(
+    const clean = href.split("?")[0].split("#")[0].trim();
+    const withSlash = clean.startsWith("/") ? clean : `/${clean}`;
+    let target = pages.find(
       (candidate) =>
         candidate.slug === clean ||
-        candidate.slug === href ||
+        candidate.slug === withSlash ||
         candidate.id === href ||
-        candidate.slug.replace(/^\//, "") === href.replace(/^\//, ""),
+        candidate.slug.replace(/^\//, "").toLowerCase() === clean.replace(/^\//, "").toLowerCase() ||
+        candidate.name.toLowerCase() === clean.replace(/^\//, "").toLowerCase(),
     );
+    if (!target && (clean.includes("privacy") || clean.includes("terms") || clean.includes("disclaimer") || clean.includes("legal") || clean.includes("support") || clean.includes("faq"))) {
+      target = pages.find((candidate) => candidate.slug === "/contact" || candidate.slug === "/about");
+    }
     if (target) setPageId(target.id);
   }
 

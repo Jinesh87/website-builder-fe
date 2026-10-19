@@ -1,11 +1,14 @@
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
 import { buildPages, photo, section } from "./build.ts";
+import { TECH_ACADEMY_LOGO } from "./logos.ts";
 
 const NAME = "Quantum Tech Academy";
 
 const header: HeaderData = {
   design: "glass-dock",
   siteName: NAME,
+  logo: TECH_ACADEMY_LOGO,
+  logoDisplay: "logo_only",
   menu: [
     { label: "Curriculum", href: "/courses" },
     { label: "Admissions", href: "/admissions" },
@@ -21,6 +24,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "cta-banner",
   siteName: NAME,
+  logo: TECH_ACADEMY_LOGO,
   description:
     "Quantum Tech Academy is a next-generation engineering fellowship training senior AI researchers, distributed systems architects, and modern engineering leaders.",
   ctaBanner: {

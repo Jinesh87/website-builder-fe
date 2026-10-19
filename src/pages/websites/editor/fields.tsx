@@ -24,7 +24,9 @@ import type { ImageRef, LinkRef } from "../../../site-kit/index.ts";
 
 const SAFE_HREF =
   /^(https?:\/\/\S+|mailto:\S+|tel:[+0-9() -]+|\/(?!\/)\S*|#\S*)$/i;
-const SAFE_IMAGE_URL = /^(https?:\/\/\S+|\/(?!\/)\S*)$/i;
+export const SAFE_IMAGE_URL =
+  /^(https?:\/\/\S+|\/(?!\/)\S*|data:image\/(?:png|jpe?g|webp|gif|svg\+xml|avif)(?:;[a-z0-9=_-]+)*;?(?:base64)?,[\s\S]*)$/i;
+
 
 const inputClass =
   "h-8 w-full rounded-ed border border-ed-border bg-ed-panel px-2.5 text-ed-sm text-ed-text placeholder:text-ed-faint shadow-ed-xs transition-all duration-150 hover:border-ed-border-strong focus:border-ed-accent focus:bg-ed-panel focus:outline-none focus:ring-2 focus:ring-ed-accent/15 aria-invalid:border-ed-danger aria-invalid:focus:ring-ed-danger/15 disabled:bg-ed-subtle disabled:text-ed-muted disabled:cursor-not-allowed";
@@ -372,6 +374,8 @@ type ImageFieldProps = {
   onChange: (value: ImageRef | undefined) => void;
   /** Optional images can be removed entirely. */
   optional?: boolean;
+  dimensionHint?: string;
+  hint?: string;
 };
 
 export function ImageField({
@@ -379,6 +383,8 @@ export function ImageField({
   value,
   onChange,
   optional = false,
+  dimensionHint,
+  hint,
 }: ImageFieldProps) {
   const media = useContext(MediaTargetContext);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -392,9 +398,10 @@ export function ImageField({
   } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const image = value ?? { url: "", alt: "" };
+  const isDataUri = Boolean(image.url && image.url.startsWith("data:image/"));
   const urlError =
     image.url && !SAFE_IMAGE_URL.test(image.url.trim())
-      ? "Use an https:// image link"
+      ? "Use an https:// link or upload an image"
       : undefined;
   const update = (patch: Partial<ImageRef>) => {
     const next = { ...image, ...patch };
@@ -456,20 +463,28 @@ export function ImageField({
 
   return (
     <div className="flex flex-col gap-3 rounded-ed-lg border border-ed-border/90 bg-ed-subtle/40 p-3 shadow-2xs">
-      <div className="flex items-center justify-between">
-        <span className="text-ed-xs font-semibold text-ed-text flex items-center gap-1.5">
-          <Images className="size-3.5 text-ed-accent" />
-          {label}
-        </span>
-        {optional && value && (
-          <button
-            type="button"
-            onClick={() => onChange(undefined)}
-            className="text-[11px] font-medium text-ed-danger hover:underline"
-          >
-            Remove image
-          </button>
-        )}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <span className="text-ed-xs font-semibold text-ed-text flex items-center gap-1.5 flex-wrap">
+            <Images className="size-3.5 text-ed-accent shrink-0" />
+            <span>{label}</span>
+            {dimensionHint && (
+              <span className="inline-flex items-center rounded bg-brand/10 px-1.5 py-0.5 text-[10px] font-medium text-brand">
+                {dimensionHint}
+              </span>
+            )}
+          </span>
+          {optional && value && (
+            <button
+              type="button"
+              onClick={() => onChange(undefined)}
+              className="text-[11px] font-medium text-ed-danger hover:underline cursor-pointer"
+            >
+              Remove image
+            </button>
+          )}
+        </div>
+        {hint && <p className="text-[11px] text-ed-muted leading-tight">{hint}</p>}
       </div>
 
       {/* Image Thumbnail with Click-to-Lightbox & Action Overlay */}
@@ -478,7 +493,7 @@ export function ImageField({
           <img
             src={image.url}
             alt={image.alt || label}
-            className="h-28 w-full object-cover transition-transform duration-200 group-hover/preview:scale-105 cursor-pointer"
+            className={`h-28 w-full ${isDataUri || label.toLowerCase().includes("logo") ? "object-contain p-3 bg-white/75 dark:bg-black/40" : "object-cover"} transition-transform duration-200 group-hover/preview:scale-105 cursor-pointer`}
             onClick={() => setLightboxOpen(true)}
           />
 
@@ -594,17 +609,38 @@ export function ImageField({
           />
         </Suspense>
       )}
-      <TextField
-        label="Image link"
-        type="url"
-        value={image.url}
-        onChange={(url) => update({ url })}
-        placeholder="https://…"
-        hint={media ? "Upload, choose from your library, or paste a link." : "Paste a link to an image."}
-        error={urlError}
-        required={!optional}
-        maxLength={2048}
-      />
+      {isDataUri ? (
+        <div className="flex flex-col gap-1.5 rounded-ed border border-brand/20 bg-brand/5 p-2.5 text-ed-xs">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 font-medium text-brand">
+              <Check className="size-3.5" />
+              <span>{image.url.includes("svg") ? "Vector SVG Logo (Template asset)" : "Embedded Image"}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => update({ url: "" })}
+              className="text-[11px] font-medium text-ed-danger hover:underline cursor-pointer"
+            >
+              Change / Clear
+            </button>
+          </div>
+          <p className="text-[11px] leading-relaxed text-ed-muted">
+            This is an integrated vector asset from the template. You can upload a new image or paste a link to replace it.
+          </p>
+        </div>
+      ) : (
+        <TextField
+          label="Image link"
+          type="text"
+          value={image.url}
+          onChange={(url) => update({ url })}
+          placeholder="https://…"
+          hint={media ? "Upload, choose from your library, or paste a link." : "Paste a link to an image."}
+          error={urlError}
+          required={!optional}
+          maxLength={65536}
+        />
+      )}
       <TextField
         label="Description (alt text)"
         value={image.alt}

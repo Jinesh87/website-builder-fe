@@ -71,9 +71,20 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
             links: [
               { label: "Home", href: "/" },
               { label: "About", href: "/about" },
+              { label: "Services", href: "/services" },
               { label: "Contact", href: "/contact" },
             ],
           },
+        ],
+        menu: [
+          { label: "Home", href: "/" },
+          { label: "About", href: "/about" },
+          { label: "Services", href: "/services" },
+          { label: "Contact", href: "/contact" },
+        ],
+        legalLinks: [
+          { label: "Privacy Policy", href: "/contact" },
+          { label: "Terms of Service", href: "/contact" },
         ],
         social: [],
       }),
@@ -1147,34 +1158,35 @@ export const SECTION_PRESETS: SectionPreset[] = [
             "Quality goods delivered worldwide. Dedicated customer support 24/7.",
           columns: [
             {
-              title: "Categories",
+              title: "Navigation",
               links: [
-                { label: "Outdoors", href: "/outdoors" },
-                { label: "Jewellery", href: "/jewellery" },
-                { label: "Footwear", href: "/footwear" },
-                { label: "Men", href: "/men" },
-                { label: "Women", href: "/women" },
+                { label: "Home", href: "/" },
+                { label: "About us", href: "/about" },
+                { label: "Services", href: "/services" },
+                { label: "Contact", href: "/contact" },
               ],
             },
             {
-              title: "Information",
+              title: "Company",
               links: [
-                { label: "Specials", href: "/specials" },
-                { label: "New Products", href: "/new" },
-                { label: "Best Sellers", href: "/bestsellers" },
-                { label: "Our Stores", href: "/stores" },
-                { label: "Contact Us", href: "/contact" },
+                { label: "About our brand", href: "/about" },
+                { label: "Featured services", href: "/services" },
+                { label: "Book appointment", href: "/contact" },
               ],
             },
             {
-              title: "My Account",
+              title: "Help & Support",
               links: [
-                { label: "My Orders", href: "/orders" },
-                { label: "My Credit Slips", href: "/credit-slips" },
-                { label: "My Addresses", href: "/addresses" },
-                { label: "My Personal Info", href: "/account" },
+                { label: "Contact support", href: "/contact" },
+                { label: "Our locations", href: "/contact" },
               ],
             },
+          ],
+          menu: [
+            { label: "Home", href: "/" },
+            { label: "About", href: "/about" },
+            { label: "Services", href: "/services" },
+            { label: "Contact", href: "/contact" },
           ],
           contact: {
             title: "Contact Us",
@@ -1193,8 +1205,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
             methods: ["paypal", "amex", "discover", "mastercard", "visa"],
           },
           legalLinks: [
-            { label: "Privacy Policy", href: "/privacy" },
-            { label: "Terms of Service", href: "/terms" },
+            { label: "Privacy Policy", href: "/contact" },
+            { label: "Terms of Service", href: "/contact" },
           ],
           copyright: "© 2026 YourStore. All rights reserved.",
         },
@@ -1214,12 +1226,21 @@ export const SECTION_PRESETS: SectionPreset[] = [
           siteName: "YOURSTORE",
           tagline: "Online Store",
           menu: [
-            { label: "Woman", href: "/woman" },
-            { label: "Man", href: "/man" },
-            { label: "Lookbook", href: "/lookbook" },
-            { label: "Sale", href: "/sale" },
-            { label: "Blog", href: "/blog" },
+            { label: "Home", href: "/" },
+            { label: "About us", href: "/about" },
+            { label: "Services", href: "/services" },
             { label: "Contact", href: "/contact" },
+          ],
+          columns: [
+            {
+              title: "Navigation",
+              links: [
+                { label: "Home", href: "/" },
+                { label: "About", href: "/about" },
+                { label: "Services", href: "/services" },
+                { label: "Contact", href: "/contact" },
+              ],
+            },
           ],
           newsletter: {
             enabled: true,
@@ -1243,6 +1264,10 @@ export const SECTION_PRESETS: SectionPreset[] = [
             enabled: true,
             methods: ["paypal", "amex", "discover", "mastercard", "visa"],
           },
+          legalLinks: [
+            { label: "Privacy Policy", href: "/contact" },
+            { label: "Terms of Service", href: "/contact" },
+          ],
           copyright: "© 2026 YourStore. All rights reserved.",
         },
       }),
@@ -1261,12 +1286,21 @@ export const SECTION_PRESETS: SectionPreset[] = [
           siteName: "YOURSTORE",
           tagline: "Online Store",
           menu: [
-            { label: "Woman", href: "/woman" },
-            { label: "Man", href: "/man" },
-            { label: "Lookbook", href: "/lookbook" },
-            { label: "Sale", href: "/sale" },
-            { label: "Blog", href: "/blog" },
+            { label: "Home", href: "/" },
+            { label: "About us", href: "/about" },
+            { label: "Services", href: "/services" },
             { label: "Contact", href: "/contact" },
+          ],
+          columns: [
+            {
+              title: "Navigation",
+              links: [
+                { label: "Home", href: "/" },
+                { label: "About us", href: "/about" },
+                { label: "Services", href: "/services" },
+                { label: "Contact", href: "/contact" },
+              ],
+            },
           ],
           contact: {
             address: "42 Avenue Des Champs-Elysées, Paris",
@@ -1282,6 +1316,10 @@ export const SECTION_PRESETS: SectionPreset[] = [
             enabled: true,
             methods: ["paypal", "amex", "discover", "mastercard", "visa"],
           },
+          legalLinks: [
+            { label: "Privacy Policy", href: "/contact" },
+            { label: "Terms of Service", href: "/contact" },
+          ],
           copyright: "Design by Web builder · All Right Reserved",
         },
       }),
@@ -1299,11 +1337,9 @@ export const SECTION_PRESETS: SectionPreset[] = [
           design: "inline",
           siteName: "YOURSTORE",
           menu: [
-            { label: "Woman", href: "/woman" },
-            { label: "Man", href: "/man" },
-            { label: "Lookbook", href: "/lookbook" },
-            { label: "Sale", href: "/sale" },
-            { label: "Blog", href: "/blog" },
+            { label: "Home", href: "/" },
+            { label: "About us", href: "/about" },
+            { label: "Services", href: "/services" },
             { label: "Contact", href: "/contact" },
           ],
           social: [
@@ -1311,6 +1347,10 @@ export const SECTION_PRESETS: SectionPreset[] = [
             { label: "Twitter", href: "https://twitter.com" },
             { label: "Instagram", href: "https://instagram.com" },
             { label: "Pinterest", href: "https://pinterest.com" },
+          ],
+          legalLinks: [
+            { label: "Privacy Policy", href: "/contact" },
+            { label: "Terms of Service", href: "/contact" },
           ],
           copyright: "© 2026 YourStore. All rights reserved.",
         },
@@ -1330,11 +1370,9 @@ export const SECTION_PRESETS: SectionPreset[] = [
           siteName: "YOURSTORE",
           tagline: "Online Store",
           menu: [
-            { label: "Woman", href: "/woman" },
-            { label: "Man", href: "/man" },
-            { label: "Lookbook", href: "/lookbook" },
-            { label: "Sale", href: "/sale" },
-            { label: "Blog", href: "/blog" },
+            { label: "Home", href: "/" },
+            { label: "About us", href: "/about" },
+            { label: "Services", href: "/services" },
             { label: "Contact", href: "/contact" },
           ],
           social: [
@@ -1348,6 +1386,10 @@ export const SECTION_PRESETS: SectionPreset[] = [
             phone: "0123-456-789",
             email: "sales@yourcompany.com",
           },
+          legalLinks: [
+            { label: "Privacy Policy", href: "/contact" },
+            { label: "Terms of Service", href: "/contact" },
+          ],
           copyright: "© 2026 YourStore. All rights reserved.",
         },
       }),
@@ -1369,26 +1411,33 @@ export const SECTION_PRESETS: SectionPreset[] = [
             heading: "Ready to grow your online store?",
             subheading:
               "Join over 10,000+ happy merchants and launch in minutes.",
-            primaryCta: { label: "Get started free", href: "/signup" },
-            secondaryCta: { label: "Book a demo", href: "/demo" },
+            primaryCta: { label: "Contact us", href: "/contact" },
+            secondaryCta: { label: "Learn more", href: "/about" },
           },
           columns: [
             {
-              title: "Product",
+              title: "Explore",
               links: [
-                { label: "Features", href: "/features" },
-                { label: "Integrations", href: "/integrations" },
-                { label: "Pricing", href: "/pricing" },
+                { label: "Home", href: "/" },
+                { label: "About us", href: "/about" },
+                { label: "Services", href: "/services" },
+                { label: "Contact", href: "/contact" },
               ],
             },
             {
               title: "Company",
               links: [
-                { label: "About us", href: "/about" },
-                { label: "Blog", href: "/blog" },
-                { label: "Careers", href: "/careers" },
+                { label: "About our team", href: "/about" },
+                { label: "Our offerings", href: "/services" },
+                { label: "Get in touch", href: "/contact" },
               ],
             },
+          ],
+          menu: [
+            { label: "Home", href: "/" },
+            { label: "About", href: "/about" },
+            { label: "Services", href: "/services" },
+            { label: "Contact", href: "/contact" },
           ],
           social: [
             { label: "Twitter", href: "https://twitter.com" },
@@ -1396,8 +1445,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
             { label: "LinkedIn", href: "https://linkedin.com" },
           ],
           legalLinks: [
-            { label: "Privacy Policy", href: "/privacy" },
-            { label: "Terms", href: "/terms" },
+            { label: "Privacy Policy", href: "/contact" },
+            { label: "Terms of Service", href: "/contact" },
           ],
           copyright: "© 2026 Acme Inc. All rights reserved.",
         },

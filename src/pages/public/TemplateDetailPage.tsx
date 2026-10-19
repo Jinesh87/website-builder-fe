@@ -443,7 +443,19 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
   }, [selectedPage]);
 
   const handleSiteLinkClick = (href: string) => {
-    const target = site?.pages.find((page) => page.slug === href);
+    if (!href || href === "#") return;
+    const clean = href.split("?")[0].split("#")[0].trim();
+    const withSlash = clean.startsWith("/") ? clean : `/${clean}`;
+    let target = site?.pages.find(
+      (page) =>
+        page.slug === clean ||
+        page.slug === withSlash ||
+        page.slug.replace(/^\//, "").toLowerCase() === clean.replace(/^\//, "").toLowerCase() ||
+        page.name.toLowerCase() === clean.replace(/^\//, "").toLowerCase(),
+    );
+    if (!target && (clean.includes("privacy") || clean.includes("terms") || clean.includes("disclaimer") || clean.includes("legal") || clean.includes("support") || clean.includes("faq"))) {
+      target = site?.pages.find((page) => page.slug === "/contact" || page.slug === "/about");
+    }
     if (target) setSelectedPage(target.name);
   };
 

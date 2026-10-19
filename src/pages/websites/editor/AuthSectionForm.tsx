@@ -333,7 +333,14 @@ export default function AuthSectionForm({ data, onChange }: Props) {
 
       <FormGroup title="Brand">
         <TextField label="Brand name" value={data.brandName} onChange={(brandName) => set({ brandName })} maxLength={60} />
-        <ImageField label="Logo" value={data.logo} onChange={(logo) => set({ logo })} optional />
+        <ImageField
+          label="Logo"
+          value={data.logo}
+          onChange={(logo) => set({ logo })}
+          dimensionHint="200 × 50 px (horizontal) or 60 × 60 px (square)"
+          hint="Transparent PNG, SVG, or WebP"
+          optional
+        />
       </FormGroup>
 
       <FormGroup title="Form style & typography" description="Fonts follow the section font picker in the Style tab.">
