@@ -1507,6 +1507,17 @@
   overflow: hidden;
 }
 
+.wb-device-scroll {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.wb-device-scroll::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
 /* Tablet Device Frame */
 .tpl-frame-tablet {
   width: 768px;

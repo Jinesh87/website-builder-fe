@@ -241,7 +241,7 @@ export default function WebsitePreviewPage() {
                 : undefined
             }
           >
-            <PreviewFrame device={device} onLinkClick={openLink}>
+            <PreviewFrame device={device} onLinkClick={openLink} theme={site?.theme}>
               <SitePage site={site} page={page} />
             </PreviewFrame>
           </main>

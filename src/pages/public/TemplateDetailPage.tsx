@@ -660,11 +660,11 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
             }}
           >
             {site && sitePage ? (
-              <PreviewFrame device={device} onLinkClick={handleSiteLinkClick}>
+              <PreviewFrame device={device} onLinkClick={handleSiteLinkClick} theme={site.theme}>
                 <SitePage site={site} page={sitePage} />
               </PreviewFrame>
             ) : (
-              <PreviewFrame device={device}>
+              <PreviewFrame device={device} theme={site?.theme}>
                 <FullTemplateSite
                   template={template}
                   selectedPage={selectedPage}
@@ -875,7 +875,7 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
               ["--scrollbar-thumb-hover" as any]: scrollThumbHoverColor,
             }}
           >
-            <PreviewFrame device={device} onLinkClick={handleLinkClick}>
+            <PreviewFrame device={device} onLinkClick={handleLinkClick} theme={preview?.site?.theme}>
               <SitePage site={preview.site} page={page} />
             </PreviewFrame>
           </main>

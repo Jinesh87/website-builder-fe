@@ -551,6 +551,16 @@ export const BLOG_CSS = `
   gap: 48px;
 }
 
+@container wb-site (max-width: 768px) {
+  .wb-blog-minimalist-body-wrap {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .wb-blog-share-dock {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
 @media (max-width: 768px) {
   .wb-blog-minimalist-body-wrap {
     grid-template-columns: 1fr;
@@ -628,6 +638,12 @@ export const BLOG_CSS = `
   margin: 0 auto;
 }
 
+@container wb-site (max-width: 860px) {
+  .wb-blog-split-banner {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
 @media (max-width: 860px) {
   .wb-blog-split-banner {
     grid-template-columns: 1fr;
@@ -806,6 +822,12 @@ export const BLOG_CSS = `
   min-width: 0;
 }
 
+@container wb-site (max-width: 820px) {
+  .wb-blog-magazine-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
 @media (max-width: 820px) {
   .wb-blog-magazine-layout {
     grid-template-columns: 1fr;
@@ -945,6 +967,12 @@ export const BLOG_CSS = `
   margin: 0 auto;
 }
 
+@container wb-site (max-width: 640px) {
+  .wb-blog-floating-card-box {
+    margin: -60px 16px 36px;
+    padding: 24px 20px;
+  }
+}
 @media (max-width: 640px) {
   .wb-blog-floating-card-box {
     margin: -60px 16px 36px;
@@ -1015,6 +1043,15 @@ export const BLOG_CSS = `
   color: var(--wb-primary);
 }
 
+@container wb-site (max-width: 860px) {
+  .wb-blog-sticky-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .wb-blog-sticky-side {
+    position: static;
+  }
+}
 @media (max-width: 860px) {
   .wb-blog-sticky-grid {
     grid-template-columns: 1fr;
@@ -1098,6 +1135,11 @@ export const BLOG_CSS = `
   padding: 40px 36px;
 }
 
+@container wb-site (max-width: 640px) {
+  .wb-blog-swiss-table-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+}
 @media (max-width: 640px) {
   .wb-blog-swiss-table-meta {
     grid-template-columns: 1fr 1fr;
@@ -1164,6 +1206,16 @@ export const BLOG_CSS = `
   color: var(--wb-text);
 }
 
+@container wb-site (max-width: 768px) {
+  .wb-blog-visual-hero-overlay {
+    padding: 24px 20px;
+  }
+  .wb-blog-visual-quote-breakout {
+    margin: 2em 0;
+    padding: 24px;
+    font-size: 19px;
+  }
+}
 @media (max-width: 768px) {
   .wb-blog-visual-hero-overlay {
     padding: 24px 20px;
@@ -1214,6 +1266,12 @@ export const BLOG_CSS = `
   box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.1);
 }
 
+@container wb-site (max-width: 640px) {
+  .wb-blog-glass-card {
+    padding: 28px 20px;
+    border-radius: 18px;
+  }
+}
 @media (max-width: 640px) {
   .wb-blog-glass-card {
     padding: 28px 20px;
