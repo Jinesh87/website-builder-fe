@@ -1,5 +1,6 @@
 import type { SaveDraftInput, WebsiteDetail, WebsitePage } from "../../../api/websites.ts";
 import type { FooterData, HeaderData, HeaderMenuItem, LinkRef, Section, ThemeSettings } from "../../../site-kit/index.ts";
+import { getTemplateSite } from "../../../site-kit/templates/index.ts";
 
 export type EditorDraft = {
   theme: ThemeSettings;
@@ -21,7 +22,63 @@ export const LIMITS = { pages: 50, sectionsPerPage: 60, menuLinks: 12 } as const
 export const PAGE_SLUG_PATTERN = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*)?$/;
 
 export function draftFromWebsite(website: WebsiteDetail): EditorDraft {
-  const { theme, header, footer, pages } = website.draft;
+  let { theme, header, footer, pages } = website.draft;
+
+  const templateKey =
+    pages.find((p) => p.templateKey)?.templateKey ??
+    (website as unknown as { templateKey?: string }).templateKey;
+  const templateSite = templateKey ? getTemplateSite(templateKey) : null;
+
+  if (templateSite) {
+    if (!header.logo?.url && templateSite.header.logo) {
+      header = {
+        ...header,
+        logo: templateSite.header.logo,
+        logoDisplay: header.logoDisplay ?? templateSite.header.logoDisplay ?? "logo_only",
+      };
+    }
+    if (!footer.logo?.url && templateSite.footer.logo) {
+      footer = {
+        ...footer,
+        logo: templateSite.footer.logo,
+        logoDisplay: footer.logoDisplay ?? templateSite.footer.logoDisplay ?? "logo_only",
+      };
+    }
+
+    pages = pages.map((page) => ({
+      ...page,
+      sections: page.sections.map((sec) => {
+        if (sec.type === "header") {
+          const secHeader = (sec.data || {}) as HeaderData;
+          if (!secHeader.logo?.url && templateSite.header.logo) {
+            return {
+              ...sec,
+              data: {
+                ...secHeader,
+                logo: templateSite.header.logo,
+                logoDisplay: secHeader.logoDisplay ?? templateSite.header.logoDisplay ?? "logo_only",
+              },
+            };
+          }
+        }
+        if (sec.type === "footer") {
+          const secFooter = (sec.data || {}) as FooterData;
+          if (!secFooter.logo?.url && templateSite.footer.logo) {
+            return {
+              ...sec,
+              data: {
+                ...secFooter,
+                logo: templateSite.footer.logo,
+                logoDisplay: secFooter.logoDisplay ?? templateSite.footer.logoDisplay ?? "logo_only",
+              },
+            };
+          }
+        }
+        return sec;
+      }),
+    }));
+  }
+
   return { theme, header, footer, pages };
 }
 

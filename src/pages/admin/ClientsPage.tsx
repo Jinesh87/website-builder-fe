@@ -6,7 +6,13 @@ import { Link } from "react-router-dom";
 import { adminClientsApi, type Client, type ClientList, type ClientSource } from "../../api/admin-clients.ts";
 import type { UserStatus } from "../../api/auth.ts";
 import { errorMessage } from "../../api/http.ts";
-import { ClientStatusChip, formatDate, SOURCE_LABELS, STATUS_LABELS } from "../../components/admin/client-labels.tsx";
+import {
+  ClientStatusChip,
+  formatDate,
+  ownerLabel,
+  SOURCE_LABELS,
+  STATUS_LABELS,
+} from "../../components/admin/client-labels.tsx";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../../components/ui/SelectInput.tsx";
@@ -120,7 +126,7 @@ export default function ClientsPage() {
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search by name or email" />
+            <SearchField.Input placeholder="Search by name, email or username" />
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
@@ -178,7 +184,7 @@ export default function ClientsPage() {
                           {client.businessName}
                         </Link>
                         <p className="text-xs text-ink-muted">
-                          {client.owner ? `${client.owner.fullName} · ${client.owner.email}` : "No login account"}
+                          {client.owner ? ownerLabel(client.owner) : "No login account"}
                         </p>
                       </td>
                       <td className="px-5 py-3 text-ink-body">{SOURCE_LABELS[client.source]}</td>

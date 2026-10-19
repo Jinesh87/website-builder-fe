@@ -1,11 +1,14 @@
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
 import { buildPages, photo, section } from "./build.ts";
+import { PLUMBING_LOGO } from "./logos.ts";
 
 const NAME = "Brightside Plumbing";
 
 const header: HeaderData = {
   design: "headline-ticker",
   siteName: NAME,
+  logo: PLUMBING_LOGO,
+  logoDisplay: "logo_only",
   announcement: "Plumbers available today in Austin • No call-out fee on repairs • 12-month guarantee on every job",
   announcementLink: { label: "Book now", href: "/contact" },
   menu: [
@@ -23,6 +26,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "columns",
   siteName: NAME,
+  logo: PLUMBING_LOGO,
   tagline: "Plumbing with a smile",
   description: "Friendly, licensed plumbers serving Austin and Round Rock. Upfront prices, tidy work and a 12-month guarantee.",
   columns: [

@@ -153,17 +153,151 @@ function RootRender({ children }: { children: ReactNode }) {
     }
   };
 
+  const siteBg = site.theme?.colors?.background || "transparent";
+
   return (
     <div
       onClickCapture={handleLinkClick}
       onClick={handleRootClick}
-      className="min-h-full h-full flex flex-col flex-1"
+      className="min-h-full w-full flex flex-col flex-1"
+      style={{ backgroundColor: siteBg }}
     >
+      <style>{`
+        html {
+          background-color: ${siteBg} !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          min-height: 100% !important;
+          height: 100% !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          overscroll-behavior: none !important;
+          overscroll-behavior-y: none !important;
+        }
+        body {
+          background-color: transparent !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          min-height: 100% !important;
+          height: auto !important;
+          overflow: visible !important;
+          overscroll-behavior: none !important;
+          overscroll-behavior-y: none !important;
+        }
+        #frame-root {
+          background-color: transparent !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          min-height: 100% !important;
+          height: auto !important;
+          overflow: visible !important;
+          display: flex !important;
+          flex-direction: column !important;
+        }
+        html, body, #frame-root, [data-puck-dropzone], * {
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+        }
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar,
+        #frame-root::-webkit-scrollbar,
+        [data-puck-dropzone]::-webkit-scrollbar,
+        *::-webkit-scrollbar {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+          background: transparent !important;
+        }
+        html::-webkit-scrollbar-thumb,
+        body::-webkit-scrollbar-thumb,
+        #frame-root::-webkit-scrollbar-thumb,
+        [data-puck-dropzone]::-webkit-scrollbar-thumb,
+        *::-webkit-scrollbar-thumb {
+          display: none !important;
+          background: transparent !important;
+        }
+        /* Ensure natural section heights without artificial whitespace */
+        div[data-puck-dropzone] {
+          min-height: 100% !important;
+          height: auto !important;
+          width: 100% !important;
+          display: flex !important;
+          flex-direction: column !important;
+          flex: 1 0 auto !important;
+          padding-bottom: 48px !important;
+        }
+        [class*="_DropZone-item"] {
+          height: auto !important;
+          min-height: 0 !important;
+          flex: 0 0 auto !important;
+          width: 100% !important;
+          position: relative !important;
+          display: block !important;
+        }
+        [class*="_DropZone-linePlaceholder"] {
+          height: 3px !important;
+          min-height: 0 !important;
+          max-height: 3px !important;
+          background: #2447c7 !important;
+          z-index: 50 !important;
+          pointer-events: none !important;
+        }
+        [class*="_DropZone-hitbox"] {
+          height: 16px !important;
+          min-height: 0 !important;
+          max-height: 16px !important;
+        }
+        /* Hitboxes must never block clicking sections when not dragging */
+        body:not([data-puck-dragging]) [class*="_DropZone-hitbox"] {
+          pointer-events: none !important;
+        }
+        body[data-puck-dragging] [class*="_DropZone-hitbox"] {
+          pointer-events: auto !important;
+        }
+        /* Production section selection overlay */
+        [class*="_DraggableComponent-overlay"] {
+          cursor: pointer !important;
+          outline: 2px solid transparent !important;
+          outline-offset: -2px !important;
+          transition: outline-color 140ms ease, box-shadow 140ms ease !important;
+          background-color: transparent !important;
+        }
+        [class*="_DraggableComponent--hover"]:not([class*="_DraggableComponent--isSelected"]) > [class*="_DraggableComponent-overlayWrapper"] > [class*="_DraggableComponent-overlay"] {
+          outline: 2px dashed rgba(36, 71, 199, 0.45) !important;
+          outline-offset: -2px !important;
+          background-color: transparent !important;
+        }
+        [class*="_DraggableComponent--isSelected"] > [class*="_DraggableComponent-overlayWrapper"] > [class*="_DraggableComponent-overlay"] {
+          outline: 2px solid #2447c7 !important;
+          outline-offset: -2px !important;
+          box-shadow: inset 0 0 0 1px rgba(36, 71, 199, 0.25) !important;
+          background-color: transparent !important;
+        }
+        /* Component drag handle and selection reliability */
+        [data-puck-component] {
+          pointer-events: auto !important;
+          cursor: grab !important;
+        }
+        [data-puck-component]:active {
+          cursor: grabbing !important;
+        }
+        /* Hide unwanted floating handler bar */
+        [class*="_DraggableComponent-actionsOverlay"],
+        [class*="_DraggableComponent-actions"],
+        [class*="_DraggableComponent-loadingOverlay"] {
+          display: none !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          opacity: 0 !important;
+          height: 0 !important;
+          width: 0 !important;
+        }
+      `}</style>
       <SiteStyles />
       <SiteFrame theme={site.theme} header={null} footer={null}>
-        <div className="relative flex min-h-full h-full w-full flex-1 flex-col">
+        <div className="relative flex min-h-full w-full flex-1 flex-col">
           {site.isEmpty && <EmptyCanvas />}
-          <div className="relative z-10 flex min-h-full h-full w-full flex-1 flex-col">
+          <div className="relative z-10 flex min-h-full w-full flex-1 flex-col">
             {children}
           </div>
         </div>

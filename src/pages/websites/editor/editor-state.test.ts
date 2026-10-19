@@ -146,4 +146,85 @@ describe("editor-state header navigation sync", () => {
       }
     }
   });
+
+  it("draftFromWebsite automatically backfills template logo for header, footer and page sections", async () => {
+    const { draftFromWebsite } = await import("./editor-state.ts");
+    const mockWebsite: any = {
+      id: "site-1",
+      clientId: "client-1",
+      clientName: "Test Client",
+      name: "Accounting Firm · Classic",
+      builderType: "MANUAL",
+      status: "DRAFT",
+      subdomain: "accounting-test",
+      pageCount: 1,
+      generationStatus: null,
+      hasUnpublishedChanges: false,
+      publishedAt: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      customDomain: null,
+      info: {
+        businessName: "Accounting Firm · Classic",
+        websiteType: "Business",
+        industry: "Finance",
+        description: null,
+        contactEmail: null,
+        contactPhone: null,
+        address: null,
+      },
+      generation: null,
+      draft: {
+        theme: DEFAULT_THEME,
+        header: {
+          design: "logo-left",
+          siteName: "Accounting Firm · Classic",
+          menu: [],
+        },
+        footer: {
+          design: "columns",
+          siteName: "Accounting Firm · Classic",
+          columns: [],
+        },
+        pages: [
+          {
+            id: "page-1",
+            name: "Home",
+            slug: "/",
+            pageType: "HOME",
+            visible: true,
+            showInNav: true,
+            seoTitle: null,
+            seoDescription: null,
+            seoKeywords: [],
+            templateKey: "accounting-firm-classic",
+            sections: [
+              {
+                id: "sec-header",
+                type: "header",
+                hidden: false,
+                data: {
+                  design: "logo-left",
+                  siteName: "Accounting Firm · Classic",
+                },
+              },
+            ],
+          },
+        ],
+        draftUpdatedAt: new Date().toISOString(),
+      },
+    };
+
+    const draft = draftFromWebsite(mockWebsite);
+    expect(draft.header.logo).toBeDefined();
+    expect(draft.header.logo?.url).toContain("data:image/svg+xml");
+    expect(draft.header.logoDisplay).toBe("logo_only");
+    expect(draft.footer.logo).toBeDefined();
+    expect(draft.footer.logo?.url).toContain("data:image/svg+xml");
+    expect(draft.footer.logoDisplay).toBe("logo_only");
+
+    const headerSec = draft.pages[0]?.sections.find((s) => s.type === "header");
+    expect((headerSec?.data as any)?.logo?.url).toContain("data:image/svg+xml");
+    expect((headerSec?.data as any)?.logoDisplay).toBe("logo_only");
+  });
 });

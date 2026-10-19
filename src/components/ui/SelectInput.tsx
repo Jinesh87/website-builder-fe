@@ -10,6 +10,9 @@ type SelectInputProps<T extends string> = {
   label?: string;
   ariaLabel?: string;
   className?: string;
+  /** Shows the same red asterisk as required text fields. */
+  isRequired?: boolean;
+  error?: string;
 };
 
 export default function SelectInput<T extends string>({
@@ -19,18 +22,32 @@ export default function SelectInput<T extends string>({
   label,
   ariaLabel,
   className = "",
+  isRequired = false,
+  error,
 }: SelectInputProps<T>) {
   const selectedOption =
     options.find((opt) => opt.value === value) ?? options[0];
 
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
-      {label && <span className="text-sm font-medium text-ink">{label}</span>}
+      {label && (
+        <span className="text-sm font-medium text-ink">
+          {label}
+          {isRequired && (
+            <span className="ms-0.5 text-danger" aria-hidden>
+              *
+            </span>
+          )}
+        </span>
+      )}
       <Dropdown>
         <Button
           aria-label={label ?? ariaLabel ?? "Select option"}
+          aria-invalid={error ? true : undefined}
           variant="secondary"
-          className="flex h-9 w-full items-center justify-between rounded-lg border border-ed-border bg-surface px-3 text-left text-sm font-normal text-ink shadow-ed-xs transition-all duration-150 hover:border-ed-border-strong hover:bg-surface focus-visible:border-ed-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ed-accent/15"
+          className={`flex h-9 w-full items-center justify-between rounded-lg border bg-surface px-3 text-left text-sm font-normal text-ink shadow-ed-xs transition-all duration-150 hover:border-ed-border-strong hover:bg-surface focus-visible:border-ed-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ed-accent/15 ${
+            error ? "border-ed-danger" : "border-ed-border"
+          }`}
         >
           <span className="truncate">
             {selectedOption?.label ?? String(value)}
@@ -76,6 +93,7 @@ export default function SelectInput<T extends string>({
           </Dropdown.Menu>
         </Dropdown.Popover>
       </Dropdown>
+      {error && <p className="text-xs text-ed-danger">{error}</p>}
     </div>
   );
 }

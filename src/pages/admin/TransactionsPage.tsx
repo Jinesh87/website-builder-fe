@@ -86,13 +86,19 @@ function StatCard({ label, value, hint, icon, tone }: { label: string; value: st
   );
 }
 
-function ClientCell({ client, user }: { client: { id: string; businessName: string }; user: { fullName: string; email: string } | null }) {
+function ClientCell({
+  client,
+  user,
+}: {
+  client: { id: string; businessName: string };
+  user: { fullName: string; email: string | null } | null;
+}) {
   return (
     <td className="px-5 py-3">
       <Link to={`/admin/clients/${client.id}`} className="font-medium text-ink hover:text-brand">
         {client.businessName}
       </Link>
-      <p className="text-xs text-ink-muted">{user ? `${user.fullName} · ${user.email}` : "System"}</p>
+      <p className="text-xs text-ink-muted">{user ? [user.fullName, user.email].filter(Boolean).join(" · ") : "System"}</p>
     </td>
   );
 }

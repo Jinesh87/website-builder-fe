@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import Icon from "./Icon.tsx";
+import { TPLS } from "./data.ts";
 
 export default function AboutPage() {
   return (
@@ -61,7 +62,7 @@ export default function AboutPage() {
               <span>ways to build: by hand or with AI</span>
             </div>
             <div className="fact c1-bg">
-              <b>9</b>
+              <b>{TPLS.length}</b>
               <span>starter templates at launch</span>
             </div>
             <div className="fact c2-bg">

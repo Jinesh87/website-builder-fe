@@ -87,6 +87,9 @@ export default function ForgotPasswordPage() {
       <p className="mt-2 text-sm leading-relaxed text-ink-body">
         Enter your email. We will send a link to set a new password.
       </p>
+      <p className="mt-1 text-xs leading-relaxed text-ink-muted">
+        Log in with a username? Ask your administrator to reset your password.
+      </p>
       <form onSubmit={handleSubmit} noValidate className="mt-5 flex flex-col gap-4">
         <TextInput
           label="Email"

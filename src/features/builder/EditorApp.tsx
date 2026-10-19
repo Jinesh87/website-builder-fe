@@ -34,6 +34,7 @@ import Inspector from "./shell/Inspector.tsx";
 import LeftRail from "./shell/LeftRail.tsx";
 import PublishDialog from "./shell/PublishDialog.tsx";
 import TopBar from "./shell/TopBar.tsx";
+import { TourProvider, EditorOnboarding } from "./onboarding/index.ts";
 
 type Toast = { id: number; message: string; tone: "success" | "danger" };
 
@@ -301,60 +302,64 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
     <EditorContext.Provider value={value}>
       <LinkTargetsContext.Provider value={linkTargets}>
         <MediaTargetContext.Provider value={mediaTarget}>
-          <div className="ed-root flex h-dvh flex-col overflow-hidden bg-ed-app font-sans text-ed-text">
-            <PageCanvas key={page.id} page={page} backTo={backTo} onChange={handlePuckChange} onPublish={() => setPublishOpen(true)} />
+          <TourProvider>
+            <div className="ed-root flex h-dvh flex-col overflow-hidden bg-ed-app font-sans text-ed-text">
+              <PageCanvas key={page.id} page={page} backTo={backTo} onChange={handlePuckChange} onPublish={() => setPublishOpen(true)} />
 
-            {(autosave.status === "conflict" || (autosave.status === "failed" && autosave.issue)) && (
-              <div
-                role="alert"
-                className="fixed left-1/2 top-14 z-(--z-ed-toast) flex max-w-xl -translate-x-1/2 items-start gap-2 rounded-ed-lg border border-ed-border bg-ed-panel px-3 py-2 shadow-ed-pop"
-              >
-                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-ed-danger" aria-hidden />
-                <p className="text-ed-sm text-ed-text">
-                  {autosave.status === "conflict"
-                    ? "This website was changed in another tab or by someone else. Reload to get the latest version; your recent edits here can't be saved."
-                    : autosave.issue?.message}
-                </p>
-                {autosave.status === "conflict" && (
-                  <button
-                    type="button"
-                    onClick={() => window.location.reload()}
-                    className="flex h-7 shrink-0 items-center gap-1 rounded-ed bg-ed-accent px-2.5 text-ed-xs font-medium text-white hover:bg-ed-accent-hover"
-                  >
-                    <RotateCw className="size-3.5" aria-hidden /> Reload
+              {(autosave.status === "conflict" || (autosave.status === "failed" && autosave.issue)) && (
+                <div
+                  role="alert"
+                  className="fixed left-1/2 top-14 z-(--z-ed-toast) flex max-w-xl -translate-x-1/2 items-start gap-2 rounded-ed-lg border border-ed-border bg-ed-panel px-3 py-2 shadow-ed-pop"
+                >
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-ed-danger" aria-hidden />
+                  <p className="text-ed-sm text-ed-text">
+                    {autosave.status === "conflict"
+                      ? "This website was changed in another tab or by someone else. Reload to get the latest version; your recent edits here can't be saved."
+                      : autosave.issue?.message}
+                  </p>
+                  {autosave.status === "conflict" && (
+                    <button
+                      type="button"
+                      onClick={() => window.location.reload()}
+                      className="flex h-7 shrink-0 items-center gap-1 rounded-ed bg-ed-accent px-2.5 text-ed-xs font-medium text-white hover:bg-ed-accent-hover"
+                    >
+                      <RotateCw className="size-3.5" aria-hidden /> Reload
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {toast && (
+                <div
+                  key={toast.id}
+                  role="status"
+                  className="fixed bottom-5 left-1/2 z-(--z-ed-toast) flex -translate-x-1/2 items-center gap-2 rounded-ed-lg bg-ed-text px-3 py-2 text-ed-sm text-white shadow-ed-pop"
+                >
+                  {toast.tone === "danger" ? (
+                    <AlertTriangle className="size-4 text-ed-danger-soft" aria-hidden />
+                  ) : (
+                    <CheckCircle2 className="size-4 text-ed-success-soft" aria-hidden />
+                  )}
+                  {toast.message}
+                  <button type="button" aria-label="Dismiss" onClick={() => setToast(null)} className="ml-1 text-white/60 hover:text-white">
+                    <X className="size-3.5" aria-hidden />
                   </button>
-                )}
-              </div>
-            )}
+                </div>
+              )}
 
-            {toast && (
-              <div
-                key={toast.id}
-                role="status"
-                className="fixed bottom-5 left-1/2 z-(--z-ed-toast) flex -translate-x-1/2 items-center gap-2 rounded-ed-lg bg-ed-text px-3 py-2 text-ed-sm text-white shadow-ed-pop"
-              >
-                {toast.tone === "danger" ? (
-                  <AlertTriangle className="size-4 text-ed-danger-soft" aria-hidden />
-                ) : (
-                  <CheckCircle2 className="size-4 text-ed-success-soft" aria-hidden />
-                )}
-                {toast.message}
-                <button type="button" aria-label="Dismiss" onClick={() => setToast(null)} className="ml-1 text-white/60 hover:text-white">
-                  <X className="size-3.5" aria-hidden />
-                </button>
-              </div>
-            )}
+              <PublishDialog
+                isOpen={publishOpen}
+                onClose={() => setPublishOpen(false)}
+                onPublished={(published) => {
+                  setWebsite(published);
+                  setPublishOpen(false);
+                  notify("Published. Your site is live.");
+                }}
+              />
 
-            <PublishDialog
-              isOpen={publishOpen}
-              onClose={() => setPublishOpen(false)}
-              onPublished={(published) => {
-                setWebsite(published);
-                setPublishOpen(false);
-                notify("Published. Your site is live.");
-              }}
-            />
-          </div>
+              <EditorOnboarding />
+            </div>
+          </TourProvider>
         </MediaTargetContext.Provider>
       </LinkTargetsContext.Provider>
     </EditorContext.Provider>

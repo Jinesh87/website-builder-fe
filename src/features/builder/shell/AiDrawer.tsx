@@ -672,6 +672,9 @@ export default function AiDrawer() {
   const [previewCanvasContent, setPreviewCanvasContent] = useState<
     typeof allItems | null
   >(null);
+  const [previewingCreatedPageId, setPreviewingCreatedPageId] = useState<
+    string | null
+  >(null);
   const [previewMode, setPreviewMode] = useState<"ai" | "original">("ai");
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
@@ -1086,12 +1089,22 @@ export default function AiDrawer() {
           }, 60);
         }
       } else if (target.scope === "site") {
-        nextItems =
-          result.after.length > 0
+        const hasAfter = result.after.length > 0;
+        const firstCreated = result.createdPages?.[0];
+
+        if (!hasAfter && firstCreated && firstCreated.sections.length > 0) {
+          nextItems = firstCreated.sections.map((s) =>
+            sectionToItem(normalizeSection(s as Section)),
+          );
+          setPreviewingCreatedPageId(firstCreated.id);
+        } else {
+          nextItems = hasAfter
             ? result.after.map((s) =>
                 sectionToItem(normalizeSection(s as Section)),
               )
             : baseline;
+          setPreviewingCreatedPageId(null);
+        }
 
         setAiBuilding({
           active: true,
@@ -1101,6 +1114,7 @@ export default function AiDrawer() {
           pointerY: 50,
         });
       } else if (!target.rebuild) {
+        setPreviewingCreatedPageId(null);
         nextItems = result.after.map((s) =>
           sectionToItem(normalizeSection(s as Section)),
         );
@@ -1119,6 +1133,7 @@ export default function AiDrawer() {
           }, 60);
         }
       } else {
+        setPreviewingCreatedPageId(null);
         nextItems = result.after.map((s) =>
           sectionToItem(normalizeSection(s as Section)),
         );
@@ -1253,7 +1268,7 @@ export default function AiDrawer() {
     isAcceptedRef.current = true;
 
     // Commit preview content as the permanent canvas state for the current page
-    if (previewCanvasContent) {
+    if (previewCanvasContent && !previewingCreatedPageId) {
       dispatch({
         type: "setData",
         data: (previous) => ({
@@ -1282,7 +1297,7 @@ export default function AiDrawer() {
       const validRoutes = getKnownRoutes(nextPages, suggestion?.createdPages ?? []);
 
       // Update current open page's sections
-      if (previewCanvasContent) {
+      if (previewCanvasContent && !previewingCreatedPageId) {
         const sanitizedSections = previewCanvasContent
           .map(itemAsSection)
           .map((s) => sanitizeSectionLinks(normalizeSection(s), validRoutes));
@@ -1437,10 +1452,14 @@ export default function AiDrawer() {
 
     if (suggestion?.createdPages && suggestion.createdPages.length > 0) {
       notify(`AI changes accepted! Created ${suggestion.createdPages.length} new page(s).`, "success");
+      if (firstCreatedPageId) {
+        selectPage(firstCreatedPageId);
+      }
     } else {
       notify("AI changes accepted and saved!", "success");
     }
 
+    setPreviewingCreatedPageId(null);
     setActiveMessageId(null);
     setSuggestion(null);
     setOriginalCanvasContent(null);
@@ -1452,6 +1471,7 @@ export default function AiDrawer() {
 
   const handleReject = () => {
     isAcceptedRef.current = true;
+    setPreviewingCreatedPageId(null);
     if (originalCanvasContent) {
       // Revert canvas to original
       dispatch({
@@ -1837,19 +1857,82 @@ export default function AiDrawer() {
                       {/* Multi-page / Site Impact Summary */}
                       {suggestion.createdPages && suggestion.createdPages.length > 0 && (
                         <div className="flex flex-col gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-[11px]">
-                          <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
-                            <FilePlus className="size-3.5" />
-                            <span>Pages to be Created ({suggestion.createdPages.length})</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+                              <FilePlus className="size-3.5" />
+                              <span>Pages to be Created ({suggestion.createdPages.length})</span>
+                            </div>
+                            {previewingCreatedPageId && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreviewingCreatedPageId(null);
+                                  const items =
+                                    suggestion.after && suggestion.after.length > 0
+                                      ? suggestion.after.map((s) =>
+                                          sectionToItem(normalizeSection(s as Section)),
+                                        )
+                                      : originalCanvasContent ?? [];
+                                  setPreviewCanvasContent(items);
+                                  dispatch({
+                                    type: "setData",
+                                    data: (previous) => ({
+                                      ...previous,
+                                      root: previous.root ?? { props: {} },
+                                      content: items,
+                                    }),
+                                  });
+                                }}
+                                className="text-[10px] font-semibold text-emerald-600 underline hover:text-emerald-500 dark:text-emerald-400 cursor-pointer"
+                              >
+                                View {page.name}
+                              </button>
+                            )}
                           </div>
                           <div className="flex flex-col gap-1 pl-1">
-                            {suggestion.createdPages.map((cp) => (
-                              <div key={cp.id} className="flex items-center justify-between text-ed-text">
-                                <span className="font-medium">
-                                  {cp.name} <code className="text-[10px] text-ed-muted font-mono">{cp.slug}</code>
-                                </span>
-                                <span className="text-[10px] text-ed-muted">{cp.sections.length} sections</span>
-                              </div>
-                            ))}
+                            {suggestion.createdPages.map((cp) => {
+                              const isPreviewing = previewingCreatedPageId === cp.id;
+                              return (
+                                <button
+                                  key={cp.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setPreviewingCreatedPageId(cp.id);
+                                    const items = cp.sections.map((s) =>
+                                      sectionToItem(normalizeSection(s as Section)),
+                                    );
+                                    setPreviewCanvasContent(items);
+                                    setPreviewMode("ai");
+                                    dispatch({
+                                      type: "setData",
+                                      data: (previous) => ({
+                                        ...previous,
+                                        root: previous.root ?? { props: {} },
+                                        content: items,
+                                      }),
+                                    });
+                                  }}
+                                  className={`flex items-center justify-between rounded-lg px-2 py-1 text-left transition-colors cursor-pointer ${
+                                    isPreviewing
+                                      ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold ring-1 ring-emerald-500/40"
+                                      : "hover:bg-emerald-500/10 text-ed-text"
+                                  }`}
+                                  title="Click to preview this page on canvas"
+                                >
+                                  <span className="font-medium">
+                                    {cp.name} <code className="text-[10px] text-ed-muted font-mono">{cp.slug}</code>
+                                  </span>
+                                  <div className="flex items-center gap-1.5 text-[10px] text-ed-muted">
+                                    <span>{cp.sections.length} sections</span>
+                                    {isPreviewing && (
+                                      <span className="rounded bg-emerald-500/20 px-1 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                                        previewing
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -2098,7 +2181,9 @@ export default function AiDrawer() {
             <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
           </span>
           <span className="text-ed-xs font-medium text-ed-text">
-            Previewing AI changes
+            {previewingCreatedPageId && suggestion?.createdPages?.find((p) => p.id === previewingCreatedPageId)
+              ? `Previewing new page: ${suggestion.createdPages.find((p) => p.id === previewingCreatedPageId)?.name} (${suggestion.createdPages.find((p) => p.id === previewingCreatedPageId)?.slug})`
+              : "Previewing AI changes"}
           </span>
           <button
             type="button"
@@ -2124,6 +2209,7 @@ export default function AiDrawer() {
         tone="warning"
         onConfirm={() => {
           setCloseRequested(false);
+          setPreviewingCreatedPageId(null);
           handleReject();
           setAiOpen(false);
         }}

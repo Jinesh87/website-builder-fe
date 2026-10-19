@@ -1,11 +1,14 @@
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
 import { buildPages, photo, section } from "./build.ts";
+import { RESTAURANT_LOGO } from "./logos.ts";
 
 const NAME = "Rosewood Kitchen";
 
 const header: HeaderData = {
   design: "side-drawer",
   siteName: NAME,
+  logo: RESTAURANT_LOGO,
+  logoDisplay: "logo_only",
   tagline: "Modern fire cooking and low-lit cocktails",
   menu: [
     { label: "Home", href: "/" },
@@ -24,6 +27,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "mega",
   siteName: NAME,
+  logo: RESTAURANT_LOGO,
   tagline: "Seasonal plates, open fire, intimate rooms",
   description: "A modern neighborhood restaurant and cocktail bar built around live fire, local farms and warm hospitality.",
   columns: [
@@ -59,7 +63,7 @@ const footer: FooterData = {
   paymentMethods: { enabled: true, methods: ["visa", "mastercard", "amex"] },
   legalLinks: [
     { label: "Reservation policy", href: "/reservations" },
-    { label: "Accessibility", href: "/accessibility" },
+    { label: "Accessibility", href: "/contact" },
   ],
   copyright: `(c) 2026 ${NAME} Hospitality`,
 };

@@ -1,11 +1,14 @@
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
 import { buildPages, photo, section } from "./build.ts";
+import { DAY_SPA_LOGO } from "./logos.ts";
 
 const NAME = "Halftone Spa";
 
 const header: HeaderData = {
   design: "side-drawer",
   siteName: NAME,
+  logo: DAY_SPA_LOGO,
+  logoDisplay: "logo_only",
   tagline: "A sensory sanctuary for deep restoration",
   menu: [
     { label: "Home", href: "/" },
@@ -24,6 +27,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "centered",
   siteName: NAME,
+  logo: DAY_SPA_LOGO,
   tagline: "Silence, warmth, and botanical restoration",
   description: "An intentional urban bathhouse and restorative day spa. 10,000 square feet of geothermal mineral pools, cedar steam, and artisan bodywork.",
   columns: [
@@ -60,7 +64,7 @@ const footer: FooterData = {
   paymentMethods: { enabled: true, methods: ["visa", "mastercard", "amex"] },
   legalLinks: [
     { label: "Etiquette & quiet policy", href: "/about" },
-    { label: "Cancellation policy", href: "/terms" },
+    { label: "Cancellation policy", href: "/contact" },
   ],
   copyright: `© 2026 ${NAME} Sanctuary Group LLC · All rights reserved`,
 };

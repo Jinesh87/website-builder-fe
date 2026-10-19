@@ -295,7 +295,7 @@ export default function AiUsagePage() {
                           {row.businessName}
                         </Link>
                         <p className="text-xs text-ink-muted">
-                          {row.owner ? `${row.owner.fullName} · ${row.owner.email}` : "No login account"}
+                          {row.owner ? [row.owner.fullName, row.owner.email].filter(Boolean).join(" · ") : "No login account"}
                         </p>
                       </td>
 

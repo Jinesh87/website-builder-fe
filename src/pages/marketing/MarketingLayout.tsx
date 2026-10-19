@@ -496,7 +496,7 @@ export default function MarketingLayout() {
   if (isPreviewMode) {
     return (
       <MarketingContext.Provider value={context}>
-        <div className="mk mk-preview-mode" style={{ minHeight: "100vh", background: "#0B0E1B" }}>
+        <div className="mk-preview-mode" style={{ minHeight: "100vh", background: "#0B0E1B" }}>
           <main id="app" style={{ minHeight: "100vh", padding: 0 }}>
             <Suspense fallback={null}>
               <Outlet />

@@ -1,11 +1,14 @@
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
 import { buildPages, photo, section } from "./build.ts";
+import { DESIGN_STUDIO_LOGO } from "./logos.ts";
 
 const NAME = "Halftone Studio";
 
 const header: HeaderData = {
   design: "floating",
   siteName: NAME,
+  logo: DESIGN_STUDIO_LOGO,
+  logoDisplay: "logo_only",
   menu: [
     { label: "Home", href: "/" },
     { label: "Work", href: "/portfolio" },
@@ -21,6 +24,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "cta-banner",
   siteName: NAME,
+  logo: DESIGN_STUDIO_LOGO,
   description: "Independent design studio for brands that refuse to blend in.",
   ctaBanner: {
     enabled: true,

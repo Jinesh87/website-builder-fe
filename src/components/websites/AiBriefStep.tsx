@@ -220,30 +220,35 @@ export default function AiBriefStep({ brief, onChange, errors, themes, mediaClie
           {brief.images.length} of {MAX_BRIEF_IMAGES} images. Alt text from the library helps the AI place them.
         </p>
 
-        <div className="mt-5 flex items-center gap-3">
-          {brief.logo ? (
-            <figure className="relative h-12 w-24 overflow-hidden rounded-lg border border-line bg-canvas">
-              <img src={brief.logo.url} alt={brief.logo.altText ?? "Logo"} className="size-full object-contain p-1" />
-              <button
-                type="button"
-                onClick={() => set("logo", null)}
-                aria-label="Remove logo"
-                className="absolute right-0.5 top-0.5 grid size-5 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80"
-              >
-                <X className="size-3" aria-hidden />
-              </button>
-            </figure>
-          ) : null}
-          <Button
-            size="sm"
-            variant="outline"
-            onPress={() => setPicker("logo")}
-            onMouseEnter={() => void MediaPickerDialog.preload()}
-            onFocus={() => void MediaPickerDialog.preload()}
-            isDisabled={!mediaClientId}
-          >
-            {brief.logo ? "Change logo" : "Choose a logo (optional)"}
-          </Button>
+        <div className="mt-5 flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            {brief.logo ? (
+              <figure className="relative h-12 w-24 overflow-hidden rounded-lg border border-line bg-canvas">
+                <img src={brief.logo.url} alt={brief.logo.altText ?? "Logo"} className="size-full object-contain p-1" />
+                <button
+                  type="button"
+                  onClick={() => set("logo", null)}
+                  aria-label="Remove logo"
+                  className="absolute right-0.5 top-0.5 grid size-5 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                >
+                  <X className="size-3" aria-hidden />
+                </button>
+              </figure>
+            ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              onPress={() => setPicker("logo")}
+              onMouseEnter={() => void MediaPickerDialog.preload()}
+              onFocus={() => void MediaPickerDialog.preload()}
+              isDisabled={!mediaClientId}
+            >
+              {brief.logo ? "Change logo" : "Choose a logo (optional)"}
+            </Button>
+          </div>
+          <p className="text-xs text-ink-muted">
+            <span className="font-medium text-ink">Recommended logo dimensions:</span> <b>200 × 50 px</b> to <b>250 × 60 px</b> (horizontal, aspect ratio ~4:1 or 5:1, transparent PNG / SVG / WebP).
+          </p>
         </div>
       </div>
 

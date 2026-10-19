@@ -659,7 +659,7 @@ export default function WebsiteEditorPage() {
             </aside>
 
             <main className="min-w-0 flex-1 overflow-y-auto" aria-label="Page preview">
-              <PreviewFrame device={device} fit>
+              <PreviewFrame device={device} fit theme={draft?.theme}>
                 <SitePage site={{ ...draft, pages }} page={page} editor={editorHooks} />
               </PreviewFrame>
             </main>
