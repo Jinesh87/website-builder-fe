@@ -1,9 +1,10 @@
 import { Suspense, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown, ChevronRight, Code2, ExternalLink, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, Code2, ExternalLink, HelpCircle, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppTooltip from "../../../components/ui/AppTooltip.tsx";
 import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
 import type { Device } from "../../../components/websites/DevicePreview.tsx";
+import { useTour } from "../onboarding/index.ts";
 
 const DownloadCodeDialog = lazyWithRetry(
   () => import("../../../components/websites/DownloadCodeDialog.tsx"),
@@ -45,6 +46,7 @@ type TopBarProps = {
 
 export default function TopBar({ backTo, onPublish }: TopBarProps) {
   const { website, draft, page, selectPage, role, device, setDevice, autosave, aiLock } = useEditor();
+  const { startTour } = useTour();
   const history = useBuilderPuck((state) => state.history);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [pageDropdownOpen, setPageDropdownOpen] = useState(false);
@@ -101,7 +103,7 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
           <li className="text-ed-faint" aria-hidden>
             <ChevronRight className="size-3.5" />
           </li>
-          <li className="relative flex items-center" ref={dropdownRef}>
+          <li className="relative flex items-center" ref={dropdownRef} data-tour="page-selector">
             <button
               type="button"
               onClick={() => setPageDropdownOpen((v) => !v)}
@@ -180,7 +182,7 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
           <Redo2 className="size-4" aria-hidden />
         </ToolButton>
         <span className="mx-1 h-5 w-px bg-ed-border" aria-hidden />
-        <div role="radiogroup" aria-label="Preview device" className="flex rounded-ed bg-ed-subtle p-0.5">
+        <div role="radiogroup" aria-label="Preview device" data-tour="device-selector" className="flex rounded-ed bg-ed-subtle p-0.5">
           {DEVICE_OPTIONS.map(({ id, label, icon: Icon }) => (
             <AppTooltip key={id} content={label} placement="bottom">
               <button
@@ -209,6 +211,17 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
           {role === "SUPER_ADMIN" ? "Admin" : "Owner"}
         </span>
       </AppTooltip>
+      <AppTooltip content="Help / Take a tour" placement="bottom">
+        <button
+          type="button"
+          onClick={() => startTour(true)}
+          data-tour="help-tour-button"
+          aria-label="Help / Take a tour"
+          className="grid size-8 place-items-center rounded-ed border border-ed-border text-ed-muted hover:bg-ed-hover hover:text-ed-text"
+        >
+          <HelpCircle className="size-4" aria-hidden />
+        </button>
+      </AppTooltip>
       <AppTooltip content="Download code" placement="bottom">
         <button
           type="button"
@@ -232,6 +245,7 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
       <button
         type="button"
         onClick={onPublish}
+        data-tour="publish-button"
         disabled={autosave.status === "conflict" || aiLock !== null}
         title={aiLock ? "Apply or discard the AI changes before publishing" : undefined}
         className="inline-flex h-8 items-center rounded-ed bg-ed-accent px-3 text-ed-sm font-medium text-white shadow-ed-xs hover:bg-ed-accent-hover disabled:opacity-50"

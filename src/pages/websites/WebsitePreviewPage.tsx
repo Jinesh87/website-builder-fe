@@ -8,6 +8,7 @@ import { useAuth } from "../../auth/auth-context.ts";
 import { DeviceToggle, PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
 import { SitePage, type SiteData } from "../../site-kit/index.ts";
 import { getLiveSiteDomain, getLiveSiteUrl } from "../../utils/live-url.ts";
+import { isLightColor } from "../../utils/colors.ts";
 import type { CreatedState } from "./CreateWebsitePage.tsx";
 
 export default function WebsitePreviewPage() {
@@ -214,17 +215,33 @@ export default function WebsitePreviewPage() {
       )}
 
       {/* Realistic Website Preview Frame */}
-      {site && page && (
-        <main
-          className={`flex-1 w-full relative bg-[#f4f5f8] ${
-            device === "desktop" ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"
-          }`}
-        >
-          <PreviewFrame device={device} onLinkClick={openLink}>
-            <SitePage site={site} page={page} />
-          </PreviewFrame>
-        </main>
-      )}
+      {site && page && (() => {
+        const isSiteLight = isLightColor(site.theme?.colors?.background ?? "#ffffff");
+        const scrollThumbColor = isSiteLight ? "rgba(24, 24, 27, 0.45)" : "rgba(255, 255, 255, 0.45)";
+        const scrollThumbHoverColor = isSiteLight ? "rgba(24, 24, 27, 0.75)" : "rgba(255, 255, 255, 0.75)";
+        return (
+          <main
+            className={`flex-1 w-full relative ${
+              device === "desktop" ? "overflow-y-auto overflow-x-hidden bg-transparent" : "overflow-hidden bg-[#f4f5f8]"
+            }`}
+            style={
+              device === "desktop"
+                ? {
+                    backgroundColor: site.theme?.colors?.background || "transparent",
+                    scrollbarWidth: "thin",
+                    scrollbarColor: `${scrollThumbColor} transparent`,
+                    ["--scrollbar-thumb" as any]: scrollThumbColor,
+                    ["--scrollbar-thumb-hover" as any]: scrollThumbHoverColor,
+                  }
+                : undefined
+            }
+          >
+            <PreviewFrame device={device} onLinkClick={openLink}>
+              <SitePage site={site} page={page} />
+            </PreviewFrame>
+          </main>
+        );
+      })()}
     </div>
   );
 }

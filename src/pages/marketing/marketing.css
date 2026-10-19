@@ -1,7 +1,13 @@
 /* Generated from Marketing_Website_Prototype.html, scoped to .mk.
-   The prototype was written against browser defaults, so undo Tailwind's preflight inside .mk. */
-.mk :where(*:not(svg, svg *, .wb-site, .wb-site *)) {all:revert}
-.mk :where(*)::before,.mk :where(*)::after {box-sizing:content-box;border:medium none currentcolor}
+   Undo Tailwind's preflight only on bare tags inside .mk without destroying custom classes */
+.mk :where(h1:not([class])) {font-size:2em;font-weight:700}
+.mk :where(h2:not([class])) {font-size:1.5em;font-weight:700}
+.mk :where(h3:not([class])) {font-size:1.25em;font-weight:600}
+.mk :where(h4:not([class])) {font-size:1em;font-weight:600}
+.mk :where(b, strong) {font-weight:700}
+.mk :where(ul:not([class])) {list-style:disc;padding-inline-start:24px}
+.mk :where(ol:not([class])) {list-style:decimal;padding-inline-start:24px}
+.mk :where(*)::before,.mk :where(*)::after {box-sizing:border-box}
 .mk :where(svg, img, video) {display:revert;vertical-align:revert}
 .mk :where(img) {max-width:100%}
 .mk [hidden] {display:none!important}
@@ -25,7 +31,7 @@
 @media (prefers-reduced-motion: reduce) {
   .mk * {transition:none!important;animation:none!important}
 }
-.mk {background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans)}
+.mk {background:var(--bg);color:var(--fg);font:16px/1.55 var(--sans);min-height:100vh;width:100%}
 .mk h1:where(:not(.wb-site *)),.mk h2:where(:not(.wb-site *)),.mk h3:where(:not(.wb-site *)) {margin:0;text-wrap:balance;line-height:1.15}
 .mk p:where(:not(.wb-site *)) {margin:0}
 .mk a:where(:not(.wb-site *)) {color:var(--accent)}
@@ -228,8 +234,9 @@
 .mk .badge {font:600 12px var(--sans);padding:4px 10px;border-radius:12px;background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap}
 .mk .plan ul {list-style:none;margin:0;padding:18px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .mk details:where(:not(.wb-site *)) {border-bottom:1px solid var(--line);padding-block:18px}
-.mk details:where(:not(.wb-site *)) summary {cursor:pointer;font-weight:600;font-size:17px;list-style:none;display:flex;justify-content:space-between;gap:16px}
-.mk details:where(:not(.wb-site *)) summary::-webkit-details-marker {display:none}
+.mk details:where(:not(.wb-site *)) summary {cursor:pointer;font-weight:600;font-size:17px;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.mk details:where(:not(.wb-site *)) summary::-webkit-details-marker,
+.mk details:where(:not(.wb-site *)) summary::marker {display:none;content:""}
 .mk details:where(:not(.wb-site *)) summary::after {content:'+';color:var(--accent);font-size:22px;line-height:1}
 .mk details:where(:not(.wb-site *))[open] summary::after {content:'–'}
 .mk details:where(:not(.wb-site *)) p {margin-top:10px;color:var(--muted);max-width:62ch}
@@ -297,10 +304,12 @@
   .mk .legal {grid-template-columns:minmax(0,1fr)}
   .mk .toc {position:static;flex-direction:row;flex-wrap:wrap}
 }
-.mk .cta {background:var(--accent);color:var(--on-accent);padding-block:56px}
+.mk .cta {background:var(--color-brand, #2448C8);color:#FFFFFF;padding-block:56px}
 .mk .cta .wrap {display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
-.mk .cta h2 {font-size:clamp(24px,3vw,30px)}
-.mk .cta .btn {background:var(--on-accent);color:var(--accent);border-color:var(--on-accent)}
+.mk .cta h2 {font-size:clamp(24px,3vw,30px);color:#FFFFFF}
+.mk .cta p {color:rgba(255,255,255,0.9)}
+.mk .cta .btn {background:#FFFFFF;color:var(--accent-ink, #1A3599);border-color:#FFFFFF}
+.mk .cta .btn:hover {background:#F4F5F7}
 .mk footer:where(:not(.wb-site *)) {background:var(--foot);color:var(--foot-fg);padding-block:56px 28px}
 .mk footer:where(:not(.wb-site *)) .cols4 {display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
 .mk footer:where(:not(.wb-site *)) a {color:var(--foot-fg);text-decoration:none;font-size:14px}
@@ -581,13 +590,13 @@
 .mk .ind {min-height:150px}
 .mk .cmp3 th.us,.mk .cmp3 td.us,.mk .cmp td.us,.mk .cmp th.us {background:var(--accent-soft);color:var(--accent-ink);font-weight:700}
 .mk .cmp th.us {background:var(--accent);color:var(--on-accent)}
-.mk .price-teaser {display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:32px;align-items:center;padding:44px;border-radius:24px;color:var(--on-accent);background:radial-gradient(400px 260px at 100% 0%, rgba(245,163,0,.55), transparent 70%),radial-gradient(400px 300px at 0% 100%, rgba(242,96,63,.45), transparent 70%),var(--accent)}
-.mk .price-teaser h2 {font-size:clamp(26px,3vw,34px)}
-.mk .price-teaser p {opacity:.9}
+.mk .price-teaser {display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto;gap:32px;align-items:center;padding:44px;border-radius:24px;color:#FFFFFF;background:radial-gradient(400px 260px at 100% 0%, rgba(245,163,0,.55), transparent 70%),radial-gradient(400px 300px at 0% 100%, rgba(242,96,63,.45), transparent 70%),var(--color-brand, #2448C8)}
+.mk .price-teaser h2 {font-size:clamp(26px,3vw,34px);color:#FFFFFF}
+.mk .price-teaser p {opacity:.9;color:rgba(255,255,255,0.9)}
 .mk .pt-plans {display:flex;flex-direction:column;gap:8px}
-.mk .pt-plans span {display:flex;justify-content:space-between;gap:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);padding:10px 14px;border-radius:12px;font-size:14px}
-.mk .pt-plans span.hot {background:#FFFFFF;color:var(--accent-ink)}
-.mk .price-teaser .btn {background:#FFFFFF;color:#2238B8;border-color:#FFFFFF}
+.mk .pt-plans span {display:flex;justify-content:space-between;gap:12px;color:#FFFFFF;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);padding:10px 14px;border-radius:12px;font-size:14px}
+.mk .pt-plans span.hot {background:#FFFFFF;color:#1A3599}
+.mk .price-teaser .btn {background:#FFFFFF;color:#1A3599;border-color:#FFFFFF}
 @media (max-width:900px) {
   .mk .price-teaser {grid-template-columns:minmax(0,1fr);padding:28px}
 }
@@ -762,3 +771,51 @@
 @media (max-width:860px) {
   .mk .side-cards,.mk .side-ui {display:none}
 }
+
+/* Premium thin scrollbar for marketing view - No visible track bar */
+.mk,
+.mk * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, rgba(140, 145, 160, 0.35)) transparent;
+}
+
+.mk ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.mk ::-webkit-scrollbar-track {
+  background: transparent !important;
+  border: none !important;
+}
+
+.mk ::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb, rgba(140, 145, 160, 0.35));
+  border-radius: 9999px;
+  border: none !important;
+  transition: background-color 0.2s ease;
+}
+
+.mk ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover, rgba(140, 145, 160, 0.65));
+}
+
+@media (prefers-color-scheme: dark) {
+  .mk:not([data-theme="light"]) ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.22);
+  }
+  .mk:not([data-theme="light"]) ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.45);
+  }
+}
+
+.mk[data-theme="dark"] ::-webkit-scrollbar-thumb,
+.mk .ghero ::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
+.mk[data-theme="dark"] ::-webkit-scrollbar-thumb:hover,
+.mk .ghero ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.45);
+}
+

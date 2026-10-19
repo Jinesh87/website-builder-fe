@@ -21,6 +21,7 @@ function RailButton({
   label,
   active,
   disabled = false,
+  dataTour,
   onClick,
   onMouseEnter,
   onFocus,
@@ -29,6 +30,7 @@ function RailButton({
   label: string;
   active: boolean;
   disabled?: boolean;
+  dataTour?: string;
   onClick: () => void;
   onMouseEnter?: () => void;
   onFocus?: () => void;
@@ -38,6 +40,7 @@ function RailButton({
     <AppTooltip content={label} placement="right" offset={8}>
       <button
         type="button"
+        data-tour={dataTour}
         aria-label={label}
         aria-pressed={active}
         disabled={disabled}
@@ -67,13 +70,20 @@ export default memo(function LeftRail() {
     <div className="z-(--z-ed-panel) flex h-full min-h-0 shrink-0 select-none">
       <nav aria-label="Editor tools" className="flex h-full min-h-0 w-13 shrink-0 flex-col items-center gap-1 border-r border-ed-border bg-ed-panel py-2 overflow-y-auto overscroll-contain">
         {PANELS.map(({ id, label, icon: Icon }) => (
-          <RailButton key={id} label={label} active={leftPanel === id} onClick={() => setLeftPanel(leftPanel === id ? null : id)}>
+          <RailButton
+            key={id}
+            label={label}
+            dataTour={id === "add" ? "left-rail-add" : undefined}
+            active={leftPanel === id}
+            onClick={() => setLeftPanel(leftPanel === id ? null : id)}
+          >
             <Icon className="size-4.5" strokeWidth={1.75} aria-hidden />
           </RailButton>
         ))}
         <span className="my-1 h-px w-6 shrink-0 bg-ed-border" aria-hidden />
         <RailButton
           label="AI assistant"
+          dataTour="left-rail-ai"
           active={aiOpen}
           disabled={aiLock !== null}
           onClick={() => setAiOpen(!aiOpen)}

@@ -17,7 +17,7 @@
   --puck-color-azure-11: #f1f4fd;
   --puck-color-azure-12: #f7f9fe;
   --color-ed-accent: #2447c7;
-  --puck-slot-min-empty-height: 100%;
+  --puck-slot-min-empty-height: 0;
 }
 
 html,
@@ -27,31 +27,136 @@ body,
   min-height: 100%;
   margin: 0;
   padding: 0;
+  overscroll-behavior: none;
 }
 
-/* Ensure the dropzone takes full height so dragging anywhere over the canvas is registered */
-[data-puck-dropzone],
-[class*="_DropZone_"] {
+/*
+ * DropZone container allows page content to grow naturally while individual
+ * sections keep their intrinsic heights without artificial whitespace.
+ */
+div[data-puck-dropzone] {
   min-height: 100% !important;
-  height: 100% !important;
+  height: auto !important;
+  width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  flex: 1 1 auto !important;
+  flex: 1 0 auto !important;
+  position: relative !important;
+  padding-bottom: 48px !important;
 }
 
-[data-puck-dropzone]:empty,
-[class*="_DropZone_"]:empty {
-  min-height: 100% !important;
-  height: 100% !important;
+div[data-puck-dropzone]:empty {
+  min-height: 280px !important;
+  background: transparent !important;
+  outline: none !important;
 }
 
-.wb-site,
-.wb-site main {
+/* Individual section items inside DropZone must take natural content height */
+[class*="_DropZone-item"] {
+  height: auto !important;
+  min-height: 0 !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  position: relative !important;
+  display: block !important;
+}
+
+/* Drag & drop line placeholders must be thin, never inflating into white boxes */
+[class*="_DropZone-linePlaceholder"] {
+  height: 3px !important;
+  min-height: 0 !important;
+  max-height: 3px !important;
+  flex: none !important;
+  background: var(--color-ed-accent, #2447c7) !important;
+  pointer-events: none !important;
+  z-index: 50 !important;
+}
+
+/* Hitboxes for drag & drop targeting must never expand vertically */
+[class*="_DropZone-hitbox"] {
+  height: 16px !important;
+  min-height: 0 !important;
+  max-height: 16px !important;
+  flex: none !important;
+}
+
+/* Hitboxes must never block clicking sections when not dragging */
+body:not([data-puck-dragging]) [class*="_DropZone-hitbox"] {
+  pointer-events: none !important;
+}
+
+body[data-puck-dragging] [class*="_DropZone-hitbox"] {
+  pointer-events: auto !important;
+}
+
+/* Component drag handle and selection reliability */
+[data-puck-component] {
+  pointer-events: auto !important;
+  cursor: grab !important;
+}
+
+[data-puck-component]:active {
+  cursor: grabbing !important;
+}
+
+.wb-site {
   min-height: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  width: 100%;
+  flex: 1 0 auto;
+}
+
+.wb-site > main {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1 0 auto;
+}
+
+.wb-editor-section-wrap {
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+/* Production-level pixel-perfect section selection */
+[class*="_DraggableComponent-overlay"] {
+  cursor: pointer !important;
+  outline: 2px solid transparent !important;
+  outline-offset: -2px !important;
+  transition: outline-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+}
+
+/* Subtle hover outline on non-selected sections */
+[class*="_DraggableComponent--hover"]:not([class*="_DraggableComponent--isSelected"]) > [class*="_DraggableComponent-overlayWrapper"] > [class*="_DraggableComponent-overlay"] {
+  outline: 2px dashed rgba(36, 71, 199, 0.45) !important;
+  outline-offset: -2px !important;
+  background-color: transparent !important;
+}
+
+/* Active selected section: crisp accent border with subtle glow, matching inspector */
+[class*="_DraggableComponent--isSelected"] > [class*="_DraggableComponent-overlayWrapper"] > [class*="_DraggableComponent-overlay"] {
+  outline: 2px solid var(--color-ed-accent, #2447c7) !important;
+  outline-offset: -2px !important;
+  box-shadow: inset 0 0 0 1px rgba(36, 71, 199, 0.25) !important;
+  background-color: transparent !important;
+}
+
+/* Completely remove Puck's unwanted floating handler / action pill bar over the canvas */
+[class*="_DraggableComponent-actionsOverlay"],
+[class*="_DraggableComponent-actions"],
+[class*="_DraggableComponent-loadingOverlay"] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
 }
 
 /* Hidden sections stay editable but are clearly marked as not published. */
@@ -112,27 +217,137 @@ body,
   overflow: hidden !important;
 }
 
-/* Custom pixel-perfect scrollbar for editor panels */
+/* Canvas iframe styling - Seamless transparent frame and overlay scrollbars */
+iframe#preview-frame,
+iframe[id*="preview"],
+.Puck iframe {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Clean professional inputs: eliminate nested inner scrollbar handles inside textareas and inputs */
+.ed-root textarea,
+.ed-root input {
+  scrollbar-width: none !important;
+}
+.ed-root textarea::-webkit-scrollbar,
+.ed-root input::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Canvas viewport & Puck frame: completely hide scrollbars while allowing natural scrolling */
+[data-tour="canvas-area"],
+[data-tour="canvas-area"] *,
+[data-tour="canvas-viewport"],
+[data-tour="canvas-viewport"] *,
+.Puck,
+.Puck *,
+[class*="_Frame_"],
+[class*="_Frame_"] *,
+[class*="_Canvas_"],
+[class*="_Canvas_"] *,
+[data-puck-dropzone],
+[data-puck-dropzone] *,
+[class*="_DropZone_"],
+[class*="_DropZone_"] *,
+#frame-root,
+#frame-root *,
+iframe#preview-frame,
+iframe[id*="preview"],
+.Puck iframe {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[data-tour="canvas-area"]::-webkit-scrollbar,
+[data-tour="canvas-area"] *::-webkit-scrollbar,
+[data-tour="canvas-viewport"]::-webkit-scrollbar,
+[data-tour="canvas-viewport"] *::-webkit-scrollbar,
+.Puck::-webkit-scrollbar,
+.Puck *::-webkit-scrollbar,
+[class*="_Frame_"]::-webkit-scrollbar,
+[class*="_Frame_"] *::-webkit-scrollbar,
+[class*="_Canvas_"]::-webkit-scrollbar,
+[class*="_Canvas_"] *::-webkit-scrollbar,
+[data-puck-dropzone]::-webkit-scrollbar,
+[data-puck-dropzone] *::-webkit-scrollbar,
+[class*="_DropZone_"]::-webkit-scrollbar,
+[class*="_DropZone_"] *::-webkit-scrollbar,
+#frame-root::-webkit-scrollbar,
+#frame-root *::-webkit-scrollbar,
+iframe#preview-frame::-webkit-scrollbar,
+iframe[id*="preview"]::-webkit-scrollbar,
+.Puck iframe::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+/* Custom pixel-perfect floating overlay scrollbar for editor panels and sidebars */
+.ed-root,
 .ed-root * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-ed-border-strong) transparent;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease;
 }
 
+.ed-root:hover,
+.ed-root *:hover,
+.ed-root *:focus-within {
+  scrollbar-color: var(--color-ed-border-strong, rgba(140, 145, 160, 0.45)) transparent;
+}
+
+.ed-root::-webkit-scrollbar,
 .ed-root *::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
+.ed-root::-webkit-scrollbar-track,
 .ed-root *::-webkit-scrollbar-track {
-  background: transparent;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
 }
 
+.ed-root::-webkit-scrollbar-thumb,
 .ed-root *::-webkit-scrollbar-thumb {
-  background-color: var(--color-ed-border-strong);
+  background-color: transparent;
   border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+.ed-root:hover::-webkit-scrollbar-thumb,
+.ed-root *:hover::-webkit-scrollbar-thumb {
+  background-color: var(--color-ed-border-strong, rgba(140, 145, 160, 0.45));
 }
 
 .ed-root *::-webkit-scrollbar-thumb:hover {
-  background-color: var(--color-ed-faint);
+  background-color: var(--color-ed-faint, rgba(140, 145, 160, 0.75));
+}
+
+.ed-root::-webkit-scrollbar-corner,
+.ed-root *::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+/* Onboarding tour smooth tooltip animations */
+@keyframes tour-tooltip-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.editor-tour-card-enter {
+  animation: tour-tooltip-enter 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 

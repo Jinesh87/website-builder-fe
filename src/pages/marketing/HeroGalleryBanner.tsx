@@ -1,5 +1,7 @@
-import { useState, useRef, useLayoutEffect, type ReactNode, type FormEvent } from "react";
+import { useState, useRef, useLayoutEffect, useEffect, useMemo, type ReactNode, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { CATS, STYLES, TPLS } from "./data.ts";
+import { templatesApi } from "../../api/websites.ts";
 import "./hero-gallery.css";
 
 function ScaledFrame({ children, dataT }: { children: ReactNode; dataT: string }) {
@@ -33,6 +35,38 @@ function ScaledFrame({ children, dataT }: { children: ReactNode; dataT: string }
 export default function HeroGalleryBanner() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [templateCount, setTemplateCount] = useState<number>(TPLS.length);
+
+  useEffect(() => {
+    let cancelled = false;
+    templatesApi
+      .list()
+      .then((loaded) => {
+        if (!cancelled && loaded && loaded.length > 0) {
+          setTemplateCount(Math.max(loaded.length, TPLS.length));
+        }
+      })
+      .catch(() => {
+        // Fallback to TPLS.length
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const industryCount = useMemo(() => {
+    const fromCategories = CATS.filter((cat) => cat !== "All").length;
+    const fromTemplates = new Set(TPLS.map((t) => t.c).filter(Boolean)).size;
+    return Math.max(fromCategories, fromTemplates);
+  }, []);
+
+  const designStyleCount = useMemo(() => {
+    const fromStyles = STYLES.filter((s) => s !== "All styles").length;
+    const fromTemplates = new Set(TPLS.map((t) => t.style).filter(Boolean)).size;
+    return Math.max(fromStyles, fromTemplates);
+  }, []);
+
+  const devicePreviewCount = 3;
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -56,7 +90,7 @@ export default function HeroGalleryBanner() {
             Find the right website <span>for your business</span>
           </h1>
           <p className="lead">
-            <b>416</b> professionally designed templates for every kind of business. Open any one to see every page on
+            <b>{templateCount}</b> professionally designed templates for every kind of business. Open any one to see every page on
             desktop, tablet and mobile, then start with it for free.
           </p>
 
@@ -87,19 +121,19 @@ export default function HeroGalleryBanner() {
 
           <div className="gstats">
             <div>
-              <b>416</b>
+              <b>{templateCount}</b>
               <span>templates</span>
             </div>
             <div>
-              <b>8</b>
+              <b>{industryCount}</b>
               <span>industries</span>
             </div>
             <div>
-              <b>12</b>
+              <b>{designStyleCount}</b>
               <span>design styles</span>
             </div>
             <div>
-              <b>3</b>
+              <b>{devicePreviewCount}</b>
               <span>device previews</span>
             </div>
           </div>

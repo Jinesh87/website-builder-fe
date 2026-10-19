@@ -66,8 +66,10 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
   const width = deviceWidth(device);
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  const deviceContainerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [height, setHeight] = useState<number | null>(null);
+  const [deviceScale, setDeviceScale] = useState(1);
 
   useLayoutEffect(() => {
     if (!fit) return;
@@ -86,6 +88,26 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
     return () => observer.disconnect();
   }, [fit, width]);
 
+  useLayoutEffect(() => {
+    if (device === "desktop" || fit) return;
+    const el = deviceContainerRef.current;
+    if (!el) return;
+    const update = () => {
+      const targetW = device === "tablet" ? 824 : 430;
+      const targetH = device === "tablet" ? 820 : 800;
+      const availW = el.clientWidth - 32;
+      const availH = el.clientHeight - 32;
+      const scaleW = availW > 0 && availW < targetW ? availW / targetW : 1;
+      const scaleH = availH > 0 && availH < targetH ? Math.max(0.65, availH / targetH) : 1;
+      const finalScale = Math.min(scaleW, scaleH);
+      setDeviceScale(Math.min(1, Math.max(0.45, finalScale)));
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    update();
+    return () => observer.disconnect();
+  }, [device, fit]);
+
   // Site links point at the client site's paths, which don't exist inside the builder.
   function handleClickCapture(event: MouseEvent<HTMLDivElement>) {
     const anchor = event.target instanceof Element ? event.target.closest("a") : null;
@@ -95,7 +117,7 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
   }
 
   if (fit) {
-    const frameClass = "overflow-clip rounded-lg border border-line-strong bg-white shadow-sm";
+    const frameClass = "overflow-clip rounded-lg border border-line-strong bg-transparent shadow-sm";
     return (
       <div className="bg-canvas p-4 sm:p-6">
         <SiteStyles />
@@ -115,7 +137,7 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
 
   if (device === "desktop") {
     return (
-      <div className="w-full min-h-screen bg-white" onClickCapture={handleClickCapture}>
+      <div className="w-full min-h-full bg-transparent" onClickCapture={handleClickCapture}>
         <SiteStyles />
         {children}
       </div>
@@ -125,13 +147,20 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
   if (device === "tablet") {
     return (
       <div
-        className="relative flex items-center justify-center w-full h-[calc(100vh-56px)] py-6 px-4 overflow-hidden bg-[#f4f5f8] bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]"
+        ref={deviceContainerRef}
+        className="relative flex items-center justify-center w-full h-full min-h-[calc(100vh-64px)] py-6 px-4 overflow-y-auto overflow-x-hidden bg-[#f4f5f8] bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]"
         onClickCapture={handleClickCapture}
       >
         <SiteStyles />
 
         {/* iPad Pro Hardware Shell */}
-        <div className="relative shrink-0 flex flex-col items-center justify-center h-full max-h-full select-none">
+        <div
+          className="relative shrink-0 flex flex-col items-center justify-center select-none transition-transform duration-200"
+          style={{
+            transform: deviceScale < 1 ? `scale(${deviceScale})` : undefined,
+            transformOrigin: "center center",
+          }}
+        >
           {/* Studio Ambient Floor Shadow */}
           <div className="absolute -inset-3 rounded-[40px] bg-black/25 blur-2xl pointer-events-none" />
 
@@ -150,11 +179,14 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
 
             {/* Inner Screen Display Glass (traps fixed modals/drawers inside device) */}
             <div
-              className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden rounded-[20px] bg-white ring-1 ring-black/10 shadow-inner"
-              style={{ transform: "translateZ(0)" }}
+              className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden rounded-[20px] ring-1 ring-black/10 shadow-inner"
+              style={{ transform: "translateZ(0)", backgroundColor: "var(--wb-bg, transparent)" }}
             >
               {/* Scrollable Content */}
-              <div className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain">
+              <div
+                className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain"
+                style={{ scrollbarWidth: "thin", scrollbarColor: "color-mix(in srgb, var(--wb-text, #18181b) 45%, transparent) transparent" }}
+              >
                 {children}
               </div>
 
@@ -172,13 +204,20 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
   // Mobile frame (iPhone 18 Pro)
   return (
     <div
-      className="relative flex items-center justify-center w-full h-[calc(100vh-56px)] py-6 px-4 overflow-hidden bg-[#f4f5f8] bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]"
+      ref={deviceContainerRef}
+      className="relative flex items-center justify-center w-full h-full min-h-[calc(100vh-64px)] py-6 px-4 overflow-y-auto overflow-x-hidden bg-[#f4f5f8] bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]"
       onClickCapture={handleClickCapture}
     >
       <SiteStyles />
 
       {/* iPhone Pro Hardware Shell */}
-      <div className="relative shrink-0 flex flex-col items-center justify-center h-full max-h-full select-none">
+      <div
+        className="relative shrink-0 flex flex-col items-center justify-center select-none transition-transform duration-200"
+        style={{
+          transform: deviceScale < 1 ? `scale(${deviceScale})` : undefined,
+          transformOrigin: "center center",
+        }}
+      >
         {/* Studio Ambient Floor Shadow */}
         <div className="absolute -inset-3 rounded-[58px] bg-black/25 blur-2xl pointer-events-none" />
 
@@ -200,8 +239,8 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
 
           {/* Inner Screen Display Glass (traps fixed modals/drawers inside device) */}
           <div
-            className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden rounded-[40px] bg-white ring-1 ring-black/10 shadow-inner"
-            style={{ transform: "translateZ(0)" }}
+            className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden rounded-[40px] ring-1 ring-black/10 shadow-inner"
+            style={{ transform: "translateZ(0)", backgroundColor: "var(--wb-bg, transparent)" }}
           >
             {/* Dynamic Island Floating Pill (Compact & Elegant) */}
             <div className="absolute left-1/2 -translate-x-1/2 top-2 z-30 flex items-center justify-between px-2 h-[22px] w-[92px] rounded-full bg-black shadow-md pointer-events-none">
@@ -214,7 +253,10 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
             </div>
 
             {/* Scrollable Website Preview (pt-8 provides clean breathing room under Dynamic Island) */}
-            <div className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain pt-8 pb-5">
+            <div
+              className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain pt-8 pb-5"
+              style={{ scrollbarWidth: "thin", scrollbarColor: "color-mix(in srgb, var(--wb-text, #18181b) 45%, transparent) transparent" }}
+            >
               {children}
             </div>
 

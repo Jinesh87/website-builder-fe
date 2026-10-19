@@ -31,6 +31,40 @@ export const SITE_CSS = `
   flex-direction: column;
   flex: 1 1 auto;
 }
+.wb-site,
+.wb-site * {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--wb-text) 45%, transparent) transparent;
+}
+.wb-site::-webkit-scrollbar,
+.wb-site *::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.wb-site::-webkit-scrollbar-track,
+.wb-site *::-webkit-scrollbar-track {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+.wb-site::-webkit-scrollbar-thumb,
+.wb-site *::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--wb-text) 45%, transparent);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+.wb-site::-webkit-scrollbar-thumb:hover,
+.wb-site *::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--wb-text) 75%, transparent);
+}
+.wb-site::-webkit-scrollbar-corner,
+.wb-site *::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
 /* Reset: :where() keeps these at class-level specificity so component classes below always win.
    .wb-editor-chrome marks builder controls drawn inside the preview; they keep the builder's own styles. */
 .wb-site :where(*${NOT_CHROME}, *${NOT_CHROME}::before, *${NOT_CHROME}::after) { box-sizing: border-box; margin: 0; padding: 0; border: 0 solid; }
@@ -98,8 +132,8 @@ export const SITE_CSS = `
 .wb-icon svg { width: 22px; height: 22px; }
 
 /* Header */
-.wb-announcement { background: var(--wb-text); color: var(--wb-bg); text-align: center; font-size: 13px; padding: 8px 24px; font-weight: 500; }
-.wb-announcement a { text-decoration: underline; text-underline-offset: 2px; margin-left: 6px; }
+.wb-announcement { background: var(--wb-surface); color: var(--wb-text); border-bottom: 1px solid var(--wb-border); text-align: center; font-size: 13px; padding: 8px 24px; font-weight: 500; }
+.wb-announcement a { text-decoration: underline; text-underline-offset: 2px; margin-left: 6px; color: var(--wb-primary); }
 .wb-header { background: var(--wb-bg); border-bottom: 1px solid var(--wb-border); position: relative; z-index: 40; transition: background 150ms ease, box-shadow 150ms ease; }
 .wb-header.wb-pos-static { position: relative; }
 .wb-header.wb-pos-sticky, .wb-header.wb-sticky { position: -webkit-sticky; position: sticky; top: 0; z-index: 40; width: 100%; }
