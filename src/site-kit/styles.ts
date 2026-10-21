@@ -4687,6 +4687,13 @@ details[open] > summary .wb-faq-plus {
   font-size: 12.5px;
   color: var(--wb-muted);
 }
+.wb-contact-form-status {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.wb-contact-form-status.is-success { color: #047857; }
+.wb-contact-form-status.is-error { color: #b91c1c; }
 @container wb-site (max-width: 640px) {
   .wb-contact-input-row {
     grid-template-columns: 1fr;
@@ -4704,133 +4711,6 @@ details[open] > summary .wb-faq-plus {
     flex-direction: column;
     align-items: flex-start;
   }
-}
-
-/* ==========================================================================
-   Mailto Contact Component (Direct Email Card)
-   ========================================================================== */
-.wb-contact-mailto-card {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.wb-contact-mailto-header {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-.wb-contact-mailto-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--wb-radius);
-  background: var(--wb-bg);
-  border: 1px solid var(--wb-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--wb-text);
-}
-.wb-contact-mailto-icon-box svg {
-  width: 22px;
-  height: 22px;
-}
-.wb-contact-mailto-subtitle {
-  font-size: 14.5px;
-  line-height: 1.55;
-  color: var(--wb-muted);
-  margin: 6px 0 0 0;
-}
-.wb-contact-mailto-services {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 4px;
-}
-.wb-contact-mailto-services-title {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--wb-muted);
-}
-.wb-contact-mailto-chip {
-  display: inline-block;
-  padding: 5px 13px;
-  border-radius: 9999px;
-  background: var(--wb-bg);
-  border: 1px solid var(--wb-border);
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--wb-text);
-}
-.wb-contact-mailto-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 6px;
-}
-.wb-contact-mailto-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 13px 24px;
-  font-size: 15px;
-  font-weight: 700;
-  text-decoration: none;
-  border-radius: var(--wb-radius);
-  box-shadow: 0 4px 14px -3px color-mix(in srgb, var(--wb-text) 15%, transparent);
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-}
-.wb-contact-mailto-cta:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px -4px color-mix(in srgb, var(--wb-text) 25%, transparent);
-}
-.wb-contact-mailto-cta svg {
-  width: 17px;
-  height: 17px;
-}
-.wb-contact-mailto-address-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: var(--wb-radius);
-  background: var(--wb-bg);
-  border: 1px solid var(--wb-border);
-}
-.wb-contact-mailto-address {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--wb-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.wb-contact-mailto-copy-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border-radius: var(--wb-radius);
-  background: color-mix(in srgb, var(--wb-text) 6%, transparent);
-  border: 1px solid var(--wb-border);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--wb-text);
-  cursor: pointer;
-  transition: all 0.18s ease;
-  flex-shrink: 0;
-}
-.wb-contact-mailto-copy-btn:hover {
-  background: color-mix(in srgb, var(--wb-text) 12%, transparent);
-  border-color: var(--wb-text);
-}
-.wb-contact-mailto-footer {
-  margin-top: 2px;
 }
 
 /* ==========================================================================
