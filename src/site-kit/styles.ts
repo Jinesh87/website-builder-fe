@@ -85,6 +85,7 @@ export const SITE_CSS = `
 .wb-container { width: 100%; max-width: var(--wb-container); margin: 0 auto; padding: 0 24px; }
 .wb-container-full { width: 100%; max-width: 100%; margin: 0; padding: 0; }
 .wb-section { padding: var(--wb-section-y) 0; }
+.wb-section[id] { scroll-margin-top: 88px; }
 .wb-bg-surface { background: var(--wb-surface); }
 .wb-bg-primary { background: var(--wb-primary); color: var(--wb-on-primary); }
 .wb-bg-primary .wb-muted { color: inherit; opacity: 0.85; }
@@ -3131,10 +3132,10 @@ export const SITE_CSS = `
 .wb-bento-cell-satellites { display: grid; grid-template-columns: 1fr; gap: 20px; }
 
 @container wb-site (max-width: 860px) {
-  .wb-services-bento-grid { grid-template-columns: 1fr; }
+  .wb-services-bento-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 860px) {
-  .wb-services-bento-grid { grid-template-columns: 1fr; }
+  .wb-services-bento-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Split Showcase */
@@ -4895,6 +4896,7 @@ details[open] > summary .wb-faq-plus {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 .wb-contact-info-label {
   font-size: 11.5px;
@@ -4907,6 +4909,7 @@ details[open] > summary .wb-faq-plus {
   font-size: 15px;
   font-weight: 600;
   color: var(--wb-text);
+  overflow-wrap: anywhere;
 }
 .wb-contact-form-wrapper {
   padding: 36px 32px;
@@ -4914,13 +4917,13 @@ details[open] > summary .wb-faq-plus {
 }
 @container wb-site (max-width: 900px) {
   .wb-contact-split-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 40px;
   }
 }
 @media (max-width: 900px) {
   .wb-contact-split-container {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 40px;
   }
 }
@@ -7682,6 +7685,8 @@ details[open] > summary .wb-faq-plus {
   .wb-features-split-title { font-size: 32px; }
   .wb-feature-card-stacked { padding: 20px 22px; gap: 16px; }
   .wb-footer-grid { grid-template-columns: repeat(2, 1fr); }
+  .wb-footer-mega-grid, .wb-footer-split-grid, .wb-footer-newsletter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+  .wb-footer-mega-grid > .wb-footer-about, .wb-footer-split-grid > .wb-footer-about, .wb-footer-newsletter-grid > .wb-footer-about { grid-column: 1 / -1; }
   
   /* Header Tablet Responsive */
   .wb-nav, .wb-nav-left, .wb-header-cta,
@@ -7712,6 +7717,9 @@ details[open] > summary .wb-faq-plus {
   .wb-hero-sub, .wb-section-head p, .wb-cta p { font-size: 17px; }
   .wb-section-head { margin-bottom: 32px; }
   .wb-footer-grid { grid-template-columns: 1fr; gap: 28px; }
+  .wb-footer-mega-grid, .wb-footer-split-grid, .wb-footer-newsletter-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .wb-newsletter-form { max-width: none; }
+  .wb-footer-cta-card { padding: 24px 20px; margin-bottom: 32px; }
   .wb-actions .wb-btn { flex: 1 1 100%; }
   .wb-member-photo { width: 96px; height: 96px; }
   .wb-service-body { padding: 24px 20px; }

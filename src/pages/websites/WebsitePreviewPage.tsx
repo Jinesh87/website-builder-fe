@@ -7,6 +7,7 @@ import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { DeviceToggle, PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
 import { SitePage, type SiteData } from "../../site-kit/index.ts";
+import { resolvePageLink } from "../../site-kit/links.ts";
 import { getLiveSiteDomain, getLiveSiteUrl } from "../../utils/live-url.ts";
 import { isLightColor } from "../../utils/colors.ts";
 import type { CreatedState } from "./CreateWebsitePage.tsx";
@@ -50,22 +51,11 @@ export default function WebsitePreviewPage() {
   const pages = website?.draft.pages ?? [];
   const page = pages.find((candidate) => candidate.id === pageId) ?? pages.find((candidate) => candidate.slug === "/") ?? pages[0];
 
-  function openLink(href: string) {
-    if (!href || href === "#") return;
-    const clean = href.split("?")[0].split("#")[0].trim();
-    const withSlash = clean.startsWith("/") ? clean : `/${clean}`;
-    let target = pages.find(
-      (candidate) =>
-        candidate.slug === clean ||
-        candidate.slug === withSlash ||
-        candidate.id === href ||
-        candidate.slug.replace(/^\//, "").toLowerCase() === clean.replace(/^\//, "").toLowerCase() ||
-        candidate.name.toLowerCase() === clean.replace(/^\//, "").toLowerCase(),
-    );
-    if (!target && (clean.includes("privacy") || clean.includes("terms") || clean.includes("disclaimer") || clean.includes("legal") || clean.includes("support") || clean.includes("faq"))) {
-      target = pages.find((candidate) => candidate.slug === "/contact" || candidate.slug === "/about");
-    }
-    if (target) setPageId(target.id);
+  function openLink(href: string): boolean {
+    const target = resolvePageLink(pages, href, page);
+    if (!target) return false;
+    setPageId(target.page.id);
+    return true;
   }
 
   const simulatedDomain = getLiveSiteDomain(website?.subdomain || "preview", website?.customDomain);
@@ -241,7 +231,13 @@ export default function WebsitePreviewPage() {
                 : undefined
             }
           >
-            <PreviewFrame device={device} onLinkClick={openLink} theme={site?.theme}>
+            <PreviewFrame
+              device={device}
+              onLinkClick={openLink}
+              allowOffsiteLinks
+              scrollResetKey={page.id}
+              theme={site?.theme}
+            >
               <SitePage site={site} page={page} />
             </PreviewFrame>
           </main>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -25,6 +25,7 @@ import { templatesApi, type TemplatePreview } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
 import { SitePage } from "../../site-kit/index.ts";
+import { resolvePageLink } from "../../site-kit/links.ts";
 import { getTemplateKey, getTemplateSite } from "../../site-kit/templates/index.ts";
 import { isLightColor } from "../../utils/colors.ts";
 import { Spinner } from "@heroui/react";
@@ -435,28 +436,13 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
   const [selectedPage, setSelectedPage] = useState(pages[0] || "Home");
   const [copied, setCopied] = useState(false);
   const isShortlisted = shortlist.includes(index);
-  const canvasRef = useRef<HTMLElement>(null);
   const sitePage = site?.pages.find((page) => page.name === selectedPage) ?? site?.pages[0];
 
-  useEffect(() => {
-    canvasRef.current?.scrollTo({ top: 0 });
-  }, [selectedPage]);
-
-  const handleSiteLinkClick = (href: string) => {
-    if (!href || href === "#") return;
-    const clean = href.split("?")[0].split("#")[0].trim();
-    const withSlash = clean.startsWith("/") ? clean : `/${clean}`;
-    let target = site?.pages.find(
-      (page) =>
-        page.slug === clean ||
-        page.slug === withSlash ||
-        page.slug.replace(/^\//, "").toLowerCase() === clean.replace(/^\//, "").toLowerCase() ||
-        page.name.toLowerCase() === clean.replace(/^\//, "").toLowerCase(),
-    );
-    if (!target && (clean.includes("privacy") || clean.includes("terms") || clean.includes("disclaimer") || clean.includes("legal") || clean.includes("support") || clean.includes("faq"))) {
-      target = site?.pages.find((page) => page.slug === "/contact" || page.slug === "/about");
-    }
-    if (target) setSelectedPage(target.name);
+  const handleSiteLinkClick = (href: string): boolean => {
+    const target = site ? resolvePageLink(site.pages, href, sitePage) : null;
+    if (!target) return false;
+    setSelectedPage(target.page.name);
+    return true;
   };
 
   const handleCopyUrl = () => {
@@ -650,7 +636,6 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
         const scrollThumbHoverColor = isSiteLight ? "rgba(24, 24, 27, 0.75)" : "rgba(255, 255, 255, 0.75)";
         return (
           <main
-            ref={canvasRef}
             className={`tpl-full-canvas ${device}`}
             style={{
               scrollbarWidth: "thin",
@@ -660,11 +645,17 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
             }}
           >
             {site && sitePage ? (
-              <PreviewFrame device={device} onLinkClick={handleSiteLinkClick} theme={site.theme}>
+              <PreviewFrame
+                device={device}
+                onLinkClick={handleSiteLinkClick}
+                allowOffsiteLinks
+                scrollResetKey={sitePage.id}
+                theme={site.theme}
+              >
                 <SitePage site={site} page={sitePage} />
               </PreviewFrame>
             ) : (
-              <PreviewFrame device={device} theme={site?.theme}>
+              <PreviewFrame device={device} scrollResetKey={selectedPage} theme={site?.theme}>
                 <FullTemplateSite
                   template={template}
                   selectedPage={selectedPage}
@@ -730,9 +721,11 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
   const pages = useMemo(() => preview?.site.pages ?? [], [preview]);
   const page = pages.find((candidate) => candidate.slug === pageSlug) ?? pages[0];
 
-  function handleLinkClick(href: string) {
-    const target = pages.find((candidate) => candidate.slug === href);
-    if (target) setPageSlug(target.slug);
+  function handleLinkClick(href: string): boolean {
+    const target = resolvePageLink(pages, href, page);
+    if (!target) return false;
+    setPageSlug(target.page.slug);
+    return true;
   }
 
   const handleCopyUrl = () => {
@@ -875,7 +868,13 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
               ["--scrollbar-thumb-hover" as any]: scrollThumbHoverColor,
             }}
           >
-            <PreviewFrame device={device} onLinkClick={handleLinkClick} theme={preview?.site?.theme}>
+            <PreviewFrame
+              device={device}
+              onLinkClick={handleLinkClick}
+              allowOffsiteLinks
+              scrollResetKey={page.slug}
+              theme={preview?.site?.theme}
+            >
               <SitePage site={preview.site} page={page} />
             </PreviewFrame>
           </main>
