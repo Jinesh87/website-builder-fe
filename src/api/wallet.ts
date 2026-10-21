@@ -26,6 +26,15 @@ export type WalletTransaction = {
 
 export type WalletTransactionPage = { transactions: WalletTransaction[]; total: number; page: number; pageSize: number };
 
+/** Connects spent on AI in a month (or a whole year when `month` is null). */
+export type AiUsageSummary = {
+  year: number;
+  month: number | null;
+  connects: number;
+  calls: number;
+  byFeature: Array<{ scope: string; label: string; calls: number; connects: number }>;
+};
+
 export type TopupCheckout = {
   orderId: string;
   keyId: string;
@@ -60,6 +69,8 @@ export const walletApi = {
   get: () => request<{ wallet: Wallet }>(BASE).then((data) => data.wallet),
   transactions: (page = 1, pageSize = 20) =>
     request<WalletTransactionPage>(`${BASE}/transactions?${new URLSearchParams({ page: String(page), pageSize: String(pageSize) })}`),
+  /** Current month when no period is given. */
+  usage: () => request<{ usage: AiUsageSummary }>(`${BASE}/usage`).then((data) => data.usage),
   createTopup: (connects: number) =>
     request<{ checkout: TopupCheckout }>(`${BASE}/topups`, { method: "POST", body: { connects } }).then((data) => data.checkout),
   confirmTopup: (input: TopupConfirmation) =>
