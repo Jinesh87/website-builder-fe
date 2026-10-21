@@ -10,6 +10,7 @@ import ContactDetailsSection from "../../components/account/ContactDetailsSectio
 import AiModelPicker from "../../components/ai/AiModelPicker.tsx";
 import AiSparklesIcon from "../../components/icons/AiSparklesIcon.tsx";
 import PageHeader from "../../components/app/PageHeader.tsx";
+import ClientEmailPanel from "../../components/client/ClientEmailPanel.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 
@@ -61,7 +62,7 @@ export default function AccountSettingsPage() {
     <div className="px-6 py-8 sm:px-8 max-w-5xl">
       <PageHeader
         title="Account settings"
-        description="Manage your contact details, password and how the AI assistant works for your account."
+        description="Manage your contact details, password, how the AI assistant works, and how your websites send email."
       />
 
       <ContactDetailsSection />
@@ -160,6 +161,8 @@ export default function AccountSettingsPage() {
           </div>
         </section>
       )}
+
+      <ClientEmailPanel />
     </div>
   );
 }

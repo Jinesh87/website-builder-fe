@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { safeHref } from "../links.ts";
 import { SectionHead, SectionShell, SiteIcon } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
+import ContactForm from "./ContactFormBackup.tsx";
 
 function MailIcon() {
   return (
@@ -44,108 +44,6 @@ function ChannelIconRender({ icon }: { icon?: string }) {
   if (icon === "user") return <SiteIcon name="user" />;
   if (icon === "pin") return <PinIcon />;
   return <MailIcon />;
-}
-
-function MailtoCard({
-  email,
-  formHeading,
-  submitLabel,
-  serviceOptions,
-}: {
-  email?: string;
-  formHeading?: string;
-  submitLabel?: string;
-  serviceOptions?: string[];
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    if (!email) return;
-    navigator.clipboard.writeText(email).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  const mailtoHref = email
-    ? safeHref(`mailto:${email}?subject=${encodeURIComponent("Inquiry from Website")}`)
-    : "#";
-
-  return (
-    <div className="wb-contact-mailto-card">
-      <div className="wb-contact-mailto-header">
-        <div className="wb-contact-mailto-icon-box">
-          <MailIcon />
-        </div>
-        <div>
-          <h3 className="wb-contact-form-title">{formHeading || "Send us an email"}</h3>
-          <p className="wb-contact-mailto-subtitle">
-            Click below to write to us directly. We typically reply within one business day.
-          </p>
-        </div>
-      </div>
-
-      {serviceOptions && serviceOptions.length > 0 && (
-        <div className="wb-contact-mailto-services">
-          <span className="wb-contact-mailto-services-title">Services offered:</span>
-          <div className="wb-contact-chips-row">
-            {serviceOptions.map((opt, i) => (
-              <span key={i} className="wb-contact-mailto-chip">
-                {opt}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="wb-contact-mailto-actions">
-        <a
-          href={mailtoHref}
-          className="wb-btn wb-btn-primary wb-contact-mailto-cta"
-        >
-          <MailIcon />
-          <span>{submitLabel || "Send an email"}</span>
-        </a>
-
-        {email && (
-          <div className="wb-contact-mailto-address-row">
-            <span className="wb-contact-mailto-address" title={email}>
-              {email}
-            </span>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="wb-contact-mailto-copy-btn"
-              title="Copy email address"
-            >
-              {copied ? (
-                <>
-                  <svg className="size-3.5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                  <span>Copied!</span>
-                </>
-              ) : (
-                <>
-                  <svg className="size-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <rect x="7" y="7" width="10" height="10" rx="2" />
-                    <path d="M4 13V5a2 2 0 012-2h8" />
-                  </svg>
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="wb-contact-mailto-footer">
-        <span className="wb-contact-privacy-note">
-          ✉️ Opens directly in your default email client
-        </span>
-      </div>
-    </div>
-  );
 }
 
 export default function ContactSection({ section }: { section: SectionOf<"contact"> }) {
@@ -312,9 +210,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
 
         {data.showForm && (
           <div className={`wb-contact-hub-form-wrap wb-contact-card-style-${cardStyle}`}>
-            <MailtoCard
-              email={data.email}
-              submitLabel={data.submitLabel}
+            <ContactForm
+              submitLabel={data.submitLabel || "Send message"}
               formHeading={data.formHeading || "Send an online enquiry"}
               serviceOptions={data.serviceOptions}
             />
@@ -378,9 +275,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
             <div className="wb-contact-editorial-right">
               {data.showForm && (
                 <div className="wb-contact-editorial-form-box">
-                  <MailtoCard
-                    email={data.email}
-                    submitLabel={data.submitLabel}
+                  <ContactForm
+                    submitLabel={data.submitLabel || "Send message"}
                     formHeading={data.formHeading}
                     serviceOptions={data.serviceOptions}
                   />
@@ -444,9 +340,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
 
             {data.showForm && (
               <div className="wb-contact-glass-form-box">
-                <MailtoCard
-                  email={data.email}
-                  submitLabel={data.submitLabel}
+                <ContactForm
+                  submitLabel={data.submitLabel || "Send message"}
                   formHeading={data.formHeading || "Send a direct message"}
                   serviceOptions={data.serviceOptions}
                 />
@@ -544,9 +439,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
 
         {data.showForm && (
           <div className={`wb-contact-form-wrapper wb-contact-card-style-${cardStyle}`}>
-            <MailtoCard
-              email={data.email}
-              submitLabel={data.submitLabel}
+            <ContactForm
+              submitLabel={data.submitLabel || "Send message"}
               formHeading={data.formHeading || "Send an inquiry"}
               serviceOptions={data.serviceOptions}
             />
