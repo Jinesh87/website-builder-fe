@@ -86,7 +86,7 @@ export default function ComponentLibrary({ isOpen, onClose, theme, savedSections
   const [category, setCategory] = useState<Category>("All");
   // Built once so preview ids stay stable between renders.
   const presets = useMemo(() => SECTION_PRESETS.map((preset) => ({ preset, sample: preset.create() })), []);
-  const HIDDEN_CATEGORIES = new Set<string>(["Contact", "Auth"]);
+  const HIDDEN_CATEGORIES = new Set<string>(["Auth"]);
   const categories: Category[] = [
     ...(savedSections.length > 0 ? [SAVED] : []),
     "All",

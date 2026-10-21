@@ -195,8 +195,8 @@ const CATEGORIES: CategoryItem[] = [
   },
 ];
 
-// Temporarily hidden categories from the sidebar without deleting code or designs
-const HIDDEN_CATEGORIES = new Set<string>(["Contact", "Auth"]);
+// Auth stays out of the sidebar; its designs are still in the registry.
+const HIDDEN_CATEGORIES = new Set<string>(["Auth"]);
 
 export const VISIBLE_CATEGORIES = CATEGORIES.filter(
   (c) => !HIDDEN_CATEGORIES.has(c.category),
