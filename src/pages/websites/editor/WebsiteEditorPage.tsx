@@ -26,6 +26,7 @@ import ConfirmDialog from "../../../components/ui/ConfirmDialog.tsx";
 import FormAlert from "../../../components/ui/FormAlert.tsx";
 import { DeviceToggle, PreviewFrame, type Device } from "../../../components/websites/DevicePreview.tsx";
 import { WebsiteStatusChip } from "../../../components/websites/website-labels.tsx";
+import { contactEndpointFor, ContactEndpointProvider } from "../../../site-kit/contact-endpoint.tsx";
 import { getLiveSiteUrl } from "../../../utils/live-url.ts";
 import {
   DEFAULT_FONT,
@@ -660,7 +661,9 @@ export default function WebsiteEditorPage() {
 
             <main className="min-w-0 flex-1 overflow-y-auto" aria-label="Page preview">
               <PreviewFrame device={device} fit theme={draft?.theme}>
-                <SitePage site={{ ...draft, pages }} page={page} editor={editorHooks} />
+                <ContactEndpointProvider endpoint={contactEndpointFor(website?.subdomain)}>
+                  <SitePage site={{ ...draft, pages }} page={page} editor={editorHooks} />
+                </ContactEndpointProvider>
               </PreviewFrame>
             </main>
 
