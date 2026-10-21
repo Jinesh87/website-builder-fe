@@ -6,6 +6,7 @@ import { errorMessage } from "../../api/http.ts";
 import AiModelPicker from "../../components/ai/AiModelPicker.tsx";
 import AiSparklesIcon from "../../components/icons/AiSparklesIcon.tsx";
 import PageHeader from "../../components/app/PageHeader.tsx";
+import ClientEmailPanel from "../../components/client/ClientEmailPanel.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
@@ -54,7 +55,10 @@ export default function AccountSettingsPage() {
 
   return (
     <div className="px-6 py-8 sm:px-8 max-w-5xl">
-      <PageHeader title="Account settings" description="Choose how the AI assistant works for your account." />
+      <PageHeader
+        title="Account settings"
+        description="Choose how the AI assistant works, and how your websites send email."
+      />
 
       {loadError && (
         <div className="mt-6 max-w-2xl">
@@ -149,6 +153,8 @@ export default function AccountSettingsPage() {
           </div>
         </section>
       )}
+
+      <ClientEmailPanel />
     </div>
   );
 }
