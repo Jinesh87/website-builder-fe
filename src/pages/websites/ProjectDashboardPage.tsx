@@ -20,7 +20,8 @@ import {
   Rocket,
   Trash2,
 } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { hostingApi, type WebsiteHosting } from "../../api/hosting.ts";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import {
   websitesApi,
@@ -32,9 +33,22 @@ import DeploymentList from "../../components/dashboard/DeploymentList.tsx";
 import DomainsPanel from "../../components/dashboard/DomainsPanel.tsx";
 import ProjectSettingsPanel from "../../components/dashboard/ProjectSettingsPanel.tsx";
 import ProjectTabs, {
+  parseProjectTab,
   type ProjectTab,
 } from "../../components/dashboard/ProjectTabs.tsx";
 import SitePreviewCard from "../../components/dashboard/SitePreviewCard.tsx";
+import HostingAlert from "../../components/hosting/HostingAlert.tsx";
+import HostingCheckoutModal from "../../components/hosting/HostingCheckoutModal.tsx";
+import HostingRequiredCard from "../../components/hosting/HostingRequiredCard.tsx";
+import {
+  CYCLE_LABELS,
+  formatBillingDate,
+  HostingStatusChip,
+  hostingBlocksPublish,
+} from "../../components/hosting/hosting-labels.tsx";
+import LiveSiteLink from "../../components/websites/LiveSiteLink.tsx";
+import PublishSuccessModal from "../../components/websites/PublishSuccessModal.tsx";
+import WebsiteHostingPanel from "../../components/hosting/WebsiteHostingPanel.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import { lazyWithRetry } from "../../utils/lazy-with-retry.ts";
@@ -98,8 +112,18 @@ export default function ProjectDashboardPage() {
   const isAdmin = user?.role === "SUPER_ADMIN";
   const backTo = isAdmin ? "/admin/websites" : "/websites";
 
-  const [tab, setTab] = useState<ProjectTab>("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = parseProjectTab(searchParams.get("tab"));
+  const setTab = useCallback(
+    (next: ProjectTab) => setSearchParams(next === "overview" ? {} : { tab: next }, { replace: true }),
+    [setSearchParams],
+  );
   const [website, setWebsite] = useState<WebsiteDetail | null>(null);
+  const [hosting, setHosting] = useState<WebsiteHosting | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  /** Set when the checkout was opened by Publish, so publishing continues once paid. */
+  const [publishAfterPay, setPublishAfterPay] = useState(false);
+  const [success, setSuccess] = useState<{ title?: string } | null>(null);
   const [versions, setVersions] = useState<WebsiteVersion[]>([]);
   const [loadError, setLoadError] = useState<{
     notFound: boolean;
@@ -120,6 +144,19 @@ export default function ProjectDashboardPage() {
     () => websitesApi.versions(id).then(setVersions),
     [id],
   );
+
+  const loadHosting = useCallback(
+    () =>
+      hostingApi
+        .get(id)
+        .then(setHosting)
+        .catch(() => setHosting(null)),
+    [id],
+  );
+
+  useEffect(() => {
+    void loadHosting();
+  }, [loadHosting]);
 
   useEffect(() => {
     let cancelled = false;
@@ -165,10 +202,44 @@ export default function ProjectDashboardPage() {
       );
       await loadVersions();
       setConfirmPublish(false);
+      setSuccess({});
     } catch (err) {
+      if (err instanceof ApiError && err.code === "HOSTING_REQUIRED") {
+        setConfirmPublish(false);
+        await loadHosting();
+        setPublishAfterPay(true);
+        setCheckoutOpen(true);
+        return;
+      }
       setPublishError(errorMessage(err));
     } finally {
       setPublishing(false);
+    }
+  }
+
+  /** Publishing needs a live plan while billing is on; ask for one first instead of failing. */
+  function startPublish() {
+    setPublishError(null);
+    if (hostingBlocksPublish(hosting)) {
+      setPublishAfterPay(true);
+      setCheckoutOpen(true);
+      return;
+    }
+    setConfirmPublish(true);
+  }
+
+  function handlePaid(updated: WebsiteHosting) {
+    // A site taken offline for non-payment comes back by itself once paid.
+    const restored = hosting?.website.offlineReason === "BILLING" && updated.website.status === "PUBLISHED";
+    setHosting(updated);
+    setCheckoutOpen(false);
+    refreshWebsite();
+    if (restored) {
+      setPublishAfterPay(false);
+      setSuccess({ title: "Your website is live again!" });
+    } else if (publishAfterPay) {
+      setPublishAfterPay(false);
+      setConfirmPublish(true);
     }
   }
 
@@ -320,14 +391,7 @@ export default function ProjectDashboardPage() {
               <Pencil className="size-4" aria-hidden /> Edit site
             </Link>
             {needsPublish && (
-              <Button
-                size="sm"
-                onPress={() => {
-                  setPublishError(null);
-                  setConfirmPublish(true);
-                }}
-                isPending={publishing}
-              >
+              <Button size="sm" onPress={startPublish} isPending={publishing}>
                 <Rocket className="size-4" aria-hidden /> Publish
               </Button>
             )}
@@ -335,6 +399,8 @@ export default function ProjectDashboardPage() {
         </div>
 
         {publishError && <FormAlert status="danger">{publishError}</FormAlert>}
+
+        {hosting && tab !== "hosting" && <HostingAlert hosting={hosting} onOpen={() => setTab("hosting")} />}
 
         <ProjectTabs value={tab} onChange={setTab} />
 
@@ -352,11 +418,35 @@ export default function ProjectDashboardPage() {
                   <DetailRow label="Status">
                     <WebsiteStatusChip website={website} />
                   </DetailRow>
-                  <DetailRow label="Address">
-                    <span className="font-mono text-ed-sm">
-                      {website.subdomain}
-                    </span>
+                  <DetailRow label="Live site">
+                    {website.status === "PUBLISHED" ? (
+                      <LiveSiteLink
+                        subdomain={website.subdomain}
+                        customDomain={website.customDomain}
+                      />
+                    ) : (
+                      <span className="font-normal text-ink-muted">
+                        Not live yet
+                      </span>
+                    )}
                   </DetailRow>
+                  {hosting && (hosting.enabled || hosting.subscription) && (
+                    <DetailRow label="Hosting">
+                      <button
+                        type="button"
+                        onClick={() => setTab("hosting")}
+                        className="inline-flex items-center gap-2 hover:text-brand"
+                      >
+                        <HostingStatusChip subscription={hosting.subscription} />
+                        {hosting.subscription?.currentPeriodEnd && (
+                          <span className="text-ed-sm font-normal text-ink-body">
+                            {CYCLE_LABELS[hosting.subscription.cycle]} · till{" "}
+                            {formatBillingDate(hosting.subscription.currentPeriodEnd)}
+                          </span>
+                        )}
+                      </button>
+                    </DetailRow>
+                  )}
                   <DetailRow label="Builder">
                     {BUILDER_LABELS[website.builderType]}
                   </DetailRow>
@@ -440,6 +530,23 @@ export default function ProjectDashboardPage() {
           <DomainsPanel website={website} onChanged={refreshWebsite} />
         )}
 
+        {tab === "hosting" &&
+          (hosting ? (
+            <WebsiteHostingPanel
+              hosting={hosting}
+              isAdmin={isAdmin}
+              onChange={setHosting}
+              onPay={() => {
+                setPublishAfterPay(false);
+                setCheckoutOpen(true);
+              }}
+            />
+          ) : (
+            <div className="grid place-items-center py-16">
+              <Spinner aria-label="Loading hosting" />
+            </div>
+          ))}
+
         {tab === "settings" && (
           <ProjectSettingsPanel
             website={website}
@@ -515,7 +622,7 @@ export default function ProjectDashboardPage() {
             </strong>
             .
           </p>
-          <PublishSeoAudit website={website} />
+          {website.seoToolsEnabled && <PublishSeoAudit website={website} />}
           {publishError && (
             <FormAlert status="danger">{publishError}</FormAlert>
           )}
@@ -555,6 +662,34 @@ export default function ProjectDashboardPage() {
           )}
         </div>
       </CommonModal>
+
+      {hosting && (
+        <HostingCheckoutModal
+          isOpen={checkoutOpen}
+          onClose={() => {
+            setCheckoutOpen(false);
+            setPublishAfterPay(false);
+          }}
+          hosting={hosting}
+          isAdmin={isAdmin}
+          onPaid={handlePaid}
+          onHostingChange={setHosting}
+          title={publishAfterPay ? "Choose a hosting plan to publish" : undefined}
+          notice={
+            publishAfterPay && (
+              <HostingRequiredCard hosting={hosting} isAdmin={isAdmin} compact />
+            )
+          }
+        />
+      )}
+
+      <PublishSuccessModal
+        isOpen={success !== null}
+        onClose={() => setSuccess(null)}
+        website={website}
+        hosting={hosting}
+        title={success?.title}
+      />
 
       {downloadOpen && (
         <Suspense fallback={null}>

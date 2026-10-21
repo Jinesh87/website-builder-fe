@@ -17,7 +17,7 @@ export type Wallet = {
 export type WalletTransaction = {
   id: string;
   type: "CREDIT" | "DEBIT";
-  source: "TOPUP" | "AI_USAGE" | "ADJUSTMENT";
+  source: "TOPUP" | "AI_USAGE" | "ADJUSTMENT" | "HOSTING";
   amount: number;
   balanceAfter: number;
   description: string;

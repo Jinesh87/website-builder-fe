@@ -1,4 +1,5 @@
 import {
+  CalendarClock,
   Globe,
   Image,
   LayoutTemplate,
@@ -17,6 +18,7 @@ const ADMIN_NAV: ShellNavItem[] = [
   { label: "All websites", icon: Globe, to: "/admin/websites", activePrefixes: ["/websites/"] },
   { label: "AI Usage", icon: AiSparklesIcon, to: "/admin/ai-usage" },
   { label: "Transactions", icon: Wallet, to: "/admin/transactions" },
+  { label: "Hosting", icon: CalendarClock, to: "/admin/hosting" },
   { label: "Templates and themes", icon: LayoutTemplate },
   { label: "Headers and footers", icon: PanelsTopLeft },
   { label: "Reusable sections", icon: Rows3, to: "/admin/sections" },

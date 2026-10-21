@@ -133,6 +133,13 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return parse<T>(await sendWithRefresh(path, options));
 }
 
+/** For file downloads (e.g. CSV exports); errors still come back as ApiError. */
+export async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  const response = await sendWithRefresh(path, options);
+  if (!response.ok) await parse<unknown>(response);
+  return response.blob();
+}
+
 /** Streams a newline-delimited JSON response, calling `onEvent` for each line as it arrives. */
 export async function requestNdjson<E>(
   path: string,

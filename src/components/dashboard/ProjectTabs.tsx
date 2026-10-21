@@ -1,13 +1,18 @@
-import { Globe, Layers, LayoutDashboard, Settings, type LucideIcon } from "lucide-react";
+import { Globe, Layers, LayoutDashboard, Server, Settings, type LucideIcon } from "lucide-react";
 
-export type ProjectTab = "overview" | "deployments" | "domains" | "settings";
+export type ProjectTab = "overview" | "deployments" | "domains" | "hosting" | "settings";
 
 const TABS: { id: ProjectTab; label: string; icon: LucideIcon }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "deployments", label: "Deployments", icon: Layers },
   { id: "domains", label: "Domains", icon: Globe },
+  { id: "hosting", label: "Hosting", icon: Server },
   { id: "settings", label: "Settings", icon: Settings },
 ];
+
+export function parseProjectTab(value: string | null): ProjectTab {
+  return TABS.find((tab) => tab.id === value)?.id ?? "overview";
+}
 
 export default function ProjectTabs({ value, onChange }: { value: ProjectTab; onChange: (tab: ProjectTab) => void }) {
   return (

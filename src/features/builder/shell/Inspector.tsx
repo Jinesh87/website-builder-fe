@@ -163,7 +163,13 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
 }
 
 function SiteInspector() {
-  const { draft, page, themes, editDraft, selectPage, website } = useEditor();
+  const { draft, page, themes, editDraft, selectPage, website, setWebsite } = useEditor();
+
+  // Only the flag is taken from the response, so the editor's draft state is never replaced.
+  const setSeoTools = async (seoToolsEnabled: boolean) => {
+    const updated = await websitesApi.update(website.id, { seoToolsEnabled });
+    setWebsite({ ...website, seoToolsEnabled: updated.seoToolsEnabled });
+  };
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const [tab, setTab] = useState<SiteAreaTab>("page");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -205,6 +211,7 @@ function SiteInspector() {
                   updatePage(current, page.id, (p) => ({ ...p, sections }))
                 );
               }}
+              onSeoToolsChange={setSeoTools}
             />
 
             {page.slug !== "/" && (

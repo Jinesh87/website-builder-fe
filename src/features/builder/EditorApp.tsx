@@ -3,8 +3,10 @@ import "./builder.css";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Puck, useGetPuck, type Data, type Permissions } from "@puckeditor/core";
 import { AlertTriangle, CheckCircle2, RotateCw, X } from "lucide-react";
+import type { WebsiteHosting } from "../../api/hosting.ts";
 import type { SavedSection, ThemeOption, WebsiteDetail, WebsitePage } from "../../api/websites.ts";
 import type { Device } from "../../components/websites/DevicePreview.tsx";
+import PublishSuccessModal from "../../components/websites/PublishSuccessModal.tsx";
 import { draftFromWebsite, homePage, updateSections, type EditorDraft } from "../../pages/websites/editor/editor-state.ts";
 import { LinkTargetsContext, MediaTargetContext } from "../../pages/websites/editor/fields.tsx";
 import type { Section } from "../../site-kit/index.ts";
@@ -270,6 +272,7 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
   }, []);
   const [device, setDevice] = useState<Device>("desktop");
   const [publishOpen, setPublishOpen] = useState(false);
+  const [published, setPublished] = useState<{ hosting: WebsiteHosting | null } | null>(null);
   const [toast, setToast] = useState<Toast | null>(
     justCreated ? { id: 0, message: "Website created. Add sections from the left panel.", tone: "success" } : null,
   );
@@ -350,6 +353,7 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
   const value = useMemo<EditorValue>(
     () => ({
       website,
+      setWebsite,
       draft,
       page,
       role,
@@ -428,11 +432,19 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
               <PublishDialog
                 isOpen={publishOpen}
                 onClose={() => setPublishOpen(false)}
-                onPublished={(published) => {
-                  setWebsite(published);
+                onPublished={(updated, hosting) => {
+                  setWebsite(updated);
                   setPublishOpen(false);
-                  notify("Published. Your site is live.");
+                  setPublished({ hosting });
                 }}
+              />
+
+              <PublishSuccessModal
+                isOpen={published !== null}
+                onClose={() => setPublished(null)}
+                website={website}
+                hosting={published?.hosting}
+                redirect={{ to: `/websites/${website.id}`, seconds: 5, stayLabel: "Keep editing" }}
               />
 
               <EditorOnboarding />
