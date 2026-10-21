@@ -21,8 +21,18 @@ import {
   type SiteArea,
 } from "./editor-context.ts";
 import { builderConfig } from "./puck/config.tsx";
-import { EditorDataError, hasAiPlaceholder, puckDataToSections, sectionsToPuckData } from "./puck/adapter.ts";
-import { selectSection, useBuilderPuck } from "./puck/puck-api.ts";
+import {
+  EditorDataError,
+  getSectionType,
+  hasAiPlaceholder,
+  itemAsSection,
+  puckDataToSections,
+  sectionToItem,
+  sectionsToPuckData,
+  type BuilderItem,
+} from "./puck/adapter.ts";
+import { replaceSection, selectSection, useBuilderPuck } from "./puck/puck-api.ts";
+import { sameChrome, splitSiteChrome, stableJson, withSiteChrome } from "./utils/site-chrome.ts";
 import { lazyWithRetry } from "../../utils/lazy-with-retry.ts";
 import AiDrawerSkeleton from "./shell/AiDrawerSkeleton.tsx";
 
@@ -99,6 +109,65 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
     if (!aiLock) return;
     return blockHistoryHotkeys();
   }, [aiLock]);
+
+  // The site header/footer also change outside this canvas (page renames, site settings, accepted AI
+  // navigation). Keep the canvas copy in step with them, and put them back if one was removed.
+  const chromeOnCanvas = useBuilderPuck((state) =>
+    state.appState.data.content
+      .filter((item) => {
+        const type = getSectionType(item.type);
+        return type === "header" || type === "footer";
+      })
+      .map((item) => item.props.id)
+      .join("|"),
+  );
+  useEffect(() => {
+    if (aiLock) return;
+    const content = getPuck().appState.data.content;
+    const chromeType = (item: (typeof content)[number]) => {
+      const type = getSectionType(item.type);
+      return type === "header" || type === "footer" ? type : null;
+    };
+    const firstIndex = (type: string) => content.findIndex((item) => chromeType(item) === type);
+    if (content.some((item, i) => chromeType(item) !== null && firstIndex(chromeType(item)!) !== i)) {
+      dispatch({
+        type: "setData",
+        data: (previous) => {
+          const seen = new Set<string>();
+          return {
+            ...previous,
+            content: (previous.content ?? []).filter((item) => {
+              const type = chromeType(item);
+              if (!type) return true;
+              if (seen.has(type)) return false;
+              seen.add(type);
+              return true;
+            }),
+          };
+        },
+      });
+      return;
+    }
+    const missing: Section[] = [];
+    for (const section of withSiteChrome([], draft)) {
+      const index = content.findIndex((item) => getSectionType(item.type) === section.type);
+      if (index === -1) {
+        missing.push(section);
+        continue;
+      }
+      const shown = itemAsSection(content[index] as BuilderItem);
+      if (!sameChrome(shown, section.type === "header" ? draft.header : draft.footer)) {
+        replaceSection(dispatch, index, { ...section, id: shown.id });
+      }
+    }
+    if (missing.length === 0) return;
+    const header = missing.filter((section) => section.type === "header").map(sectionToItem);
+    const footer = missing.filter((section) => section.type === "footer").map(sectionToItem);
+    dispatch({
+      type: "setData",
+      data: (previous) => ({ ...previous, content: [...header, ...(previous.content ?? []), ...footer] }),
+    });
+  }, [aiLock, chromeOnCanvas, draft, dispatch, getPuck]);
   const hasSelection = useBuilderPuck((state) => state.appState.ui.itemSelector !== null);
   const isEmpty = useBuilderPuck((state) => state.appState.data.content.length === 0);
 
@@ -175,8 +244,8 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
 
 /** One Puck instance per page; initial data is read once and later edits flow out through onChange. */
 function PageCanvas({ page, backTo, onChange, onPublish }: { page: WebsitePage; backTo: string; onChange: (data: Data) => void; onPublish: () => void }) {
-  const [initialData] = useState(() => sectionsToPuckData(page.sections));
-  const { aiLock } = useEditor();
+  const { aiLock, draft } = useEditor();
+  const [initialData] = useState(() => sectionsToPuckData(withSiteChrome(page.sections, draft)));
   return (
     <Puck config={builderConfig} data={initialData} onChange={onChange} permissions={aiLock ? LOCKED_PERMISSIONS : EDITABLE_PERMISSIONS}>
       <EditorShell backTo={backTo} onPublish={onPublish} onCommit={onChange} />
@@ -248,9 +317,18 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
         notify(error instanceof EditorDataError ? error.message : "That change couldn't be applied.", "danger");
         return;
       }
+      // The canvas shows the site-wide header and footer; edits to them apply to every page.
+      const { body, header, footer } = splitSiteChrome(sections, draftRef.current);
       const current = draftRef.current.pages.find((candidate) => candidate.id === page.id);
-      if (current && sameJson(current.sections, sections)) return;
-      editDraft((d) => updateSections(d, page.id, () => sections));
+      if (
+        current &&
+        sameJson(current.sections, body) &&
+        stableJson(draftRef.current.header) === stableJson(header) &&
+        stableJson(draftRef.current.footer) === stableJson(footer)
+      ) {
+        return;
+      }
+      editDraft((d) => ({ ...updateSections(d, page.id, () => body), header, footer }));
     },
     [page.id, editDraft, notify],
   );

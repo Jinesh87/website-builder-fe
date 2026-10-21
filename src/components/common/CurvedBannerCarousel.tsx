@@ -446,8 +446,16 @@ export default function CurvedBannerCarousel({
                     src={item.image}
                     alt={item.alt || item.title}
                     loading={idx < 8 ? "eager" : "lazy"}
+                    decoding="async"
                     draggable={false}
                     className="wb-reel-img"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const fallback = DEFAULT_BANNER_ITEMS[idx % DEFAULT_BANNER_ITEMS.length].image;
+                      if (target.src !== fallback) {
+                        target.src = fallback;
+                      }
+                    }}
                   />
                   <div className="wb-reel-shade" aria-hidden />
 
@@ -505,7 +513,17 @@ export default function CurvedBannerCarousel({
                   playsInline
                 />
               ) : (
-                <img src={activePreview.image} alt={activePreview.alt || activePreview.title} />
+                <img
+                  src={activePreview.image}
+                  alt={activePreview.alt || activePreview.title}
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const fallback = DEFAULT_BANNER_ITEMS[0].image;
+                    if (target.src !== fallback) {
+                      target.src = fallback;
+                    }
+                  }}
+                />
               )}
             </div>
 

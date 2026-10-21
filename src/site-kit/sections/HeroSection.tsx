@@ -15,6 +15,11 @@ import {
   SiteImage,
   SiteLink,
 } from "../primitives.tsx";
+import {
+  getAmbientGradient,
+  getCuratedFallbackImage,
+  normalizeImageUrl,
+} from "../image-utils.ts";
 import type { HeroData, SectionOf } from "../types.ts";
 import CurvedBannerCarousel, {
   DEFAULT_BANNER_ITEMS,
@@ -242,6 +247,81 @@ function renderHighlightedHeading(
   );
 }
 
+function HeroBackgroundMedia({
+  bgImage,
+  bgVideoUrl,
+  bgEmbedUrl,
+  bgPosClass,
+  contextDescription,
+}: {
+  bgImage?: { url: string; alt?: string };
+  bgVideoUrl?: string;
+  bgEmbedUrl?: string | null;
+  bgPosClass: string;
+  contextDescription: string;
+}) {
+  const initialUrl = bgImage?.url
+    ? normalizeImageUrl(bgImage.url, contextDescription)
+    : "";
+  const [imgSrc, setImgSrc] = useState(initialUrl);
+  const [loadState, setLoadState] = useState<"loading" | "loaded" | "fallback" | "failed">("loading");
+
+  useEffect(() => {
+    if (bgImage?.url) {
+      setImgSrc(normalizeImageUrl(bgImage.url, contextDescription));
+      setLoadState("loading");
+    }
+  }, [bgImage?.url, contextDescription]);
+
+  const handleImageError = () => {
+    const fallback = getCuratedFallbackImage(contextDescription);
+    if (imgSrc !== fallback) {
+      setImgSrc(fallback);
+      setLoadState("fallback");
+    } else {
+      setLoadState("failed");
+    }
+  };
+
+  const ambientGradient = getAmbientGradient(contextDescription);
+
+  return (
+    <div
+      className={`wb-hero-bg-media ${bgPosClass}`}
+      style={{
+        background: ambientGradient,
+      }}
+    >
+      {bgEmbedUrl ? (
+        <div className="wb-hero-bg-iframe-container">
+          <iframe
+            src={bgEmbedUrl}
+            title="Hero Background Video"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            className="wb-hero-bg-iframe"
+          />
+        </div>
+      ) : bgVideoUrl ? (
+        <video autoPlay loop muted playsInline src={bgVideoUrl} />
+      ) : imgSrc && loadState !== "failed" ? (
+        <img
+          src={imgSrc}
+          alt={bgImage?.alt ?? "Hero background"}
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+          onLoad={() => setLoadState("loaded")}
+          onError={handleImageError}
+          style={{
+            opacity: loadState === "loaded" ? 1 : 0.85,
+            transition: "opacity 0.4s ease-out",
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 function HeroMockupPlaceholder() {
   return (
     <div className="wb-hero-mockup-placeholder">
@@ -340,7 +420,7 @@ export default function HeroSection({
             subtitle: slide.description || "",
             badge: slide.badge || "",
             image:
-              slide.image?.url ||
+              (slide.image?.url && normalizeImageUrl(slide.image.url)) ||
               DEFAULT_BANNER_ITEMS[idx % DEFAULT_BANNER_ITEMS.length].image,
             author: slide.subtitle || "",
             alt: slide.image?.alt || slide.title || "Reel card",
@@ -425,9 +505,9 @@ export default function HeroSection({
   }
 
   if (data.variant === "campaign-banner") {
+    const campaignContext = `${data.heading ?? ""} ${data.subheading ?? ""}`;
     const bgImage = data.backgroundImage || data.image;
-    const defaultPoster =
-      "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1600&q=80";
+    const defaultPoster = getCuratedFallbackImage(campaignContext);
 
     const rawVideo = data.backgroundVideoUrl || data.videoUrl;
     const isPlaceholderOrExternal =
@@ -444,7 +524,9 @@ export default function HeroSection({
       data.videoUrl && !data.videoUrl.match(/\.(mp4|webm|ogg)/i)
         ? getEmbedUrl(data.videoUrl, true) || undefined
         : undefined;
-    const posterUrl = bgImage?.url || defaultPoster;
+    const posterUrl =
+      (bgImage?.url && normalizeImageUrl(bgImage.url, campaignContext)) ||
+      defaultPoster;
 
     // Resolve bottom shape divider: handles both bannerBottomShape and bottomShape
     const rawShape =
@@ -604,6 +686,15 @@ export default function HeroSection({
               alt={bgImage?.alt ?? "Campaign Hero Background"}
               className="wb-campaign-bg-img"
               loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              onError={(e) => {
+                const target = e.currentTarget;
+                const fallback = getCuratedFallbackImage(campaignContext);
+                if (target.src !== fallback) {
+                  target.src = fallback;
+                }
+              }}
             />
 
             {bgEmbedUrl ? (
@@ -912,9 +1003,22 @@ export default function HeroSection({
     data.variant === "background-image" ||
     data.variant === "video-bg";
 
-  const bgImage =
+  const contextDescription = `${data.heading ?? ""} ${data.subheading ?? ""} ${data.eyebrow ?? ""} ${data.description ?? ""}`;
+
+  const rawBgImage =
     data.backgroundImage ||
     (isBgMediaMode && data.image ? data.image : undefined);
+
+  // If in background media mode and no image was specified, intelligently select a context-aware fallback image
+  const resolvedBgUrl = rawBgImage?.url
+    ? normalizeImageUrl(rawBgImage.url, contextDescription)
+    : isBgMediaMode && data.variant !== "video-bg"
+      ? getCuratedFallbackImage(contextDescription)
+      : undefined;
+
+  const bgImage = resolvedBgUrl
+    ? { url: resolvedBgUrl, alt: rawBgImage?.alt ?? "Hero background" }
+    : undefined;
 
   const bgVideoUrl =
     data.backgroundVideoUrl ||
@@ -969,7 +1073,7 @@ export default function HeroSection({
             loop={data.videoLoop}
           />
         ) : data.image ? (
-          <SiteImage image={data.image} />
+          <SiteImage image={data.image} contextText={contextDescription} />
         ) : (
           <HeroMockupPlaceholder />
         )}
@@ -1040,26 +1144,13 @@ export default function HeroSection({
       {/* Full Background Image / Video media layer */}
       {hasBgMedia && (
         <>
-          <div className={`wb-hero-bg-media ${bgPosClass}`}>
-            {bgEmbedUrl ? (
-              <div className="wb-hero-bg-iframe-container">
-                <iframe
-                  src={bgEmbedUrl}
-                  title="Hero Background Video"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  className="wb-hero-bg-iframe"
-                />
-              </div>
-            ) : bgVideoUrl ? (
-              <video autoPlay loop muted playsInline src={bgVideoUrl} />
-            ) : bgImage?.url ? (
-              <img
-                src={bgImage.url}
-                alt={bgImage.alt ?? "Hero background"}
-                loading="eager"
-              />
-            ) : null}
-          </div>
+          <HeroBackgroundMedia
+            bgImage={bgImage}
+            bgVideoUrl={bgVideoUrl}
+            bgEmbedUrl={bgEmbedUrl}
+            bgPosClass={bgPosClass}
+            contextDescription={contextDescription}
+          />
           {overlayType !== "none" && (
             <div
               className={`wb-hero-overlay wb-overlay-${overlayType}`}

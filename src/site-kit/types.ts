@@ -90,6 +90,8 @@ export type HeaderMenuItem = {
 };
 
 export type HeaderData = {
+  /** Style of the site-wide header, edited through the shared header section. */
+  settings?: SectionSettings;
   design: HeaderDesign;
   siteName: string;
   logo?: ImageRef;
@@ -178,6 +180,8 @@ export type FooterContact = {
 };
 
 export type FooterData = {
+  /** Style of the site-wide footer, edited through the shared footer section. */
+  settings?: SectionSettings;
   design: FooterDesign;
   siteName: string;
   logo?: ImageRef;

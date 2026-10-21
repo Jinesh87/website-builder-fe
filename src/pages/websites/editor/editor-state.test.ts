@@ -223,8 +223,9 @@ describe("editor-state header navigation sync", () => {
     expect(draft.footer.logo?.url).toContain("data:image/svg+xml");
     expect(draft.footer.logoDisplay).toBe("logo_only");
 
-    const headerSec = draft.pages[0]?.sections.find((s) => s.type === "header");
-    expect((headerSec?.data as any)?.logo?.url).toContain("data:image/svg+xml");
-    expect((headerSec?.data as any)?.logoDisplay).toBe("logo_only");
+    // The page's own header copy became the site-wide header and was removed from the page.
+    expect(draft.pages[0]?.sections.some((s) => s.type === "header")).toBe(false);
+    expect(draft.header.design).toBe("logo-left");
+    expect(draft.header.siteName).toBe("Accounting Firm · Classic");
   });
 });

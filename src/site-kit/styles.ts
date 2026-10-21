@@ -2151,9 +2151,14 @@ export const SITE_CSS = `
 
 .wb-hero-bg-media {
   position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 30%, #1e293b 0%, #0f172a 60%, #020617 100%);
 }
 .wb-hero-bg-media img, .wb-hero-bg-media video {
   width: 100%; height: 100%; border: 0;
+  object-fit: cover;
+  transition: opacity 0.4s ease-out;
+  font-size: 0;
+  color: transparent;
 }
 .wb-hero-bg-iframe-container {
   position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none;
