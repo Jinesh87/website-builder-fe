@@ -26,6 +26,7 @@ const SOURCE_LABELS: Record<WalletTransactionPage["transactions"][number]["sourc
   TOPUP: "Purchase",
   AI_USAGE: "AI usage",
   ADJUSTMENT: "Adjustment",
+  HOSTING: "Hosting",
 };
 
 /** Nearest whole pack within the purchase limits, so 101 becomes 100 and 130 becomes 150. */

@@ -14,6 +14,7 @@ import {
 } from "../../auth/validation.ts";
 import { ClientStatusChip, formatDate, SOURCE_LABELS } from "../../components/admin/client-labels.tsx";
 import AiModelPricingPanel from "../../components/admin/AiModelPricingPanel.tsx";
+import ClientHostingPanel from "../../components/hosting/ClientHostingPanel.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextAreaInput from "../../components/ui/TextAreaInput.tsx";
@@ -321,6 +322,12 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
 
     {client && (
       <div className="mt-6">
+        <ClientHostingPanel clientId={client.id} />
+      </div>
+    )}
+
+    {client && (
+      <div className="mt-6">
         <AiModelPricingPanel clientId={client.id} />
       </div>
     )}
@@ -412,6 +419,12 @@ function ClientSidebar({
           className={`${buttonVariants({ variant: "outline", size: "sm", fullWidth: true })} mt-3`}
         >
           Create website for this client
+        </Link>
+        <Link
+          to={`/admin/websites/clients/${encodeURIComponent(client.id)}`}
+          className={`${buttonVariants({ variant: "ghost", size: "sm", fullWidth: true })} mt-2`}
+        >
+          Websites & hosting
         </Link>
       </section>
 

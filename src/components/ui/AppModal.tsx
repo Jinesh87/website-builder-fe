@@ -172,12 +172,12 @@ export function CommonModal({
             ariaLabel ??
             (typeof resolvedTitle === "string" ? resolvedTitle : "Dialog")
           }
-          className={`relative w-full  ${SIZE_STYLES[size]} overflow-hidden rounded-[24px] border border-line/80 bg-surface shadow-2xl transition-all duration-200 flex flex-col text-left ${baseClass} ${dialogClassName} ${contentClass}`}
+          className={`relative w-full ${SIZE_STYLES[size]} max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] overflow-hidden rounded-[24px] border border-line/80 bg-surface shadow-2xl transition-all duration-200 flex flex-col text-left ${baseClass} ${dialogClassName} ${contentClass}`}
         >
           {/* 1. SEPARATED HEADER */}
           {showHeader && (
             <div
-              className={`relative w-full border-b border-line/60 bg-surface pb-2 flex items-center justify-between text-left ${headerWrapperClass} ${headerClassName}`}
+              className={`relative w-full shrink-0 border-b border-line/60 bg-surface pb-2 flex items-center justify-between text-left ${headerWrapperClass} ${headerClassName}`}
             >
               {modalHeader ? (
                 modalHeader
@@ -226,7 +226,7 @@ export function CommonModal({
           {/* 2. SEPARATED BODY */}
           {bodyContent && (
             <div
-              className={`w-full px-6 py-5 text-sm leading-relaxed text-ink-body text-left bg-surface ${bodyWrapperBaseClass} ${bodyWrapperClass} ${bodyClassName}`}
+              className={`-mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4 text-sm leading-relaxed text-ink-body text-left bg-surface ${bodyWrapperBaseClass} ${bodyWrapperClass} ${bodyClassName}`}
             >
               {bodyContent}
             </div>
@@ -236,7 +236,7 @@ export function CommonModal({
           {!disableFooter &&
             (modalFooter || primaryAction || secondaryAction) && (
               <div
-                className={`w-full border-t border-line/60 bg-surface pt-2 flex items-center justify-end gap-3 text-left ${footerWrapperClass} ${footerClassName}`}
+                className={`w-full shrink-0 border-t border-line/60 bg-surface pt-2 flex items-center justify-end gap-3 text-left ${footerWrapperClass} ${footerClassName}`}
               >
                 {modalFooter ? (
                   modalFooter

@@ -42,6 +42,7 @@ const SOURCE_OPTIONS: SelectOption<"" | WalletTransaction["source"]>[] = [
   { value: "TOPUP", label: "Purchases" },
   { value: "AI_USAGE", label: "AI usage" },
   { value: "ADJUSTMENT", label: "Adjustments" },
+  { value: "HOSTING", label: "Hosting" },
 ];
 
 const TYPE_OPTIONS: SelectOption<"" | WalletTransaction["type"]>[] = [
@@ -61,6 +62,7 @@ const SOURCE_LABELS: Record<WalletTransaction["source"], string> = {
   TOPUP: "Purchase",
   AI_USAGE: "AI usage",
   ADJUSTMENT: "Adjustment",
+  HOSTING: "Hosting",
 };
 
 const STATUS_STYLES: Record<PaymentStatus, { label: string; className: string }> = {

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button, Chip, Label, Spinner, Switch } from "@heroui/react";
-import { Check, CreditCard, Eye, EyeOff, Mail, Send, Sliders } from "lucide-react";
+import { Check, CreditCard, Eye, EyeOff, Mail, Send, Server, Sliders } from "lucide-react";
 import AiSparklesIcon from "../../components/icons/AiSparklesIcon.tsx";
 import { adminAiApi, type AiConfig, type AiConfigInput } from "../../api/admin-ai.ts";
 import AiModelPicker from "../../components/ai/AiModelPicker.tsx";
@@ -16,9 +16,12 @@ import PaymentSettingsPanel, { PaymentStatusChip } from "../../components/admin/
 import AiModelPricingPanel from "../../components/admin/AiModelPricingPanel.tsx";
 import AiBillingRatePanel from "../../components/admin/AiBillingRatePanel.tsx";
 import type { PaymentConfig } from "../../api/wallet.ts";
+import HostingSettingsPanel from "../../components/hosting/HostingSettingsPanel.tsx";
+import type { HostingSettings } from "../../api/hosting.ts";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
-type SettingsTab = "email" | "ai" | "payments";
+type SettingsTab = "email" | "ai" | "payments" | "hosting";
+const SETTINGS_TABS: readonly SettingsTab[] = ["email", "ai", "payments", "hosting"];
 type EmailConfigErrors = Partial<Record<keyof EmailConfigInput, string>>;
 type AiConfigErrors = Partial<Record<keyof AiConfigInput, string>>;
 
@@ -50,8 +53,9 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const activeTab: SettingsTab = tabParam === "ai" || tabParam === "payments" ? tabParam : "email";
+  const activeTab: SettingsTab = SETTINGS_TABS.find((tab) => tab === tabParam) ?? "email";
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
+  const [hostingSettings, setHostingSettings] = useState<HostingSettings | null>(null);
 
   // EMAIL CONFIG STATE
   const [emailConfig, setEmailConfig] = useState<EmailConfig | null>(null);
@@ -208,12 +212,14 @@ export default function SettingsPage() {
     <div className={`px-6 py-8 sm:px-8 ${activeTab === "ai" ? "" : "max-w-5xl"}`}>
       <PageHeader
         title="Settings"
-        description="Manage system communications, the AI Copilot generation engine and payments."
+        description="Manage system communications, the AI Copilot generation engine, payments and hosting plans."
         actions={
           activeTab === "email" ? (
             emailConfig && <EmailStatusChip config={emailConfig} />
           ) : activeTab === "ai" ? (
             aiConfig && <AiStatusChip config={aiConfig} />
+          ) : activeTab === "hosting" ? (
+            hostingSettings && (hostingSettings.enabled ? <Chip color="success">Billing on</Chip> : <Chip>Billing off</Chip>)
           ) : (
             paymentConfig && <PaymentStatusChip config={paymentConfig} />
           )
@@ -260,11 +266,30 @@ export default function SettingsPage() {
           <CreditCard className="size-4" />
           <span>Payments</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setTab("hosting")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-t-lg border-b-2 -mb-px ${
+            activeTab === "hosting"
+              ? "border-primary text-ink bg-surface shadow-xs font-semibold"
+              : "border-transparent text-ink-muted hover:text-ink hover:bg-surface/50"
+          }`}
+        >
+          <Server className="size-4" />
+          <span>Hosting</span>
+        </button>
       </div>
 
       {activeTab === "payments" && (
         <div className="mt-8">
           <PaymentSettingsPanel onLoaded={setPaymentConfig} />
+        </div>
+      )}
+
+      {activeTab === "hosting" && (
+        <div className="mt-8">
+          <HostingSettingsPanel onLoaded={setHostingSettings} />
         </div>
       )}
 

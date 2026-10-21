@@ -1270,20 +1270,74 @@ function SlugField({
   );
 }
 
+/** Website-wide switch for the SEO fields and the pre-publish SEO audit; live-site SEO runs either way. */
+function SeoToolsToggle({ enabled, onChange }: { enabled: boolean; onChange: (enabled: boolean) => Promise<void> }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggle() {
+    setSaving(true);
+    setError(null);
+    try {
+      await onChange(!enabled);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 border-b border-ed-border/70 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-ed-xs font-bold uppercase tracking-wider text-ed-text">SEO tools</p>
+          <p className="mt-0.5 text-ed-2xs leading-relaxed text-ed-muted">
+            {enabled
+              ? "Edit search titles, descriptions and keywords, and see the SEO check before publishing."
+              : "Off. Your live site still gets automatic SEO: page titles, descriptions and a sitemap."}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          aria-label="SEO tools"
+          disabled={saving}
+          onClick={() => void toggle()}
+          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ed-accent/40 disabled:opacity-60 ${
+            enabled ? "bg-ed-accent" : "bg-ed-border-strong"
+          }`}
+        >
+          <span
+            aria-hidden
+            className={`absolute left-0.5 top-0.5 size-4 rounded-full bg-white shadow-xs transition-transform ${enabled ? "translate-x-4" : ""}`}
+          />
+        </button>
+      </div>
+      {error && <p className="text-ed-2xs text-ed-danger">{error}</p>}
+    </div>
+  );
+}
+
 export function PageForm({
   page,
   pages,
   onChange,
   website,
   onUpdateSections,
+  onSeoToolsChange,
 }: {
   page: WebsitePage;
   pages: WebsitePage[];
   onChange: (patch: PageMetaPatch) => void;
   website?: WebsiteDetail | null;
   onUpdateSections?: (sections: Section[]) => void;
+  /** Saves the website's SEO tools setting; without it the toggle is hidden. */
+  onSeoToolsChange?: (enabled: boolean) => Promise<void>;
 }) {
   const isHome = page.slug === "/";
+  const seoToolsEnabled = website?.seoToolsEnabled ?? false;
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1478,6 +1532,9 @@ Sitemap: ${dom}/sitemap.xml`;
         )}
       </FormGroup>
 
+      {onSeoToolsChange && <SeoToolsToggle enabled={seoToolsEnabled} onChange={onSeoToolsChange} />}
+
+      {seoToolsEnabled && (
       <FormGroup title="Search engines (SEO)">
         {/* AI SEO Action Buttons */}
         <div className="flex flex-col gap-2 -mt-1">
@@ -1768,6 +1825,7 @@ Sitemap: ${dom}/sitemap.xml`;
           </div>
         )}
       </FormGroup>
+      )}
 
       {/* In-Editor File Preview Modal */}
       {activeAssetPreview && (
@@ -1837,7 +1895,7 @@ Sitemap: ${dom}/sitemap.xml`;
         </Modal.Backdrop>
       )}
 
-      {website && (
+      {website && seoToolsEnabled && (
         <PageSeoContentReviewModal
           isOpen={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}

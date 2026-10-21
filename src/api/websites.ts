@@ -49,6 +49,8 @@ export type WebsiteSummary = {
   /** Set when the draft was (or is being) built by AI. */
   generationStatus: GenerationStatus | null;
   hasUnpublishedChanges: boolean;
+  /** Shows SEO fields and the pre-publish SEO audit in the editor. */
+  seoToolsEnabled: boolean;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -213,6 +215,7 @@ export type CreateWebsiteInput = {
 
 export type UpdateWebsiteInput = {
   name?: string;
+  seoToolsEnabled?: boolean;
 } & { [K in keyof WebsiteInfo]?: string | null };
 
 export const GENERATION_TONES = ["professional", "friendly", "luxury", "playful", "bold", "minimal"] as const;

@@ -49,6 +49,8 @@ export type AiLock = "thinking" | "building" | "reviewing" | null;
 
 export type EditorValue = {
   website: WebsiteDetail;
+  /** For website-level settings changed from the editor (e.g. SEO tools). */
+  setWebsite: (website: WebsiteDetail) => void;
   draft: EditorDraft;
   page: WebsitePage;
   role: EditorRole;

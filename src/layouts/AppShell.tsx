@@ -4,6 +4,7 @@ import { LogOut, type LucideIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/auth-context.ts";
 import BrandLogo from "../components/BrandLogo.tsx";
+import NotificationBell from "../components/app/NotificationBell.tsx";
 
 export type ShellNavItem = {
   label: string;
@@ -125,6 +126,7 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
               <p className={`truncate text-sm font-medium ${dark ? "text-white" : "text-ink"}`}>{user.fullName}</p>
               <p className={`truncate text-xs ${dark ? "text-white/50" : "text-ink-muted"}`}>{roleLabel}</p>
             </div>
+            <NotificationBell dark={dark} />
             <Button
               isIconOnly
               size="sm"
