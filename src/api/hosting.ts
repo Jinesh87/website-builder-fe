@@ -6,7 +6,6 @@ export type BillingCycle = "QUARTERLY" | "YEARLY";
 export type HostingStatus = "AWAITING_PAYMENT" | "ACTIVE" | "GRACE" | "SUSPENDED";
 export type HostingPayer = "CLIENT" | "ADMIN" | "SYSTEM";
 export type HostingPaymentMethod = "WALLET" | "CASH" | "UPI" | "BANK_TRANSFER";
-export type OfflineMethod = Exclude<HostingPaymentMethod, "WALLET">;
 export type PriceSource = "WEBSITE" | "CLIENT" | "GLOBAL";
 export type WebsiteOfflineReason = "MANUAL" | "BILLING";
 
@@ -86,9 +85,8 @@ export type UpdatePlanInput = {
   yearlyPrice?: number | null;
 };
 
-export type CollectInput =
-  | { cycle: BillingCycle; method: "WALLET"; reference?: string; note?: string }
-  | { cycle: BillingCycle; method: OfflineMethod; amountRupees: number; reference?: string; note?: string };
+/** WALLET charges the client's connects; the other methods record the plan's price collected offline. */
+export type CollectInput = { cycle: BillingCycle; method: HostingPaymentMethod; reference?: string; note?: string };
 
 export type HostingPriceChange = {
   id: string;

@@ -8,7 +8,7 @@ import {
   type HostingPaymentMethod,
   type WebsiteHosting,
 } from "../../api/hosting.ts";
-import { ApiError, errorMessage } from "../../api/http.ts";
+import { errorMessage } from "../../api/http.ts";
 import { connectsPriceInPaise, formatConnects, formatPaise } from "../../api/wallet.ts";
 import CommonModal from "../ui/CommonModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
@@ -33,12 +33,6 @@ type HostingCheckoutModalProps = {
 
 const CYCLES: BillingCycle[] = ["QUARTERLY", "YEARLY"];
 const ADMIN_METHODS: HostingPaymentMethod[] = ["CASH", "UPI", "BANK_TRANSFER", "WALLET"];
-const RUPEES_PATTERN = /^\d{1,8}(\.\d{1,2})?$/;
-
-function rupeesFor(connects: number, connectsPerRupee: number): string {
-  const paise = connectsPriceInPaise(connects, connectsPerRupee);
-  return paise % 100 === 0 ? String(paise / 100) : (paise / 100).toFixed(2);
-}
 
 export default function HostingCheckoutModal({
   isOpen,
@@ -54,10 +48,8 @@ export default function HostingCheckoutModal({
   const [editingPrice, setEditingPrice] = useState(false);
   const [cycle, setCycle] = useState<BillingCycle>(initialHosting.subscription?.cycle ?? "QUARTERLY");
   const [method, setMethod] = useState<HostingPaymentMethod>("CASH");
-  const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
-  const [amountError, setAmountError] = useState<string>();
   const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
 
@@ -73,57 +65,37 @@ export default function HostingCheckoutModal({
     setEditingPrice(false);
     setCycle(initial);
     setMethod("CASH");
-    setAmount(rupeesFor(initialHosting.prices[initial].amount, initialHosting.connectsPerRupee));
     setReference("");
     setNote("");
-    setAmountError(undefined);
     setError(null);
   }, [openedFor]);
 
   function chooseCycle(next: BillingCycle) {
     setCycle(next);
-    setAmount(rupeesFor(hosting.prices[next].amount, hosting.connectsPerRupee));
     setError(null);
   }
 
   function handlePriceSaved(updated: WebsiteHosting) {
     setHosting(updated);
     setEditingPrice(false);
-    setAmount(rupeesFor(updated.prices[cycle].amount, updated.connectsPerRupee));
     onHostingChange?.(updated);
   }
 
+  /** Cash, UPI or bank: the admin collected exactly the plan's price, so the wallet isn't needed. */
   const offline = isAdmin && method !== "WALLET";
-  const collectedPaise = offline && RUPEES_PATTERN.test(amount) ? Math.round(Number(amount) * 100) : 0;
-  // Same rule as the server: collecting exactly the plan's rupee price credits exactly the price.
-  const creditConnects =
-    collectedPaise === 0
-      ? 0
-      : price > 0 && collectedPaise === connectsPriceInPaise(price, hosting.connectsPerRupee)
-        ? price
-        : Math.round(collectedPaise * hosting.connectsPerRupee * 10) / 1000;
-  const shortBy = Math.max(0, price - hosting.balance - creditConnects);
+  const shortBy = offline ? 0 : Math.max(0, price - hosting.balance);
   const blocked = hosting.renewalOpensAt !== null;
 
   async function pay() {
     setError(null);
-    if (offline && !(RUPEES_PATTERN.test(amount) && Number(amount) > 0)) {
-      setAmountError("Enter the rupees you collected");
-      return;
-    }
     setPaying(true);
     try {
       const updated = isAdmin
-        ? await hostingApi.collect(
-            hosting.website.id,
-            method === "WALLET"
-              ? { cycle, method, reference: reference.trim(), note: note.trim() }
-              : { cycle, method, amountRupees: Number(amount), reference: reference.trim(), note: note.trim() },
-          )
+        ? await hostingApi.collect(hosting.website.id, { cycle, method, reference: reference.trim(), note: note.trim() })
         : await hostingApi.pay(hosting.website.id, cycle);
       onPaid(updated);
     } catch (err) {
-      setError(err instanceof ApiError && err.fieldErrors().amountRupees ? err.fieldErrors().amountRupees! : errorMessage(err));
+      setError(errorMessage(err));
     } finally {
       setPaying(false);
     }
@@ -241,21 +213,17 @@ export default function HostingCheckoutModal({
                 label: value === "WALLET" ? "Charge client's connects" : `Collected · ${METHOD_LABELS[value]}`,
               }))}
             />
-            {offline && (
-              <div>
-                <TextInput
-                  label="Amount collected (₹)"
-                  name="amountRupees"
-                  value={amount}
-                  onChange={(value) => {
-                    setAmount(value.replace(/[^\d.]/g, ""));
-                    setAmountError(undefined);
-                  }}
-                  error={amountError}
-                  description={`Credited as ${formatConnects(creditConnects)}, then charged`}
-                />
-              </div>
-            )}
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-ink">{offline ? "Amount to collect" : "Charged from wallet"}</span>
+              <p className="flex h-9 items-center rounded-lg border border-line bg-canvas/60 px-3 text-sm font-semibold text-ink">
+                {offline
+                  ? formatPaise(connectsPriceInPaise(price, hosting.connectsPerRupee))
+                  : formatConnects(price)}
+              </p>
+              <span className="text-xs text-ink-muted">
+                {offline ? `Plan price · ${formatConnects(price)}` : "From the client's current connects"}
+              </span>
+            </div>
             <TextInput label="Reference (optional)" name="reference" value={reference} onChange={setReference} placeholder="Receipt or UPI ref" />
             <TextInput label="Note (optional)" name="note" value={note} onChange={setNote} />
           </div>
