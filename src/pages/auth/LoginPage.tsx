@@ -15,10 +15,10 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ identifier?: string; password?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -26,22 +26,24 @@ export default function LoginPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const trimmed = identifier.trim();
     const errors = {
-      email: validateEmail(email),
+      // Usernames can't contain "@", so anything with one must be a valid email.
+      identifier: !trimmed ? "Email or username is required" : trimmed.includes("@") ? validateEmail(trimmed) : undefined,
       password: password ? undefined : "Password is required",
     };
     setFieldErrors(errors);
     setError(null);
     setUnverifiedEmail(null);
-    if (errors.email || errors.password) return;
+    if (errors.identifier || errors.password) return;
 
     setSubmitting(true);
     try {
       // On success the guest-only route guard redirects to the right home screen.
-      await login({ email: email.trim(), password, remember });
+      await login({ identifier: trimmed, password, remember });
     } catch (err) {
       if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
-        setUnverifiedEmail(email.trim().toLowerCase());
+        setUnverifiedEmail(trimmed.toLowerCase());
       }
       setError(errorMessage(err));
       setSubmitting(false);
@@ -83,14 +85,13 @@ export default function LoginPage() {
 
       <form onSubmit={handleSubmit} noValidate className="mt-7 flex flex-col gap-4">
         <TextInput
-          label="Email"
-          name="email"
-          type="email"
-          autoComplete="email"
+          label="Email or username"
+          name="username"
+          autoComplete="username"
           placeholder="you@business.com"
-          value={email}
-          onChange={setEmail}
-          error={fieldErrors.email}
+          value={identifier}
+          onChange={setIdentifier}
+          error={fieldErrors.identifier}
           autoFocus
         />
         <TextInput

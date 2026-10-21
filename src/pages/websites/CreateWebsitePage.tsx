@@ -82,18 +82,36 @@ const INFO_FIELDS = new Set<string>([
   "clientId",
 ]);
 
+/** Mirrors the backend length limits for the optional text fields. */
+const MAX_LENGTHS = { businessName: 160, industry: 80, contactEmail: 255, description: 2000 } as const;
+
+function tooLong(value: string, max: number, label: string): string | undefined {
+  return value.trim().length > max ? `${label} must be at most ${max} characters` : undefined;
+}
+
 function validateInfo(form: InfoForm, needsClient: boolean, clientId: string): InfoErrors {
-  const errors: InfoErrors = {};
-  if (needsClient && !clientId) errors.clientId = "Choose the client this website is for";
-  if (form.name.trim().length < 2) errors.name = "Website name must be at least 2 characters";
-  if (form.contactEmail.trim()) errors.contactEmail = validateEmail(form.contactEmail);
-  if (form.contactPhone.trim() && !PHONE_PATTERN.test(form.contactPhone.trim())) {
-    errors.contactPhone = "Enter a valid phone number";
-  }
-  if (form.subdomain.trim() && !SUBDOMAIN_PATTERN.test(form.subdomain.trim())) {
-    errors.subdomain = "Use 3-40 lowercase letters, numbers or hyphens";
-  }
-  return errors;
+  const name = form.name.trim();
+  const contactEmail = form.contactEmail.trim();
+  const contactPhone = form.contactPhone.trim();
+  const subdomain = form.subdomain.trim().toLowerCase();
+
+  return {
+    clientId: needsClient && !clientId ? "Choose the client this website is for" : undefined,
+    name: !name
+      ? "Website name is required"
+      : name.length < 2
+        ? "Website name must be at least 2 characters"
+        : tooLong(name, 120, "Website name"),
+    businessName: tooLong(form.businessName, MAX_LENGTHS.businessName, "Business name"),
+    industry: tooLong(form.industry, MAX_LENGTHS.industry, "Industry"),
+    contactEmail: contactEmail
+      ? (validateEmail(contactEmail) ?? tooLong(contactEmail, MAX_LENGTHS.contactEmail, "Contact email"))
+      : undefined,
+    contactPhone: contactPhone && !PHONE_PATTERN.test(contactPhone) ? "Enter a valid phone number" : undefined,
+    subdomain:
+      subdomain && !SUBDOMAIN_PATTERN.test(subdomain) ? "Use 3-40 lowercase letters, numbers or hyphens" : undefined,
+    description: tooLong(form.description, MAX_LENGTHS.description, "Business description"),
+  };
 }
 
 function optional(value: string): string | undefined {
@@ -234,7 +252,10 @@ export default function CreateWebsitePage() {
 
   const clientOptions: SelectOption<string>[] = [
     { value: "", label: clients ? "Select a client" : "Loading clients…" },
-    ...(clients ?? []).map((client) => ({ value: client.id, label: client.businessName })),
+    ...(clients ?? []).map((client) => {
+      const login = client.owner?.username ? `@${client.owner.username}` : client.owner?.email;
+      return { value: client.id, label: login ? `${client.businessName} (${login})` : client.businessName };
+    }),
   ];
 
   function update<K extends keyof InfoForm>(key: K) {
@@ -424,8 +445,14 @@ export default function CreateWebsitePage() {
 
             {isAdmin && (
               <div className="mt-5 max-w-sm">
-                <SelectInput label="Client" value={clientId} onChange={setClientId} options={clientOptions} />
-                {errors.clientId && <p className="mt-1 text-xs text-danger">{errors.clientId}</p>}
+                <SelectInput
+                  label="Client"
+                  value={clientId}
+                  onChange={setClientId}
+                  options={clientOptions}
+                  error={errors.clientId}
+                  isRequired
+                />
               </div>
             )}
 
@@ -438,27 +465,41 @@ export default function CreateWebsitePage() {
                 error={errors.name}
                 placeholder="e.g. Main website"
                 autoFocus
+                isRequired
               />
               <TextInput
-                label="Business name"
+                label="Business name (optional)"
                 name="businessName"
                 value={form.businessName}
                 onChange={update("businessName")}
                 error={errors.businessName}
                 description="Shown in the header and footer."
               />
-              <SelectInput label="Website type" value={form.websiteType} onChange={update("websiteType")} options={WEBSITE_TYPES} />
-              <TextInput label="Industry" name="industry" value={form.industry} onChange={update("industry")} error={errors.industry} />
+              <SelectInput
+                label="Website type (optional)"
+                value={form.websiteType}
+                onChange={update("websiteType")}
+                options={WEBSITE_TYPES}
+              />
               <TextInput
-                label="Contact email"
+                label="Industry (optional)"
+                name="industry"
+                value={form.industry}
+                onChange={update("industry")}
+                error={errors.industry}
+              />
+              <TextInput
+                label="Contact email (optional)"
                 name="contactEmail"
                 type="email"
+                placeholder="hello@business.com"
                 value={form.contactEmail}
                 onChange={update("contactEmail")}
                 error={errors.contactEmail}
+                description="Contact form messages are sent here."
               />
               <TextInput
-                label="Contact phone"
+                label="Contact phone (optional)"
                 name="contactPhone"
                 type="tel"
                 placeholder="+91"
@@ -479,11 +520,12 @@ export default function CreateWebsitePage() {
               </div>
               <div className="sm:col-span-3">
                 <TextAreaInput
-                  label="Business description"
+                  label="Business description (optional)"
                   name="description"
                   value={form.description}
                   onChange={update("description")}
                   error={errors.description}
+                  description={`${form.description.trim().length}/${MAX_LENGTHS.description} characters`}
                 />
               </div>
             </div>

@@ -7,7 +7,9 @@ export type ClientSource = "SELF_SIGNUP" | "ADMIN_CREATED";
 export type ClientOwner = {
   id: string;
   fullName: string;
-  email: string;
+  email: string | null;
+  /** Set only for clients whose login was created by a Super Admin. */
+  username: string | null;
   phone: string | null;
   status: UserStatus;
   emailVerified: boolean;
@@ -42,9 +44,17 @@ export type ClientList = {
 export type ClientDetailsInput = {
   businessName: string;
   fullName: string;
+  /** Optional for clients that log in with a username. */
   email: string;
   phone: string;
   address: string;
+  /** Only sent for clients that log in with a username. */
+  username?: string;
+};
+
+export type CreateClientInput = Omit<ClientDetailsInput, "username"> & {
+  username: string;
+  password: string;
 };
 
 type ClientResponse = { client: Client };
@@ -65,8 +75,8 @@ export const adminClientsApi = {
 
   get: (id: string) => request<ClientResponse>(`${BASE}/${id}`).then((data) => data.client),
 
-  create: (input: ClientDetailsInput & { sendInvite: boolean }) =>
-    request<{ client: Client; inviteSent: boolean | null }>(BASE, { method: "POST", body: input }),
+  create: (input: CreateClientInput) =>
+    request<ClientResponse>(BASE, { method: "POST", body: input }).then((data) => data.client),
 
   update: (id: string, input: ClientDetailsInput) =>
     request<ClientResponse>(`${BASE}/${id}`, { method: "PATCH", body: input }).then((data) => data.client),
@@ -76,6 +86,9 @@ export const adminClientsApi = {
 
   reactivate: (id: string) =>
     request<ClientResponse>(`${BASE}/${id}/reactivate`, { method: "POST" }).then((data) => data.client),
+
+  setPassword: (id: string, password: string) =>
+    request<ClientResponse>(`${BASE}/${id}/password`, { method: "POST", body: { password } }).then((data) => data.client),
 
   resendEmail: (id: string) =>
     request<{ emailSent: boolean }>(`${BASE}/${id}/resend-email`, { method: "POST" }),

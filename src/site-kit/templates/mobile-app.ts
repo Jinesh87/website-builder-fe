@@ -1,11 +1,14 @@
 import { buildPages, photo, section } from "./build.ts";
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
+import { MOBILE_APP_LOGO } from "./logos.ts";
 
 const NAME = "Aura Pay";
 
 const header: HeaderData = {
   design: "floating",
   siteName: NAME,
+  logo: MOBILE_APP_LOGO,
+  logoDisplay: "logo_only",
   menu: [
     { label: "Features", href: "/#features" },
     { label: "Vaults", href: "/#vaults" },
@@ -21,6 +24,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "columns",
   siteName: NAME,
+  logo: MOBILE_APP_LOGO,
   description:
     "Aura is the next-generation financial operating companion combining multi-currency global spending, automated high-yield vaults, and biometric security into one fluid mobile experience.",
   columns: [
@@ -36,10 +40,10 @@ const footer: FooterData = {
     {
       title: "Security & Trust",
       links: [
-        { label: "FDIC Pass-Through", href: "/#security" },
-        { label: "Zero-Fraud Guarantee", href: "/#security" },
-        { label: "Biometric Locks", href: "/#security" },
-        { label: "Compliance Disclosures", href: "/terms" },
+        { label: "FDIC Pass-Through", href: "/#features" },
+        { label: "Zero-Fraud Guarantee", href: "/#features" },
+        { label: "Biometric Locks", href: "/#features" },
+        { label: "Compliance Disclosures", href: "/#download" },
       ],
     },
     {
@@ -47,8 +51,8 @@ const footer: FooterData = {
       links: [
         { label: "About Aura", href: "/#features" },
         { label: "Press Kit", href: "/#features" },
-        { label: "Support Concierge", href: "/contact" },
-        { label: "Careers (We're Hiring)", href: "/contact" },
+        { label: "Support Concierge", href: "/#download" },
+        { label: "Careers (We're Hiring)", href: "/#download" },
       ],
     },
   ],
@@ -63,9 +67,9 @@ const footer: FooterData = {
     { label: "Instagram", href: "https://instagram.com" },
   ],
   legalLinks: [
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "Cardholder Agreement", href: "/terms" },
-    { label: "Disclosures & Licences", href: "/security" },
+    { label: "Privacy Policy", href: "/#features" },
+    { label: "Cardholder Agreement", href: "/#download" },
+    { label: "Disclosures & Licences", href: "/#features" },
   ],
   copyright: `© 2026 ${NAME}. Banking services provided by Evolve Bank & Trust, Member FDIC.`,
 };
@@ -167,7 +171,7 @@ export const MOBILE_APP_SITE: SiteData = {
               },
             ],
           },
-          { background: "surface", spacing: "relaxed" },
+          { background: "surface", spacing: "relaxed", anchor: "features" },
         ),
 
         // 3. App Feature Services Grid
@@ -232,7 +236,7 @@ export const MOBILE_APP_SITE: SiteData = {
             ],
             cta: { label: "Claim Your Titanium Card", href: "/#download" },
           },
-          { background: "surface" },
+          { background: "surface", anchor: "card" },
         ),
 
         // 5. Growth Metrics
@@ -248,7 +252,7 @@ export const MOBILE_APP_SITE: SiteData = {
               { value: "< 2 min", label: "Account Setup Time" },
             ],
           },
-          { background: "default" },
+          { background: "default", anchor: "vaults" },
         ),
 
         // 6. Verified User Testimonials
@@ -309,7 +313,7 @@ export const MOBILE_APP_SITE: SiteData = {
               },
             ],
           },
-          { background: "default" },
+          { background: "default", anchor: "security" },
         ),
 
         // 8. Download Conversion CTA
@@ -325,7 +329,7 @@ export const MOBILE_APP_SITE: SiteData = {
             secondaryButton: { label: "Get it on Google Play", href: "/#download" },
             trustBadges: ["Free account creation", "No impact on credit score", "Setup in under 120 seconds"],
           },
-          { background: "surface" },
+          { background: "surface", anchor: "download" },
         ),
       ],
     },

@@ -66,6 +66,7 @@ import {
   VideoField,
 } from "./fields.tsx";
 import { FontPicker } from "./FontPicker.tsx";
+import { cardImageSize, heroImageSize, MEDIA_HINT, MEDIA_SIZE, wideImageSize } from "./media-dimensions.ts";
 import CustomSectionForm from "./CustomSectionForm.tsx";
 import AuthSectionForm from "./AuthSectionForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
@@ -295,6 +296,15 @@ const DEFAULT_CAMPAIGN_STATS: HeroCampaignStat[] = [
 ];
 
 function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
+  const mediaPosition =
+    data.imagePosition ??
+    (data.variant === "split"
+      ? "right"
+      : data.variant === "split-left"
+        ? "left"
+        : data.variant === "background-image" || data.variant === "video-bg"
+          ? "background"
+          : "bottom");
   const trustedBy = data.trustedBy ?? {};
   const updateTrustedBy = (
     patch: Partial<NonNullable<HeroData["trustedBy"]>>,
@@ -582,7 +592,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                 })
               }
               placeholder="/bannervid.mp4"
-              hint="High definition looping background video that plays continuously behind the banner."
+              dimensionHint={MEDIA_SIZE.fullBleed}
+              hint={`High definition looping background video that plays continuously behind the banner. ${MEDIA_HINT.fullBleedVideo}`}
             />
             <div className="flex flex-wrap items-center gap-1.5 -mt-1 mb-2">
               <span className="text-xs text-slate-500 font-medium mr-1">
@@ -658,6 +669,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                 })
               }
               optional
+              dimensionHint={MEDIA_SIZE.fullBleed}
+              hint="Shown while the video loads and when it can't play. Use a frame from the video."
             />
             <SelectField
               label="Background overlay style"
@@ -979,6 +992,7 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                   label="Card Image / Poster"
                   value={slide.image}
                   onChange={(image) => update({ ...slide, image })}
+                  dimensionHint={MEDIA_SIZE.reelCard}
                 />
                 <TextField
                   label="Card Title"
@@ -1028,17 +1042,7 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
 
           <SelectField
             label="Media display placement"
-            value={
-              data.imagePosition ??
-              (data.variant === "split"
-                ? "right"
-                : data.variant === "split-left"
-                  ? "left"
-                  : data.variant === "background-image" ||
-                      data.variant === "video-bg"
-                    ? "background"
-                    : "bottom")
-            }
+            value={mediaPosition}
             options={[
               {
                 value: "right",
@@ -1081,6 +1085,9 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             value={data.image}
             onChange={(image) => onChange({ ...data, image })}
             optional
+            dimensionHint={
+              data.mediaType === "both" ? MEDIA_SIZE.fullBleed : heroImageSize(data.variant, mediaPosition)
+            }
           />
 
           <SelectField
@@ -1110,6 +1117,7 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
               onChange({ ...data, videoUrl: videoUrl || undefined })
             }
             placeholder="https://www.youtube.com/watch?v=... or upload MP4"
+            dimensionHint={MEDIA_SIZE.fullBleed}
             hint="Supports direct MP4/WebM uploads (up to 50 MB) or YouTube/Vimeo links."
           />
 
@@ -1148,6 +1156,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
               onChange({ ...data, backgroundImage })
             }
             optional
+            dimensionHint={MEDIA_SIZE.fullBleed}
+            hint={MEDIA_HINT.cropped}
           />
 
           <SelectField
@@ -1182,7 +1192,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
               })
             }
             placeholder="https://www.youtube.com/watch?v=... or upload MP4"
-            hint="Ambient full-bleed video that plays automatically in the background."
+            dimensionHint={MEDIA_SIZE.fullBleed}
+            hint={`Ambient full-bleed video that plays automatically in the background. ${MEDIA_HINT.fullBleedVideo}`}
           />
 
           <SelectField
@@ -1354,6 +1365,8 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
               value={data.splitImage}
               onChange={(splitImage) => onChange({ ...data, splitImage })}
               optional
+              dimensionHint={MEDIA_SIZE.featuresMockup}
+              hint="Shown at its natural shape up to 480 px wide; a transparent PNG or WebP works best."
             />
             <OptionalLinkField
               label="Primary CTA button (optional)"
@@ -1761,6 +1774,7 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
             value={data.splitImage}
             onChange={(splitImage) => onChange({ ...data, splitImage })}
             optional
+            dimensionHint={MEDIA_SIZE.servicesShowcase}
           />
           <TextField
             label="Showcase tagline (optional)"
@@ -1948,6 +1962,7 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
                 value={item.image}
                 onChange={(image) => update({ ...item, image })}
                 optional
+                dimensionHint={cardImageSize(data.imageAspect ?? "16:9")}
               />
 
               <StringList
@@ -2237,6 +2252,8 @@ function TestimonialsForm({ data, onChange }: DataFormProps<TestimonialsData>) {
                 value={item.avatar}
                 onChange={(avatar) => update({ ...item, avatar })}
                 optional
+                dimensionHint={MEDIA_SIZE.avatar}
+                hint={MEDIA_HINT.avatar}
               />
               <div className="grid grid-cols-2 gap-2">
                 <TextField
@@ -2833,6 +2850,7 @@ function GalleryForm({ data, onChange }: DataFormProps<GalleryData>) {
               label="Image"
               value={image}
               onChange={(next) => update(next ?? { url: "", alt: "" })}
+              dimensionHint={MEDIA_SIZE.galleryImage}
             />
           )}
         />
@@ -2871,6 +2889,8 @@ function LogosForm({ data, onChange }: DataFormProps<LogosData>) {
               label="Logo"
               value={logo}
               onChange={(next) => update(next ?? { url: "", alt: "" })}
+              dimensionHint={MEDIA_SIZE.logo}
+              hint={MEDIA_HINT.logo}
             />
           )}
         />
@@ -2933,6 +2953,7 @@ function SplitForm({ data, onChange }: DataFormProps<SplitData>) {
           value={data.image}
           onChange={(image) => onChange({ ...data, image })}
           optional
+          dimensionHint={MEDIA_SIZE.splitImage}
         />
       </FormGroup>
     </>
@@ -3235,6 +3256,7 @@ function MediaForm({ data, onChange }: DataFormProps<MediaData>) {
             value={data.image}
             onChange={(image) => onChange({ ...data, image })}
             optional
+            dimensionHint={wideImageSize(data.aspect)}
           />
         ) : (
           <VideoField
@@ -3244,6 +3266,7 @@ function MediaForm({ data, onChange }: DataFormProps<MediaData>) {
               onChange({ ...data, videoUrl: videoUrl || "" })
             }
             placeholder="https://www.youtube.com/watch?v=… or upload MP4"
+            dimensionHint={wideImageSize(data.aspect)}
             hint="Plays with privacy-enhanced embedding or direct MP4 streaming."
           />
         )}
@@ -3430,6 +3453,8 @@ function TeamForm({ data, onChange }: DataFormProps<TeamData>) {
                 value={member.photo}
                 onChange={(photo) => update({ ...member, photo })}
                 optional
+                dimensionHint={MEDIA_SIZE.teamPortrait}
+                hint="Head-and-shoulders photo with the face centred; some designs crop it to a square or circle."
               />
               <StringList
                 label="Skills / Highlights / Credentials"
@@ -3519,6 +3544,17 @@ function CarouselForm({ data, onChange }: DataFormProps<CarouselData>) {
     currentVariant === "image-gallery" ||
     currentVariant === "image-strip" ||
     currentVariant === "image-coverflow";
+  const slideImageSize = isImageVariant
+    ? wideImageSize(data.imageAspect || "16:9")
+    : currentVariant === "hero-slider"
+      ? MEDIA_SIZE.fullBleed
+      : currentVariant === "curved-banner"
+        ? MEDIA_SIZE.reelCard
+        : currentVariant === "showcase"
+          ? wideImageSize("16:9")
+          : currentVariant === "minimal-editorial"
+            ? cardImageSize("4:3")
+            : cardImageSize("16:9");
 
   return (
     <>
@@ -3685,6 +3721,7 @@ function CarouselForm({ data, onChange }: DataFormProps<CarouselData>) {
                 value={slide.image}
                 onChange={(image) => update({ ...slide, image })}
                 optional
+                dimensionHint={slideImageSize}
               />
               <TextField
                 label="Slide Title / Headline"

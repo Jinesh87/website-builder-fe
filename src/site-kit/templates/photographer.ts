@@ -1,11 +1,14 @@
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
 import { buildPages, photo, section } from "./build.ts";
+import { PHOTOGRAPHER_LOGO } from "./logos.ts";
 
 const NAME = "Elena Vance";
 
 const header: HeaderData = {
   design: "minimalist",
   siteName: NAME,
+  logo: PHOTOGRAPHER_LOGO,
+  logoDisplay: "logo_only",
   menu: [
     { label: "Home", href: "/" },
     { label: "Selected Work", href: "/portfolio" },
@@ -20,6 +23,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "split",
   siteName: NAME,
+  logo: PHOTOGRAPHER_LOGO,
   tagline: "Fine Art & Editorial Photography",
   description: "Documenting spatial volume, human stillness, and natural light. Working internationally from Paris, Zurich, and Tokyo.",
   columns: [

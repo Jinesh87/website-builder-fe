@@ -7,7 +7,9 @@ import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { DeviceToggle, PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
 import { SitePage, type SiteData } from "../../site-kit/index.ts";
+import { resolvePageLink } from "../../site-kit/links.ts";
 import { getLiveSiteDomain, getLiveSiteUrl } from "../../utils/live-url.ts";
+import { isLightColor } from "../../utils/colors.ts";
 import type { CreatedState } from "./CreateWebsitePage.tsx";
 
 export default function WebsitePreviewPage() {
@@ -49,17 +51,11 @@ export default function WebsitePreviewPage() {
   const pages = website?.draft.pages ?? [];
   const page = pages.find((candidate) => candidate.id === pageId) ?? pages.find((candidate) => candidate.slug === "/") ?? pages[0];
 
-  function openLink(href: string) {
-    if (!href || href === "#") return;
-    const clean = href.startsWith("/") ? href : `/${href}`;
-    const target = pages.find(
-      (candidate) =>
-        candidate.slug === clean ||
-        candidate.slug === href ||
-        candidate.id === href ||
-        candidate.slug.replace(/^\//, "") === href.replace(/^\//, ""),
-    );
-    if (target) setPageId(target.id);
+  function openLink(href: string): boolean {
+    const target = resolvePageLink(pages, href, page);
+    if (!target) return false;
+    setPageId(target.page.id);
+    return true;
   }
 
   const simulatedDomain = getLiveSiteDomain(website?.subdomain || "preview", website?.customDomain);
@@ -214,17 +210,39 @@ export default function WebsitePreviewPage() {
       )}
 
       {/* Realistic Website Preview Frame */}
-      {site && page && (
-        <main
-          className={`flex-1 w-full relative bg-[#f4f5f8] ${
-            device === "desktop" ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden"
-          }`}
-        >
-          <PreviewFrame device={device} onLinkClick={openLink}>
-            <SitePage site={site} page={page} />
-          </PreviewFrame>
-        </main>
-      )}
+      {site && page && (() => {
+        const isSiteLight = isLightColor(site.theme?.colors?.background ?? "#ffffff");
+        const scrollThumbColor = isSiteLight ? "rgba(24, 24, 27, 0.45)" : "rgba(255, 255, 255, 0.45)";
+        const scrollThumbHoverColor = isSiteLight ? "rgba(24, 24, 27, 0.75)" : "rgba(255, 255, 255, 0.75)";
+        return (
+          <main
+            className={`flex-1 w-full relative ${
+              device === "desktop" ? "overflow-y-auto overflow-x-hidden bg-transparent" : "overflow-hidden bg-[#f4f5f8]"
+            }`}
+            style={
+              device === "desktop"
+                ? {
+                    backgroundColor: site.theme?.colors?.background || "transparent",
+                    scrollbarWidth: "thin",
+                    scrollbarColor: `${scrollThumbColor} transparent`,
+                    ["--scrollbar-thumb" as any]: scrollThumbColor,
+                    ["--scrollbar-thumb-hover" as any]: scrollThumbHoverColor,
+                  }
+                : undefined
+            }
+          >
+            <PreviewFrame
+              device={device}
+              onLinkClick={openLink}
+              allowOffsiteLinks
+              scrollResetKey={page.id}
+              theme={site?.theme}
+            >
+              <SitePage site={site} page={page} />
+            </PreviewFrame>
+          </main>
+        );
+      })()}
     </div>
   );
 }

@@ -17,6 +17,7 @@ import {
   type SortOrder,
 } from "../../api/admin-ai-usage.ts";
 import { errorMessage } from "../../api/http.ts";
+import { formatConnects, formatConnectsNumber } from "../../api/wallet.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../../components/ui/SelectInput.tsx";
@@ -29,6 +30,8 @@ const SORT_OPTIONS: SelectOption<AiUsageSortBy>[] = [
   { value: "totalTokens", label: "Most tokens" },
   { value: "estimatedCost", label: "Highest cost" },
   { value: "totalRequests", label: "Most requests" },
+  { value: "connectsUsed", label: "Connects used" },
+  { value: "connectsLeft", label: "Connects left" },
   { value: "lastUsedAt", label: "Recently used" },
   { value: "businessName", label: "Client name" },
 ];
@@ -117,7 +120,7 @@ export default function AiUsagePage() {
     <div className="px-6 py-8 sm:px-8">
       <PageHeader
         title="AI Usage"
-        description="Monitor OpenAI token consumption, estimated dollar cost, and generation activity across clients."
+        description="Tokens, cost and connects each client used, and the connects they have left."
       />
 
       {/* KPI Overview Cards */}
@@ -134,9 +137,7 @@ export default function AiUsagePage() {
               {formatCurrency(data.summary.totalEstimatedCost)}
             </p>
             <p className="mt-1 text-xs text-ink-muted">
-              {data.summary.totalEstimatedCost > 0
-                ? `${formatDetailedCost(data.summary.totalEstimatedCost)} accurate sum`
-                : "Based on OpenAI API rates"}
+              {formatConnects(data.summary.totalConnectsUsed)} charged to clients
             </p>
           </div>
 
@@ -269,9 +270,10 @@ export default function AiUsagePage() {
                 <thead className="border-b border-line bg-canvas/60 text-xs font-medium text-ink-muted">
                   <tr>
                     <th scope="col" className="px-5 py-3 font-medium">Client</th>
-                    <th scope="col" className="px-5 py-3 font-medium">Est. Cost (USD)</th>
-                    <th scope="col" className="px-5 py-3 font-medium">Total Tokens</th>
-                    <th scope="col" className="px-5 py-3 font-medium">Token Breakdown</th>
+                    <th scope="col" className="px-5 py-3 text-right font-medium">Connects used</th>
+                    <th scope="col" className="px-5 py-3 text-right font-medium">Connects left</th>
+                    <th scope="col" className="px-5 py-3 font-medium">Cost (USD)</th>
+                    <th scope="col" className="px-5 py-3 font-medium">Tokens</th>
                     <th scope="col" className="px-5 py-3 font-medium">Requests</th>
                     <th scope="col" className="px-5 py-3 font-medium">Primary Model</th>
                     <th scope="col" className="px-5 py-3 font-medium">Last Active</th>
@@ -295,8 +297,21 @@ export default function AiUsagePage() {
                           {row.businessName}
                         </Link>
                         <p className="text-xs text-ink-muted">
-                          {row.owner ? `${row.owner.fullName} · ${row.owner.email}` : "No login account"}
+                          {row.owner ? [row.owner.fullName, row.owner.email].filter(Boolean).join(" · ") : "No login account"}
                         </p>
+                      </td>
+
+                      <td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-ink">
+                        {formatConnectsNumber(row.connectsUsed)}
+                      </td>
+
+                      <td
+                        className={`whitespace-nowrap px-5 py-3 text-right font-semibold ${
+                          row.connectsLeft <= 0 ? "text-rose-600 dark:text-rose-400" : "text-ink"
+                        }`}
+                        title={row.connectsLeft <= 0 ? "Out of connects: AI is blocked until they buy more" : undefined}
+                      >
+                        {formatConnectsNumber(row.connectsLeft)}
                       </td>
 
                       <td className="px-5 py-3">
@@ -306,15 +321,10 @@ export default function AiUsagePage() {
                       </td>
 
                       <td className="px-5 py-3">
-                        <span className="font-semibold text-ink">
-                          {formatNumber(row.totalTokens)}
-                        </span>
-                      </td>
-
-                      <td className="px-5 py-3 text-xs text-ink-muted">
-                        <span>{formatNumber(row.promptTokens)} prompt</span>
-                        <span className="mx-1.5 text-line-strong">/</span>
-                        <span>{formatNumber(row.completionTokens)} completion</span>
+                        <p className="font-semibold text-ink">{formatNumber(row.totalTokens)}</p>
+                        <p className="whitespace-nowrap text-xs text-ink-muted">
+                          {formatNumber(row.promptTokens)} in / {formatNumber(row.completionTokens)} out
+                        </p>
                       </td>
 
                       <td className="px-5 py-3 text-ink-body">

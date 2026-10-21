@@ -1,15 +1,18 @@
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
 import { buildPages, photo, section } from "./build.ts";
+import { TECH_ACADEMY_LOGO } from "./logos.ts";
 
 const NAME = "Quantum Tech Academy";
 
 const header: HeaderData = {
   design: "glass-dock",
   siteName: NAME,
+  logo: TECH_ACADEMY_LOGO,
+  logoDisplay: "logo_only",
   menu: [
     { label: "Curriculum", href: "/courses" },
     { label: "Admissions", href: "/admissions" },
-    { label: "Mentors", href: "/about" },
+    { label: "Mentors", href: "/#mentors" },
     { label: "Contact", href: "/contact" },
   ],
   cta: { label: "Apply for Fellowship", href: "/admissions" },
@@ -21,6 +24,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "cta-banner",
   siteName: NAME,
+  logo: TECH_ACADEMY_LOGO,
   description:
     "Quantum Tech Academy is a next-generation engineering fellowship training senior AI researchers, distributed systems architects, and modern engineering leaders.",
   ctaBanner: {
@@ -45,8 +49,8 @@ const footer: FooterData = {
       links: [
         { label: "Admissions & Tuition", href: "/admissions" },
         { label: "Scholarships & ISAs", href: "/admissions" },
-        { label: "Mentor Network", href: "/about" },
-        { label: "Alumni Outcomes", href: "/about" },
+        { label: "Mentor Network", href: "/#mentors" },
+        { label: "Alumni Outcomes", href: "/#outcomes" },
       ],
     },
   ],
@@ -205,7 +209,7 @@ export const TECH_ACADEMY_SITE: SiteData = {
               { value: "4.95 / 5", label: "Fellow Satisfaction Rating" },
             ],
           },
-          { background: "surface" },
+          { background: "surface", anchor: "outcomes" },
         ),
         section(
           "features",
@@ -289,7 +293,7 @@ export const TECH_ACADEMY_SITE: SiteData = {
               },
             ],
           },
-          { background: "surface" },
+          { background: "surface", anchor: "mentors" },
         ),
         section(
           "pricing",

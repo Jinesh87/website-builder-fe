@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { Monitor, Smartphone, Tablet, type LucideIcon } from "lucide-react";
-import { SiteStyles } from "../../site-kit/index.ts";
+import { SiteStyles, themeToCssVars, type ThemeSettings } from "../../site-kit/index.ts";
+import { isExternalHref, isOffsiteHref, linkHash } from "../../site-kit/links.ts";
 
 export type Device = "desktop" | "tablet" | "mobile";
 
@@ -54,20 +55,79 @@ export function DeviceToggle({ value, onChange, tone = "light" }: DeviceTogglePr
 
 type PreviewFrameProps = {
   device: Device;
-  /** Receives the href of clicked site links, e.g. to switch the previewed page. */
-  onLinkClick?: (href: string) => void;
+  /**
+   * Receives the href of clicked site links, e.g. to switch the previewed page.
+   * Returns true when the link was followed, so the preview scrolls to its `#anchor` or the top.
+   */
+  onLinkClick?: (href: string) => boolean;
+  /** Lets web, email and phone links open (web links in a new tab) instead of swallowing them. */
+  allowOffsiteLinks?: boolean;
+  /** Scrolls the preview back to the top whenever this changes, e.g. the previewed page id. */
+  scrollResetKey?: string;
   /** Scale the frame down to the available width instead of scrolling sideways. Exposes `--preview-scale`. */
   fit?: boolean;
+  /** Theme settings for background color and typography */
+  theme?: ThemeSettings;
   children: ReactNode;
 };
 
+/** Device frames scroll their own screen; the desktop frame scrolls inside the page around it. */
+function scrollContainerOf(root: HTMLElement): HTMLElement | null {
+  const deviceScreen = root.querySelector<HTMLElement>(".wb-device-scroll");
+  if (deviceScreen) return deviceScreen;
+  for (let node = root.parentElement; node; node = node.parentElement) {
+    const { overflowY } = getComputedStyle(node);
+    if (overflowY === "auto" || overflowY === "scroll") return node;
+  }
+  return document.scrollingElement instanceof HTMLElement ? document.scrollingElement : null;
+}
+
+function scrollPreview(root: HTMLElement, hash: string) {
+  const container = scrollContainerOf(root);
+  if (!container) return;
+  const target = hash ? root.querySelector<HTMLElement>(`#${CSS.escape(hash)}`) : null;
+  if (!target) {
+    container.scrollTo({ top: 0 });
+    return;
+  }
+  const containerBox = container.getBoundingClientRect();
+  // Tablet and mobile frames are scaled with a CSS transform; scrollTop is in unscaled pixels.
+  const scale = container.offsetHeight > 0 ? containerBox.height / container.offsetHeight : 1;
+  const offset = (target.getBoundingClientRect().top - containerBox.top) / (scale || 1);
+  const margin = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  container.scrollTo({ top: container.scrollTop + offset - margin, behavior: reduceMotion ? "auto" : "smooth" });
+}
+
 /** Fixed-width frame; site-kit container queries make it behave like a real device. */
-export function PreviewFrame({ device, onLinkClick, fit = false, children }: PreviewFrameProps) {
+export function PreviewFrame({
+  device,
+  onLinkClick,
+  allowOffsiteLinks = false,
+  scrollResetKey,
+  fit = false,
+  theme,
+  children,
+}: PreviewFrameProps) {
   const width = deviceWidth(device);
+  const rootRef = useRef<HTMLDivElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
+  const deviceContainerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [height, setHeight] = useState<number | null>(null);
+  const [deviceScale, setDeviceScale] = useState(1);
+  const [navigation, setNavigation] = useState({ count: 0, hash: "" });
+
+  const bg = theme?.colors?.background || "#ffffff";
+  const text = theme?.colors?.text || "#18181b";
+  const screenThemeVars = theme ? (themeToCssVars(theme) as CSSProperties) : undefined;
+  const innerScreenStyle: CSSProperties = {
+    transform: "translateZ(0)",
+    backgroundColor: bg,
+    color: text,
+    ...screenThemeVars,
+  };
 
   useLayoutEffect(() => {
     if (!fit) return;
@@ -86,18 +146,60 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
     return () => observer.disconnect();
   }, [fit, width]);
 
+  useLayoutEffect(() => {
+    if (device === "desktop" || fit) return;
+    const el = deviceContainerRef.current;
+    if (!el) return;
+    const update = () => {
+      const targetW = device === "tablet" ? 824 : 430;
+      const targetH = device === "tablet" ? 820 : 800;
+      const availW = el.clientWidth - 32;
+      const availH = el.clientHeight - 32;
+      const scaleW = availW > 0 && availW < targetW ? availW / targetW : 1;
+      const scaleH = availH > 0 && availH < targetH ? Math.max(0.65, availH / targetH) : 1;
+      const finalScale = Math.min(scaleW, scaleH);
+      setDeviceScale(Math.min(1, Math.max(0.45, finalScale)));
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    update();
+    return () => observer.disconnect();
+  }, [device, fit]);
+
+  // Runs before the navigation effect so a link to another page's anchor ends at the anchor.
+  useLayoutEffect(() => {
+    const root = rootRef.current ?? deviceContainerRef.current;
+    if (scrollResetKey === undefined || !root) return;
+    scrollPreview(root, "");
+  }, [scrollResetKey]);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current ?? deviceContainerRef.current;
+    if (navigation.count === 0 || !root) return;
+    scrollPreview(root, navigation.hash);
+  }, [navigation]);
+
   // Site links point at the client site's paths, which don't exist inside the builder.
   function handleClickCapture(event: MouseEvent<HTMLDivElement>) {
     const anchor = event.target instanceof Element ? event.target.closest("a") : null;
     if (!anchor) return;
+    const href = anchor.getAttribute("href") ?? "";
+    if (allowOffsiteLinks && isOffsiteHref(href)) {
+      if (isExternalHref(href) && anchor.target !== "_blank") {
+        event.preventDefault();
+        window.open(href, "_blank", "noopener,noreferrer");
+      }
+      return;
+    }
     event.preventDefault();
-    onLinkClick?.(anchor.getAttribute("href") ?? "");
+    if (!onLinkClick?.(href)) return;
+    setNavigation((current) => ({ count: current.count + 1, hash: linkHash(href) }));
   }
 
   if (fit) {
-    const frameClass = "overflow-clip rounded-lg border border-line-strong bg-white shadow-sm";
+    const frameClass = "overflow-clip rounded-lg border border-line-strong bg-transparent shadow-sm";
     return (
-      <div className="bg-canvas p-4 sm:p-6">
+      <div ref={rootRef} className="bg-canvas p-4 sm:p-6">
         <SiteStyles />
         <div ref={outerRef} className="mx-auto overflow-hidden" style={{ maxWidth: width, height: height ?? undefined }}>
           <div
@@ -115,7 +217,7 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
 
   if (device === "desktop") {
     return (
-      <div className="w-full min-h-screen bg-white" onClickCapture={handleClickCapture}>
+      <div ref={rootRef} className="w-full min-h-full bg-transparent" onClickCapture={handleClickCapture}>
         <SiteStyles />
         {children}
       </div>
@@ -125,13 +227,20 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
   if (device === "tablet") {
     return (
       <div
-        className="relative flex items-center justify-center w-full h-[calc(100vh-56px)] py-6 px-4 overflow-hidden bg-[#f4f5f8] bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]"
+        ref={deviceContainerRef}
+        className="relative flex items-center justify-center w-full h-full min-h-[calc(100vh-64px)] py-6 px-4 overflow-y-auto overflow-x-hidden bg-[#f4f5f8] bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]"
         onClickCapture={handleClickCapture}
       >
         <SiteStyles />
 
         {/* iPad Pro Hardware Shell */}
-        <div className="relative shrink-0 flex flex-col items-center justify-center h-full max-h-full select-none">
+        <div
+          className="relative shrink-0 flex flex-col items-center justify-center select-none transition-transform duration-200"
+          style={{
+            transform: deviceScale < 1 ? `scale(${deviceScale})` : undefined,
+            transformOrigin: "center center",
+          }}
+        >
           {/* Studio Ambient Floor Shadow */}
           <div className="absolute -inset-3 rounded-[40px] bg-black/25 blur-2xl pointer-events-none" />
 
@@ -148,19 +257,30 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
               <div className="size-[3px] rounded-full bg-[#05070a]" />
             </div>
 
-            {/* Inner Screen Display Glass (traps fixed modals/drawers inside device) */}
+            {/* Inner Screen Display Glass */}
             <div
-              className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden rounded-[20px] bg-white ring-1 ring-black/10 shadow-inner"
-              style={{ transform: "translateZ(0)" }}
+              className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden rounded-[20px] ring-1 ring-black/10 shadow-inner"
+              style={innerScreenStyle}
             >
               {/* Scrollable Content */}
-              <div className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain">
+              <div
+                className="wb-device-scroll flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden overscroll-contain pb-6"
+                style={{ backgroundColor: bg }}
+              >
                 {children}
               </div>
 
               {/* iOS Home Indicator Bar */}
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-                <div className="h-1 w-36 rounded-full bg-zinc-800/40 backdrop-blur-sm" />
+              <div
+                className="absolute bottom-0 inset-x-0 h-6 z-30 flex items-center justify-center pointer-events-none"
+                style={{
+                  background: `linear-gradient(to top, color-mix(in srgb, ${bg} 90%, transparent), transparent)`,
+                }}
+              >
+                <div
+                  className="h-1 w-36 rounded-full"
+                  style={{ backgroundColor: `color-mix(in srgb, ${text} 30%, transparent)` }}
+                />
               </div>
             </div>
           </div>
@@ -172,13 +292,20 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
   // Mobile frame (iPhone 18 Pro)
   return (
     <div
-      className="relative flex items-center justify-center w-full h-[calc(100vh-56px)] py-6 px-4 overflow-hidden bg-[#f4f5f8] bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]"
+      ref={deviceContainerRef}
+      className="relative flex items-center justify-center w-full h-full min-h-[calc(100vh-64px)] py-6 px-4 overflow-y-auto overflow-x-hidden bg-[#f4f5f8] bg-[radial-gradient(#d1d5db_1px,transparent_1px)] [background-size:20px_20px]"
       onClickCapture={handleClickCapture}
     >
       <SiteStyles />
 
       {/* iPhone Pro Hardware Shell */}
-      <div className="relative shrink-0 flex flex-col items-center justify-center h-full max-h-full select-none">
+      <div
+        className="relative shrink-0 flex flex-col items-center justify-center select-none transition-transform duration-200"
+        style={{
+          transform: deviceScale < 1 ? `scale(${deviceScale})` : undefined,
+          transformOrigin: "center center",
+        }}
+      >
         {/* Studio Ambient Floor Shadow */}
         <div className="absolute -inset-3 rounded-[58px] bg-black/25 blur-2xl pointer-events-none" />
 
@@ -198,29 +325,78 @@ export function PreviewFrame({ device, onLinkClick, fit = false, children }: Pre
           {/* Top Micro-Speaker Slit */}
           <div className="absolute top-[3.5px] left-1/2 -translate-x-1/2 h-[3px] w-12 rounded-full bg-[#05070a] ring-1 ring-white/10 z-30 pointer-events-none" />
 
-          {/* Inner Screen Display Glass (traps fixed modals/drawers inside device) */}
+          {/* Inner Screen Display Glass (Seamless 390px edge-to-edge canvas) */}
           <div
-            className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden rounded-[40px] bg-white ring-1 ring-black/10 shadow-inner"
-            style={{ transform: "translateZ(0)" }}
+            className="relative flex flex-col flex-1 min-h-0 w-full overflow-hidden rounded-[40px] ring-1 ring-black/10 shadow-inner"
+            style={innerScreenStyle}
           >
-            {/* Dynamic Island Floating Pill (Compact & Elegant) */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-2 z-30 flex items-center justify-between px-2 h-[22px] w-[92px] rounded-full bg-black shadow-md pointer-events-none">
-              {/* Lens */}
-              <div className="size-2 rounded-full bg-[#080d1a] ring-1 ring-white/15 relative flex items-center justify-center">
-                <div className="size-0.5 rounded-full bg-blue-500/70" />
+            {/* Authentic iOS Status Bar with Dynamic Island & Ambient Frosted Glass */}
+            <div
+              className="absolute top-0 inset-x-0 h-11 z-40 flex items-center justify-between px-6 pointer-events-none select-none"
+              style={{
+                background: `color-mix(in srgb, ${bg} 88%, transparent)`,
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
+                borderBottom: `1px solid color-mix(in srgb, ${text} 6%, transparent)`,
+                color: text,
+              }}
+            >
+              {/* Time */}
+              <span className="text-[12.5px] font-semibold tracking-tight">
+                9:41
+              </span>
+
+              {/* Dynamic Island Floating Pill */}
+              <div className="absolute left-1/2 -translate-x-1/2 top-2 flex items-center justify-between px-2.5 h-[25px] w-[96px] rounded-full bg-black shadow-[0_2px_8px_rgba(0,0,0,0.6)] ring-1 ring-white/10">
+                {/* Lens */}
+                <div className="size-2 rounded-full bg-[#080d1a] ring-1 ring-white/20 relative flex items-center justify-center">
+                  <div className="size-0.5 rounded-full bg-blue-500/80" />
+                </div>
+                {/* Sensor */}
+                <div className="size-1.5 rounded-full bg-[#0a0c10] ml-auto" />
               </div>
-              {/* Sensor */}
-              <div className="size-1.5 rounded-full bg-[#0a0c10] ml-auto" />
+
+              {/* Status Icons */}
+              <div className="flex items-center gap-1.5 opacity-85">
+                {/* Cellular Signal (4 bars) */}
+                <svg className="w-3.5 h-3" viewBox="0 0 17 12" fill="currentColor" aria-hidden="true">
+                  <rect x="0" y="8" width="2.5" height="4" rx="0.5" />
+                  <rect x="4" y="6" width="2.5" height="6" rx="0.5" />
+                  <rect x="8" y="3" width="2.5" height="9" rx="0.5" />
+                  <rect x="12" y="0" width="2.5" height="12" rx="0.5" />
+                </svg>
+                {/* Wi-Fi Icon */}
+                <svg className="w-3.5 h-3" viewBox="0 0 16 12" fill="currentColor" aria-hidden="true">
+                  <path d="M8 9.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM3.5 6.5C4.7 5.3 6.3 4.5 8 4.5s3.3.8 4.5 2L14 5C12.4 3.4 10.3 2.5 8 2.5S3.6 3.4 2 5l1.5 1.5zM0 3C2.2.8 5 0 8 0s5.8.8 8 3l-1.5 1.5C12.8 2.9 10.5 2 8 2S3.2 2.9 1.5 4.5L0 3z" />
+                </svg>
+                {/* Battery Icon */}
+                <div className="w-[19px] h-[10px] rounded-[3px] border border-current p-[1px] flex items-center">
+                  <div className="h-full w-3 bg-current rounded-[1px]" />
+                </div>
+              </div>
             </div>
 
-            {/* Scrollable Website Preview (pt-8 provides clean breathing room under Dynamic Island) */}
-            <div className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain pt-8 pb-5">
+            {/* Scrollable Website Preview (pt-11 protects safe area, pb-7 clears home bar, scrollbar hidden for authentic mobile feel) */}
+            <div
+              className="wb-device-scroll flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden overscroll-contain pt-11 pb-7"
+              style={{
+                backgroundColor: bg,
+              }}
+            >
               {children}
             </div>
 
-            {/* Bottom iOS Home Indicator Pill */}
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none">
-              <div className="h-1 w-32 rounded-full bg-zinc-900/40 backdrop-blur-sm" />
+            {/* Bottom iOS Home Indicator Safe Area Bar */}
+            <div
+              className="absolute bottom-0 inset-x-0 h-6 z-40 flex items-center justify-center pointer-events-none select-none"
+              style={{
+                background: `linear-gradient(to top, color-mix(in srgb, ${bg} 92%, transparent), transparent)`,
+              }}
+            >
+              <div
+                className="h-1 w-32 rounded-full"
+                style={{ backgroundColor: `color-mix(in srgb, ${text} 35%, transparent)` }}
+              />
             </div>
           </div>
         </div>

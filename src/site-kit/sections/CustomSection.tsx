@@ -2,7 +2,8 @@ import type { CSSProperties } from "react";
 import { SectionShell, SiteButton, SiteIcon, SiteImage, parseRichText } from "../primitives.tsx";
 import type { CustomBlock, SectionOf } from "../types.ts";
 
-const SAFE_IMAGE_URL = /^(https?:\/\/\S+|\/(?!\/)\S*)$/i;
+const SAFE_IMAGE_URL =
+  /^(https?:\/\/\S+|\/(?!\/)\S*|data:image\/(?:png|jpe?g|webp|gif|svg\+xml|avif)(?:;[a-z0-9=_-]+)*;?(?:base64)?,[\s\S]*)$/i;
 
 function BlockList({ blocks }: { blocks: CustomBlock[] | undefined }) {
   return (blocks ?? []).map((block, index) => <BlockView key={index} block={block} />);

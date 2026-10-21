@@ -48,6 +48,7 @@ import {
 } from "../../../../site-kit/index.ts";
 import { useEditor } from "../../editor-context.ts";
 import { insertSections, useBuilderPuck } from "../../puck/puck-api.ts";
+import { getSectionType, sectionToItem } from "../../puck/adapter.ts";
 import { EmptyState, PanelHeader, SearchField } from "../ui.tsx";
 
 type CategoryItem = {
@@ -338,11 +339,7 @@ type PresetCardItemProps = {
 const PresetCardItem = memo(
   function PresetCardItem({ preset, theme, full, onAdd }: PresetCardItemProps) {
     return (
-      <Drawer.Item
-        name={preset.key}
-        label={preset.label}
-        isDragDisabled={full}
-      >
+      <Drawer.Item name={preset.key} label={preset.label} isDragDisabled={full}>
         {() => (
           <div
             onClick={() => onAdd(preset)}
@@ -388,7 +385,8 @@ const PresetCardItem = memo(
     if (prev.full !== next.full) return false;
     if (prev.onAdd !== next.onAdd) return false;
     if (prev.theme !== next.theme) {
-      if (JSON.stringify(prev.theme) !== JSON.stringify(next.theme)) return false;
+      if (JSON.stringify(prev.theme) !== JSON.stringify(next.theme))
+        return false;
     }
     return true;
   },
@@ -434,7 +432,7 @@ const CategoryRail = memo(function CategoryRail({
   return (
     <nav
       aria-label="Section categories"
-      className="flex w-[70px] shrink-0 flex-col gap-1 border-r border-ed-border bg-ed-subtle/40 p-1 overflow-y-auto overscroll-contain"
+      className="flex w-17.5 shrink-0 flex-col gap-1 border-r border-ed-border bg-ed-subtle/40 p-1 overflow-y-auto overscroll-contain"
     >
       {VISIBLE_CATEGORIES.map(({ id, shortLabel, label, icon: Icon }) => {
         const isSelected = selectedId === id && !isSearching;
@@ -482,7 +480,8 @@ export default function AddPanel() {
   const [selectedCategoryId, setSelectedCategoryId] = useState("hero");
 
   const selectedCategory =
-    VISIBLE_CATEGORIES.find((c) => c.id === selectedCategoryId) ?? VISIBLE_CATEGORIES[0]!;
+    VISIBLE_CATEGORIES.find((c) => c.id === selectedCategoryId) ??
+    VISIBLE_CATEGORIES[0]!;
 
   const filteredPresets = useMemo(() => {
     const trimmed = deferredQuery.trim();
@@ -510,11 +509,46 @@ export default function AddPanel() {
 
   const handleAdd = useCallback(
     (preset: SectionPreset) => {
-      if (fullRef.current) return;
-      insertSections(dispatch, [preset.create()], insertAtRef.current);
+      const created = preset.create();
+      if (fullRef.current && created.type !== "header" && created.type !== "footer") return;
+      if (created.type === "header") {
+        const headerData = created.data as unknown as Record<string, unknown>;
+        if (draft.header.logo && !headerData.logo) {
+          headerData.logo = draft.header.logo;
+          headerData.logoDisplay = draft.header.logoDisplay ?? "logo_only";
+        }
+        if (draft.header.siteName) {
+          headerData.siteName = draft.header.siteName;
+        }
+      } else if (created.type === "footer") {
+        const footerData = created.data as unknown as Record<string, unknown>;
+        if (draft.footer.logo && !footerData.logo) {
+          footerData.logo = draft.footer.logo;
+          footerData.logoDisplay = draft.footer.logoDisplay ?? "logo_only";
+        }
+        if (draft.footer.siteName) {
+          footerData.siteName = draft.footer.siteName;
+        }
+      }
+      if (created.type === "header" || created.type === "footer") {
+        // One header and one footer are shared by every page: a new design replaces the current one.
+        const item = sectionToItem(created);
+        dispatch({
+          type: "setData",
+          data: (previous) => {
+            const content = previous.content ?? [];
+            const index = content.findIndex((existing) => getSectionType(existing.type) === created.type);
+            if (index !== -1) return { content: content.map((existing, i) => (i === index ? item : existing)) };
+            return { content: created.type === "header" ? [item, ...content] : [...content, item] };
+          },
+        });
+        notify(`${preset.label} now shows on every page`);
+        return;
+      }
+      insertSections(dispatch, [created], insertAtRef.current);
       notify(`${preset.label} added`);
     },
-    [dispatch, notify],
+    [dispatch, notify, draft.header, draft.footer],
   );
 
   const handleSelectCategory = useCallback((id: string) => {

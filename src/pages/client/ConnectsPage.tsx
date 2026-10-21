@@ -8,6 +8,7 @@ import {
   formatConnectsNumber,
   formatPaise,
   walletApi,
+  type AiUsageSummary,
   type Wallet,
   type WalletTransactionPage,
 } from "../../api/wallet.ts";
@@ -40,6 +41,7 @@ function formatDate(iso: string, withTime = true): string {
 export default function ConnectsPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [history, setHistory] = useState<WalletTransactionPage | null>(null);
+  const [usage, setUsage] = useState<AiUsageSummary | null>(null);
   const [page, setPage] = useState(1);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [pageFeedback, setPageFeedback] = useState<Feedback>(null);
@@ -59,7 +61,9 @@ export default function ConnectsPage() {
   }, []);
 
   useEffect(() => {
-    Promise.all([walletApi.get().then(setWallet), loadHistory(1)]).catch((err: unknown) => setLoadError(errorMessage(err)));
+    Promise.all([walletApi.get().then(setWallet), walletApi.usage().then(setUsage), loadHistory(1)]).catch((err: unknown) =>
+      setLoadError(errorMessage(err)),
+    );
   }, [loadHistory]);
 
   function openModal() {
@@ -177,6 +181,43 @@ export default function ConnectsPage() {
           </section>
 
           {pageFeedback && <FormAlert status={pageFeedback.status}>{pageFeedback.message}</FormAlert>}
+
+          {usage && (
+            <section className="rounded-2xl border border-line bg-surface px-6 py-5 shadow-xs">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-base font-semibold text-ink">AI usage this month</h2>
+                <p className="text-sm text-ink-body">
+                  <span className="font-semibold text-ink">{formatConnects(usage.connects)}</span> across {usage.calls}{" "}
+                  {usage.calls === 1 ? "AI request" : "AI requests"}
+                </p>
+              </div>
+              {usage.byFeature.length === 0 ? (
+                <p className="mt-3 text-sm text-ink-muted">You haven't used AI this month.</p>
+              ) : (
+                <ul className="mt-4 flex flex-col gap-3">
+                  {usage.byFeature.map((feature) => (
+                    <li key={feature.scope}>
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium text-ink">{feature.label}</span>
+                        <span className="text-ink-body">
+                          {formatConnectsNumber(feature.connects)}
+                          <span className="ml-1.5 text-xs text-ink-muted">
+                            · {feature.calls} {feature.calls === 1 ? "request" : "requests"}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-canvas" aria-hidden>
+                        <div
+                          className="h-full rounded-full bg-indigo-500"
+                          style={{ width: `${usage.connects > 0 ? Math.max(2, (feature.connects / usage.connects) * 100) : 0}%` }}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
 
           <section className="overflow-hidden rounded-2xl border border-line bg-surface shadow-xs">
             <div className="flex items-center justify-between border-b border-line px-6 py-4">

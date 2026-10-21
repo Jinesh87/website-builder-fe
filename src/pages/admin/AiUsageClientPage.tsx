@@ -1,9 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Spinner } from "@heroui/react";
-import { Activity, ArrowLeft, Cpu, DollarSign } from "lucide-react";
+import { Activity, ArrowLeft, Coins, Cpu, DollarSign, Wallet } from "lucide-react";
 import { adminAiUsageApi, type ClientAiCallsResponse } from "../../api/admin-ai-usage.ts";
 import { errorMessage } from "../../api/http.ts";
+import { formatConnects, formatConnectsNumber } from "../../api/wallet.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import SelectInput from "../../components/ui/SelectInput.tsx";
@@ -22,6 +23,8 @@ const FEATURE_LABELS: Record<string, string> = {
   page: "Page edit",
   section: "Section edit",
   section_add: "Add section",
+  page_seo: "SEO",
+  page_seo_audit: "SEO audit",
 };
 
 function featureLabel(scope: string): string {
@@ -92,7 +95,7 @@ export default function AiUsageClientPage() {
       </Link>
       <PageHeader
         title={data ? `${data.client.businessName} · AI calls` : "AI calls"}
-        description={`Cost of each AI call in ${periodLabel}, at OpenAI's list prices.`}
+        description={`Cost and connects charged for each AI call in ${periodLabel}.`}
       />
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -115,8 +118,15 @@ export default function AiUsageClientPage() {
 
       {data && (
         <>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatCard label="Estimated cost" value={usd(data.totalCost)} icon={<DollarSign className="size-4" aria-hidden />} tone="bg-emerald-50 text-emerald-600" />
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <StatCard
+              label="Connects left"
+              value={formatConnectsNumber(data.connectsLeft)}
+              icon={<Wallet className="size-4" aria-hidden />}
+              tone={data.connectsLeft <= 0 ? "bg-rose-50 text-rose-600" : "bg-indigo-50 text-indigo-600"}
+            />
+            <StatCard label="Connects used" value={formatConnectsNumber(data.totalConnects)} icon={<Coins className="size-4" aria-hidden />} tone="bg-amber-50 text-amber-600" />
+            <StatCard label="Cost" value={usd(data.totalCost)} icon={<DollarSign className="size-4" aria-hidden />} tone="bg-emerald-50 text-emerald-600" />
             <StatCard label="AI calls" value={data.total.toLocaleString()} icon={<Activity className="size-4" aria-hidden />} tone="bg-blue-50 text-blue-600" />
             <StatCard label="Tokens" value={totalTokens.toLocaleString()} icon={<Cpu className="size-4" aria-hidden />} tone="bg-brand-soft text-brand" />
           </div>
@@ -135,6 +145,7 @@ export default function AiUsageClientPage() {
                       <p className="text-xs text-ink-muted">
                         {feature.calls} {feature.calls === 1 ? "call" : "calls"} · {feature.totalTokens.toLocaleString()} tokens
                       </p>
+                      <p className="text-xs font-medium text-ink-body">{formatConnects(feature.connects)}</p>
                     </div>
                   ))}
                 </div>
@@ -153,6 +164,7 @@ export default function AiUsageClientPage() {
                         <th scope="col" className="px-5 py-3 text-right font-medium">Output</th>
                         <th scope="col" className="px-5 py-3 text-right font-medium">Duration</th>
                         <th scope="col" className="px-5 py-3 text-right font-medium">Cost</th>
+                        <th scope="col" className="px-5 py-3 text-right font-medium">Connects</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line">
@@ -175,6 +187,12 @@ export default function AiUsageClientPage() {
                           </td>
                           <td className="whitespace-nowrap px-5 py-3 text-right text-xs text-ink-body">{duration(call.durationMs)}</td>
                           <td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-emerald-600">{usd(call.cost)}</td>
+                          <td
+                            className="whitespace-nowrap px-5 py-3 text-right font-semibold text-ink"
+                            title={call.connectsCharged === 0 ? "Not charged (run by a Super Admin)" : undefined}
+                          >
+                            {call.connectsCharged === null ? "—" : formatConnectsNumber(call.connectsCharged)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

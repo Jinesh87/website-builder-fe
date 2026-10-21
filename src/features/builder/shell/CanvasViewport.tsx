@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { deviceWidth, type Device } from "../../../components/websites/DevicePreview.tsx";
+import { useBuilderSite } from "../editor-context.ts";
 import AiBuilderCanvasOverlay from "./AiBuilderCanvasOverlay.tsx";
 
 const GUTTER = 24;
@@ -21,6 +22,14 @@ export default function CanvasViewport({
   const [box, setBox] = useState<{ width: number; height: number } | null>(null);
   const width = deviceWidth(device);
 
+  let siteBg = "transparent";
+  try {
+    const site = useBuilderSite();
+    siteBg = site?.theme?.colors?.background || "transparent";
+  } catch {
+    // CanvasViewport used outside BuilderSiteContext
+  }
+
   useLayoutEffect(() => {
     const outer = outerRef.current;
     if (!outer) return;
@@ -41,6 +50,7 @@ export default function CanvasViewport({
     height: box ? box.height / scale : "100%",
     top: GUTTER,
     transform: `translateX(-50%) scale(${scale})`,
+    backgroundColor: siteBg,
   };
 
   return (
@@ -51,11 +61,13 @@ export default function CanvasViewport({
           onDeselect?.();
         }
       }}
+      data-tour="canvas-area"
       className="relative z-(--z-ed-canvas) min-w-0 flex-1 h-full overflow-hidden bg-ed-app bg-[radial-gradient(var(--color-ed-border)_1px,transparent_1px)] bg-size-[16px_16px]"
     >
       {box && (
         <div
-          className="absolute left-1/2 origin-top overflow-hidden rounded-ed-lg border border-ed-border bg-white shadow-ed-canvas transition-[width] duration-200 motion-reduce:transition-none"
+          data-tour="canvas-viewport"
+          className="absolute left-1/2 origin-top overflow-hidden rounded-ed-lg border border-ed-border shadow-ed-canvas transition-[width] duration-200 motion-reduce:transition-none"
           style={frameStyle}
         >
           {children}

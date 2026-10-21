@@ -1,11 +1,14 @@
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
 import { buildPages, photo, section } from "./build.ts";
+import { UX_DESIGNER_LOGO } from "./logos.ts";
 
 const NAME = "Alex Rivera";
 
 const header: HeaderData = {
   design: "glass-dock",
   siteName: NAME,
+  logo: UX_DESIGNER_LOGO,
+  logoDisplay: "logo_only",
   menu: [
     { label: "Overview", href: "/" },
     { label: "Case Studies", href: "/portfolio" },
@@ -21,6 +24,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "cta-banner",
   siteName: NAME,
+  logo: UX_DESIGNER_LOGO,
   description: "Senior Staff Product Designer crafting AI interfaces, scalable design systems, and high-conversion software products for visionary tech companies.",
   ctaBanner: {
     enabled: true,

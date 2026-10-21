@@ -1490,6 +1490,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  min-height: 0;
 }
 
 .tpl-full-canvas.desktop {
@@ -1498,11 +1499,23 @@
 
 .tpl-full-canvas.tablet,
 .tpl-full-canvas.mobile {
-  background: #080A14;
-  padding: 32px 16px;
+  background: #f4f5f8;
+  padding: 0;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.wb-device-scroll {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.wb-device-scroll::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
 /* Tablet Device Frame */

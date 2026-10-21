@@ -246,7 +246,11 @@ export default function Inspector() {
   );
 
   return (
-    <aside aria-label="Properties" className="z-(--z-ed-panel) flex h-full min-h-0 w-80 shrink-0 flex-col border-l border-ed-border bg-ed-panel overflow-hidden">
+    <aside
+      aria-label="Properties"
+      data-tour="right-inspector"
+      className="z-(--z-ed-panel) flex h-full min-h-0 w-80 shrink-0 flex-col border-l border-ed-border bg-ed-panel overflow-hidden"
+    >
       {item && selector ? <SectionInspector key={item.props.id} item={item} index={selector.index} /> : <SiteInspector />}
     </aside>
   );

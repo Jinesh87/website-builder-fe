@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { safeHref } from "../links.ts";
 import { SectionHead, SectionShell, SiteIcon } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
@@ -41,81 +42,109 @@ function ChannelIconRender({ icon }: { icon?: string }) {
   if (icon === "phone") return <PhoneIcon />;
   if (icon === "chat") return <SiteIcon name="chat" />;
   if (icon === "user") return <SiteIcon name="user" />;
+  if (icon === "pin") return <PinIcon />;
   return <MailIcon />;
 }
 
-function ContactForm({
-  submitLabel,
+function MailtoCard({
+  email,
   formHeading,
+  submitLabel,
   serviceOptions,
 }: {
-  submitLabel: string;
+  email?: string;
   formHeading?: string;
+  submitLabel?: string;
   serviceOptions?: string[];
 }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (!email) return;
+    navigator.clipboard.writeText(email).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const mailtoHref = email
+    ? safeHref(`mailto:${email}?subject=${encodeURIComponent("Inquiry from Website")}`)
+    : "#";
+
   return (
-    <form className="wb-contact-form" onSubmit={(e) => e.preventDefault()}>
-      {formHeading && <h3 className="wb-contact-form-title">{formHeading}</h3>}
+    <div className="wb-contact-mailto-card">
+      <div className="wb-contact-mailto-header">
+        <div className="wb-contact-mailto-icon-box">
+          <MailIcon />
+        </div>
+        <div>
+          <h3 className="wb-contact-form-title">{formHeading || "Send us an email"}</h3>
+          <p className="wb-contact-mailto-subtitle">
+            Click below to write to us directly. We typically reply within one business day.
+          </p>
+        </div>
+      </div>
 
       {serviceOptions && serviceOptions.length > 0 && (
-        <div className="wb-contact-services-group">
-          <label className="wb-contact-field-label">I'm interested in:</label>
+        <div className="wb-contact-mailto-services">
+          <span className="wb-contact-mailto-services-title">Services offered:</span>
           <div className="wb-contact-chips-row">
             {serviceOptions.map((opt, i) => (
-              <label key={i} className="wb-contact-chip">
-                <input type="checkbox" name="service" value={opt} defaultChecked={i === 0} />
-                <span>{opt}</span>
-              </label>
+              <span key={i} className="wb-contact-mailto-chip">
+                {opt}
+              </span>
             ))}
           </div>
         </div>
       )}
 
-      <div className="wb-contact-input-row">
-        <label className="wb-contact-field">
-          <span className="wb-contact-field-label">Your name</span>
-          <input
-            type="text"
-            name="name"
-            placeholder="Jane Doe"
-            autoComplete="name"
-            required
-            className="wb-contact-input"
-          />
-        </label>
-        <label className="wb-contact-field">
-          <span className="wb-contact-field-label">Email address</span>
-          <input
-            type="email"
-            name="email"
-            placeholder="jane@company.com"
-            autoComplete="email"
-            required
-            className="wb-contact-input"
-          />
-        </label>
+      <div className="wb-contact-mailto-actions">
+        <a
+          href={mailtoHref}
+          className="wb-btn wb-btn-primary wb-contact-mailto-cta"
+        >
+          <MailIcon />
+          <span>{submitLabel || "Send an email"}</span>
+        </a>
+
+        {email && (
+          <div className="wb-contact-mailto-address-row">
+            <span className="wb-contact-mailto-address" title={email}>
+              {email}
+            </span>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="wb-contact-mailto-copy-btn"
+              title="Copy email address"
+            >
+              {copied ? (
+                <>
+                  <svg className="size-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Copied!</span>
+                </>
+              ) : (
+                <>
+                  <svg className="size-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="7" y="7" width="10" height="10" rx="2" />
+                    <path d="M4 13V5a2 2 0 012-2h8" />
+                  </svg>
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
-      <label className="wb-contact-field">
-        <span className="wb-contact-field-label">Project details / Message</span>
-        <textarea
-          name="message"
-          placeholder="Tell us about your timeline, scope, and objectives..."
-          rows={4}
-          required
-          className="wb-contact-textarea"
-        />
-      </label>
-
-      <div className="wb-contact-form-footer">
-        <button type="submit" className="wb-btn wb-btn-primary wb-contact-submit-btn">
-          {submitLabel}
-        </button>
+      <div className="wb-contact-mailto-footer">
         <span className="wb-contact-privacy-note">
-          🔒 We respect your privacy. No spam.
+          ✉️ Opens directly in your default email client
         </span>
       </div>
-    </form>
+    </div>
   );
 }
 
@@ -129,6 +158,17 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
 
   // 1. Cards Hub Variant (Multi-Channel Grid + Direct Access)
   if (variant === "cards-hub") {
+    const channels = data.channels || [];
+    const hasEmailInChannels = channels.some(
+      (c) => c.icon === "mail" || (data.email && c.value.toLowerCase().trim() === data.email.toLowerCase().trim())
+    );
+    const hasPhoneInChannels = channels.some(
+      (c) => c.icon === "phone" || (data.phone && c.value.replace(/\D/g, "") === data.phone.replace(/\D/g, ""))
+    );
+    const hasAddressInChannels = channels.some(
+      (c) => Boolean(data.address && c.value.toLowerCase().trim() === data.address.toLowerCase().trim())
+    );
+
     return (
       <SectionShell
         sectionId={section.id}
@@ -143,7 +183,7 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
         />
 
         <div className="wb-contact-hub-grid">
-          {data.email && (
+          {!hasEmailInChannels && data.email && (
             <a
               href={safeHref(`mailto:${data.email}`)}
               className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
@@ -157,7 +197,7 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
             </a>
           )}
 
-          {data.phone && (
+          {!hasPhoneInChannels && data.phone && (
             <a
               href={safeHref(`tel:${data.phone.replace(/\s+/g, "")}`)}
               className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
@@ -171,7 +211,7 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
             </a>
           )}
 
-          {data.address && (
+          {!hasAddressInChannels && data.address && (
             <div className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}>
               <div className="wb-contact-hub-icon-wrap">
                 <PinIcon />
@@ -184,26 +224,96 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
             </div>
           )}
 
-          {data.channels?.map((ch, idx) => (
-            <div
-              key={idx}
-              className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
-            >
-              <div className="wb-contact-hub-icon-wrap">
-                <ChannelIconRender icon={ch.icon} />
+          {channels.map((ch, idx) => {
+            const isEmail = ch.icon === "mail" || ch.value.includes("@");
+            const isPhone = ch.icon === "phone" || /^[\d\s\(\)\-\+]{7,}$/.test(ch.value.trim());
+            const isLink = ch.icon === "chat" || ch.value.startsWith("http") || ch.value.includes("discord.gg");
+
+            if (isEmail) {
+              return (
+                <a
+                  key={idx}
+                  href={safeHref(`mailto:${ch.value}`)}
+                  className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
+                >
+                  <div className="wb-contact-hub-icon-wrap">
+                    <ChannelIconRender icon={ch.icon} />
+                  </div>
+                  <span className="wb-contact-hub-label">{ch.label}</span>
+                  <strong className="wb-contact-hub-value">{ch.value}</strong>
+                  {ch.description && (
+                    <span className="wb-contact-hub-subtext">{ch.description}</span>
+                  )}
+                  <span className="wb-contact-hub-action">Send direct email →</span>
+                </a>
+              );
+            }
+
+            if (isPhone) {
+              return (
+                <a
+                  key={idx}
+                  href={safeHref(`tel:${ch.value.replace(/\s+/g, "")}`)}
+                  className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
+                >
+                  <div className="wb-contact-hub-icon-wrap">
+                    <ChannelIconRender icon={ch.icon} />
+                  </div>
+                  <span className="wb-contact-hub-label">{ch.label}</span>
+                  <strong className="wb-contact-hub-value">{ch.value}</strong>
+                  {ch.description && (
+                    <span className="wb-contact-hub-subtext">{ch.description}</span>
+                  )}
+                  <span className="wb-contact-hub-action">One-tap dial →</span>
+                </a>
+              );
+            }
+
+            if (isLink) {
+              const url = ch.value.startsWith("http") ? ch.value : `https://${ch.value}`;
+              return (
+                <a
+                  key={idx}
+                  href={safeHref(url)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
+                >
+                  <div className="wb-contact-hub-icon-wrap">
+                    <ChannelIconRender icon={ch.icon} />
+                  </div>
+                  <span className="wb-contact-hub-label">{ch.label}</span>
+                  <strong className="wb-contact-hub-value">{ch.value}</strong>
+                  {ch.description && (
+                    <span className="wb-contact-hub-subtext">{ch.description}</span>
+                  )}
+                  <span className="wb-contact-hub-action">Open link →</span>
+                </a>
+              );
+            }
+
+            return (
+              <div
+                key={idx}
+                className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
+              >
+                <div className="wb-contact-hub-icon-wrap">
+                  <ChannelIconRender icon={ch.icon} />
+                </div>
+                <span className="wb-contact-hub-label">{ch.label}</span>
+                <strong className="wb-contact-hub-value">{ch.value}</strong>
+                {ch.description && (
+                  <span className="wb-contact-hub-subtext">{ch.description}</span>
+                )}
               </div>
-              <span className="wb-contact-hub-label">{ch.label}</span>
-              <strong className="wb-contact-hub-value">{ch.value}</strong>
-              {ch.description && (
-                <span className="wb-contact-hub-subtext">{ch.description}</span>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {data.showForm && (
           <div className={`wb-contact-hub-form-wrap wb-contact-card-style-${cardStyle}`}>
-            <ContactForm
+            <MailtoCard
+              email={data.email}
               submitLabel={data.submitLabel}
               formHeading={data.formHeading || "Send an online enquiry"}
               serviceOptions={data.serviceOptions}
@@ -268,7 +378,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
             <div className="wb-contact-editorial-right">
               {data.showForm && (
                 <div className="wb-contact-editorial-form-box">
-                  <ContactForm
+                  <MailtoCard
+                    email={data.email}
                     submitLabel={data.submitLabel}
                     formHeading={data.formHeading}
                     serviceOptions={data.serviceOptions}
@@ -333,7 +444,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
 
             {data.showForm && (
               <div className="wb-contact-glass-form-box">
-                <ContactForm
+                <MailtoCard
+                  email={data.email}
                   submitLabel={data.submitLabel}
                   formHeading={data.formHeading || "Send a direct message"}
                   serviceOptions={data.serviceOptions}
@@ -432,7 +544,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
 
         {data.showForm && (
           <div className={`wb-contact-form-wrapper wb-contact-card-style-${cardStyle}`}>
-            <ContactForm
+            <MailtoCard
+              email={data.email}
               submitLabel={data.submitLabel}
               formHeading={data.formHeading || "Send an inquiry"}
               serviceOptions={data.serviceOptions}

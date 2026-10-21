@@ -1,5 +1,5 @@
 import { Chip } from "@heroui/react";
-import type { ClientSource } from "../../api/admin-clients.ts";
+import type { ClientOwner, ClientSource } from "../../api/admin-clients.ts";
 import type { UserStatus } from "../../api/auth.ts";
 
 export const SOURCE_LABELS: Record<ClientSource, string> = {
@@ -26,6 +26,11 @@ export function ClientStatusChip({ status }: { status: UserStatus | undefined })
       {STATUS_LABELS[status]}
     </Chip>
   );
+}
+
+/** "Name · login" where login is the username for admin-issued accounts, otherwise the email. */
+export function ownerLabel(owner: Pick<ClientOwner, "fullName" | "email" | "username">): string {
+  return [owner.fullName, owner.username ? `@${owner.username}` : owner.email].filter(Boolean).join(" · ");
 }
 
 export function formatDate(iso: string): string {

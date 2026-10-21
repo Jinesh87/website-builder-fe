@@ -21,8 +21,18 @@ import {
   type SiteArea,
 } from "./editor-context.ts";
 import { builderConfig } from "./puck/config.tsx";
-import { EditorDataError, hasAiPlaceholder, puckDataToSections, sectionsToPuckData } from "./puck/adapter.ts";
-import { selectSection, useBuilderPuck } from "./puck/puck-api.ts";
+import {
+  EditorDataError,
+  getSectionType,
+  hasAiPlaceholder,
+  itemAsSection,
+  puckDataToSections,
+  sectionToItem,
+  sectionsToPuckData,
+  type BuilderItem,
+} from "./puck/adapter.ts";
+import { replaceSection, selectSection, useBuilderPuck } from "./puck/puck-api.ts";
+import { sameChrome, splitSiteChrome, stableJson, withSiteChrome } from "./utils/site-chrome.ts";
 import { lazyWithRetry } from "../../utils/lazy-with-retry.ts";
 import AiDrawerSkeleton from "./shell/AiDrawerSkeleton.tsx";
 
@@ -34,6 +44,7 @@ import Inspector from "./shell/Inspector.tsx";
 import LeftRail from "./shell/LeftRail.tsx";
 import PublishDialog from "./shell/PublishDialog.tsx";
 import TopBar from "./shell/TopBar.tsx";
+import { TourProvider, EditorOnboarding } from "./onboarding/index.ts";
 
 type Toast = { id: number; message: string; tone: "success" | "danger" };
 
@@ -98,6 +109,65 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
     if (!aiLock) return;
     return blockHistoryHotkeys();
   }, [aiLock]);
+
+  // The site header/footer also change outside this canvas (page renames, site settings, accepted AI
+  // navigation). Keep the canvas copy in step with them, and put them back if one was removed.
+  const chromeOnCanvas = useBuilderPuck((state) =>
+    state.appState.data.content
+      .filter((item) => {
+        const type = getSectionType(item.type);
+        return type === "header" || type === "footer";
+      })
+      .map((item) => item.props.id)
+      .join("|"),
+  );
+  useEffect(() => {
+    if (aiLock) return;
+    const content = getPuck().appState.data.content;
+    const chromeType = (item: (typeof content)[number]) => {
+      const type = getSectionType(item.type);
+      return type === "header" || type === "footer" ? type : null;
+    };
+    const firstIndex = (type: string) => content.findIndex((item) => chromeType(item) === type);
+    if (content.some((item, i) => chromeType(item) !== null && firstIndex(chromeType(item)!) !== i)) {
+      dispatch({
+        type: "setData",
+        data: (previous) => {
+          const seen = new Set<string>();
+          return {
+            ...previous,
+            content: (previous.content ?? []).filter((item) => {
+              const type = chromeType(item);
+              if (!type) return true;
+              if (seen.has(type)) return false;
+              seen.add(type);
+              return true;
+            }),
+          };
+        },
+      });
+      return;
+    }
+    const missing: Section[] = [];
+    for (const section of withSiteChrome([], draft)) {
+      const index = content.findIndex((item) => getSectionType(item.type) === section.type);
+      if (index === -1) {
+        missing.push(section);
+        continue;
+      }
+      const shown = itemAsSection(content[index] as BuilderItem);
+      if (!sameChrome(shown, section.type === "header" ? draft.header : draft.footer)) {
+        replaceSection(dispatch, index, { ...section, id: shown.id });
+      }
+    }
+    if (missing.length === 0) return;
+    const header = missing.filter((section) => section.type === "header").map(sectionToItem);
+    const footer = missing.filter((section) => section.type === "footer").map(sectionToItem);
+    dispatch({
+      type: "setData",
+      data: (previous) => ({ ...previous, content: [...header, ...(previous.content ?? []), ...footer] }),
+    });
+  }, [aiLock, chromeOnCanvas, draft, dispatch, getPuck]);
   const hasSelection = useBuilderPuck((state) => state.appState.ui.itemSelector !== null);
   const isEmpty = useBuilderPuck((state) => state.appState.data.content.length === 0);
 
@@ -174,8 +244,8 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
 
 /** One Puck instance per page; initial data is read once and later edits flow out through onChange. */
 function PageCanvas({ page, backTo, onChange, onPublish }: { page: WebsitePage; backTo: string; onChange: (data: Data) => void; onPublish: () => void }) {
-  const [initialData] = useState(() => sectionsToPuckData(page.sections));
-  const { aiLock } = useEditor();
+  const { aiLock, draft } = useEditor();
+  const [initialData] = useState(() => sectionsToPuckData(withSiteChrome(page.sections, draft)));
   return (
     <Puck config={builderConfig} data={initialData} onChange={onChange} permissions={aiLock ? LOCKED_PERMISSIONS : EDITABLE_PERMISSIONS}>
       <EditorShell backTo={backTo} onPublish={onPublish} onCommit={onChange} />
@@ -247,9 +317,18 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
         notify(error instanceof EditorDataError ? error.message : "That change couldn't be applied.", "danger");
         return;
       }
+      // The canvas shows the site-wide header and footer; edits to them apply to every page.
+      const { body, header, footer } = splitSiteChrome(sections, draftRef.current);
       const current = draftRef.current.pages.find((candidate) => candidate.id === page.id);
-      if (current && sameJson(current.sections, sections)) return;
-      editDraft((d) => updateSections(d, page.id, () => sections));
+      if (
+        current &&
+        sameJson(current.sections, body) &&
+        stableJson(draftRef.current.header) === stableJson(header) &&
+        stableJson(draftRef.current.footer) === stableJson(footer)
+      ) {
+        return;
+      }
+      editDraft((d) => ({ ...updateSections(d, page.id, () => body), header, footer }));
     },
     [page.id, editDraft, notify],
   );
@@ -301,60 +380,64 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
     <EditorContext.Provider value={value}>
       <LinkTargetsContext.Provider value={linkTargets}>
         <MediaTargetContext.Provider value={mediaTarget}>
-          <div className="ed-root flex h-dvh flex-col overflow-hidden bg-ed-app font-sans text-ed-text">
-            <PageCanvas key={page.id} page={page} backTo={backTo} onChange={handlePuckChange} onPublish={() => setPublishOpen(true)} />
+          <TourProvider>
+            <div className="ed-root flex h-dvh flex-col overflow-hidden bg-ed-app font-sans text-ed-text">
+              <PageCanvas key={page.id} page={page} backTo={backTo} onChange={handlePuckChange} onPublish={() => setPublishOpen(true)} />
 
-            {(autosave.status === "conflict" || (autosave.status === "failed" && autosave.issue)) && (
-              <div
-                role="alert"
-                className="fixed left-1/2 top-14 z-(--z-ed-toast) flex max-w-xl -translate-x-1/2 items-start gap-2 rounded-ed-lg border border-ed-border bg-ed-panel px-3 py-2 shadow-ed-pop"
-              >
-                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-ed-danger" aria-hidden />
-                <p className="text-ed-sm text-ed-text">
-                  {autosave.status === "conflict"
-                    ? "This website was changed in another tab or by someone else. Reload to get the latest version; your recent edits here can't be saved."
-                    : autosave.issue?.message}
-                </p>
-                {autosave.status === "conflict" && (
-                  <button
-                    type="button"
-                    onClick={() => window.location.reload()}
-                    className="flex h-7 shrink-0 items-center gap-1 rounded-ed bg-ed-accent px-2.5 text-ed-xs font-medium text-white hover:bg-ed-accent-hover"
-                  >
-                    <RotateCw className="size-3.5" aria-hidden /> Reload
+              {(autosave.status === "conflict" || (autosave.status === "failed" && autosave.issue)) && (
+                <div
+                  role="alert"
+                  className="fixed left-1/2 top-14 z-(--z-ed-toast) flex max-w-xl -translate-x-1/2 items-start gap-2 rounded-ed-lg border border-ed-border bg-ed-panel px-3 py-2 shadow-ed-pop"
+                >
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-ed-danger" aria-hidden />
+                  <p className="text-ed-sm text-ed-text">
+                    {autosave.status === "conflict"
+                      ? "This website was changed in another tab or by someone else. Reload to get the latest version; your recent edits here can't be saved."
+                      : autosave.issue?.message}
+                  </p>
+                  {autosave.status === "conflict" && (
+                    <button
+                      type="button"
+                      onClick={() => window.location.reload()}
+                      className="flex h-7 shrink-0 items-center gap-1 rounded-ed bg-ed-accent px-2.5 text-ed-xs font-medium text-white hover:bg-ed-accent-hover"
+                    >
+                      <RotateCw className="size-3.5" aria-hidden /> Reload
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {toast && (
+                <div
+                  key={toast.id}
+                  role="status"
+                  className="fixed bottom-5 left-1/2 z-(--z-ed-toast) flex -translate-x-1/2 items-center gap-2 rounded-ed-lg bg-ed-text px-3 py-2 text-ed-sm text-white shadow-ed-pop"
+                >
+                  {toast.tone === "danger" ? (
+                    <AlertTriangle className="size-4 text-ed-danger-soft" aria-hidden />
+                  ) : (
+                    <CheckCircle2 className="size-4 text-ed-success-soft" aria-hidden />
+                  )}
+                  {toast.message}
+                  <button type="button" aria-label="Dismiss" onClick={() => setToast(null)} className="ml-1 text-white/60 hover:text-white">
+                    <X className="size-3.5" aria-hidden />
                   </button>
-                )}
-              </div>
-            )}
+                </div>
+              )}
 
-            {toast && (
-              <div
-                key={toast.id}
-                role="status"
-                className="fixed bottom-5 left-1/2 z-(--z-ed-toast) flex -translate-x-1/2 items-center gap-2 rounded-ed-lg bg-ed-text px-3 py-2 text-ed-sm text-white shadow-ed-pop"
-              >
-                {toast.tone === "danger" ? (
-                  <AlertTriangle className="size-4 text-ed-danger-soft" aria-hidden />
-                ) : (
-                  <CheckCircle2 className="size-4 text-ed-success-soft" aria-hidden />
-                )}
-                {toast.message}
-                <button type="button" aria-label="Dismiss" onClick={() => setToast(null)} className="ml-1 text-white/60 hover:text-white">
-                  <X className="size-3.5" aria-hidden />
-                </button>
-              </div>
-            )}
+              <PublishDialog
+                isOpen={publishOpen}
+                onClose={() => setPublishOpen(false)}
+                onPublished={(published) => {
+                  setWebsite(published);
+                  setPublishOpen(false);
+                  notify("Published. Your site is live.");
+                }}
+              />
 
-            <PublishDialog
-              isOpen={publishOpen}
-              onClose={() => setPublishOpen(false)}
-              onPublished={(published) => {
-                setWebsite(published);
-                setPublishOpen(false);
-                notify("Published. Your site is live.");
-              }}
-            />
-          </div>
+              <EditorOnboarding />
+            </div>
+          </TourProvider>
         </MediaTargetContext.Provider>
       </LinkTargetsContext.Provider>
     </EditorContext.Provider>

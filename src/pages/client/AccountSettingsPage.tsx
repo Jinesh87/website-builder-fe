@@ -1,13 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Button, Spinner } from "@heroui/react";
-import { Info } from "lucide-react";
+import { Info, KeyRound } from "lucide-react";
 import { clientAiSettingsApi, type ClientAiSettings } from "../../api/ai-models.ts";
-import { errorMessage } from "../../api/http.ts";
+import { authApi } from "../../api/auth.ts";
+import { ApiError, errorMessage } from "../../api/http.ts";
+import { useAuth } from "../../auth/auth-context.ts";
+import { PASSWORD_HINT, validatePassword } from "../../auth/validation.ts";
+import ContactDetailsSection from "../../components/account/ContactDetailsSection.tsx";
 import AiModelPicker from "../../components/ai/AiModelPicker.tsx";
 import AiSparklesIcon from "../../components/icons/AiSparklesIcon.tsx";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import ClientEmailPanel from "../../components/client/ClientEmailPanel.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
+import TextInput from "../../components/ui/TextInput.tsx";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
 
@@ -57,8 +62,11 @@ export default function AccountSettingsPage() {
     <div className="px-6 py-8 sm:px-8 max-w-5xl">
       <PageHeader
         title="Account settings"
-        description="Choose how the AI assistant works, and how your websites send email."
+        description="Manage your contact details, password, how the AI assistant works, and how your websites send email."
       />
+
+      <ContactDetailsSection />
+      <ChangePasswordSection />
 
       {loadError && (
         <div className="mt-6 max-w-2xl">
@@ -156,5 +164,68 @@ export default function AccountSettingsPage() {
 
       <ClientEmailPanel />
     </div>
+  );
+}
+
+function ChangePasswordSection() {
+  const { setSessionUser } = useAuth();
+  const [newPassword, setNewPassword] = useState("");
+  const [error, setError] = useState<string | undefined>();
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const validationError = validatePassword(newPassword);
+    setError(validationError);
+    setFeedback(null);
+    if (validationError) return;
+
+    setSaving(true);
+    try {
+      const { user } = await authApi.changePassword({ newPassword });
+      setSessionUser(user);
+      setNewPassword("");
+      setFeedback({ status: "success", message: "Password changed. Other devices have been signed out." });
+    } catch (err) {
+      if (err instanceof ApiError) setError(err.fieldErrors().newPassword);
+      setFeedback({ status: "danger", message: errorMessage(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="mt-8 rounded-xl border border-line bg-surface p-6 shadow-xs">
+      <div className="flex items-center gap-2.5">
+        <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
+          <KeyRound className="size-5" aria-hidden />
+        </div>
+        <div>
+          <h2 className="text-base font-semibold text-ink">Password</h2>
+          <p className="text-xs text-ink-muted">Changing it signs you out on every other device.</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate className="mt-5 flex max-w-md flex-col gap-4">
+        <TextInput
+          label="New password"
+          name="newPassword"
+          type="password"
+          autoComplete="new-password"
+          value={newPassword}
+          onChange={setNewPassword}
+          error={error}
+          description={PASSWORD_HINT}
+          isRequired
+        />
+        {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
+        <div>
+          <Button type="submit" isPending={saving}>
+            Save password
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }

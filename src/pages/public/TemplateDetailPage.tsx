@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -25,7 +25,9 @@ import { templatesApi, type TemplatePreview } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
 import { SitePage } from "../../site-kit/index.ts";
+import { resolvePageLink } from "../../site-kit/links.ts";
 import { getTemplateKey, getTemplateSite } from "../../site-kit/templates/index.ts";
+import { isLightColor } from "../../utils/colors.ts";
 import { Spinner } from "@heroui/react";
 import "../marketing/templates-gallery.css";
 
@@ -434,16 +436,13 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
   const [selectedPage, setSelectedPage] = useState(pages[0] || "Home");
   const [copied, setCopied] = useState(false);
   const isShortlisted = shortlist.includes(index);
-  const canvasRef = useRef<HTMLElement>(null);
   const sitePage = site?.pages.find((page) => page.name === selectedPage) ?? site?.pages[0];
 
-  useEffect(() => {
-    canvasRef.current?.scrollTo({ top: 0 });
-  }, [selectedPage]);
-
-  const handleSiteLinkClick = (href: string) => {
-    const target = site?.pages.find((page) => page.slug === href);
-    if (target) setSelectedPage(target.name);
+  const handleSiteLinkClick = (href: string): boolean => {
+    const target = site ? resolvePageLink(site.pages, href, sitePage) : null;
+    if (!target) return false;
+    setSelectedPage(target.page.name);
+    return true;
   };
 
   const handleCopyUrl = () => {
@@ -630,43 +629,45 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
       </header>
 
       {/* Main Full-Page Preview Viewport Canvas */}
-      <main ref={canvasRef} className={`tpl-full-canvas ${site ? "desktop" : device}`}>
-        {site && sitePage ? (
-          <PreviewFrame device={device} onLinkClick={handleSiteLinkClick}>
-            <SitePage site={site} page={sitePage} />
-          </PreviewFrame>
-        ) : device === "desktop" ? (
-          <FullTemplateSite
-            template={template}
-            selectedPage={selectedPage}
-            onSelectPage={setSelectedPage}
-            mobile={false}
-            onCtaClick={handleUseTemplate}
-          />
-        ) : device === "tablet" ? (
-          <div className="tpl-frame-tablet">
-            <div className="tpl-frame-speaker" />
-            <FullTemplateSite
-              template={template}
-              selectedPage={selectedPage}
-              onSelectPage={setSelectedPage}
-              mobile={false}
-              onCtaClick={handleUseTemplate}
-            />
-          </div>
-        ) : (
-          <div className="tpl-frame-mobile">
-            <div className="tpl-frame-speaker" />
-            <FullTemplateSite
-              template={template}
-              selectedPage={selectedPage}
-              onSelectPage={setSelectedPage}
-              mobile={true}
-              onCtaClick={handleUseTemplate}
-            />
-          </div>
-        )}
-      </main>
+      {(() => {
+        const bg = site?.theme?.colors?.background || "#ffffff";
+        const isSiteLight = isLightColor(bg);
+        const scrollThumbColor = isSiteLight ? "rgba(24, 24, 27, 0.45)" : "rgba(255, 255, 255, 0.45)";
+        const scrollThumbHoverColor = isSiteLight ? "rgba(24, 24, 27, 0.75)" : "rgba(255, 255, 255, 0.75)";
+        return (
+          <main
+            className={`tpl-full-canvas ${device}`}
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: `${scrollThumbColor} transparent`,
+              ["--scrollbar-thumb" as any]: scrollThumbColor,
+              ["--scrollbar-thumb-hover" as any]: scrollThumbHoverColor,
+            }}
+          >
+            {site && sitePage ? (
+              <PreviewFrame
+                device={device}
+                onLinkClick={handleSiteLinkClick}
+                allowOffsiteLinks
+                scrollResetKey={sitePage.id}
+                theme={site.theme}
+              >
+                <SitePage site={site} page={sitePage} />
+              </PreviewFrame>
+            ) : (
+              <PreviewFrame device={device} scrollResetKey={selectedPage} theme={site?.theme}>
+                <FullTemplateSite
+                  template={template}
+                  selectedPage={selectedPage}
+                  onSelectPage={setSelectedPage}
+                  mobile={device === "mobile"}
+                  onCtaClick={handleUseTemplate}
+                />
+              </PreviewFrame>
+            )}
+          </main>
+        );
+      })()}
     </div>
   );
 }
@@ -720,9 +721,11 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
   const pages = useMemo(() => preview?.site.pages ?? [], [preview]);
   const page = pages.find((candidate) => candidate.slug === pageSlug) ?? pages[0];
 
-  function handleLinkClick(href: string) {
-    const target = pages.find((candidate) => candidate.slug === href);
-    if (target) setPageSlug(target.slug);
+  function handleLinkClick(href: string): boolean {
+    const target = resolvePageLink(pages, href, page);
+    if (!target) return false;
+    setPageSlug(target.page.slug);
+    return true;
   }
 
   const handleCopyUrl = () => {
@@ -850,11 +853,33 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
         </div>
       </header>
 
-      <main className="tpl-full-canvas desktop" style={{ background: "#F4F5F8" }}>
-        <PreviewFrame device={device} fit onLinkClick={handleLinkClick}>
-          <SitePage site={preview.site} page={page} />
-        </PreviewFrame>
-      </main>
+      {(() => {
+        const bg = preview?.site?.theme?.colors?.background || "#ffffff";
+        const isSiteLight = isLightColor(bg);
+        const scrollThumbColor = isSiteLight ? "rgba(24, 24, 27, 0.45)" : "rgba(255, 255, 255, 0.45)";
+        const scrollThumbHoverColor = isSiteLight ? "rgba(24, 24, 27, 0.75)" : "rgba(255, 255, 255, 0.75)";
+        return (
+          <main
+            className={`tpl-full-canvas ${device}`}
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: `${scrollThumbColor} transparent`,
+              ["--scrollbar-thumb" as any]: scrollThumbColor,
+              ["--scrollbar-thumb-hover" as any]: scrollThumbHoverColor,
+            }}
+          >
+            <PreviewFrame
+              device={device}
+              onLinkClick={handleLinkClick}
+              allowOffsiteLinks
+              scrollResetKey={page.slug}
+              theme={preview?.site?.theme}
+            >
+              <SitePage site={preview.site} page={page} />
+            </PreviewFrame>
+          </main>
+        );
+      })()}
     </div>
   );
 }

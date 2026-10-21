@@ -1,11 +1,14 @@
 import { buildPages, photo, section } from "./build.ts";
 import type { FooterData, HeaderData, SiteData } from "../types.ts";
+import { EVENT_SUMMIT_LOGO } from "./logos.ts";
 
 const NAME = "Apex Summit";
 
 const header: HeaderData = {
   design: "floating",
   siteName: NAME,
+  logo: EVENT_SUMMIT_LOGO,
+  logoDisplay: "logo_only",
   menu: [
     { label: "Speakers", href: "/#speakers" },
     { label: "Tracks", href: "/#tracks" },
@@ -21,6 +24,7 @@ const header: HeaderData = {
 const footer: FooterData = {
   design: "columns",
   siteName: NAME,
+  logo: EVENT_SUMMIT_LOGO,
   description:
     "Apex Summit 2026 brings together 3,500 visionary creators, frontier AI researchers, spatial architects, and founders for three days of immersive keynotes, technical workshops, and high-impact connections.",
   columns: [
@@ -39,16 +43,16 @@ const footer: FooterData = {
         { label: "Spatial Pavilion", href: "/#tracks" },
         { label: "VIP Networking Gala", href: "/#passes" },
         { label: "Founder Pitch Arena", href: "/#tracks" },
-        { label: "Accessibility Guide", href: "/contact" },
+        { label: "Accessibility Guide", href: "/#passes" },
       ],
     },
     {
       title: "Venue & Travel",
       links: [
-        { label: "Moscone West San Francisco", href: "/contact" },
-        { label: "Partner Hotel Blocks", href: "/contact" },
-        { label: "Visa Support Letters", href: "/contact" },
-        { label: "Health & Safety", href: "/contact" },
+        { label: "Moscone West San Francisco", href: "/#passes" },
+        { label: "Partner Hotel Blocks", href: "/#passes" },
+        { label: "Visa Support Letters", href: "/#passes" },
+        { label: "Health & Safety", href: "/#passes" },
       ],
     },
   ],
@@ -63,9 +67,9 @@ const footer: FooterData = {
     { label: "LinkedIn", href: "https://linkedin.com" },
   ],
   legalLinks: [
-    { label: "Code of Conduct", href: "/conduct" },
-    { label: "Refund Policy", href: "/terms" },
-    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Code of Conduct", href: "/#passes" },
+    { label: "Refund Policy", href: "/#passes" },
+    { label: "Privacy Policy", href: "/#passes" },
   ],
   copyright: `© 2026 ${NAME}. The Premier Global Stage for Frontier Creators & Architects.`,
 };
@@ -208,7 +212,7 @@ export const EVENT_SUMMIT_SITE: SiteData = {
               },
             ],
           },
-          { background: "default" },
+          { background: "default", anchor: "speakers" },
         ),
 
         // 4. Summit Tracks & Experience
@@ -251,7 +255,7 @@ export const EVENT_SUMMIT_SITE: SiteData = {
               },
             ],
           },
-          { background: "surface" },
+          { background: "surface", anchor: "tracks" },
         ),
 
         // 5. Summit Schedule Highlight
@@ -271,7 +275,7 @@ export const EVENT_SUMMIT_SITE: SiteData = {
             ],
             cta: { label: "Download Full PDF Schedule", href: "/#passes" },
           },
-          { background: "default" },
+          { background: "default", anchor: "schedule" },
         ),
 
         // 6. Pass Tiers & Ticketing (Pricing)
@@ -331,7 +335,7 @@ export const EVENT_SUMMIT_SITE: SiteData = {
               },
             ],
           },
-          { background: "surface" },
+          { background: "surface", anchor: "passes" },
         ),
 
         // 7. Global Sponsors & Partners
@@ -392,7 +396,7 @@ export const EVENT_SUMMIT_SITE: SiteData = {
             heading: "Don't miss the defining technology and design moment of 2026",
             text: "Only 120 in-person passes remain before the summit officially closes registration.",
             button: { label: "Secure Your Pass Now", href: "/#passes" },
-            secondaryButton: { label: "Apply for Media Accreditation", href: "/contact" },
+            secondaryButton: { label: "Apply for Media Accreditation", href: "mailto:concierge@apexsummit.org" },
             trustBadges: ["Instant digital ticket delivery", "100% transferrable", "Corporate invoice ready"],
           },
           { background: "default" },

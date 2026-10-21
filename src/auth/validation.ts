@@ -16,3 +16,17 @@ export function validatePassword(password: string): string | undefined {
 }
 
 export const PASSWORD_HINT = "At least 8 characters with a letter and a number.";
+
+/** Mirrors the backend rule: 3–40 lowercase letters, numbers, ".", "_" or "-", starting and ending with a letter or number. */
+export function validateUsername(username: string): string | undefined {
+  const value = username.trim().toLowerCase();
+  if (!value) return "Username is required";
+  if (value.length < 3) return "Username must be at least 3 characters";
+  if (value.length > 40) return "Username must be at most 40 characters";
+  if (!/^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/.test(value)) {
+    return "Use lowercase letters, numbers, dots, dashes or underscores, starting and ending with a letter or number";
+  }
+  return undefined;
+}
+
+export const USERNAME_HINT = "Lowercase letters, numbers, dots, dashes or underscores.";
