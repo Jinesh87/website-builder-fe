@@ -2,9 +2,6 @@ import { useState } from "react";
 import { safeHref } from "../links.ts";
 import { SectionHead, SectionShell, SiteIcon } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
-import ContactForm from "./ContactFormBackup.tsx";
-
-export { ContactForm };
 
 function MailIcon() {
   return (

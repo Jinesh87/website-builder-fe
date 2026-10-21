@@ -48,6 +48,7 @@ import {
 } from "../../../../site-kit/index.ts";
 import { useEditor } from "../../editor-context.ts";
 import { insertSections, useBuilderPuck } from "../../puck/puck-api.ts";
+import { getSectionType, sectionToItem } from "../../puck/adapter.ts";
 import { EmptyState, PanelHeader, SearchField } from "../ui.tsx";
 
 type CategoryItem = {
@@ -508,8 +509,8 @@ export default function AddPanel() {
 
   const handleAdd = useCallback(
     (preset: SectionPreset) => {
-      if (fullRef.current) return;
       const created = preset.create();
+      if (fullRef.current && created.type !== "header" && created.type !== "footer") return;
       if (created.type === "header") {
         const headerData = created.data as unknown as Record<string, unknown>;
         if (draft.header.logo && !headerData.logo) {
@@ -528,6 +529,21 @@ export default function AddPanel() {
         if (draft.footer.siteName) {
           footerData.siteName = draft.footer.siteName;
         }
+      }
+      if (created.type === "header" || created.type === "footer") {
+        // One header and one footer are shared by every page: a new design replaces the current one.
+        const item = sectionToItem(created);
+        dispatch({
+          type: "setData",
+          data: (previous) => {
+            const content = previous.content ?? [];
+            const index = content.findIndex((existing) => getSectionType(existing.type) === created.type);
+            if (index !== -1) return { content: content.map((existing, i) => (i === index ? item : existing)) };
+            return { content: created.type === "header" ? [item, ...content] : [...content, item] };
+          },
+        });
+        notify(`${preset.label} now shows on every page`);
+        return;
       }
       insertSections(dispatch, [created], insertAtRef.current);
       notify(`${preset.label} added`);

@@ -1,6 +1,7 @@
 import type { SaveDraftInput, WebsiteDetail, WebsitePage } from "../../../api/websites.ts";
 import type { FooterData, HeaderData, HeaderMenuItem, LinkRef, Section, ThemeSettings } from "../../../site-kit/index.ts";
 import { getTemplateSite } from "../../../site-kit/templates/index.ts";
+import { liftSiteChrome } from "../../../features/builder/utils/site-chrome.ts";
 
 export type EditorDraft = {
   theme: ThemeSettings;
@@ -79,7 +80,7 @@ export function draftFromWebsite(website: WebsiteDetail): EditorDraft {
     }));
   }
 
-  return { theme, header, footer, pages };
+  return { theme, ...liftSiteChrome({ header, footer, pages }) };
 }
 
 export function toSaveInput(draft: EditorDraft, expectedDraftUpdatedAt: string): SaveDraftInput {

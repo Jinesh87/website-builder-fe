@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { Monitor, Smartphone, Tablet, type LucideIcon } from "lucide-react";
 import { SiteStyles, themeToCssVars, type ThemeSettings } from "../../site-kit/index.ts";
+import { isExternalHref, isOffsiteHref, linkHash } from "../../site-kit/links.ts";
 
 export type Device = "desktop" | "tablet" | "mobile";
 
@@ -54,8 +55,15 @@ export function DeviceToggle({ value, onChange, tone = "light" }: DeviceTogglePr
 
 type PreviewFrameProps = {
   device: Device;
-  /** Receives the href of clicked site links, e.g. to switch the previewed page. */
-  onLinkClick?: (href: string) => void;
+  /**
+   * Receives the href of clicked site links, e.g. to switch the previewed page.
+   * Returns true when the link was followed, so the preview scrolls to its `#anchor` or the top.
+   */
+  onLinkClick?: (href: string) => boolean;
+  /** Lets web, email and phone links open (web links in a new tab) instead of swallowing them. */
+  allowOffsiteLinks?: boolean;
+  /** Scrolls the preview back to the top whenever this changes, e.g. the previewed page id. */
+  scrollResetKey?: string;
   /** Scale the frame down to the available width instead of scrolling sideways. Exposes `--preview-scale`. */
   fit?: boolean;
   /** Theme settings for background color and typography */
@@ -63,15 +71,53 @@ type PreviewFrameProps = {
   children: ReactNode;
 };
 
+/** Device frames scroll their own screen; the desktop frame scrolls inside the page around it. */
+function scrollContainerOf(root: HTMLElement): HTMLElement | null {
+  const deviceScreen = root.querySelector<HTMLElement>(".wb-device-scroll");
+  if (deviceScreen) return deviceScreen;
+  for (let node = root.parentElement; node; node = node.parentElement) {
+    const { overflowY } = getComputedStyle(node);
+    if (overflowY === "auto" || overflowY === "scroll") return node;
+  }
+  return document.scrollingElement instanceof HTMLElement ? document.scrollingElement : null;
+}
+
+function scrollPreview(root: HTMLElement, hash: string) {
+  const container = scrollContainerOf(root);
+  if (!container) return;
+  const target = hash ? root.querySelector<HTMLElement>(`#${CSS.escape(hash)}`) : null;
+  if (!target) {
+    container.scrollTo({ top: 0 });
+    return;
+  }
+  const containerBox = container.getBoundingClientRect();
+  // Tablet and mobile frames are scaled with a CSS transform; scrollTop is in unscaled pixels.
+  const scale = container.offsetHeight > 0 ? containerBox.height / container.offsetHeight : 1;
+  const offset = (target.getBoundingClientRect().top - containerBox.top) / (scale || 1);
+  const margin = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  container.scrollTo({ top: container.scrollTop + offset - margin, behavior: reduceMotion ? "auto" : "smooth" });
+}
+
 /** Fixed-width frame; site-kit container queries make it behave like a real device. */
-export function PreviewFrame({ device, onLinkClick, fit = false, theme, children }: PreviewFrameProps) {
+export function PreviewFrame({
+  device,
+  onLinkClick,
+  allowOffsiteLinks = false,
+  scrollResetKey,
+  fit = false,
+  theme,
+  children,
+}: PreviewFrameProps) {
   const width = deviceWidth(device);
+  const rootRef = useRef<HTMLDivElement>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const deviceContainerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [height, setHeight] = useState<number | null>(null);
   const [deviceScale, setDeviceScale] = useState(1);
+  const [navigation, setNavigation] = useState({ count: 0, hash: "" });
 
   const bg = theme?.colors?.background || "#ffffff";
   const text = theme?.colors?.text || "#18181b";
@@ -120,18 +166,40 @@ export function PreviewFrame({ device, onLinkClick, fit = false, theme, children
     return () => observer.disconnect();
   }, [device, fit]);
 
+  // Runs before the navigation effect so a link to another page's anchor ends at the anchor.
+  useLayoutEffect(() => {
+    const root = rootRef.current ?? deviceContainerRef.current;
+    if (scrollResetKey === undefined || !root) return;
+    scrollPreview(root, "");
+  }, [scrollResetKey]);
+
+  useLayoutEffect(() => {
+    const root = rootRef.current ?? deviceContainerRef.current;
+    if (navigation.count === 0 || !root) return;
+    scrollPreview(root, navigation.hash);
+  }, [navigation]);
+
   // Site links point at the client site's paths, which don't exist inside the builder.
   function handleClickCapture(event: MouseEvent<HTMLDivElement>) {
     const anchor = event.target instanceof Element ? event.target.closest("a") : null;
     if (!anchor) return;
+    const href = anchor.getAttribute("href") ?? "";
+    if (allowOffsiteLinks && isOffsiteHref(href)) {
+      if (isExternalHref(href) && anchor.target !== "_blank") {
+        event.preventDefault();
+        window.open(href, "_blank", "noopener,noreferrer");
+      }
+      return;
+    }
     event.preventDefault();
-    onLinkClick?.(anchor.getAttribute("href") ?? "");
+    if (!onLinkClick?.(href)) return;
+    setNavigation((current) => ({ count: current.count + 1, hash: linkHash(href) }));
   }
 
   if (fit) {
     const frameClass = "overflow-clip rounded-lg border border-line-strong bg-transparent shadow-sm";
     return (
-      <div className="bg-canvas p-4 sm:p-6">
+      <div ref={rootRef} className="bg-canvas p-4 sm:p-6">
         <SiteStyles />
         <div ref={outerRef} className="mx-auto overflow-hidden" style={{ maxWidth: width, height: height ?? undefined }}>
           <div
@@ -149,7 +217,7 @@ export function PreviewFrame({ device, onLinkClick, fit = false, theme, children
 
   if (device === "desktop") {
     return (
-      <div className="w-full min-h-full bg-transparent" onClickCapture={handleClickCapture}>
+      <div ref={rootRef} className="w-full min-h-full bg-transparent" onClickCapture={handleClickCapture}>
         <SiteStyles />
         {children}
       </div>

@@ -39,10 +39,10 @@ import {
   formatCountdown,
   pruneExpiredRollbacks,
   rollbackRemainingMs,
+  toHistoryPayload,
   useNow,
   type ChatMessage,
   type ChatSession,
-  type SuggestionStatus,
 } from "./ai-chat-history.ts";
 import {
   ensureUniqueSlugs,
@@ -52,14 +52,7 @@ import {
   resolveInternalLink,
   sanitizeSectionLinks,
 } from "../utils/link-validator.ts";
-
-/** Tells the AI what became of each change it proposed earlier in the chat. */
-const SUGGESTION_OUTCOMES: Record<SuggestionStatus, string> = {
-  pending: "The owner hasn't applied this change; it isn't on the page",
-  accepted: "The owner applied this change",
-  rejected: "The owner rejected this change; it isn't on the page",
-  rolled_back: "The owner applied this change, then undid it; it isn't on the page",
-};
+import { isChromeSection, splitSiteChrome, withSiteChrome } from "../utils/site-chrome.ts";
 
 const COLOR_MAP: Record<string, string> = {
   red: "#dc2626",
@@ -1005,10 +998,7 @@ export default function AiDrawer() {
     setOriginalCanvasContent(baseline);
 
     try {
-      const historyPayload = nextMessages.slice(-10).map((m) => {
-        const outcome = m.role === "assistant" && m.status ? `\n(${SUGGESTION_OUTCOMES[m.status]})` : "";
-        return { role: m.role, content: `${m.content.slice(0, 2900 - outcome.length)}${outcome}` };
-      });
+      const historyPayload = toHistoryPayload(nextMessages);
 
       const result = await websitesApi.generateAiSuggestionStream(
         website.id,
@@ -1093,9 +1083,10 @@ export default function AiDrawer() {
         const firstCreated = result.createdPages?.[0];
 
         if (!hasAfter && firstCreated && firstCreated.sections.length > 0) {
-          nextItems = firstCreated.sections.map((s) =>
-            sectionToItem(normalizeSection(s as Section)),
-          );
+          nextItems = withSiteChrome(
+            firstCreated.sections.map((s) => normalizeSection(s as Section)),
+            draft,
+          ).map(sectionToItem);
           setPreviewingCreatedPageId(firstCreated.id);
         } else {
           nextItems = hasAfter
@@ -1221,6 +1212,9 @@ export default function AiDrawer() {
           content: baseline,
         }),
       });
+      saveSession(
+        nextMessages.map((m) => (m.id === userMessage.id ? { ...m, failed: true } : m)),
+      );
       if (
         abortController.signal.aborted ||
         (err as Error)?.name === "AbortError" ||
@@ -1295,14 +1289,20 @@ export default function AiDrawer() {
     editDraft((current) => {
       let nextPages = [...current.pages];
       const validRoutes = getKnownRoutes(nextPages, suggestion?.createdPages ?? []);
+      let nextHeader = { ...current.header };
+      let nextFooter = { ...current.footer };
+      const bodyOnly = (sections: readonly Section[]) => sections.filter((s) => !isChromeSection(s));
 
-      // Update current open page's sections
+      // Update current open page's sections; its header/footer are the site-wide ones
       if (previewCanvasContent && !previewingCreatedPageId) {
         const sanitizedSections = previewCanvasContent
           .map(itemAsSection)
           .map((s) => sanitizeSectionLinks(normalizeSection(s), validRoutes));
+        const split = splitSiteChrome(sanitizedSections, current);
+        nextHeader = split.header;
+        nextFooter = split.footer;
         nextPages = nextPages.map((p) =>
-          p.id === page.id ? { ...p, sections: sanitizedSections } : p,
+          p.id === page.id ? { ...p, sections: split.body } : p,
         );
       }
 
@@ -1319,8 +1319,8 @@ export default function AiDrawer() {
       if (suggestion?.createdPages && suggestion.createdPages.length > 0) {
         const uniqueCreated = ensureUniqueSlugs(nextPages, suggestion.createdPages);
         for (const cp of uniqueCreated) {
-          const sanitizedSections = cp.sections.map((s) =>
-            sanitizeSectionLinks(normalizeSection(s as Section), validRoutes),
+          const sanitizedSections = bodyOnly(
+            cp.sections.map((s) => sanitizeSectionLinks(normalizeSection(s as Section), validRoutes)),
           );
           nextPages.push({
             id: cp.id,
@@ -1359,8 +1359,8 @@ export default function AiDrawer() {
                 seoDescription: up.seoDescription !== undefined ? up.seoDescription : p.seoDescription,
                 sections:
                   up.sections && up.sections.length > 0
-                    ? up.sections.map((s) =>
-                        sanitizeSectionLinks(normalizeSection(s as Section), validRoutes),
+                    ? bodyOnly(
+                        up.sections.map((s) => sanitizeSectionLinks(normalizeSection(s as Section), validRoutes)),
                       )
                     : p.sections,
               };
@@ -1376,10 +1376,7 @@ export default function AiDrawer() {
         nextPages = nextPages.filter((p) => !deleteSet.has(p.id) || p.slug === "/");
       }
 
-      // Handle navigation patch
-      let nextHeader = { ...current.header };
-      let nextFooter = { ...current.footer };
-
+      // Handle navigation patch (the header is site-wide, so this reaches every page)
       if (suggestion?.navigationPatch) {
         const rawMenu = suggestion.navigationPatch.menu || suggestion.navigationPatch.headerMenu;
         if (rawMenu && rawMenu.length > 0) {
@@ -1518,7 +1515,7 @@ export default function AiDrawer() {
           data: (previous) => ({
             ...previous,
             root: previous.root ?? { props: {} },
-            content: currentPageRestored.sections.map(sectionToItem),
+            content: withSiteChrome(currentPageRestored.sections, restored).map(sectionToItem),
           }),
         });
       }
@@ -1898,9 +1895,10 @@ export default function AiDrawer() {
                                   type="button"
                                   onClick={() => {
                                     setPreviewingCreatedPageId(cp.id);
-                                    const items = cp.sections.map((s) =>
-                                      sectionToItem(normalizeSection(s as Section)),
-                                    );
+                                    const items = withSiteChrome(
+                                      cp.sections.map((s) => normalizeSection(s as Section)),
+                                      draft,
+                                    ).map(sectionToItem);
                                     setPreviewCanvasContent(items);
                                     setPreviewMode("ai");
                                     dispatch({

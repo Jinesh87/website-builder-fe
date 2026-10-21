@@ -1,8 +1,9 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
 import { isExternalHref, safeHref } from "./links.ts";
 import { sectionFontStyle } from "./theme.ts";
 import type { GridColumns, IconName, ImageRef, LinkRef, SectionSettings } from "./types.ts";
 import { isLightColor, normalizeHexColor } from "../utils/colors.ts";
+import { getCuratedFallbackImage, normalizeImageUrl } from "./image-utils.ts";
 
 type SiteLinkProps = {
   link: LinkRef;
@@ -30,24 +31,78 @@ export function SiteButton({ link, tone = "primary" }: { link: LinkRef; tone?: "
 
 export function SiteImage({
   image,
-  className,
+  className = "",
   priority = false,
+  contextText,
 }: {
   image: ImageRef;
   className?: string;
   priority?: boolean;
+  contextText?: string;
 }) {
+  const initialUrl = normalizeImageUrl(image.url, contextText);
+  const [currentSrc, setCurrentSrc] = useState(initialUrl);
+  const [hasError, setHasError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const nextUrl = normalizeImageUrl(image.url, contextText);
+    setCurrentSrc(nextUrl);
+    setHasError(false);
+    setIsLoaded(false);
+  }, [image.url, contextText]);
+
   const trimmedAlt = image.alt?.trim();
   const isGeneric = !trimmedAlt || ["image", "hero background", "photo", "picture", "website visual"].includes(trimmedAlt.toLowerCase());
   const alt = !isGeneric ? trimmedAlt : "";
+
+  const handleError = () => {
+    const fallback = getCuratedFallbackImage(contextText || image.alt);
+    if (currentSrc !== fallback) {
+      setCurrentSrc(fallback);
+    } else {
+      setHasError(true);
+    }
+  };
+
+  if (hasError || !currentSrc) {
+    return (
+      <div
+        className={`wb-img-fallback-placeholder flex items-center justify-center bg-slate-800 text-slate-400 ${className}`}
+        style={{ minHeight: "160px" }}
+        role="img"
+        aria-label={alt || "Visual showcase"}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          className="size-8 opacity-40"
+          aria-hidden="true"
+        >
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <polyline points="21 15 16 10 5 21" />
+        </svg>
+      </div>
+    );
+  }
+
   return (
     <img
-      src={image.url}
+      src={currentSrc}
       alt={alt}
       className={className}
       loading={priority ? "eager" : "lazy"}
       decoding="async"
       fetchPriority={priority ? "high" : "auto"}
+      onError={handleError}
+      onLoad={() => setIsLoaded(true)}
+      style={{
+        opacity: isLoaded ? 1 : 0.85,
+        transition: "opacity 0.3s ease-out",
+      }}
     />
   );
 }
