@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown, ChevronRight, Code2, ExternalLink, HelpCircle, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
+import { ArrowLeft, BookUp, ChevronDown, ChevronRight, Code2, ExternalLink, HelpCircle, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppTooltip from "../../../components/ui/AppTooltip.tsx";
 import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
@@ -23,8 +23,9 @@ const DEVICE_OPTIONS: { id: Device; label: string; icon: typeof Monitor }[] = [
 
 function PublishState() {
   const { website } = useEditor();
-  const [label, dot] =
-    website.status === "PUBLISHED"
+  const [label, dot] = website.isTemplateStudio
+    ? ["Template Studio", "bg-ed-accent"]
+    : website.status === "PUBLISHED"
       ? website.hasUnpublishedChanges
         ? ["Unpublished changes", "bg-ed-warning"]
         : ["Published", "bg-ed-success"]
@@ -45,7 +46,7 @@ type TopBarProps = {
 };
 
 export default function TopBar({ backTo, onPublish }: TopBarProps) {
-  const { website, draft, page, selectPage, role, device, setDevice, autosave, aiLock } = useEditor();
+  const { website, draft, page, selectPage, role, device, setDevice, autosave, aiLock, setLeftPanel } = useEditor();
   const { startTour } = useTour();
   const history = useBuilderPuck((state) => state.history);
   const [downloadOpen, setDownloadOpen] = useState(false);
@@ -242,16 +243,28 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
       >
         <ExternalLink className="size-3.5" aria-hidden /> Preview
       </button>
-      <button
-        type="button"
-        onClick={onPublish}
-        data-tour="publish-button"
-        disabled={autosave.status === "conflict" || aiLock !== null}
-        title={aiLock ? "Apply or discard the AI changes before publishing" : undefined}
-        className="inline-flex h-8 items-center rounded-ed bg-ed-accent px-3 text-ed-sm font-medium text-white shadow-ed-xs hover:bg-ed-accent-hover disabled:opacity-50"
-      >
-        Publish
-      </button>
+      {website.isTemplateStudio ? (
+        <button
+          type="button"
+          onClick={() => setLeftPanel("publish-template")}
+          disabled={autosave.status === "conflict" || aiLock !== null}
+          title="Template Studio websites are saved as templates, not published"
+          className="inline-flex h-8 items-center gap-1.5 rounded-ed bg-ed-accent px-3 text-ed-sm font-medium text-white shadow-ed-xs hover:bg-ed-accent-hover disabled:opacity-50"
+        >
+          <BookUp className="size-3.5" aria-hidden /> Save template
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onPublish}
+          data-tour="publish-button"
+          disabled={autosave.status === "conflict" || aiLock !== null}
+          title={aiLock ? "Apply or discard the AI changes before publishing" : undefined}
+          className="inline-flex h-8 items-center rounded-ed bg-ed-accent px-3 text-ed-sm font-medium text-white shadow-ed-xs hover:bg-ed-accent-hover disabled:opacity-50"
+        >
+          Publish
+        </button>
+      )}
       {downloadOpen && (
         <Suspense fallback={null}>
           <DownloadCodeDialog

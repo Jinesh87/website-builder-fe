@@ -51,6 +51,8 @@ export type WebsiteSummary = {
   hasUnpublishedChanges: boolean;
   /** Shows SEO fields and the pre-publish SEO audit in the editor. */
   seoToolsEnabled: boolean;
+  /** Designs a platform template in the internal Template Studio; it can't be published. */
+  isTemplateStudio: boolean;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -256,6 +258,19 @@ export type SavedSection = {
 
 export type SaveTemplateInput = { name: string; description?: string };
 
+/** Must match PLATFORM_TEMPLATE_CATEGORIES on the server. */
+export const PLATFORM_TEMPLATE_CATEGORIES = [
+  "Business",
+  "Agency",
+  "Services",
+  "Health",
+  "Food",
+  "Portfolio",
+  "Landing page",
+  "Education",
+] as const;
+export type PlatformTemplateCategory = (typeof PLATFORM_TEMPLATE_CATEGORIES)[number];
+
 export type SavePageContentInput = {
   expectedDraftUpdatedAt: string;
   schemaVersion: number;
@@ -298,7 +313,6 @@ export const websitesApi = {
     ),
 
   deleteTemplate: (templateId: string) => request<void>(`${BASE}/templates/${templateId}`, { method: "DELETE" }),
-
   savedSections: (websiteId: string) =>
     request<{ sections: SavedSection[] }>(`${BASE}/${websiteId}/saved-sections`).then((data) => data.sections),
 

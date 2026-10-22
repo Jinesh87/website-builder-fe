@@ -6,7 +6,7 @@ import type { FooterData, HeaderData, ThemeSettings } from "../../site-kit/index
 import type { AutosaveState } from "./autosave/use-autosave.ts";
 
 export type SiteArea = "header" | "page" | "theme" | "footer";
-export type LeftPanelId = "add" | "pages" | "layers" | "assets" | "templates";
+export type LeftPanelId = "add" | "pages" | "layers" | "assets" | "templates" | "publish-template";
 export type EditorRole = "SUPER_ADMIN" | "CLIENT";
 
 /** What the canvas iframe needs to draw the site chrome around the page content. */
