@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import Icon from "./Icon.tsx";
-import { TPLS } from "./data.ts";
+import { useGalleryTemplates } from "./use-gallery-templates.ts";
 
 export default function AboutPage() {
+  const templateCount = useGalleryTemplates().length;
+
   return (
     <div className="view" data-view="about">
       <div className="page-hero split-hero">
@@ -62,7 +64,7 @@ export default function AboutPage() {
               <span>ways to build: by hand or with AI</span>
             </div>
             <div className="fact c1-bg">
-              <b>{TPLS.length}</b>
+              <b>{templateCount}</b>
               <span>starter templates at launch</span>
             </div>
             <div className="fact c2-bg">
