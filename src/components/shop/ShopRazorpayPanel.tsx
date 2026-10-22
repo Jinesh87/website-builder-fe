@@ -169,7 +169,7 @@ export default function ShopRazorpayPanel({ websiteId }: { websiteId: string }) 
         <CopyRow
           label="Website address for Razorpay"
           value={config.siteUrl}
-          hint="Give Razorpay this address when they verify the business. It is this website, and it has to be public."
+          hint="Give Razorpay this address when they verify the business. A connected custom domain is used when there is one. Otherwise this is the live site address, and it has to be public."
         />
         <CopyRow
           label="Webhook address"

@@ -13,6 +13,7 @@ export type ShopVariant = {
   sku: string | null;
   pricePaise: number;
   sortOrder: number;
+  quantity: number;
   images: ShopImage[];
 };
 
@@ -77,6 +78,35 @@ export type ShopPaymentInput = {
   razorpayWebhookSecret?: string;
 };
 
+export type InventoryItem = {
+  variantId: string;
+  productId: string;
+  productName: string;
+  categoryName: string;
+  variantName: string;
+  options: { name: string; value: string }[];
+  pricePaise: number;
+  quantity: number;
+};
+
+export type InventoryMovement = {
+  id: string;
+  productName: string;
+  variantName: string;
+  delta: number;
+  quantityAfter: number;
+  note: string | null;
+  actorName: string | null;
+  createdAt: string;
+};
+
+export type InventoryLogPage = {
+  movements: InventoryMovement[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 export type ShopProductQuery = {
   search?: string;
   categoryId?: string;
@@ -131,6 +161,25 @@ export const shopApi = {
 
   updatePaymentConfig: (websiteId: string, input: ShopPaymentInput) =>
     request<{ config: ShopPaymentConfig }>(`${base(websiteId)}/payments`, { method: "PUT", body: input }).then((data) => data.config),
+
+  inventory: (websiteId: string, search = "") => {
+    const query = new URLSearchParams();
+    if (search) query.set("search", search);
+    const text = query.toString();
+    return request<{ items: InventoryItem[] }>(`${base(websiteId)}/inventory${text ? `?${text}` : ""}`).then((data) => data.items);
+  },
+
+  addInventory: (websiteId: string, variantId: string, quantity: number, note?: string) =>
+    request<{ item: InventoryItem }>(`${base(websiteId)}/inventory/${variantId}`, {
+      method: "PATCH",
+      body: { quantity, note },
+    }).then((data) => data.item),
+
+  inventoryLog: (websiteId: string, search = "", page = 1) => {
+    const query = new URLSearchParams({ page: String(page) });
+    if (search) query.set("search", search);
+    return request<InventoryLogPage>(`${base(websiteId)}/inventory/log?${query}`);
+  },
 
   revealPaymentSecrets: (websiteId: string) =>
     request<{ secrets: { razorpayKeySecret: string | null; razorpayWebhookSecret: string | null } }>(

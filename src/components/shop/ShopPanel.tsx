@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Label, Spinner, Switch } from "@heroui/react";
-import { ImagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, ImagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { ACCEPT_BY_KIND, mediaApi, uploadProblem } from "../../api/media.ts";
-import { shopApi, type ShopCategory, type ShopImage, type ShopProduct, type ShopProductInput } from "../../api/shop.ts";
+import { shopApi, type ShopCategory, type ShopImage, type ShopProduct, type ShopProductInput, type ShopVariant } from "../../api/shop.ts";
 import { errorMessage } from "../../api/http.ts";
 import { formatPaise } from "../../api/wallet.ts";
 import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
+import { ShopInventoryLogPanel, ShopInventoryPanel } from "./ShopInventoryPanel.tsx";
 import ShopRazorpayPanel from "./ShopRazorpayPanel.tsx";
 import CommonModal from "../ui/CommonModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
@@ -70,6 +71,26 @@ function rupeesToPaise(value: string): number | null {
 
 function paiseToRupees(paise: number): string {
   return (paise / 100).toFixed(2);
+}
+
+function variantOptions(product: ShopProduct, variantName: string): { name: string; value: string }[] {
+  for (const set of product.optionSets ?? []) {
+    if (set.options.length === 0) continue;
+    const combos = set.options.reduce<string[][]>(
+      (sets, option) => sets.flatMap((prefix) => option.values.map((value) => [...prefix, value])),
+      [[]],
+    );
+    for (const values of combos) {
+      if (values.join(" / ") === variantName) {
+        return set.options.map((option, index) => ({ name: option.name, value: values[index] ?? "" }));
+      }
+    }
+  }
+  return [];
+}
+
+function variantPhotos(product: ShopProduct, variant: ShopVariant): ShopImage[] {
+  return variant.images?.length ? variant.images : (product.images ?? []);
 }
 
 function coverUrl(product: ShopProduct): string | null {
@@ -149,12 +170,14 @@ function setsFromProduct(product: ShopProduct): SetDraft[] {
   return [blankSet()];
 }
 
-type ShopSection = "category" | "settings" | "products" | "razorpay";
+type ShopSection = "category" | "settings" | "products" | "inventory" | "inventory-log" | "razorpay";
 
 const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "category", label: "Category" },
   { id: "settings", label: "Shop settings" },
   { id: "products", label: "Products" },
+  { id: "inventory", label: "Inventory" },
+  { id: "inventory-log", label: "Inventory log" },
   { id: "razorpay", label: "Razorpay" },
 ];
 
@@ -239,14 +262,17 @@ export default function ShopPanel({
 
       {section === "razorpay" && <ShopRazorpayPanel websiteId={website.id} />}
 
-      {(section === "category" || section === "products") && !website.shopEnabled && (
+      {(section === "category" || section === "products" || section === "inventory" || section === "inventory-log") && !website.shopEnabled && (
         <section className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
-          <p className="text-sm text-ink-body">Turn the shop on in Shop settings before adding categories or products.</p>
+          <p className="text-sm text-ink-body">Turn the shop on in Shop settings before adding categories, products, or stock.</p>
           <Button size="sm" variant="outline" className="mt-4" onPress={() => setSection("settings")}>
             Open shop settings
           </Button>
         </section>
       )}
+
+      {section === "inventory" && website.shopEnabled && <ShopInventoryPanel websiteId={website.id} />}
+      {section === "inventory-log" && website.shopEnabled && <ShopInventoryLogPanel websiteId={website.id} />}
 
       {(section === "category" || section === "products") && website.shopEnabled && (
         <ShopCatalog websiteId={website.id} clientId={website.clientId} section={section} />
@@ -274,6 +300,7 @@ function ShopCatalog({
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
   const [draft, setDraft] = useState<ProductDraft | null>(null);
+  const [viewing, setViewing] = useState<ShopProduct | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQuery(search.trim()), 300);
@@ -426,6 +453,10 @@ function ShopCatalog({
           </Button>
         </div>
 
+        {viewing ? (
+          <ProductVariants product={viewing} onBack={() => setViewing(null)} onEdit={() => openProduct(viewing)} />
+        ) : (
+        <>
         <div className="flex flex-wrap gap-2 border-b border-line px-5 py-3">
           <div className="relative min-w-[220px] flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
@@ -458,6 +489,56 @@ function ShopCatalog({
           </div>
         )}
 
+        <div className="divide-y divide-line">
+          {products === null && (
+            <div className="grid place-items-center py-12">
+              <Spinner aria-label="Loading products" />
+            </div>
+          )}
+          {products?.length === 0 && (
+            <p className="px-5 py-10 text-center text-sm text-ink-muted">
+              {query || categoryId ? "No products match this search." : "No products yet."}
+            </p>
+          )}
+          {products?.map((product) => {
+            const cover = coverUrl(product);
+            return (
+            <div key={product.id} className="flex w-full items-center gap-2 px-3 py-1 hover:bg-canvas">
+              <button
+                type="button"
+                onClick={() => setViewing(product)}
+                className="flex min-w-0 flex-1 items-center justify-between gap-4 px-2 py-2 text-left"
+              >
+                {cover ? (
+                  <img src={cover} alt="" className="size-12 shrink-0 rounded-md object-cover" />
+                ) : (
+                  <span className="grid size-12 shrink-0 place-items-center rounded-md bg-canvas text-ink-muted">
+                    <ImagePlus className="size-4" aria-hidden />
+                  </span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ink">{product.name}</span>
+                  <span className="mt-0.5 block truncate text-xs text-ink-muted">
+                    {product.categoryName} · {optionSummary(product)}
+                  </span>
+                </span>
+                <span className="shrink-0 text-sm text-ink">{priceLabel(product)}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => openProduct(product)}
+                aria-label={`Edit ${product.name}`}
+                className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-muted hover:bg-surface hover:text-ink"
+              >
+                <Pencil className="size-3.5" aria-hidden />
+              </button>
+            </div>
+            );
+          })}
+        </div>
+        </>
+        )}
+
         {draft && (
           <ProductForm
             websiteId={websiteId}
@@ -468,6 +549,7 @@ function ShopCatalog({
             onClose={() => setDraft(null)}
             onSaved={(product, previousCategoryId) => {
               setDraft(null);
+              setViewing((current) => (current?.id === product.id ? product : current));
               setCategories((current) =>
                 (current ?? []).map((category) => {
                   if (category.id === product.categoryId && category.id !== previousCategoryId) {
@@ -495,6 +577,7 @@ function ShopCatalog({
             }}
             onDeleted={(productId, previousCategoryId) => {
               setDraft(null);
+              setViewing((current) => (current?.id === productId ? null : current));
               setProducts((current) => (current ?? []).filter((item) => item.id !== productId));
               setCategories((current) =>
                 (current ?? []).map((category) =>
@@ -506,50 +589,64 @@ function ShopCatalog({
             }}
           />
         )}
-
-        <div className="divide-y divide-line">
-          {products === null && (
-            <div className="grid place-items-center py-12">
-              <Spinner aria-label="Loading products" />
-            </div>
-          )}
-          {products?.length === 0 && (
-            <p className="px-5 py-10 text-center text-sm text-ink-muted">
-              {query || categoryId ? "No products match this search." : "No products yet."}
-            </p>
-          )}
-          {products?.map((product) => {
-            const cover = coverUrl(product);
-            return (
-            <button
-              key={product.id}
-              type="button"
-              onClick={() => openProduct(product)}
-              className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left hover:bg-canvas"
-            >
-              {cover ? (
-                <img src={cover} alt="" className="size-12 shrink-0 rounded-md object-cover" />
-              ) : (
-                <span className="grid size-12 shrink-0 place-items-center rounded-md bg-canvas text-ink-muted">
-                  <ImagePlus className="size-4" aria-hidden />
-                </span>
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-ink">{product.name}</span>
-                <span className="mt-0.5 block truncate text-xs text-ink-muted">
-                  {product.categoryName} · {optionSummary(product)}
-                </span>
-              </span>
-              <span className="flex shrink-0 items-center gap-3">
-                <span className="text-sm text-ink">{priceLabel(product)}</span>
-                <Pencil className="size-3.5 text-ink-muted" aria-hidden />
-              </span>
-            </button>
-            );
-          })}
-        </div>
       </section>
       )}
+    </div>
+  );
+}
+
+function ProductVariants({ product, onBack, onEdit }: { product: ShopProduct; onBack: () => void; onEdit: () => void }) {
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
+        <button type="button" onClick={onBack} className="inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink">
+          <ChevronLeft className="size-4" aria-hidden /> Products
+        </button>
+        <Button size="sm" variant="outline" onPress={onEdit}>
+          <Pencil className="size-3.5" aria-hidden /> Edit
+        </Button>
+      </div>
+      <div className="px-5 py-4">
+        <h3 className="text-base font-semibold text-ink">{product.name}</h3>
+        <p className="mt-0.5 text-xs text-ink-muted">
+          {product.categoryName} · {priceLabel(product)}
+        </p>
+        {product.description && <p className="mt-2 max-w-2xl text-sm text-ink-body">{product.description}</p>}
+      </div>
+      <ul className="divide-y divide-line border-t border-line">
+        {product.variants.map((variant) => {
+          const options = variantOptions(product, variant.name);
+          const photos = variantPhotos(product, variant);
+          return (
+            <li key={variant.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-start">
+              {photos.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto">
+                  {photos.map((image) => (
+                    <img
+                      key={image.mediaId}
+                      src={image.url}
+                      alt={image.alt || variant.name}
+                      className="size-24 shrink-0 rounded-lg object-cover"
+                    />
+                  ))}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-ink">
+                  {options.length > 0 ? options.map((option) => option.value).join(" / ") : variant.name}
+                </p>
+                {options.length > 0 && (
+                  <p className="mt-0.5 text-xs text-ink-muted">{options.map((option) => `${option.name}: ${option.value}`).join(" · ")}</p>
+                )}
+                <p className="mt-1 text-sm text-ink">
+                  {formatPaise(variant.pricePaise)}
+                  <span className="text-ink-muted"> · {variant.quantity} on hand</span>
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
