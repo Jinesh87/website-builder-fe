@@ -184,11 +184,12 @@ function RootRender({ children }: { children: ReactNode }) {
           overscroll-behavior: none !important;
           overscroll-behavior-y: none !important;
         }
+        /* The body's height is auto, so a percentage would collapse the drop zone to its content. */
         #frame-root {
           background-color: transparent !important;
           margin: 0 !important;
           padding: 0 !important;
-          min-height: 100% !important;
+          min-height: 100vh !important;
           height: auto !important;
           overflow: visible !important;
           display: flex !important;

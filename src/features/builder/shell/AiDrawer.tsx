@@ -1293,12 +1293,16 @@ export default function AiDrawer() {
       let nextFooter = { ...current.footer };
       const bodyOnly = (sections: readonly Section[]) => sections.filter((s) => !isChromeSection(s));
 
-      // Update current open page's sections; its header/footer are the site-wide ones
+      // Update current open page's sections; its header/footer stay the site-wide, own or none it had
       if (previewCanvasContent && !previewingCreatedPageId) {
         const sanitizedSections = previewCanvasContent
           .map(itemAsSection)
           .map((s) => sanitizeSectionLinks(normalizeSection(s), validRoutes));
-        const split = splitSiteChrome(sanitizedSections, current);
+        const split = splitSiteChrome(
+          sanitizedSections,
+          current,
+          current.pages.find((p) => p.id === page.id)?.sections,
+        );
         nextHeader = split.header;
         nextFooter = split.footer;
         nextPages = nextPages.map((p) =>

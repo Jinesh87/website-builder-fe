@@ -141,22 +141,22 @@ type SitePageProps = {
 
 /** One full page of a client website: header, visible sections, footer. */
 export default function SitePage({ site, page, editor }: SitePageProps) {
-  // If page contains an explicit header or footer section, use it; otherwise fallback to global site header/footer
-  const pageHeaderSection = page.sections.find(
-    (section): section is SectionOf<"header"> => section.type === "header" && (Boolean(editor) || !section.hidden),
-  );
-  const pageFooterSection = page.sections.find(
-    (section): section is SectionOf<"footer"> => section.type === "footer" && (Boolean(editor) || !section.hidden),
-  );
+  // A page's own header/footer replaces the site-wide one; a hidden one means the page has none.
+  const pageHeaderSection = page.sections.find((section): section is SectionOf<"header"> => section.type === "header");
+  const pageFooterSection = page.sections.find((section): section is SectionOf<"footer"> => section.type === "footer");
 
   const effectiveHeader = pageHeaderSection
-    ? <HeaderSection section={pageHeaderSection} />
+    ? editor || !pageHeaderSection.hidden
+      ? <HeaderSection section={pageHeaderSection} />
+      : null
     : (site.header && !site.header.hidden)
       ? <SiteHeader header={site.header} settings={site.header.settings} />
       : null;
 
   const effectiveFooter = pageFooterSection
-    ? <FooterSection section={pageFooterSection} />
+    ? editor || !pageFooterSection.hidden
+      ? <FooterSection section={pageFooterSection} />
+      : null
     : (site.footer && !site.footer.hidden)
       ? <SiteFooter footer={site.footer} settings={site.footer.settings} />
       : null;

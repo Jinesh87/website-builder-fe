@@ -21,6 +21,16 @@ import {
 import { useEditor } from "../editor-context.ts";
 import { itemAsSection, type BuilderItem } from "../puck/adapter.ts";
 import { duplicateSection, removeSection, replaceSection, selectSection, setAllSections, useBuilderPuck } from "../puck/puck-api.ts";
+import {
+  isChromeSection,
+  isSiteChrome,
+  pageChromeMode,
+  setPageChrome,
+  withSiteChrome,
+  type ChromeMode,
+  type ChromeType,
+} from "../utils/site-chrome.ts";
+import { CheckboxField } from "../../../pages/websites/editor/fields.tsx";
 import { Tabs, ToolButton } from "./ui.tsx";
 
 type SectionTab = "content" | "style" | "responsive" | "advanced";
@@ -40,7 +50,7 @@ const AREA_TABS: { id: SiteAreaTab; label: string }[] = [
 ];
 
 function SectionInspector({ item, index }: { item: BuilderItem; index: number }) {
-  const { website, draft, setSavedSections, notify } = useEditor();
+  const { website, draft, page, editDraft, setSavedSections, notify } = useEditor();
   const siteFont = isFontKey(draft.theme.fonts.heading) ? draft.theme.fonts.heading : DEFAULT_FONT;
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const [tab, setTab] = useState<SectionTab>("content");
@@ -91,6 +101,33 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
 
   const definition = SECTION_DEFINITIONS[localSection.type];
   const changeSettings = (settings: SectionSettings) => change({ ...localSection, settings });
+  const chromeType = isChromeSection(localSection) ? (localSection.type as ChromeType) : null;
+  const shared = isSiteChrome(localSection);
+
+  function switchChrome(type: ChromeType, mode: ChromeMode) {
+    if (mode === "none") {
+      // The header/footer leaves the canvas, so a pending edit must not land on the section that takes its index.
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+      selectSection(dispatch, null);
+    } else {
+      flushChange();
+    }
+    const seed = mode === "page" ? localSectionRef.current : undefined;
+    editDraft((current) =>
+      updatePage(current, page.id, (p) => ({ ...p, sections: setPageChrome(p.sections, type, mode, current, seed) })),
+    );
+    notify(
+      mode === "none"
+        ? `${definition.label} removed from this page`
+        : mode === "page"
+          ? `This page now has its own ${type}`
+          : `This page now uses the site ${type}`,
+    );
+  }
+
+  const remove = () => (chromeType ? switchChrome(chromeType, "none") : removeSection(dispatch, index));
+  const removeLabel = chromeType ? "Remove from this page" : "Delete section";
 
   async function saveToLibrary({ name }: { name: string }) {
     flushChange();
@@ -115,10 +152,12 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
           <ToolButton label="Save to library" size="sm" onClick={() => setSaving(true)}>
             <BookmarkPlus className="size-3.5" aria-hidden />
           </ToolButton>
-          <ToolButton label="Duplicate section" size="sm" onClick={() => duplicateSection(dispatch, index)}>
-            <Copy className="size-3.5" aria-hidden />
-          </ToolButton>
-          <ToolButton label="Delete section" size="sm" tone="danger" onClick={() => removeSection(dispatch, index)}>
+          {!chromeType && (
+            <ToolButton label="Duplicate section" size="sm" onClick={() => duplicateSection(dispatch, index)}>
+              <Copy className="size-3.5" aria-hidden />
+            </ToolButton>
+          )}
+          <ToolButton label={removeLabel} size="sm" tone="danger" onClick={remove}>
             <Trash2 className="size-3.5" aria-hidden />
           </ToolButton>
           <ToolButton label="Deselect" size="sm" onClick={() => selectSection(dispatch, null)}>
@@ -130,15 +169,31 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
       <div role="tabpanel" aria-label={SECTION_TABS.find((candidate) => candidate.id === tab)?.label} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {tab === "content" && (
           <div className="flex flex-col">
+            {chromeType && (
+              <div className="flex flex-col gap-2 border-b border-ed-border/70 p-4">
+                <p className="text-ed-xs text-ed-muted">
+                  {shared
+                    ? `Site ${chromeType}: changes here update every page that uses it.`
+                    : `This page's own ${chromeType}: changes here affect only this page.`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => switchChrome(chromeType, shared ? "page" : "site")}
+                  className="flex w-full items-center justify-center rounded-ed-lg border border-ed-border bg-ed-panel py-2 text-ed-xs font-semibold text-ed-text transition-colors hover:bg-ed-hover"
+                >
+                  {shared ? "Customize for this page only" : `Use the site ${chromeType}`}
+                </button>
+              </div>
+            )}
             <SectionContentForm key={localSection.id} section={localSection} onChange={change} />
             <div className="border-t border-ed-border/70 p-4 mt-2">
               <button
                 type="button"
-                onClick={() => removeSection(dispatch, index)}
+                onClick={remove}
                 className="flex w-full items-center justify-center gap-2 rounded-ed-lg border border-red-500/25 bg-red-500/10 py-2.5 text-ed-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-500 transition-all shadow-xs"
               >
                 <Trash2 className="size-3.5" aria-hidden />
-                Delete {definition.label.toLowerCase()}
+                {chromeType ? `Remove ${chromeType} from this page` : `Delete ${definition.label.toLowerCase()}`}
               </button>
             </div>
           </div>
@@ -163,7 +218,7 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
 }
 
 function SiteInspector() {
-  const { draft, page, themes, editDraft, selectPage, website, setWebsite } = useEditor();
+  const { draft, page, themes, editDraft, selectPage, website, setWebsite, notify } = useEditor();
 
   // Only the flag is taken from the response, so the editor's draft state is never replaced.
   const setSeoTools = async (seoToolsEnabled: boolean) => {
@@ -173,6 +228,16 @@ function SiteInspector() {
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const [tab, setTab] = useState<SiteAreaTab>("page");
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  function showChrome(type: ChromeType, show: boolean) {
+    editDraft((current) =>
+      updatePage(current, page.id, (p) => ({
+        ...p,
+        sections: setPageChrome(p.sections, type, show ? "site" : "none", current),
+      })),
+    );
+    notify(show ? `This page now shows the site ${type}` : `${type === "header" ? "Header" : "Footer"} removed from this page`);
+  }
 
   function removePage() {
     const remaining = deletePage(draft, page.id);
@@ -202,17 +267,32 @@ function SiteInspector() {
                 editDraft(() => nextDraft);
                 const updatedCurrentPage = nextDraft.pages.find((p) => p.id === page.id);
                 if (updatedCurrentPage) {
-                  setAllSections(dispatch, updatedCurrentPage.sections);
+                  setAllSections(dispatch, withSiteChrome(updatedCurrentPage.sections, nextDraft));
                 }
               }}
               onUpdateSections={(sections) => {
-                setAllSections(dispatch, sections);
+                setAllSections(dispatch, withSiteChrome(sections, draft));
                 editDraft((current) =>
                   updatePage(current, page.id, (p) => ({ ...p, sections }))
                 );
               }}
               onSeoToolsChange={setSeoTools}
             />
+
+            <div className="flex flex-col gap-2.5 border-t border-ed-border/70 px-4 py-4">
+              <p className="text-ed-xs font-semibold uppercase tracking-wider text-ed-muted">Header and footer</p>
+              <CheckboxField
+                label="Show header on this page"
+                checked={pageChromeMode(page.sections, "header") !== "none"}
+                onChange={(show) => showChrome("header", show)}
+              />
+              <CheckboxField
+                label="Show footer on this page"
+                checked={pageChromeMode(page.sections, "footer") !== "none"}
+                onChange={(show) => showChrome("footer", show)}
+                hint="Select the header or footer on the canvas to edit it, or customize it for this page only."
+              />
+            </div>
 
             {page.slug !== "/" && (
               <div className="px-4 py-4">
