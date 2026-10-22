@@ -29,6 +29,10 @@ type HostingCheckoutModalProps = {
   notice?: ReactNode;
   /** Called when the admin changes this website's price from the dialog. */
   onHostingChange?: (hosting: WebsiteHosting) => void;
+  /** Preselected billing cycle. */
+  initialCycle?: BillingCycle;
+  /** Preselect custom price editor for admin. */
+  initialEditingPrice?: boolean;
 };
 
 const CYCLES: BillingCycle[] = ["QUARTERLY", "YEARLY"];
@@ -43,10 +47,12 @@ export default function HostingCheckoutModal({
   title,
   notice,
   onHostingChange,
+  initialCycle,
+  initialEditingPrice,
 }: HostingCheckoutModalProps) {
   const [hosting, setHosting] = useState(initialHosting);
-  const [editingPrice, setEditingPrice] = useState(false);
-  const [cycle, setCycle] = useState<BillingCycle>(initialHosting.subscription?.cycle ?? "QUARTERLY");
+  const [editingPrice, setEditingPrice] = useState(initialEditingPrice ?? false);
+  const [cycle, setCycle] = useState<BillingCycle>(initialCycle ?? initialHosting.subscription?.cycle ?? "QUARTERLY");
   const [method, setMethod] = useState<HostingPaymentMethod>("CASH");
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
@@ -60,15 +66,15 @@ export default function HostingCheckoutModal({
   const openedFor = isOpen ? initialHosting.website.id : null;
   useEffect(() => {
     if (!openedFor) return;
-    const initial = initialHosting.subscription?.cycle ?? "QUARTERLY";
+    const initial = initialCycle ?? initialHosting.subscription?.cycle ?? "QUARTERLY";
     setHosting(initialHosting);
-    setEditingPrice(false);
+    setEditingPrice(initialEditingPrice ?? false);
     setCycle(initial);
     setMethod("CASH");
     setReference("");
     setNote("");
     setError(null);
-  }, [openedFor]);
+  }, [openedFor, initialCycle, initialEditingPrice]);
 
   function chooseCycle(next: BillingCycle) {
     setCycle(next);
@@ -129,9 +135,13 @@ export default function HostingCheckoutModal({
           </FormAlert>
         )}
 
-        <div role="radiogroup" aria-label="Billing cycle" className="grid gap-3 sm:grid-cols-2">
+        <div
+          role="radiogroup"
+          aria-label="Billing cycle"
+          className={`grid gap-3 ${isAdmin ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
+        >
           {CYCLES.map((option) => {
-            const selected = option === cycle;
+            const selected = !editingPrice && option === cycle;
             const optionPrice = hosting.prices[option];
             return (
               <button
@@ -139,7 +149,10 @@ export default function HostingCheckoutModal({
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => chooseCycle(option)}
+                onClick={() => {
+                  chooseCycle(option);
+                  setEditingPrice(false);
+                }}
                 className={`rounded-xl border p-4 text-left transition-colors ${
                   selected ? "border-brand bg-brand-soft/50 ring-1 ring-brand/30" : "border-line hover:border-line-strong"
                 }`}
@@ -156,15 +169,39 @@ export default function HostingCheckoutModal({
               </button>
             );
           })}
+
+          {isAdmin && (
+            <button
+              type="button"
+              role="radio"
+              aria-checked={editingPrice}
+              onClick={() => setEditingPrice(true)}
+              className={`rounded-xl border p-4 text-left transition-colors ${
+                editingPrice
+                  ? "border-brand bg-brand-soft/50 ring-1 ring-brand/30"
+                  : "border-line hover:border-line-strong"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-ink">Custom</span>
+                {editingPrice && <Check className="size-4 text-brand" aria-hidden />}
+              </div>
+              <p className="mt-2 text-lg font-bold text-ink">Custom price</p>
+              <p className="text-xs text-ink-muted">
+                {hosting.prices[cycle].source === "WEBSITE" ? "Custom site price active" : "Set specific price for site"}
+              </p>
+            </button>
+          )}
         </div>
 
         {isAdmin &&
           (editingPrice ? (
             <div className="rounded-xl border border-brand/30 bg-brand-soft/30 p-4">
-              <p className="mb-3 text-sm font-semibold text-ink">Set price</p>
+              <p className="mb-3 text-sm font-semibold text-ink">Set custom price</p>
               <WebsitePriceEditor
                 hosting={hosting}
                 cycle={cycle}
+                allowGlobal={false}
                 onSaved={handlePriceSaved}
                 onCancel={() => setEditingPrice(false)}
               />
