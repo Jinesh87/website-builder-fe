@@ -51,6 +51,10 @@ export type WebsiteSummary = {
   hasUnpublishedChanges: boolean;
   /** Shows SEO fields and the pre-publish SEO audit in the editor. */
   seoToolsEnabled: boolean;
+  /** Super Admin has allowed this company to use a shop. */
+  shopFeatureEnabled: boolean;
+  /** Client has turned the shop on for this website. */
+  shopEnabled: boolean;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -216,6 +220,7 @@ export type CreateWebsiteInput = {
 export type UpdateWebsiteInput = {
   name?: string;
   seoToolsEnabled?: boolean;
+  shopEnabled?: boolean;
 } & { [K in keyof WebsiteInfo]?: string | null };
 
 export const GENERATION_TONES = ["professional", "friendly", "luxury", "playful", "bold", "minimal"] as const;
