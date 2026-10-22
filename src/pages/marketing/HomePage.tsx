@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { formatConnects, formatPaise } from "../../api/wallet.ts";
-import { PLANS, TPLS } from "./data.ts";
+import { formatPaise } from "../../api/wallet.ts";
+import { TPLS } from "./data.ts";
 import Icon from "./Icon.tsx";
 import { prefersReducedMotion } from "./marketing-context.ts";
 import { MediaTile, TemplateFrame, type SitePart } from "./MiniSite.tsx";
 import TemplateCard from "./TemplateCard.tsx";
 import HeroGalleryBanner from "./HeroGalleryBanner.tsx";
-import { cyclePrice, usePublicPricing } from "./use-pricing.ts";
+import { lowestPrice, usePublicPricing } from "./use-pricing.ts";
 
 
 
@@ -113,8 +113,9 @@ export default function HomePage() {
   const ai = useAiDemo();
   const { run: runAi } = ai;
   const { pricing } = usePublicPricing();
-  const yearly = cyclePrice(pricing, "YEARLY");
-  const yearlyPrice = yearly ? `${formatPaise(yearly.paise)} / year` : "See pricing";
+  const plans = pricing?.packages ?? [];
+  const lowestYearly = lowestPrice(plans, "YEARLY");
+  const yearlyPrice = lowestYearly ? `From ${formatPaise(lowestYearly)} / year` : "See pricing";
   const aiStage = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -648,15 +649,20 @@ export default function HomePage() {
                 Pricing
               </div>
               <h2>Simple hosting plans</h2>
-              <p>Pay quarterly or yearly with connects, or ask us for a custom plan.</p>
+              <p>Basic, Standard or Custom, billed quarterly or yearly in rupees.</p>
             </div>
             <div className="pt-plans">
-              {PLANS.map((plan) => {
-                const price = plan.cycle && cyclePrice(pricing, plan.cycle);
+              {plans.map((plan) => {
+                const yearly = plan.prices.YEARLY;
+                const quarterly = plan.prices.QUARTERLY;
                 return (
-                  <span key={plan.name} className={plan.featured ? "hot" : undefined}>
+                  <span key={plan.id} className={plan.featured ? "hot" : undefined}>
                     <b>{plan.name}</b>
-                    {price && `${formatConnects(price.connects)} (${formatPaise(price.paise)})`}
+                    {plan.isCustom
+                      ? "Custom quote"
+                      : yearly
+                        ? `${formatPaise(yearly)} / year`
+                        : quarterly && `${formatPaise(quarterly)} / 3 months`}
                   </span>
                 );
               })}

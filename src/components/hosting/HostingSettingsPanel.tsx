@@ -1,26 +1,31 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Button, Chip, Label, Spinner, Switch } from "@heroui/react";
-import { CalendarClock, History, Server } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button, Chip, Spinner } from "@heroui/react";
+import { CalendarClock, History, Package, Server } from "lucide-react";
 import { adminHostingApi, type BillingCycle, type HostingPriceChange, type HostingSettings } from "../../api/hosting.ts";
 import { errorMessage } from "../../api/http.ts";
-import { connectsPriceInPaise, formatPaise } from "../../api/wallet.ts";
-import { ConfirmModal } from "../ui/CommonModal.tsx";
+import { formatPaise } from "../../api/wallet.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 import SelectInput from "../ui/SelectInput.tsx";
-import { ConnectsInput, CYCLE_LABELS, formatBillingDate } from "./hosting-labels.tsx";
+import { CYCLE_LABELS, formatBillingDate, SwitchField } from "./hosting-labels.tsx";
+import HostingPackageEditor from "./HostingPackageEditor.tsx";
 
 type Feedback = { status: "success" | "danger" | "warning"; message: string } | null;
-type Form = { enabled: boolean; quarterlyPrice: string; yearlyPrice: string; reminderDays: string; graceDays: string };
+type Form = { enabled: boolean; allowConnectsPayment: boolean; reminderDays: string; graceDays: string };
 type FormErrors = Partial<Record<keyof Form, string>>;
 
-const SCOPE_LABELS: Record<HostingPriceChange["scope"], string> = { GLOBAL: "Global", CLIENT: "Client", WEBSITE: "Website" };
+const SCOPE_LABELS: Record<HostingPriceChange["scope"], string> = {
+  GLOBAL: "Global",
+  CLIENT: "Client",
+  WEBSITE: "Website",
+  PACKAGE: "Package",
+};
 const CYCLE_OPTIONS = (["QUARTERLY", "YEARLY"] as const).map((value) => ({ value, label: CYCLE_LABELS[value] }));
 
 function toForm(settings: HostingSettings): Form {
   return {
     enabled: settings.enabled,
-    quarterlyPrice: String(settings.quarterlyPrice || ""),
-    yearlyPrice: String(settings.yearlyPrice || ""),
+    allowConnectsPayment: settings.allowConnectsPayment,
     reminderDays: String(settings.reminderDays),
     graceDays: String(settings.graceDays),
   };
@@ -28,33 +33,32 @@ function toForm(settings: HostingSettings): Form {
 
 function validate(form: Form): FormErrors {
   const days = (value: string) => (/^\d{1,2}$/.test(value) && Number(value) <= 60 ? undefined : "Enter 0 to 60 days");
-  const price = (value: string) =>
-    form.enabled && !(Number(value) > 0) ? "Required to turn billing on" : undefined;
-  return {
-    quarterlyPrice: price(form.quarterlyPrice),
-    yearlyPrice: price(form.yearlyPrice),
-    reminderDays: days(form.reminderDays),
-    graceDays: days(form.graceDays),
-  };
+  return { reminderDays: days(form.reminderDays), graceDays: days(form.graceDays) };
 }
 
-function priceChange(before: number | null, after: number | null): string {
-  const show = (value: number | null) => (value === null ? "default" : value.toLocaleString("en-IN"));
+/** Package prices of 0 aren't offered; a website price of 0 is free. Older changes are in connects. */
+function priceChange(change: HostingPriceChange, before: number | null, after: number | null): string {
+  const show = (value: number | null) => {
+    if (value === null) return "—";
+    if (change.unit === "CONNECTS") return `${value.toLocaleString("en-IN")} connects`;
+    if (value === 0) return change.scope === "PACKAGE" ? "Not offered" : "Free";
+    return formatPaise(value);
+  };
   return before === after ? show(after) : `${show(before)} → ${show(after)}`;
 }
 
-/** Global hosting prices and billing rules; client and website prices are set on their own pages. */
+/** Hosting packages and billing rules; a website's custom price is set on its own Hosting tab. */
 export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (settings: HostingSettings) => void }) {
   const [settings, setSettings] = useState<HostingSettings | null>(null);
   const [form, setForm] = useState<Form | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [confirming, setConfirming] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
 
   const [freeDays, setFreeDays] = useState("30");
-  const [backfillCycle, setBackfillCycle] = useState<BillingCycle>("QUARTERLY");
+  const [backfillPackageId, setBackfillPackageId] = useState("");
+  const [backfillCycle, setBackfillCycle] = useState<BillingCycle>("YEARLY");
   const [backfilling, setBackfilling] = useState(false);
   const [backfillFeedback, setBackfillFeedback] = useState<Feedback>(null);
 
@@ -74,6 +78,12 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
     if (settings) onLoaded?.(settings);
   }, [settings, onLoaded]);
 
+  const listed = settings?.packages.filter((pkg) => !pkg.isCustom && (pkg.prices.QUARTERLY || pkg.prices.YEARLY)) ?? [];
+  const firstListedId = listed[0]?.id;
+  useEffect(() => {
+    if (!backfillPackageId && firstListedId) setBackfillPackageId(firstListedId);
+  }, [backfillPackageId, firstListedId]);
+
   function update<K extends keyof Form>(key: K) {
     return (value: Form[K]) => {
       setForm((current) => current && { ...current, [key]: value });
@@ -82,43 +92,26 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
     };
   }
 
-  const pricesChanged =
-    settings !== null &&
-    form !== null &&
-    (Number(form.quarterlyPrice || 0) !== settings.quarterlyPrice || Number(form.yearlyPrice || 0) !== settings.yearlyPrice);
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!form) return;
     const nextErrors = validate(form);
     setErrors(nextErrors);
     setFeedback(null);
     if (Object.values(nextErrors).some(Boolean)) return;
-    if (pricesChanged && settings && settings.plansOnGlobalPrice > 0) {
-      setConfirming(true);
-      return;
-    }
-    void save();
-  }
-
-  async function save() {
-    if (!form) return;
     setSaving(true);
     try {
       apply(
         await adminHostingApi.updateSettings({
           enabled: form.enabled,
-          quarterlyPrice: Number(form.quarterlyPrice || 0),
-          yearlyPrice: Number(form.yearlyPrice || 0),
+          allowConnectsPayment: form.allowConnectsPayment,
           reminderDays: Number(form.reminderDays),
           graceDays: Number(form.graceDays),
         }),
       );
-      setFeedback({ status: "success", message: "Hosting settings saved. New prices apply from each plan's next payment." });
-      setConfirming(false);
+      setFeedback({ status: "success", message: "Hosting settings saved." });
     } catch (err) {
       setFeedback({ status: "danger", message: errorMessage(err) });
-      setConfirming(false);
     } finally {
       setSaving(false);
     }
@@ -133,7 +126,7 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
     setBackfilling(true);
     setBackfillFeedback(null);
     try {
-      const { created } = await adminHostingApi.backfill({ freeDays: days, cycle: backfillCycle });
+      const { created } = await adminHostingApi.backfill({ freeDays: days, packageId: backfillPackageId, cycle: backfillCycle });
       setBackfillFeedback({
         status: "success",
         message: `${created} ${created === 1 ? "website got" : "websites got"} a free ${days}-day plan.`,
@@ -155,47 +148,52 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
     );
   }
 
-  const rupees = (value: string) =>
-    Number(value) > 0 ? `= ${formatPaise(connectsPriceInPaise(Number(value), settings.connectsPerRupee))}` : undefined;
-
   return (
-    <div className="grid max-w-3xl gap-6">
+    <div className="grid max-w-4xl gap-6">
+      <section className="rounded-xl border border-line bg-surface p-6 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
+            <Package className="size-5" aria-hidden />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-base font-semibold text-ink">Hosting packages</h2>
+            <p className="text-xs text-ink-muted">
+              Shown on the pricing page and when publishing, in this order. Prices are per website, in rupees.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-4">
+          {settings.packages.map((pkg) => (
+            <HostingPackageEditor key={pkg.id} pkg={pkg} onSaved={apply} />
+          ))}
+        </div>
+      </section>
+
       <form onSubmit={handleSubmit} noValidate className="rounded-xl border border-line bg-surface p-6 shadow-xs">
         <div className="flex items-center gap-2.5">
           <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
             <Server className="size-5" aria-hidden />
           </div>
           <div className="flex-1">
-            <h2 className="text-base font-semibold text-ink">Hosting plans</h2>
-            <p className="text-xs text-ink-muted">
-              Paid from the client's connects, per website. Client and website prices override these on their own pages.
-            </p>
+            <h2 className="text-base font-semibold text-ink">Billing rules</h2>
+            <p className="text-xs text-ink-muted">Clients pay online through Razorpay. Connects stay for AI unless you allow them here.</p>
           </div>
           {settings.enabled ? <Chip color="success">Billing on</Chip> : <Chip>Billing off</Chip>}
         </div>
 
-        <div className="mt-6 flex flex-col gap-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <ConnectsInput
-              id="hosting-quarterly"
-              label="Quarterly price (3 months)"
-              value={form.quarterlyPrice}
-              onChange={update("quarterlyPrice")}
-              hint={rupees(form.quarterlyPrice)}
-              error={errors.quarterlyPrice}
-              isDisabled={saving}
-            />
-            <ConnectsInput
-              id="hosting-yearly"
-              label="Yearly price (12 months)"
-              value={form.yearlyPrice}
-              onChange={update("yearlyPrice")}
-              hint={rupees(form.yearlyPrice)}
-              error={errors.yearlyPrice}
-              isDisabled={saving}
-            />
+        {!settings.razorpayConfigured && (
+          <div className="mt-5">
+            <FormAlert status="warning">
+              Razorpay isn't set up, so clients can't pay hosting online.{" "}
+              <Link to="/admin/settings?tab=payments" className="font-medium underline">
+                Add the keys in Payments
+              </Link>
+              .
+            </FormAlert>
           </div>
+        )}
 
+        <div className="mt-6 flex flex-col gap-5">
           <div className="grid gap-4 sm:grid-cols-2">
             <DaysInput
               id="hosting-reminder"
@@ -217,17 +215,25 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
             />
           </div>
 
-          <Switch isSelected={form.enabled} onChange={update("enabled")} isDisabled={saving}>
-            <Switch.Content>
-              <Switch.Control>
-                <Switch.Thumb />
-              </Switch.Control>
-              <Label className="text-sm text-ink">Require a paid hosting plan to publish</Label>
-            </Switch.Content>
-          </Switch>
-          <p className="-mt-3 text-xs text-ink-muted">
-            When on, publishing needs a plan, plans renew from connects, and unpaid sites go offline after the grace period.
-          </p>
+          <div>
+            <SwitchField label="Require a paid hosting plan to publish" isSelected={form.enabled} onChange={update("enabled")} isDisabled={saving} />
+            <p className="mt-1 text-xs text-ink-muted">
+              When on, publishing needs a plan, and unpaid sites go offline after the grace period.
+            </p>
+          </div>
+
+          <div>
+            <SwitchField
+              label="Let clients pay hosting with connects"
+              isSelected={form.allowConnectsPayment}
+              onChange={update("allowConnectsPayment")}
+              isDisabled={saving}
+            />
+            <p className="mt-1 text-xs text-ink-muted">
+              Optional, next to online payment, at {settings.connectsPerRupee} connects per ₹1. Clients can also turn on auto-renewal
+              from connects.
+            </p>
+          </div>
 
           {form.enabled && !settings.enabled && settings.liveSitesWithoutPlan > 0 && (
             <FormAlert status="warning">
@@ -240,7 +246,7 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
 
           <div>
             <Button type="submit" isPending={saving}>
-              Save hosting settings
+              Save billing rules
             </Button>
           </div>
         </div>
@@ -260,17 +266,29 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
             </p>
           </div>
         </div>
-        {settings.liveSitesWithoutPlan > 0 && (
-          <div className="mt-5 flex flex-wrap items-end gap-3">
-            <div>
-              <DaysInput id="hosting-free-days" label="Free days" value={freeDays} onChange={setFreeDays} isDisabled={backfilling} />
+        {settings.liveSitesWithoutPlan > 0 &&
+          (listed.length === 0 ? (
+            <div className="mt-5">
+              <FormAlert status="warning">Price a package first, so these websites can renew after the free days.</FormAlert>
             </div>
-            <SelectInput label="Then renews" value={backfillCycle} onChange={setBackfillCycle} options={CYCLE_OPTIONS} className="w-40" />
-            <Button variant="outline" onPress={handleBackfill} isPending={backfilling}>
-              Give free plan to {settings.liveSitesWithoutPlan}
-            </Button>
-          </div>
-        )}
+          ) : (
+            <div className="mt-5 flex flex-wrap items-end gap-3">
+              <div>
+                <DaysInput id="hosting-free-days" label="Free days" value={freeDays} onChange={setFreeDays} isDisabled={backfilling} />
+              </div>
+              <SelectInput
+                label="Then renews on"
+                value={backfillPackageId}
+                onChange={setBackfillPackageId}
+                options={listed.map((pkg) => ({ value: pkg.id, label: pkg.name }))}
+                className="w-40"
+              />
+              <SelectInput label="Billed" value={backfillCycle} onChange={setBackfillCycle} options={CYCLE_OPTIONS} className="w-36" />
+              <Button variant="outline" onPress={handleBackfill} isPending={backfilling} isDisabled={!backfillPackageId}>
+                Give free plan to {settings.liveSitesWithoutPlan}
+              </Button>
+            </div>
+          ))}
         {backfillFeedback && (
           <div className="mt-4">
             <FormAlert status={backfillFeedback.status}>{backfillFeedback.message}</FormAlert>
@@ -304,8 +322,8 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
                       <span className="text-ink">{change.label}</span>
                       <span className="ml-2 rounded-full bg-canvas px-2 py-0.5 text-xs text-ink-body">{SCOPE_LABELS[change.scope]}</span>
                     </td>
-                    <td className="px-6 py-2.5 text-ink-body">{priceChange(change.oldQuarterlyPrice, change.newQuarterlyPrice)}</td>
-                    <td className="px-6 py-2.5 text-ink-body">{priceChange(change.oldYearlyPrice, change.newYearlyPrice)}</td>
+                    <td className="px-6 py-2.5 text-ink-body">{priceChange(change, change.oldQuarterlyPrice, change.newQuarterlyPrice)}</td>
+                    <td className="px-6 py-2.5 text-ink-body">{priceChange(change, change.oldYearlyPrice, change.newYearlyPrice)}</td>
                     <td className="px-6 py-2.5 text-ink-body">{change.changedBy ?? "—"}</td>
                     <td className="whitespace-nowrap px-6 py-2.5 text-xs text-ink-muted">{formatBillingDate(change.createdAt)}</td>
                   </tr>
@@ -315,19 +333,6 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
           </div>
         )}
       </section>
-
-      <ConfirmModal
-        isOpen={confirming}
-        onClose={() => !saving && setConfirming(false)}
-        onConfirm={save}
-        isPending={saving}
-        tone="warning"
-        title="Change the global price?"
-        confirmLabel="Change price"
-      >
-        {settings.plansOnGlobalPrice} {settings.plansOnGlobalPrice === 1 ? "plan uses" : "plans use"} the global price. The new
-        price applies from each one's next payment; periods already paid don't change.
-      </ConfirmModal>
     </div>
   );
 }

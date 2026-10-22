@@ -1,4 +1,14 @@
-import type { TopupCheckout, TopupConfirmation } from "../api/wallet.ts";
+import type { TopupConfirmation } from "../api/wallet.ts";
+
+/** The server-created order Checkout pays: a connects purchase or a hosting period. */
+export type RazorpayOrder = {
+  orderId: string;
+  keyId: string;
+  amountPaise: number;
+  currency: string;
+  businessName: string;
+  prefill: { name: string; email?: string; contact?: string };
+};
 
 const CHECKOUT_SRC = "https://checkout.razorpay.com/v1/checkout.js";
 
@@ -43,10 +53,10 @@ export class CheckoutDismissedError extends Error {
 }
 
 /**
- * Opens Razorpay Checkout for a connects purchase. Resolves with what the server needs to verify the payment;
+ * Opens Razorpay Checkout for an order. Resolves with what the server needs to verify the payment;
  * rejects with CheckoutDismissedError when the user closes it without paying.
  */
-export async function openRazorpayCheckout(checkout: TopupCheckout, description: string): Promise<TopupConfirmation> {
+export async function openRazorpayCheckout(checkout: RazorpayOrder, description: string): Promise<TopupConfirmation> {
   await loadCheckout();
   const Razorpay = window.Razorpay;
   if (!Razorpay) throw new Error("Couldn't load Razorpay. Please try again.");

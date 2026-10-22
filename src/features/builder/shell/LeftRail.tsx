@@ -1,5 +1,5 @@
 import { memo, type ComponentType, type ReactNode } from "react";
-import { Files, Images, Layers, LayoutTemplate, Plus, type LucideProps } from "lucide-react";
+import { BookUp, Files, Images, Layers, LayoutTemplate, Plus, type LucideProps } from "lucide-react";
 import AppTooltip from "../../../components/ui/AppTooltip.tsx";
 import { AiSparklesIcon } from "../../../components/icons/AiSparklesIcon.tsx";
 import { useEditor, type LeftPanelId } from "../editor-context.ts";
@@ -7,14 +7,31 @@ import AddPanel from "./panels/AddPanel.tsx";
 import AssetsPanel from "./panels/AssetsPanel.tsx";
 import LayersPanel from "./panels/LayersPanel.tsx";
 import PagesPanel from "./panels/PagesPanel.tsx";
+import PublishTemplatePanel from "./panels/PublishTemplatePanel.tsx";
 import TemplatesPanel from "./panels/TemplatesPanel.tsx";
 
-const PANELS: { id: LeftPanelId; label: string; icon: ComponentType<LucideProps>; render: ComponentType }[] = [
+type PanelDef = {
+  id: LeftPanelId;
+  label: string;
+  icon: ComponentType<LucideProps>;
+  render: ComponentType;
+  /** Only on Template Studio websites, for a Super Admin; the server enforces the same rule. */
+  templateStudioOnly?: boolean;
+};
+
+const PANELS: PanelDef[] = [
   { id: "add", label: "Add sections", icon: Plus, render: AddPanel },
   { id: "pages", label: "Pages", icon: Files, render: PagesPanel },
   { id: "layers", label: "Layers", icon: Layers, render: LayersPanel },
   { id: "assets", label: "Assets", icon: Images, render: AssetsPanel },
   { id: "templates", label: "Templates", icon: LayoutTemplate, render: TemplatesPanel },
+  {
+    id: "publish-template",
+    label: "Save to template gallery",
+    icon: BookUp,
+    render: PublishTemplatePanel,
+    templateStudioOnly: true,
+  },
 ];
 
 function RailButton({
@@ -58,8 +75,10 @@ function RailButton({
 }
 
 export default memo(function LeftRail() {
-  const { leftPanel, setLeftPanel, aiOpen, setAiOpen, aiLock } = useEditor();
-  const active = PANELS.find((panel) => panel.id === leftPanel);
+  const { leftPanel, setLeftPanel, aiOpen, setAiOpen, aiLock, role, website } = useEditor();
+  const inTemplateStudio = role === "SUPER_ADMIN" && website.isTemplateStudio;
+  const panels = PANELS.filter((panel) => !panel.templateStudioOnly || inTemplateStudio);
+  const active = panels.find((panel) => panel.id === leftPanel);
   const Panel = active?.render;
 
   const preloadAi = () => {
@@ -69,7 +88,7 @@ export default memo(function LeftRail() {
   return (
     <div className="z-(--z-ed-panel) flex h-full min-h-0 shrink-0 select-none">
       <nav aria-label="Editor tools" className="flex h-full min-h-0 w-13 shrink-0 flex-col items-center gap-1 border-r border-ed-border bg-ed-panel py-2 overflow-y-auto overscroll-contain">
-        {PANELS.map(({ id, label, icon: Icon }) => (
+        {panels.map(({ id, label, icon: Icon }) => (
           <RailButton
             key={id}
             label={label}

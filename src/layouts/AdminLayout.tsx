@@ -19,7 +19,7 @@ const ADMIN_NAV: ShellNavItem[] = [
   { label: "AI Usage", icon: AiSparklesIcon, to: "/admin/ai-usage" },
   { label: "Transactions", icon: Wallet, to: "/admin/transactions" },
   { label: "Hosting", icon: CalendarClock, to: "/admin/hosting" },
-  { label: "Templates and themes", icon: LayoutTemplate },
+  { label: "Templates", icon: LayoutTemplate, to: "/admin/templates" },
   { label: "Headers and footers", icon: PanelsTopLeft },
   { label: "Reusable sections", icon: Rows3, to: "/admin/sections" },
   { label: "Domains", icon: Server },

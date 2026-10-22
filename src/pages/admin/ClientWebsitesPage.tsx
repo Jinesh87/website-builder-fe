@@ -4,11 +4,11 @@ import { buttonVariants } from "@heroui/styles";
 import {
   ArrowLeft,
   CircleCheck,
-  Coins,
   CreditCard,
   Eye,
   Globe,
   History,
+  IndianRupee,
   LayoutDashboard,
   Pencil,
   Plus,
@@ -25,13 +25,14 @@ import { SOURCE_LABELS } from "../../components/admin/client-labels.tsx";
 import { IconButton, IconLink, RowActions } from "../../components/admin/websites/RowActions.tsx";
 import HostingCheckoutModal from "../../components/hosting/HostingCheckoutModal.tsx";
 import {
-  CYCLE_LABELS,
   daysUntil,
   formatBillingDate,
+  formatPlanPrice,
   HostingStatusChip,
   METHOD_LABELS,
   PAYER_LABELS,
-  PRICE_SOURCE_LABELS,
+  paymentAmountLabel,
+  planLabel,
   remainingLabel,
 } from "../../components/hosting/hosting-labels.tsx";
 import WebsitePaymentsModal from "../../components/hosting/WebsitePaymentsModal.tsx";
@@ -91,7 +92,7 @@ export default function ClientWebsitesPage() {
 
   function handlePriceSaved() {
     setActive(null);
-    setFeedback({ status: "success", message: "Price saved. It applies from each website's next payment." });
+    setFeedback({ status: "success", message: "Custom price saved. It applies from the website's next payment." });
     void load();
   }
 
@@ -146,7 +147,7 @@ export default function ClientWebsitesPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link to={`/admin/clients/${client.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
-            <UserCog className="size-4" aria-hidden /> Client details & prices
+            <UserCog className="size-4" aria-hidden /> Client details
           </Link>
           <Link to={`/websites/new?clientId=${encodeURIComponent(client.id)}`} className={buttonVariants({ size: "sm" })}>
             <Plus className="size-4" aria-hidden /> Create website
@@ -177,17 +178,17 @@ export default function ClientWebsitesPage() {
         />
         <StatCard
           label="Hosting paid"
-          value={totals.connects.toLocaleString("en-IN")}
+          value={formatPaise(totals.amountPaise)}
           hint={`${totals.payments} ${totals.payments === 1 ? "payment" : "payments"}${
             totals.collectedPaise > 0 ? ` · ${formatPaise(totals.collectedPaise)} offline` : ""
           }`}
-          icon={<Coins className="size-4" aria-hidden />}
+          icon={<IndianRupee className="size-4" aria-hidden />}
           tone="bg-indigo-50 text-indigo-600"
         />
         <StatCard
-          label="Wallet"
+          label="Connects"
           value={formatConnects(data.balance)}
-          hint="Used for hosting renewals and AI"
+          hint="For AI; can also pay hosting"
           icon={<Wallet className="size-4" aria-hidden />}
           tone="bg-amber-50 text-amber-600"
         />
@@ -251,7 +252,7 @@ export default function ClientWebsitesPage() {
           onClose={() => setActive(null)}
           headerDetails={{
             icon: <Pencil className="size-4.5" />,
-            title: "Hosting price",
+            title: "Custom hosting price",
             description: `${active.hosting.website.name} · ${active.hosting.website.subdomain}`,
           }}
           iconTone="brand"
@@ -292,7 +293,6 @@ function WebsiteRow({
   onHistory: () => void;
 }) {
   const { subscription, lastPayment } = website;
-  const price = website.prices[subscription?.cycle ?? "QUARTERLY"];
   const remaining = subscription && remainingLabel(subscription);
   const endSoon = subscription?.status === "ACTIVE" && subscription.currentPeriodEnd && daysUntil(subscription.currentPeriodEnd) <= 7;
 
@@ -313,8 +313,8 @@ function WebsiteRow({
         )}
       </td>
       <td className="px-5 py-3 text-ink-body">
-        {subscription ? CYCLE_LABELS[subscription.cycle] : "—"}
-        {subscription && !subscription.autoRenew && <p className="text-xs text-ink-muted">Auto-renew off</p>}
+        {subscription ? planLabel(subscription) : "—"}
+        {subscription?.autoRenew && <p className="text-xs text-ink-muted">Auto-renew on</p>}
       </td>
       <td className="whitespace-nowrap px-5 py-3 text-ink-body">
         {subscription?.currentPeriodStart ? formatBillingDate(subscription.currentPeriodStart) : "—"}
@@ -335,12 +335,10 @@ function WebsiteRow({
       <td className="whitespace-nowrap px-5 py-3">
         <div className="flex items-center justify-end gap-1">
           <div className="text-right">
-            <p className="font-semibold text-ink">{price.amount.toLocaleString("en-IN")}</p>
-            <p className={`text-xs ${price.source === "WEBSITE" ? "font-medium text-brand" : "text-ink-muted"}`}>
-              {PRICE_SOURCE_LABELS[price.source]}
-            </p>
+            <p className="font-semibold text-ink">{subscription ? formatPlanPrice(website.price) : "—"}</p>
+            {subscription?.isCustomPackage && <p className="text-xs font-medium text-brand">Custom price</p>}
           </div>
-          <IconButton onPress={onEditPrice} label="Edit website price" icon={Pencil} isDisabled={isOpening} />
+          <IconButton onPress={onEditPrice} label="Set custom price" icon={Pencil} isDisabled={isOpening} />
         </div>
       </td>
       <td className="whitespace-nowrap px-5 py-3">
@@ -348,8 +346,7 @@ function WebsiteRow({
           <>
             <p className="text-ink">{formatBillingDate(lastPayment.createdAt)}</p>
             <p className="text-xs text-ink-muted">
-              {PAYER_LABELS[lastPayment.paidBy]} · {METHOD_LABELS[lastPayment.method]}
-              {lastPayment.collectedPaise !== null && ` · ${formatPaise(lastPayment.collectedPaise)}`}
+              {PAYER_LABELS[lastPayment.paidBy]} · {METHOD_LABELS[lastPayment.method]} · {paymentAmountLabel(lastPayment).amount}
             </p>
           </>
         ) : (

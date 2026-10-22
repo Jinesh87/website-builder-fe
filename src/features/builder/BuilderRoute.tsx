@@ -108,7 +108,7 @@ export default function BuilderRoute() {
           themes={state.data.themes}
           savedSections={state.data.savedSections}
           role={role}
-          backTo={backTo}
+          backTo={state.data.website.isTemplateStudio ? "/admin/templates" : backTo}
           justCreated={justCreated}
         />
       </Suspense>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, SearchField, Spinner } from "@heroui/react";
-import { AlarmClock, CircleCheck, CloudOff, Coins, Download, Hourglass, IndianRupee, ListChecks, Receipt, Server } from "lucide-react";
+import { AlarmClock, CircleCheck, CloudOff, Coins, CreditCard, Download, Hourglass, IndianRupee, ListChecks, Receipt, Server } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   adminHostingApi,
@@ -11,17 +11,18 @@ import {
   type SubscriptionList,
 } from "../../api/hosting.ts";
 import { errorMessage } from "../../api/http.ts";
-import { formatConnectsNumber, formatPaise } from "../../api/wallet.ts";
+import { formatConnects, formatPaise } from "../../api/wallet.ts";
 import StatCard from "../../components/admin/StatCard.tsx";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import {
-  CYCLE_LABELS,
   formatBillingDate,
   formatPeriod,
+  formatPlanPrice,
   HostingStatusChip,
   METHOD_LABELS,
   PAYER_LABELS,
-  PRICE_SOURCE_LABELS,
+  paymentAmountLabel,
+  planLabel,
   remainingLabel,
 } from "../../components/hosting/hosting-labels.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
@@ -155,7 +156,7 @@ export default function HostingPage() {
         description="Every website's hosting plan, and the payments collected for it."
         actions={
           <Link to="/admin/settings?tab=hosting" className="text-sm text-brand hover:underline">
-            Prices & rules
+            Packages & rules
           </Link>
         }
       />
@@ -222,19 +223,19 @@ export default function HostingPage() {
       )}
 
       {tab === "payments" && payments && (
-        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="Payments"
-            value={String(payments.summary.payments)}
-            hint="Periods paid with these filters"
+            label="Hosting revenue"
+            value={formatPaise(payments.summary.amountPaise)}
+            hint={`${payments.summary.payments} ${payments.summary.payments === 1 ? "period" : "periods"} paid with these filters`}
             icon={<Receipt className="size-4" aria-hidden />}
             tone="bg-indigo-50 text-indigo-600"
           />
           <StatCard
-            label="Connects charged"
-            value={formatConnectsNumber(payments.summary.connects)}
-            hint="Hosting debits from wallets"
-            icon={<Coins className="size-4" aria-hidden />}
+            label="Paid online"
+            value={formatPaise(payments.summary.onlinePaise)}
+            hint="Through Razorpay"
+            icon={<CreditCard className="size-4" aria-hidden />}
             tone="bg-brand-soft text-brand"
           />
           <StatCard
@@ -243,6 +244,13 @@ export default function HostingPage() {
             hint="Cash, UPI and bank transfers recorded by admins"
             icon={<IndianRupee className="size-4" aria-hidden />}
             tone="bg-emerald-50 text-emerald-600"
+          />
+          <StatCard
+            label="Paid with connects"
+            value={formatPaise(payments.summary.connectsPaise)}
+            hint={formatConnects(payments.summary.connects)}
+            icon={<Coins className="size-4" aria-hidden />}
+            tone="bg-amber-50 text-amber-600"
           />
         </div>
       )}
@@ -318,8 +326,8 @@ export default function HostingPage() {
                         </Link>
                       </td>
                       <td className="px-5 py-3 text-ink-body">
-                        {CYCLE_LABELS[subscription.cycle]}
-                        {!subscription.autoRenew && <span className="block text-xs text-ink-muted">Auto-renew off</span>}
+                        {planLabel(subscription)}
+                        {subscription.autoRenew && <span className="block text-xs text-ink-muted">Auto-renew on</span>}
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 text-ink-body">
                         {subscription.currentPeriodStart && subscription.currentPeriodEnd
@@ -331,8 +339,8 @@ export default function HostingPage() {
                         <HostingStatusChip subscription={subscription} />
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 text-right">
-                        <p className="font-semibold text-ink">{price.amount.toLocaleString("en-IN")}</p>
-                        <p className="text-xs text-ink-muted">{PRICE_SOURCE_LABELS[price.source]}</p>
+                        <p className="font-semibold text-ink">{formatPlanPrice(price)}</p>
+                        {subscription.isCustomPackage && <p className="text-xs text-brand">Custom price</p>}
                       </td>
                     </tr>
                   );
@@ -348,46 +356,48 @@ export default function HostingPage() {
                   <tr>
                     <th className="px-5 py-3 font-medium">Website</th>
                     <th className="px-5 py-3 font-medium">Period</th>
-                    <th className="px-5 py-3 text-right font-medium">Connects</th>
+                    <th className="px-5 py-3 text-right font-medium">Amount</th>
                     <th className="px-5 py-3 font-medium">Paid by</th>
-                    <th className="px-5 py-3 text-right font-medium">Collected</th>
                     <th className="px-5 py-3 font-medium">Paid on</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {payments.items.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-canvas/40">
-                      <td className="px-5 py-3">
-                        {payment.websiteId ? (
-                          <Link to={`/websites/${payment.websiteId}?tab=hosting`} className="font-medium text-ink hover:text-brand">
-                            {payment.websiteName}
+                  {payments.items.map((payment) => {
+                    const { amount, detail } = paymentAmountLabel(payment);
+                    return (
+                      <tr key={payment.id} className="hover:bg-canvas/40">
+                        <td className="px-5 py-3">
+                          {payment.websiteId ? (
+                            <Link to={`/websites/${payment.websiteId}?tab=hosting`} className="font-medium text-ink hover:text-brand">
+                              {payment.websiteName}
+                            </Link>
+                          ) : (
+                            <span className="font-medium text-ink">{payment.websiteName}</span>
+                          )}
+                          <Link to={`/admin/clients/${payment.client.id}`} className="block text-xs text-ink-muted hover:text-brand">
+                            {payment.client.businessName}
                           </Link>
-                        ) : (
-                          <span className="font-medium text-ink">{payment.websiteName}</span>
-                        )}
-                        <Link to={`/admin/clients/${payment.client.id}`} className="block text-xs text-ink-muted hover:text-brand">
-                          {payment.client.businessName}
-                        </Link>
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-ink-body">
-                        {formatPeriod(payment.periodStart, payment.periodEnd)}
-                        <span className="block text-xs text-ink-muted">{CYCLE_LABELS[payment.cycle]}</span>
-                      </td>
-                      <td className="px-5 py-3 text-right font-semibold text-ink">{payment.amount.toLocaleString("en-IN")}</td>
-                      <td className="px-5 py-3 text-ink-body">
-                        {PAYER_LABELS[payment.paidBy]} · {METHOD_LABELS[payment.method]}
-                        {(payment.reference || payment.recordedBy) && (
-                          <span className="block text-xs text-ink-muted">
-                            {[payment.reference && `Ref ${payment.reference}`, payment.recordedBy?.fullName].filter(Boolean).join(" · ")}
-                          </span>
-                        )}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-right text-ink-body">
-                        {payment.collectedPaise === null ? "—" : formatPaise(payment.collectedPaise)}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-xs text-ink-body">{formatBillingDate(payment.createdAt)}</td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3 text-ink-body">
+                          {formatPeriod(payment.periodStart, payment.periodEnd)}
+                          <span className="block text-xs text-ink-muted">{planLabel(payment)}</span>
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3 text-right">
+                          <p className="font-semibold text-ink">{amount}</p>
+                          {detail && <p className="text-xs text-ink-muted">{detail}</p>}
+                        </td>
+                        <td className="px-5 py-3 text-ink-body">
+                          {PAYER_LABELS[payment.paidBy]} · {METHOD_LABELS[payment.method]}
+                          {(payment.reference || payment.recordedBy) && (
+                            <span className="block text-xs text-ink-muted">
+                              {[payment.reference && `Ref ${payment.reference}`, payment.recordedBy?.fullName].filter(Boolean).join(" · ")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3 text-xs text-ink-body">{formatBillingDate(payment.createdAt)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

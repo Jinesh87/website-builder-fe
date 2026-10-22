@@ -46,6 +46,7 @@ const AiUsageClientPage = lazy(() => import("./pages/admin/AiUsageClientPage.tsx
 const TransactionsPage = lazy(() => import("./pages/admin/TransactionsPage.tsx"));
 const HostingPage = lazy(() => import("./pages/admin/HostingPage.tsx"));
 const SectionLibraryPage = lazy(() => import("./pages/admin/SectionLibraryPage.tsx"));
+const TemplatesAdminPage = lazy(() => import("./pages/admin/TemplatesPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage.tsx"));
 
 function PageLoading() {
@@ -115,6 +116,7 @@ export default function App() {
                 <Route path="ai-usage/:clientId" element={<AiUsageClientPage />} />
                 <Route path="transactions" element={<TransactionsPage />} />
                 <Route path="hosting" element={<HostingPage />} />
+                <Route path="templates" element={<TemplatesAdminPage />} />
                 <Route path="sections" element={<SectionLibraryPage />} />
                 <Route path="media" element={<MediaLibraryPage />} />
                 <Route path="settings" element={<SettingsPage />} />
