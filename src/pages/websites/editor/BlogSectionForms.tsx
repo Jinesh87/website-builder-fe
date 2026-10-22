@@ -9,6 +9,7 @@ import {
 } from "../../../site-kit/index.ts";
 import {
   CheckboxField,
+  CommaListField,
   FormGroup,
   ImageField,
   ItemList,
@@ -152,15 +153,6 @@ export function BlogForm({
     onChange({ ...data, [key]: value });
   };
 
-  const categoriesText = (data.categories || []).join(", ");
-  const handleCategoriesChange = (text: string) => {
-    const list = text
-      .split(",")
-      .map((c) => c.trim())
-      .filter(Boolean);
-    update("categories", list.length > 0 ? list : ["All"]);
-  };
-
   return (
     <>
       <FormGroup title="Header & Description">
@@ -184,10 +176,10 @@ export function BlogForm({
       </FormGroup>
 
       <FormGroup title="Filter Categories">
-        <TextField
+        <CommaListField
           label="Categories (comma separated)"
-          value={categoriesText}
-          onChange={handleCategoriesChange}
+          value={data.categories}
+          onChange={(categories) => update("categories", categories)}
           placeholder="All, Design, Tips, Architecture, Growth"
         />
         <SelectField
@@ -304,15 +296,6 @@ export function BlogDetailForm({
     value: BlogDetailData[K],
   ) => {
     onChange({ ...data, [key]: value });
-  };
-
-  const tagsText = (data.tags || []).join(", ");
-  const handleTagsChange = (text: string) => {
-    const list = text
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-    update("tags", list);
   };
 
   const contentSections = data.content || [];
@@ -465,10 +448,10 @@ export function BlogDetailForm({
       </FormGroup>
 
       <FormGroup title="Tags & Display Toggles">
-        <TextField
+        <CommaListField
           label="Tags (comma separated)"
-          value={tagsText}
-          onChange={handleTagsChange}
+          value={data.tags}
+          onChange={(tags) => update("tags", tags)}
           placeholder="Architecture, Design Systems, Modernism"
         />
         <CheckboxField

@@ -1,4 +1,5 @@
 import { useRef, useState, useSyncExternalStore, type ChangeEvent, type FormEvent } from "react";
+import { errorMessage, request } from "../../api/http.ts";
 import Icon, { type IconName } from "./Icon.tsx";
 import { prefersReducedMotion, useMarketing } from "./marketing-context.ts";
 
@@ -9,8 +10,8 @@ const TOPICS: [topic: string, tile: string, icon: IconName, title: string, text:
     "Plans and pricing",
     "c0",
     "chat",
-    "Sales",
-    "Plans, pricing and the Agency plan for many websites.",
+    "Sales & Inquiries",
+    "Plans, pricing and custom sites. Direct to bytezorasales@gmail.com",
     "Message sales →",
   ],
   ["Technical support", "c2", "help", "Support", "Help with your account, editor or publishing.", "Get support →"],
@@ -45,6 +46,8 @@ export default function ContactPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState<ContactErrors>({});
   const [sent, setSent] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const update =
     (key: keyof ContactForm) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -55,8 +58,9 @@ export default function ContactPage() {
       ? { "aria-invalid": Boolean(errors[key]), "aria-describedby": errors[key] ? `${fieldId[key]}-err` : undefined }
       : {};
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSubmitError("");
     const next: ContactErrors = {
       name: form.name.trim() ? "" : "Enter your name.",
       email: EMAIL.test(form.email.trim()) ? "" : "Enter a valid email, like name@business.com.",
@@ -68,11 +72,40 @@ export default function ContactPage() {
       document.getElementById(fieldId[firstInvalid])?.focus();
       return;
     }
-    setSent(
-      `Thanks, ${form.name.trim().split(" ")[0]}. Your message was sent. We'll reply to ${form.email.trim()}. (Prototype: nothing was actually sent.)`,
-    );
-    setForm(EMPTY_FORM);
-    setErrors({});
+
+    try {
+      setSubmitting(true);
+      const { emailDispatched } = await request<{ ok: boolean; message: string; emailDispatched: boolean }>("/contact", {
+        method: "POST",
+        body: {
+          name: form.name.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim() || undefined,
+          subject: form.subject || "General question",
+          message: form.message.trim(),
+        },
+      });
+
+      const firstName = form.name.trim().split(" ")[0];
+      const replyNote = `We will get back to you at ${form.email.trim()} within 2–4 hours.`;
+      setSent(
+        emailDispatched
+          ? `Thank you, ${firstName}! Your inquiry was delivered directly to bytezorasales@gmail.com. ${replyNote}`
+          : `Thank you, ${firstName}! Your inquiry has been received. ${replyNote}`,
+      );
+      toast(emailDispatched ? "Inquiry sent to bytezorasales@gmail.com" : "Inquiry received");
+      setForm(EMPTY_FORM);
+      setErrors({});
+    } catch (err: unknown) {
+      const message = errorMessage(
+        err,
+        "Failed to send your message. Please try again or reach us directly at Support@bytezoracoders.com.",
+      );
+      setSubmitError(message);
+      toast(message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function pickTopic(topic: string) {
@@ -113,13 +146,77 @@ export default function ContactPage() {
           style={{
             display: "grid",
             gridTemplateColumns: narrow ? "minmax(0,1fr)" : "minmax(0,3fr) minmax(0,2fr)",
-            gap: "32px",
-            alignItems: "start",
+            gap: "28px",
+            alignItems: "stretch",
           }}
         >
-          <div className="card" style={{ padding: "32px" }}>
-            <form ref={formRef} noValidate onSubmit={submit}>
-              <h2 style={{ fontSize: "22px" }}>Send a message</h2>
+          <div
+            className="card"
+            style={{
+              padding: narrow ? "24px 20px" : "32px",
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+            }}
+          >
+            <form
+              ref={formRef}
+              noValidate
+              onSubmit={submit}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                flex: 1,
+                justifyContent: "space-between",
+                gap: "18px",
+              }}
+            >
+              <div>
+                <h2 style={{ fontSize: "22px", margin: "0 0 6px" }}>Send a message</h2>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "10px 14px",
+                    background: "var(--accent-soft)",
+                    border: "1px solid var(--line-2)",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    color: "var(--fg)",
+                    lineHeight: 1.4,
+                    marginTop: "10px",
+                  }}
+                >
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      width: "20px",
+                      height: "20px",
+                      borderRadius: "50%",
+                      background: "var(--accent)",
+                      color: "#ffffff",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "11px",
+                      fontWeight: "bold",
+                      flexShrink: 0,
+                    }}
+                  >
+                    ✉
+                  </span>
+                  <span>
+                    Inquiries route directly to our sales inbox at{" "}
+                    <a
+                      href="mailto:bytezorasales@gmail.com"
+                      style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline" }}
+                    >
+                      bytezorasales@gmail.com
+                    </a>
+                  </span>
+                </div>
+              </div>
+
               <div className="grid g2" style={{ gap: "16px" }}>
                 <div className="fld">
                   <label htmlFor="c-name">Full name</label>
@@ -170,73 +267,264 @@ export default function ContactPage() {
                   </select>
                 </div>
               </div>
-              <div className="fld">
+
+              <div className="fld" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
                 <label htmlFor="c-msg">Message</label>
                 <textarea
                   id="c-msg"
                   className="in"
                   required
+                  rows={4}
+                  style={{ flex: 1, minHeight: "120px", resize: "vertical" }}
                   value={form.message}
                   onChange={update("message")}
                   {...invalid("message")}
                 />
                 <FieldError id="c-msg" message={errors.message} />
               </div>
+
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  gap: "12px",
+                  gap: "16px",
                   flexWrap: "wrap",
+                  marginTop: "auto",
+                  paddingTop: "6px",
                 }}
               >
-                <span className="hint">We reply within [time].</span>
-                <button className="btn p lg" type="submit">
-                  Send message
+                <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: "220px" }}>
+                  <span className="hint" style={{ fontSize: "12.5px" }}>
+                    Direct route: <strong style={{ color: "var(--fg)" }}>bytezorasales@gmail.com</strong>
+                  </span>
+                  <span className="hint" style={{ fontSize: "12px" }}>
+                    We usually reply within 2–4 hours during business days.
+                  </span>
+                </div>
+                <button
+                  className="btn p lg"
+                  type="submit"
+                  disabled={submitting}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "8px", minWidth: "150px", justifyContent: "center" }}
+                >
+                  {submitting ? (
+                    <>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          width: "14px",
+                          height: "14px",
+                          border: "2px solid currentColor",
+                          borderRightColor: "transparent",
+                          borderRadius: "50%",
+                          animation: "mk-spin 0.8s linear infinite",
+                        }}
+                      />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send message"
+                  )}
                 </button>
               </div>
-              <div className="note ok" hidden={!sent} role="status">
-                {sent}
-              </div>
+
+              {sent && (
+                <div
+                  className="note ok"
+                  role="status"
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "10px",
+                    lineHeight: "1.5",
+                  }}
+                >
+                  <span style={{ marginTop: "2px", flexShrink: 0, display: "inline-flex" }}>
+                    <Icon name="check" className="ico" />
+                  </span>
+                  <div>{sent}</div>
+                </div>
+              )}
+              {submitError && (
+                <div className="note err" role="alert">
+                  {submitError}
+                </div>
+              )}
             </form>
           </div>
-          <div className="stack" style={{ gap: "20px" }}>
-            <div className="card">
-              <h3>Contact details</h3>
-              <div>
-                <div className="hint">Email</div>
-                <div>[support@yourdomain.com]</div>
+
+          <div
+            className="card"
+            style={{
+              padding: narrow ? "24px 20px" : "32px",
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              justifyContent: "space-between",
+              gap: "18px",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  display: "inline-block",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "1px",
+                  textTransform: "uppercase",
+                  color: "var(--accent)",
+                  marginBottom: "4px",
+                }}
+              >
+                Direct Contact
               </div>
-              <div>
-                <div className="hint">Phone</div>
-                <div>[+91 00000 00000]</div>
+              <h2 style={{ fontSize: "22px", margin: "0 0 6px" }}>Contact details</h2>
+              <p className="hint" style={{ margin: 0, fontSize: "13px" }}>
+                Reach our sales &amp; support teams directly or visit our office.
+              </p>
+            </div>
+
+            {/* Sales & Inquiry Destination Box */}
+            <div
+              style={{
+                padding: "14px 16px",
+                background: "var(--accent-soft)",
+                borderRadius: "10px",
+                border: "1px solid var(--line-2)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Sales &amp; Client Inquiries
+                </span>
+                <span
+                  style={{
+                    fontSize: "10.5px",
+                    fontWeight: 700,
+                    padding: "2px 8px",
+                    borderRadius: "12px",
+                    background: "var(--accent)",
+                    color: "#ffffff",
+                    letterSpacing: "0.3px",
+                  }}
+                >
+                  Form Route
+                </span>
               </div>
-              <div>
-                <div className="hint">Office</div>
-                <div>[Address line, City, Postcode]</div>
+              <a
+                href="mailto:bytezorasales@gmail.com"
+                style={{
+                  color: "var(--fg)",
+                  fontSize: "15px",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  wordBreak: "break-all",
+                }}
+              >
+                bytezorasales@gmail.com
+              </a>
+              <span style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4 }}>
+                All contact form messages and pricing requests route directly to this inbox.
+              </span>
+            </div>
+
+            {/* Support Email */}
+            <div
+              style={{
+                padding: "12px 16px",
+                background: "var(--bg-2)",
+                borderRadius: "10px",
+                border: "1px solid var(--line)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px",
+              }}
+            >
+              <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                Customer &amp; Technical Support
+              </span>
+              <a
+                href="mailto:Support@bytezoracoders.com"
+                style={{ color: "var(--fg)", fontSize: "14px", fontWeight: 600, textDecoration: "none", wordBreak: "break-all" }}
+              >
+                Support@bytezoracoders.com
+              </a>
+            </div>
+
+            {/* Phone & Working Hours Grid */}
+            <div className="grid g2" style={{ gap: "12px" }}>
+              <div
+                style={{
+                  padding: "12px 14px",
+                  background: "var(--bg-2)",
+                  borderRadius: "10px",
+                  border: "1px solid var(--line)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                }}
+              >
+                <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase" }}>
+                  Phone
+                </span>
+                <a
+                  href="tel:+919995070483"
+                  style={{ color: "var(--fg)", fontSize: "13px", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
+                >
+                  +91 (999) 50-70483
+                </a>
               </div>
-              <div>
-                <div className="hint">Hours</div>
-                <div>[Mon–Fri, 9:00–18:00]</div>
+              <div
+                style={{
+                  padding: "12px 14px",
+                  background: "var(--bg-2)",
+                  borderRadius: "10px",
+                  border: "1px solid var(--line)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "4px",
+                }}
+              >
+                <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase" }}>
+                  Working Hours
+                </span>
+                <span style={{ color: "var(--fg)", fontSize: "13px", fontWeight: 500, whiteSpace: "nowrap" }}>
+                  Mon–Fri, 9–18 IST
+                </span>
               </div>
             </div>
-            <div className="stack" style={{ gap: "8px" }}>
-              <div className="illus">
-                <svg viewBox="0 0 400 220" role="img" aria-label="Map showing the office location">
-                  <rect width="400" height="220" fill="var(--bg-2)" />
-                  <path d="M0 70h400M0 150h400M90 0v220M220 0v220M320 0v220" stroke="var(--surface)" strokeWidth="14" />
-                  <path d="M0 110 C120 90 200 140 400 100" stroke="var(--line-2)" strokeWidth="8" fill="none" />
-                  <rect x="232" y="84" width="76" height="54" rx="4" fill="var(--accent-soft)" />
-                  <rect x="100" y="160" width="108" height="50" rx="4" fill="var(--accent-soft)" />
-                  <path
-                    d="M270 40c-16 0-28 12-28 28 0 22 28 50 28 50s28-28 28-50c0-16-12-28-28-28z"
-                    fill="var(--accent)"
-                  />
-                  <circle cx="270" cy="68" r="10" fill="var(--surface)" />
-                </svg>
+
+            {/* Location Details Box Only (No Map, Clean details) */}
+            <div
+              style={{
+                padding: "14px 16px",
+                background: "var(--bg-2)",
+                borderRadius: "10px",
+                border: "1px solid var(--line)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+                marginTop: "auto",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Office (India Headquarters)
+                </span>
+                <span style={{ fontSize: "11px", color: "var(--muted)", fontWeight: 500 }}>
+                  Ernakulam, Kerala
+                </span>
               </div>
-              <span className="hint">[Office address]. Link to your map listing here.</span>
+              <div style={{ fontSize: "14px", color: "var(--fg)", fontWeight: 600, lineHeight: 1.45 }}>
+                Ground Floor, 287/A, Ernakulam, Kerala – 682315
+              </div>
+              <span style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4 }}>
+                Registered development &amp; operations office in India.
+              </span>
             </div>
           </div>
         </div>

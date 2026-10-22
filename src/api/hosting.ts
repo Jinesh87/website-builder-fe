@@ -229,6 +229,20 @@ export const hostingApi = {
     request<HostingResponse>(`${websiteBase(websiteId)}/collect`, { method: "POST", body: input }).then((data) => data.hosting),
 };
 
+/** The platform's default hosting prices, as set in Settings → Hosting. */
+export type PublicPricing = {
+  quarterlyConnects: number;
+  yearlyConnects: number;
+  quarterlyPaise: number;
+  yearlyPaise: number;
+  reminderDays: number;
+  graceDays: number;
+};
+
+export const pricingApi = {
+  get: () => request<{ pricing: PublicPricing }>("/pricing").then((data) => data.pricing),
+};
+
 export const adminHostingApi = {
   settings: () => request<{ settings: HostingSettings }>("/admin/settings/hosting").then((data) => data.settings),
   updateSettings: (input: HostingSettingsInput) =>

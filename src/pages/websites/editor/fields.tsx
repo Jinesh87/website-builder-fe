@@ -104,6 +104,59 @@ export function TextField({
   );
 }
 
+type CommaListFieldProps = Omit<TextFieldProps, "value" | "onChange"> & {
+  value: string[] | undefined;
+  onChange: (value: string[]) => void;
+  /** Applied to each trimmed item before it is emitted (e.g. lowercasing). */
+  normalize?: (item: string) => string;
+};
+
+function parseCommaList(
+  text: string,
+  normalize?: (item: string) => string,
+): string[] {
+  return text
+    .split(",")
+    .map((item) => {
+      const trimmed = item.trim();
+      return normalize ? normalize(trimmed) : trimmed;
+    })
+    .filter(Boolean);
+}
+
+/**
+ * Text input bound to a string list. Keeps the raw text locally so separators
+ * and trailing spaces survive while typing; resyncs only on external changes.
+ */
+export function CommaListField({
+  value = [],
+  onChange,
+  normalize,
+  ...textFieldProps
+}: CommaListFieldProps) {
+  const joined = value.join(", ");
+  const [draft, setDraft] = useState(joined);
+  const [prevJoined, setPrevJoined] = useState(joined);
+
+  if (joined !== prevJoined) {
+    setPrevJoined(joined);
+    if (parseCommaList(draft, normalize).join(", ") !== joined) {
+      setDraft(joined);
+    }
+  }
+
+  return (
+    <TextField
+      {...textFieldProps}
+      value={draft}
+      onChange={(text) => {
+        setDraft(text);
+        onChange(parseCommaList(text, normalize));
+      }}
+    />
+  );
+}
+
 type TextAreaFieldProps = {
   label: string;
   value: string | undefined;

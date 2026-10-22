@@ -35,7 +35,7 @@ import {
   type LucideProps,
 } from "lucide-react";
 import AppTooltip from "../../../../components/ui/AppTooltip.tsx";
-import { LIMITS } from "../../../../pages/websites/editor/editor-state.ts";
+import { LIMITS, updatePage } from "../../../../pages/websites/editor/editor-state.ts";
 import {
   SECTION_PRESETS,
   SectionView,
@@ -49,6 +49,15 @@ import {
 import { useEditor } from "../../editor-context.ts";
 import { insertSections, useBuilderPuck } from "../../puck/puck-api.ts";
 import { getSectionType, sectionToItem } from "../../puck/adapter.ts";
+import {
+  PAGE_FOOTER_ID,
+  PAGE_HEADER_ID,
+  SITE_FOOTER_ID,
+  SITE_HEADER_ID,
+  pageChromeMode,
+  setPageChrome,
+  withSiteBrand,
+} from "../../utils/site-chrome.ts";
 import { EmptyState, PanelHeader, SearchField } from "../ui.tsx";
 
 type CategoryItem = {
@@ -209,32 +218,39 @@ const HEADER_PREVIEW_WIDTH = 1360;
 const HEADER_PREVIEW_SCALE =
   (PREVIEW_WIDTH * PREVIEW_SCALE) / HEADER_PREVIEW_WIDTH;
 
-function useInView(options?: IntersectionObserverInit) {
-  const [inView, setInView] = useState(false);
+/** Previews already rendered once; Puck remounts every drawer item after each drag, and they must not blank out. */
+const shownPreviews = new Set<string>();
+
+function useInView(key: string) {
+  const [inView, setInView] = useState(() => shownPreviews.has(key));
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el || inView) return;
 
-    if (typeof IntersectionObserver === "undefined") {
+    const show = () => {
+      shownPreviews.add(key);
       setInView(true);
+    };
+    if (typeof IntersectionObserver === "undefined") {
+      show();
       return;
     }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
-          setInView(true);
+          show();
           observer.disconnect();
         }
       },
-      { rootMargin: "300px", ...options },
+      { rootMargin: "300px" },
     );
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [inView, options]);
+  }, [inView, key]);
 
   return { ref, inView };
 }
@@ -277,7 +293,7 @@ const SectionLivePreview = memo(function SectionLivePreview({
     return s;
   }, [preset.key, isCurvedHero]);
 
-  const { ref, inView } = useInView();
+  const { ref, inView } = useInView(preset.key);
 
   return (
     <div
@@ -338,9 +354,9 @@ type PresetCardItemProps = {
 
 const PresetCardItem = memo(
   function PresetCardItem({ preset, theme, full, onAdd }: PresetCardItemProps) {
-    return (
-      <Drawer.Item name={preset.key} label={preset.label} isDragDisabled={full}>
-        {() => (
+    // Puck uses this render function as a component type, so a new function would remount the card.
+    const renderCard = useCallback(
+      () => (
           <div
             onClick={() => onAdd(preset)}
             role="button"
@@ -376,7 +392,16 @@ const PresetCardItem = memo(
               </div>
             </div>
           </div>
-        )}
+      ),
+      [preset, theme, onAdd],
+    );
+    return (
+      <Drawer.Item
+        name={preset.key}
+        label={preset.label}
+        isDragDisabled={full && preset.type !== "header" && preset.type !== "footer"}
+      >
+        {renderCard}
       </Drawer.Item>
     );
   },
@@ -469,7 +494,7 @@ const CategoryRail = memo(function CategoryRail({
 });
 
 export default function AddPanel() {
-  const { notify, draft } = useEditor();
+  const { notify, draft, page, editDraft } = useEditor();
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const selectedIndex = useBuilderPuck(
     (state) => state.appState.ui.itemSelector?.index ?? null,
@@ -506,49 +531,44 @@ export default function AddPanel() {
   insertAtRef.current = insertAt;
   const fullRef = useRef(full);
   fullRef.current = full;
+  // Read at click time so content edits don't give every preset card a new handler.
+  const latestRef = useRef({ draft, page });
+  latestRef.current = { draft, page };
 
   const handleAdd = useCallback(
     (preset: SectionPreset) => {
-      const created = preset.create();
+      const { draft: latestDraft, page: latestPage } = latestRef.current;
+      const created = withSiteBrand(preset.create(), latestDraft);
       if (fullRef.current && created.type !== "header" && created.type !== "footer") return;
-      if (created.type === "header") {
-        const headerData = created.data as unknown as Record<string, unknown>;
-        if (draft.header.logo && !headerData.logo) {
-          headerData.logo = draft.header.logo;
-          headerData.logoDisplay = draft.header.logoDisplay ?? "logo_only";
-        }
-        if (draft.header.siteName) {
-          headerData.siteName = draft.header.siteName;
-        }
-      } else if (created.type === "footer") {
-        const footerData = created.data as unknown as Record<string, unknown>;
-        if (draft.footer.logo && !footerData.logo) {
-          footerData.logo = draft.footer.logo;
-          footerData.logoDisplay = draft.footer.logoDisplay ?? "logo_only";
-        }
-        if (draft.footer.siteName) {
-          footerData.siteName = draft.footer.siteName;
-        }
-      }
       if (created.type === "header" || created.type === "footer") {
-        // One header and one footer are shared by every page: a new design replaces the current one.
-        const item = sectionToItem(created);
+        // A new design replaces the header/footer this page shows: the site-wide one or the page's own.
+        const type = created.type;
+        const mode = pageChromeMode(latestPage.sections, type);
+        if (mode === "none") {
+          editDraft((current) =>
+            updatePage(current, latestPage.id, (p) => ({ ...p, sections: setPageChrome(p.sections, type, "page", current, created) })),
+          );
+          notify(`${preset.label} added to this page`);
+          return;
+        }
+        const ids = mode === "site" ? { header: SITE_HEADER_ID, footer: SITE_FOOTER_ID } : { header: PAGE_HEADER_ID, footer: PAGE_FOOTER_ID };
+        const item = sectionToItem({ ...created, id: ids[type] });
         dispatch({
           type: "setData",
           data: (previous) => {
             const content = previous.content ?? [];
-            const index = content.findIndex((existing) => getSectionType(existing.type) === created.type);
+            const index = content.findIndex((existing) => getSectionType(existing.type) === type);
             if (index !== -1) return { content: content.map((existing, i) => (i === index ? item : existing)) };
-            return { content: created.type === "header" ? [item, ...content] : [...content, item] };
+            return { content: type === "header" ? [item, ...content] : [...content, item] };
           },
         });
-        notify(`${preset.label} now shows on every page`);
+        notify(mode === "site" ? `${preset.label} now shows on every page using the site ${type}` : `${preset.label} now shows on this page`);
         return;
       }
       insertSections(dispatch, [created], insertAtRef.current);
       notify(`${preset.label} added`);
     },
-    [dispatch, notify, draft.header, draft.footer],
+    [dispatch, notify, editDraft],
   );
 
   const handleSelectCategory = useCallback((id: string) => {

@@ -87,7 +87,7 @@ export default function HeroGalleryBanner() {
         <div className="gcopy">
           <span className="eyebrow">Template gallery</span>
           <h1>
-            Find the right website <span>for your business</span>
+            Build Your Website Free, <span>Pay Only for Hosting</span>
           </h1>
           <p className="lead">
             <b>{templateCount}</b> professionally designed templates for every kind of business. Open any one to see every page on
