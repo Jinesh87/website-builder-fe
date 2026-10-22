@@ -42,3 +42,11 @@ export function yearlySavingPercent(pricing: PublicPricing | null): number {
   if (!quarterly || !yearly) return 0;
   return Math.max(0, Math.round((1 - yearly.connects / (quarterly.connects * 4)) * 100));
 }
+
+/** Whole-percent extra that four quarters cost over one year; 0 when quarterly isn't dearer. */
+export function quarterlyPremiumPercent(pricing: PublicPricing | null): number {
+  const quarterly = cyclePrice(pricing, "QUARTERLY");
+  const yearly = cyclePrice(pricing, "YEARLY");
+  if (!quarterly || !yearly) return 0;
+  return Math.max(0, Math.round(((quarterly.connects * 4) / yearly.connects - 1) * 100));
+}

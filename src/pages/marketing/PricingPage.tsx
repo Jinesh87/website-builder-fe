@@ -3,7 +3,13 @@ import type { BillingCycle } from "../../api/hosting.ts";
 import { formatConnects, formatPaise } from "../../api/wallet.ts";
 import { PLANS } from "./data.ts";
 import Icon from "./Icon.tsx";
-import { cyclePrice, usePublicPricing, yearlySavingPercent, type CyclePrice } from "./use-pricing.ts";
+import {
+  cyclePrice,
+  quarterlyPremiumPercent,
+  usePublicPricing,
+  yearlySavingPercent,
+  type CyclePrice,
+} from "./use-pricing.ts";
 
 const CYCLE_UNIT: Record<BillingCycle, string> = { QUARTERLY: "/ 3 months", YEARLY: "/ year" };
 
@@ -34,6 +40,7 @@ export default function PricingPage() {
   const { pricing, failed } = usePublicPricing();
   const loading = !pricing && !failed;
   const saving = yearlySavingPercent(pricing);
+  const premium = quarterlyPremiumPercent(pricing);
   const quarterly = cyclePrice(pricing, "QUARTERLY");
   const yearly = cyclePrice(pricing, "YEARLY");
 
@@ -54,7 +61,13 @@ export default function PricingPage() {
             {PLANS.map((plan) => {
               const price = plan.cycle && cyclePrice(pricing, plan.cycle);
               const badge =
-                plan.cycle === "YEARLY" && saving > 0 ? `Save ${saving}%` : plan.featured ? "Most popular" : null;
+                plan.cycle === "YEARLY" && saving > 0
+                  ? `Save ${saving}%`
+                  : plan.cycle === "QUARTERLY" && premium > 0
+                    ? `+${premium}% vs yearly`
+                    : plan.featured
+                      ? "Most popular"
+                      : null;
               return (
                 <div key={plan.name} className={plan.featured ? "card plan feat" : "card plan"}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
