@@ -245,9 +245,7 @@ export function MarketingFooter() {
             <span>
               Powered by{" "}
               <a
-                href="https://bytezoracoders.com"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="mailto:Support@bytezoracoders.com"
                 className="brand-link"
                 title="Support: Support@bytezoracoders.com"
               >

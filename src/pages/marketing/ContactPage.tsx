@@ -11,7 +11,7 @@ const TOPICS: [topic: string, tile: string, icon: IconName, title: string, text:
     "c0",
     "chat",
     "Sales & Inquiries",
-    "Plans, pricing and custom sites. Direct to bytezorasales@gmail.com",
+    "Plans, pricing and custom sites. Direct to support@bytezoracoders.com",
     "Message sales →",
   ],
   ["Technical support", "c2", "help", "Support", "Help with your account, editor or publishing.", "Get support →"],
@@ -90,10 +90,10 @@ export default function ContactPage() {
       const replyNote = `We will get back to you at ${form.email.trim()} within 2–4 hours.`;
       setSent(
         emailDispatched
-          ? `Thank you, ${firstName}! Your inquiry was delivered directly to bytezorasales@gmail.com. ${replyNote}`
+          ? `Thank you, ${firstName}! Your inquiry was delivered directly to support@bytezoracoders.com. ${replyNote}`
           : `Thank you, ${firstName}! Your inquiry has been received. ${replyNote}`,
       );
-      toast(emailDispatched ? "Inquiry sent to bytezorasales@gmail.com" : "Inquiry received");
+      toast(emailDispatched ? "Inquiry sent to support@bytezoracoders.com" : "Inquiry received");
       setForm(EMPTY_FORM);
       setErrors({});
     } catch (err: unknown) {
@@ -208,10 +208,10 @@ export default function ContactPage() {
                   <span>
                     Inquiries route directly to our sales inbox at{" "}
                     <a
-                      href="mailto:bytezorasales@gmail.com"
+                      href="mailto:support@bytezoracoders.com"
                       style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline" }}
                     >
-                      bytezorasales@gmail.com
+                      support@bytezoracoders.com
                     </a>
                   </span>
                 </div>
@@ -296,7 +296,7 @@ export default function ContactPage() {
               >
                 <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: "220px" }}>
                   <span className="hint" style={{ fontSize: "12.5px" }}>
-                    Direct route: <strong style={{ color: "var(--fg)" }}>bytezorasales@gmail.com</strong>
+                    Direct route: <strong style={{ color: "var(--fg)" }}>support@bytezoracoders.com</strong>
                   </span>
                   <span className="hint" style={{ fontSize: "12px" }}>
                     We usually reply within 2–4 hours during business days.
@@ -416,7 +416,7 @@ export default function ContactPage() {
                 </span>
               </div>
               <a
-                href="mailto:bytezorasales@gmail.com"
+                href="mailto:support@bytezoracoders.com"
                 style={{
                   color: "var(--fg)",
                   fontSize: "15px",
@@ -425,7 +425,7 @@ export default function ContactPage() {
                   wordBreak: "break-all",
                 }}
               >
-                bytezorasales@gmail.com
+                support@bytezoracoders.com
               </a>
               <span style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4 }}>
                 All contact form messages and pricing requests route directly to this inbox.
