@@ -13,6 +13,8 @@ type WebsitePriceEditorProps = {
   onCancel?: () => void;
   /** Cycle for the plan created when the website has none yet. */
   cycle?: BillingCycle;
+  /** When false, hides the Global default option and only edits this website's price. */
+  allowGlobal?: boolean;
 };
 
 type Prices = { quarterlyPrice: number | null; yearlyPrice: number | null };
@@ -26,7 +28,13 @@ function toText(prices: Prices) {
  * Super Admin: sets this website's own price, or the global default. A website price left empty
  * inherits (client price, then global); the global default always has a value.
  */
-export default function WebsitePriceEditor({ hosting, onSaved, onCancel, cycle = "QUARTERLY" }: WebsitePriceEditorProps) {
+export default function WebsitePriceEditor({
+  hosting,
+  onSaved,
+  onCancel,
+  cycle = "QUARTERLY",
+  allowGlobal = true,
+}: WebsitePriceEditorProps) {
   const { priceLevels, connectsPerRupee, website } = hosting;
   const [scope, setScope] = useState<PriceScope>("WEBSITE");
   const [values, setValues] = useState(() => toText(priceLevels.website));
@@ -110,26 +118,28 @@ export default function WebsitePriceEditor({ hosting, onSaved, onCancel, cycle =
 
   return (
     <div className="flex flex-col gap-3">
-      <div role="radiogroup" aria-label="Apply price to" className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-surface p-1">
-        {scopes.map((option) => {
-          const selected = option.id === scope;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => setScope(option.id)}
-              disabled={saving}
-              className={`truncate rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-                selected ? "bg-ink text-white shadow-xs" : "text-ink-muted hover:bg-canvas hover:text-ink"
-              }`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
+      {allowGlobal && (
+        <div role="radiogroup" aria-label="Apply price to" className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-surface p-1">
+          {scopes.map((option) => {
+            const selected = option.id === scope;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setScope(option.id)}
+                disabled={saving}
+                className={`truncate rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                  selected ? "bg-ink text-white shadow-xs" : "text-ink-muted hover:bg-canvas hover:text-ink"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {field("QUARTERLY")}

@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { CATS, CAT_LABEL, STYLES, TPLS } from "./data.ts";
+import { CATS, CAT_LABEL, STYLES } from "./data.ts";
 import { useMarketing } from "./marketing-context.ts";
+import PlatformTemplateCard from "./PlatformTemplateCard.tsx";
 import TemplateCard from "./TemplateCard.tsx";
+import { useGalleryTemplates } from "./use-gallery-templates.ts";
 import "./templates-gallery.css";
 
 export default function TemplatesPage() {
   const location = useLocation();
   const { shortlist, toggleShortlist } = useMarketing();
+  const templates = useGalleryTemplates();
 
   const [selectedCat, setSelectedCat] = useState<string>(() => {
     const stateCat = (location.state as { cat?: string } | null)?.cat;
@@ -17,39 +20,38 @@ export default function TemplatesPage() {
   const [sortOrder, setSortOrder] = useState<"pop" | "az" | "new">("pop");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Category counts
+  // Known categories first, then any other category a platform template uses
+  const categories = useMemo(() => {
+    const known = new Set<string>(CATS);
+    const extra = [...new Set(templates.map((t) => t.category))].filter((c) => !known.has(c));
+    return [...CATS, ...extra];
+  }, [templates]);
+
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { All: TPLS.length };
-    for (const c of CATS) {
-      if (c === "All") continue;
-      counts[c] = TPLS.filter((t) => t.c === c).length;
-    }
+    const counts: Record<string, number> = { All: templates.length };
+    for (const t of templates) counts[t.category] = (counts[t.category] ?? 0) + 1;
     return counts;
-  }, []);
+  }, [templates]);
 
   // Filtered and sorted templates list
-  const filteredIndices = useMemo(() => {
+  const filteredTemplates = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    const result = TPLS.map((_, i) => i).filter((i) => {
-      const t = TPLS[i];
-      if (selectedCat !== "All" && t.c !== selectedCat) return false;
+    const result = templates.filter((t) => {
+      if (selectedCat !== "All" && t.category !== selectedCat) return false;
       if (styleFilter && t.style !== styleFilter) return false;
-      if (query) {
-        const searchable = [t.id, t.n, t.type, t.style, t.c, t.biz].filter(Boolean).join(" ").toLowerCase();
-        if (!searchable.includes(query)) return false;
-      }
+      if (query && !t.searchText.includes(query)) return false;
       return true;
     });
 
     if (sortOrder === "az") {
-      result.sort((a, b) => TPLS[a].n.localeCompare(TPLS[b].n));
+      result.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortOrder === "new") {
       result.reverse();
     }
     // "pop" maintains the default curated order where row 1 and row 2 match the reference UI!
 
     return result;
-  }, [selectedCat, styleFilter, sortOrder, searchTerm]);
+  }, [templates, selectedCat, styleFilter, sortOrder, searchTerm]);
 
   return (
     <div className="gallery-view" data-view="templates">
@@ -60,7 +62,7 @@ export default function TemplatesPage() {
 
           {/* Category Chips with Counts */}
           <div className="gallery-chips" role="group" aria-label="Filter templates by category">
-            {CATS.map((c) => {
+            {categories.map((c) => {
               const isAll = c === "All";
               const label = isAll ? "All templates" : CAT_LABEL[c] ?? c;
               const count = categoryCounts[c] ?? 0;
@@ -85,7 +87,7 @@ export default function TemplatesPage() {
         {/* Filter Controls Bar (.gbar) */}
         <div className="gallery-bar">
           <span className="gallery-count" aria-live="polite">
-            {filteredIndices.length} {filteredIndices.length === 1 ? "template" : "templates"}
+            {filteredTemplates.length} {filteredTemplates.length === 1 ? "template" : "templates"}
             {selectedCat !== "All" ? ` in ${CAT_LABEL[selectedCat] ?? selectedCat}` : ""}
             {styleFilter ? ` · ${styleFilter} style` : ""}
             {searchTerm.trim() ? ` · matching "${searchTerm.trim()}"` : ""}
@@ -182,15 +184,19 @@ export default function TemplatesPage() {
 
         {/* 3-Column Template Grid */}
         <div className="gallery-grid">
-          {filteredIndices.length > 0 ? (
-            filteredIndices.map((index) => (
-              <TemplateCard
-                key={index}
-                index={index}
-                isShortlisted={shortlist.includes(index)}
-                onToggleShortlist={toggleShortlist}
-              />
-            ))
+          {filteredTemplates.length > 0 ? (
+            filteredTemplates.map((t) =>
+              t.kind === "curated" ? (
+                <TemplateCard
+                  key={t.key}
+                  index={t.index}
+                  isShortlisted={shortlist.includes(t.index)}
+                  onToggleShortlist={toggleShortlist}
+                />
+              ) : (
+                <PlatformTemplateCard key={t.key} template={t.template} />
+              ),
+            )
           ) : (
             <div className="gallery-empty">
               <p>No templates match your selected filters.</p>

@@ -34,6 +34,7 @@ import {
 import {
   CheckboxField,
   ColorField,
+  CommaListField,
   FormGroup,
   ImageField,
   ItemList,
@@ -1017,9 +1018,9 @@ export function FooterForm({
           onChange={(enabled) => updatePaymentMethods({ enabled })}
         />
         {paymentMethods.enabled !== false && (
-          <TextField
+          <CommaListField
             label="Payment badges (comma separated)"
-            value={(
+            value={
               paymentMethods.methods ?? [
                 "paypal",
                 "amex",
@@ -1027,15 +1028,9 @@ export function FooterForm({
                 "mastercard",
                 "visa",
               ]
-            ).join(", ")}
-            onChange={(val) =>
-              updatePaymentMethods({
-                methods: val
-                  .split(",")
-                  .map((s) => s.trim().toLowerCase())
-                  .filter(Boolean),
-              })
             }
+            normalize={(method) => method.toLowerCase()}
+            onChange={(methods) => updatePaymentMethods({ methods })}
             hint="Supported: paypal, amex, discover, mastercard, visa, applepay"
           />
         )}

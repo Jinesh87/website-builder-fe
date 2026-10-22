@@ -5,7 +5,7 @@ import { hostingApi, type WebsiteHosting } from "../../../api/hosting.ts";
 import { ApiError, errorMessage } from "../../../api/http.ts";
 import { websitesApi, type WebsiteDetail, type WebsiteVersion } from "../../../api/websites.ts";
 import HostingCheckoutModal from "../../../components/hosting/HostingCheckoutModal.tsx";
-import HostingRequiredCard from "../../../components/hosting/HostingRequiredCard.tsx";
+import HostingRequiredCard, { type SelectedHostingOption } from "../../../components/hosting/HostingRequiredCard.tsx";
 import { hostingBlocksPublish } from "../../../components/hosting/hosting-labels.tsx";
 import FormAlert from "../../../components/ui/FormAlert.tsx";
 import PublishSeoAudit from "../../../components/websites/PublishSeoAudit.tsx";
@@ -28,6 +28,7 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
   const [versions, setVersions] = useState<WebsiteVersion[] | null>(null);
   const [hosting, setHosting] = useState<WebsiteHosting | null>(null);
   const [hostingLoaded, setHostingLoaded] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<SelectedHostingOption>("QUARTERLY");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
@@ -43,7 +44,14 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
       .catch(() => !cancelled && setVersions([]));
     hostingApi
       .get(website.id)
-      .then((loaded) => !cancelled && setHosting(loaded))
+      .then((loaded) => {
+        if (!cancelled) {
+          setHosting(loaded);
+          if (loaded?.subscription?.cycle) {
+            setSelectedPlan(loaded.subscription.cycle);
+          }
+        }
+      })
       .catch(() => !cancelled && setHosting(null))
       .finally(() => !cancelled && setHostingLoaded(true));
     return () => {
@@ -93,7 +101,17 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
             </Modal.Header>
             <Modal.Body>
               <div className="flex flex-col gap-4 text-sm text-ink-body">
-                {needsPlan && hosting && <HostingRequiredCard hosting={hosting} isAdmin={isAdmin} />}
+                {needsPlan && hosting && (
+                  <HostingRequiredCard
+                    hosting={hosting}
+                    isAdmin={isAdmin}
+                    selectedOption={selectedPlan}
+                    onSelect={(option) => {
+                      setSelectedPlan(option);
+                      setCheckoutOpen(true);
+                    }}
+                  />
+                )}
 
                 <p>
                   A new version is created from your saved draft and goes live at{" "}
@@ -162,6 +180,8 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
           onClose={() => setCheckoutOpen(false)}
           hosting={hosting}
           isAdmin={isAdmin}
+          initialCycle={selectedPlan === "CUSTOM" ? (hosting.subscription?.cycle ?? "QUARTERLY") : selectedPlan}
+          initialEditingPrice={selectedPlan === "CUSTOM"}
           onPaid={handlePaid}
           onHostingChange={setHosting}
           title="Choose a hosting plan to publish"

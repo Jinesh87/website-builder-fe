@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { TPLS } from "./data.ts";
+import { formatConnects, formatPaise } from "../../api/wallet.ts";
+import { PLANS, TPLS } from "./data.ts";
 import Icon from "./Icon.tsx";
 import { prefersReducedMotion } from "./marketing-context.ts";
 import { MediaTile, TemplateFrame, type SitePart } from "./MiniSite.tsx";
 import TemplateCard from "./TemplateCard.tsx";
 import HeroGalleryBanner from "./HeroGalleryBanner.tsx";
+import { cyclePrice, usePublicPricing } from "./use-pricing.ts";
 
 
 
@@ -110,6 +112,9 @@ export default function HomePage() {
   const activeCollection = SHOWCASE_COLLECTIONS.find((c) => c.id === showcaseTab) ?? SHOWCASE_COLLECTIONS[0];
   const ai = useAiDemo();
   const { run: runAi } = ai;
+  const { pricing } = usePublicPricing();
+  const yearly = cyclePrice(pricing, "YEARLY");
+  const yearlyPrice = yearly ? `${formatPaise(yearly.paise)} / year` : "See pricing";
   const aiStage = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -628,7 +633,7 @@ export default function HomePage() {
                   <td>Cost</td>
                   <td>Project fee</td>
                   <td>Your time</td>
-                  <td className="us">[Plan price] / month</td>
+                  <td className="us">{yearlyPrice}</td>
                 </tr>
               </tbody>
             </table>
@@ -642,19 +647,19 @@ export default function HomePage() {
               <div className="eyebrow plain" style={{ color: "var(--on-accent)", opacity: ".85" }}>
                 Pricing
               </div>
-              <h2>Plans for one website or many</h2>
-              <p>Starter, Business and Agency. Start free and upgrade when you are ready. [Confirm trial details.]</p>
+              <h2>Simple hosting plans</h2>
+              <p>Pay quarterly or yearly with connects, or ask us for a custom plan.</p>
             </div>
             <div className="pt-plans">
-              <span>
-                <b>Starter</b>[Price]/mo
-              </span>
-              <span className="hot">
-                <b>Business</b>[Price]/mo
-              </span>
-              <span>
-                <b>Agency</b>[Price]/mo
-              </span>
+              {PLANS.map((plan) => {
+                const price = plan.cycle && cyclePrice(pricing, plan.cycle);
+                return (
+                  <span key={plan.name} className={plan.featured ? "hot" : undefined}>
+                    <b>{plan.name}</b>
+                    {price && `${formatConnects(price.connects)} (${formatPaise(price.paise)})`}
+                  </span>
+                );
+              })}
             </div>
             <Link to="/pricing" className="btn lg">
               See pricing

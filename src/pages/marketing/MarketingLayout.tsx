@@ -4,7 +4,7 @@ import { TPLS } from "./data.ts";
 import { MarketingContext, type MarketingContextValue } from "./marketing-context.ts";
 import { MiniSite, TemplateFrame } from "./MiniSite.tsx";
 import Tabs from "./Tabs.tsx";
-import { LayoutTemplate } from "lucide-react";
+import { LayoutTemplate, Mail, Phone } from "lucide-react";
 import { env } from "../../config/env.ts";
 import "./marketing.css";
 
@@ -142,12 +142,48 @@ export function MarketingHeader({
   );
 }
 
+function LinkedInIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.64 1.64 0 1 0-1.64-1.64 1.64 1.64 0 0 0 1.64 1.64m1.39 9.74V9.93H5.07v8.57z" />
+    </svg>
+  );
+}
+
+function GmailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
 export function MarketingFooter() {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer>
       <div className="wrap">
-        <div className="cols4">
-          <div className="col" style={{ maxWidth: "320px" }}>
+        <div className="cols5">
+          <div className="col" style={{ maxWidth: "300px" }}>
             <Link to="/" className="brand" aria-label={`${env.appName} home`} style={{ color: "#FFFFFF" }}>
               <span className="brand-mark" aria-hidden="true">
                 <LayoutTemplate className="brand-mark-icon" aria-hidden="true" />
@@ -155,6 +191,14 @@ export function MarketingFooter() {
               <span className="brand-name">{env.appName}</span>
             </Link>
             <p style={{ fontSize: "14px" }}>Build and publish your business website by hand or with AI.</p>
+            <a
+              href="mailto:Support@bytezoracoders.com"
+              className="foot-email-badge"
+              title="Send an email to Support"
+            >
+              <Mail style={{ width: "14px", height: "14px" }} aria-hidden="true" />
+              <span>Support@bytezoracoders.com</span>
+            </a>
           </div>
           <div className="col">
             <h4>Product</h4>
@@ -174,10 +218,81 @@ export function MarketingFooter() {
             <Link to="/legal?doc=terms">Terms of Service</Link>
             <Link to="/legal?doc=privacy">Privacy Policy</Link>
           </div>
+          <div className="col contact-col">
+            <h4>Contact Us</h4>
+            <div className="foot-contact-block">
+              <span className="foot-contact-title">India Headquarters</span>
+              <p className="foot-contact-address">
+                Ground Floor, 287/A, Ernakulam,<br />
+                Kerala – 682315
+              </p>
+              <a href="tel:+919995070483" className="foot-contact-link">
+                <Phone style={{ width: "13px", height: "13px" }} aria-hidden="true" />
+                <span>+91 (999) 50-70483</span>
+              </a>
+              <a href="mailto:Support@bytezoracoders.com" className="foot-contact-link">
+                <Mail style={{ width: "13px", height: "13px" }} aria-hidden="true" />
+                <span>Support@bytezoracoders.com</span>
+              </a>
+            </div>
+          </div>
         </div>
         <div className="base">
-          <span>© [Year] [Company name]. All rights reserved.</span>
-          <span>[Social links]</span>
+          <div className="base-left">
+            <span>© {currentYear} Bytezora. All rights reserved.</span>
+          </div>
+          <div className="base-center">
+            <span>
+              Powered by{" "}
+              <a
+                href="mailto:Support@bytezoracoders.com"
+                className="brand-link"
+                title="Support: Support@bytezoracoders.com"
+              >
+                Bytezora
+              </a>
+            </span>
+          </div>
+          <div className="foot-socials" aria-label="Social media links">
+            <a
+              href="https://in.linkedin.com/company/bytezora"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="foot-social-link linkedin"
+              aria-label="LinkedIn"
+              title="Connect on LinkedIn"
+            >
+              <LinkedInIcon />
+            </a>
+            <a
+              href="mailto:Support@bytezoracoders.com"
+              className="foot-social-link gmail"
+              aria-label="Gmail / Email Support"
+              title="Email Support (Support@bytezoracoders.com)"
+            >
+              <GmailIcon />
+            </a>
+            <a
+              href="https://www.facebook.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="foot-social-link facebook"
+              aria-label="Facebook"
+              title="Follow on Facebook"
+            >
+              <FacebookIcon />
+            </a>
+            <a
+              href="https://www.instagram.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="foot-social-link instagram"
+              aria-label="Instagram"
+              title="Follow on Instagram"
+            >
+              <InstagramIcon />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
@@ -523,7 +638,7 @@ export default function MarketingLayout() {
           <div className="cta" id="cta">
             <div className="wrap">
               <div className="stack" style={{ gap: "6px" }}>
-                <h2>Ready to build your website?</h2>
+                <h2>Build Your Website Free, Pay Only for Hosting</h2>
                 <p style={{ opacity: ".85" }}>Create your account and reach your dashboard in a few minutes.</p>
               </div>
               <Link to="/signup" className="btn lg">

@@ -1,7 +1,6 @@
-import { useState, useRef, useLayoutEffect, useEffect, useMemo, type ReactNode, type FormEvent } from "react";
+import { useState, useRef, useLayoutEffect, useMemo, type ReactNode, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { CATS, STYLES, TPLS } from "./data.ts";
-import { templatesApi } from "../../api/websites.ts";
+import { useGalleryTemplates } from "./use-gallery-templates.ts";
 import "./hero-gallery.css";
 
 function ScaledFrame({ children, dataT }: { children: ReactNode; dataT: string }) {
@@ -35,36 +34,13 @@ function ScaledFrame({ children, dataT }: { children: ReactNode; dataT: string }
 export default function HeroGalleryBanner() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [templateCount, setTemplateCount] = useState<number>(TPLS.length);
-
-  useEffect(() => {
-    let cancelled = false;
-    templatesApi
-      .list()
-      .then((loaded) => {
-        if (!cancelled && loaded && loaded.length > 0) {
-          setTemplateCount(Math.max(loaded.length, TPLS.length));
-        }
-      })
-      .catch(() => {
-        // Fallback to TPLS.length
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const industryCount = useMemo(() => {
-    const fromCategories = CATS.filter((cat) => cat !== "All").length;
-    const fromTemplates = new Set(TPLS.map((t) => t.c).filter(Boolean)).size;
-    return Math.max(fromCategories, fromTemplates);
-  }, []);
-
-  const designStyleCount = useMemo(() => {
-    const fromStyles = STYLES.filter((s) => s !== "All styles").length;
-    const fromTemplates = new Set(TPLS.map((t) => t.style).filter(Boolean)).size;
-    return Math.max(fromStyles, fromTemplates);
-  }, []);
+  const templates = useGalleryTemplates();
+  const templateCount = templates.length;
+  const industryCount = useMemo(() => new Set(templates.map((t) => t.category)).size, [templates]);
+  const designStyleCount = useMemo(
+    () => new Set(templates.flatMap((t) => (t.style ? [t.style] : []))).size,
+    [templates],
+  );
 
   const devicePreviewCount = 3;
 
@@ -87,7 +63,7 @@ export default function HeroGalleryBanner() {
         <div className="gcopy">
           <span className="eyebrow">Template gallery</span>
           <h1>
-            Find the right website <span>for your business</span>
+            Build Your Website Free, <span>Pay Only for Hosting</span>
           </h1>
           <p className="lead">
             <b>{templateCount}</b> professionally designed templates for every kind of business. Open any one to see every page on

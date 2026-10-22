@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_SECTION_SETTINGS, type FooterData, type HeaderData, type Section } from "../../../site-kit/index.ts";
 import {
+  PAGE_FOOTER_ID,
+  PAGE_HEADER_ID,
   SITE_FOOTER_ID,
   SITE_HEADER_ID,
+  canvasChromeFix,
   liftSiteChrome,
+  pageChromeMode,
   sameChrome,
+  setPageChrome,
   splitSiteChrome,
   stableJson,
+  withSiteBrand,
   withSiteChrome,
 } from "./site-chrome.ts";
 
@@ -82,5 +88,108 @@ describe("site chrome", () => {
     expect(lifted.header.menu).toEqual(header.menu);
     expect(lifted.pages.every((page) => page.sections.every((s) => s.type !== "header"))).toBe(true);
     expect(lifted.footer).toBe(footer);
+  });
+});
+
+describe("per-page header and footer", () => {
+  const chrome = { header, footer };
+
+  it("shows a page's own header in place of the site header, and nothing for a removed footer", () => {
+    let sections = setPageChrome([hero], "header", "page", chrome);
+    sections = setPageChrome(sections, "footer", "none", chrome);
+    expect(pageChromeMode(sections, "header")).toBe("page");
+    expect(pageChromeMode(sections, "footer")).toBe("none");
+    expect(withSiteChrome(sections, chrome).map((s) => s.id)).toEqual([PAGE_HEADER_ID, "hero-1"]);
+  });
+
+  it("goes back to the site header", () => {
+    const own = setPageChrome([hero], "header", "page", chrome);
+    const back = setPageChrome(own, "header", "site", chrome);
+    expect(back).toEqual([hero]);
+    expect(withSiteChrome(back, chrome)[0]?.id).toBe(SITE_HEADER_ID);
+  });
+
+  it("saves edits to a page's own header on that page and leaves the site header alone", () => {
+    const stored = setPageChrome([hero], "header", "page", chrome);
+    const [shown, body, shownFooter] = withSiteChrome(stored, chrome);
+    const edited = { ...shown!, data: { ...(shown!.data as HeaderData), siteName: "Blog" } } as Section;
+    const split = splitSiteChrome([edited, body!, shownFooter!], chrome, stored);
+    expect(split.header).toBe(header);
+    expect(split.body.map((s) => s.id)).toEqual([PAGE_HEADER_ID, "hero-1"]);
+    expect((split.body[0]!.data as HeaderData).siteName).toBe("Blog");
+  });
+
+  it("keeps a removed footer removed whatever the canvas shows", () => {
+    const stored = setPageChrome([hero], "footer", "none", chrome);
+    const split = splitSiteChrome(withSiteChrome([hero], chrome), chrome, stored);
+    expect(split.body.map((s) => [s.id, s.hidden])).toEqual([
+      ["hero-1", false],
+      [PAGE_FOOTER_ID, true],
+    ]);
+  });
+
+  it("tells the canvas which header/footer to show", () => {
+    const stored = setPageChrome([hero], "footer", "none", chrome);
+    expect(canvasChromeFix(withSiteChrome(stored, chrome), stored, chrome)).toBeNull();
+    const fix = canvasChromeFix(withSiteChrome([hero], chrome), stored, chrome);
+    expect(fix?.header?.id).toBe(SITE_HEADER_ID);
+    expect(fix?.footer).toBeNull();
+  });
+
+  it("keeps the site name and logo on a new header design", () => {
+    const logo = { url: "https://cdn.example.com/logo.png", alt: "Taqueria" };
+    const preset = { ...hero, id: "x", type: "header", data: { ...header, design: "centered", siteName: "Sample" } } as Section;
+    const branded = withSiteBrand(preset, { header: { ...header, logo }, footer });
+    expect(branded.data).toMatchObject({ design: "centered", siteName: "Taqueria", logo, logoDisplay: "logo_only" });
+    expect(withSiteBrand(hero, chrome)).toBe(hero);
+  });
+
+  describe("dropping a header or footer onto the canvas", () => {
+    const droppedHeader = {
+      ...hero,
+      id: "header-123",
+      type: "header",
+      data: { ...header, design: "centered", siteName: "Sample" },
+    } as Section;
+
+    it("replaces the site header when the page uses it, keeping the site name", () => {
+      const canvas = withSiteChrome([hero], chrome);
+      const split = splitSiteChrome([canvas[0]!, hero, droppedHeader, canvas[2]!], chrome, [hero]);
+      expect(split.header.design).toBe("centered");
+      expect(split.header.siteName).toBe("Taqueria");
+      expect(split.body).toEqual([hero]);
+    });
+
+    it("replaces a page's own header and leaves the site header alone", () => {
+      const stored = setPageChrome([hero], "header", "page", chrome);
+      const split = splitSiteChrome([...withSiteChrome(stored, chrome), droppedHeader], chrome, stored);
+      expect(split.header).toBe(header);
+      expect(split.body.map((s) => [s.id, s.hidden])).toEqual([
+        [PAGE_HEADER_ID, false],
+        ["hero-1", false],
+      ]);
+      expect((split.body[0]!.data as HeaderData).design).toBe("centered");
+    });
+
+    it("gives a page with no header its own copy", () => {
+      const stored = setPageChrome([hero], "header", "none", chrome);
+      const split = splitSiteChrome([hero, droppedHeader], chrome, stored);
+      expect(pageChromeMode(split.body, "header")).toBe("page");
+      expect((split.body[0]!.data as HeaderData).design).toBe("centered");
+    });
+
+    it("keeps the dropped header on the canvas until the page shows it, then tidies it into place", () => {
+      const canvas = [...withSiteChrome([hero], chrome), droppedHeader];
+      expect(canvasChromeFix(canvas, [hero], chrome)).toBeNull();
+      const split = splitSiteChrome(canvas, chrome, [hero]);
+      const fix = canvasChromeFix(canvas, split.body, split);
+      expect(fix?.header).toMatchObject({ id: SITE_HEADER_ID, data: { design: "centered", siteName: "Taqueria" } });
+    });
+  });
+
+  it("does not lift a page's own header into the site header", () => {
+    const own = setPageChrome([hero], "header", "page", { header: { ...header, siteName: "Blog" }, footer });
+    const content = { header, footer, pages: [{ slug: "/blog", sections: own }] };
+    expect(liftSiteChrome(content)).toBe(content);
   });
 });

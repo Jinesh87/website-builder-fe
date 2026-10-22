@@ -55,6 +55,7 @@ import type {
 import {
   CheckboxField,
   ColorField,
+  CommaListField,
   FormGroup,
   ImageField,
   ItemList,
@@ -1275,17 +1276,11 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
               maxLength={100}
               placeholder="Trusted by over 10,000+ companies"
             />
-            <TextField
+            <CommaListField
               label="Company brand names (comma separated)"
-              value={(trustedBy.logos ?? []).map((l) => l.label).join(", ")}
-              onChange={(val) =>
-                updateTrustedBy({
-                  logos: val
-                    .split(",")
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                    .map((label) => ({ label })),
-                })
+              value={(trustedBy.logos ?? []).map((l) => l.label)}
+              onChange={(labels) =>
+                updateTrustedBy({ logos: labels.map((label) => ({ label })) })
               }
             />
           </div>

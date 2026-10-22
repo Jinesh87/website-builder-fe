@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import Icon from "./Icon.tsx";
-import { TPLS } from "./data.ts";
+import { useGalleryTemplates } from "./use-gallery-templates.ts";
 
 export default function AboutPage() {
+  const templateCount = useGalleryTemplates().length;
+
   return (
     <div className="view" data-view="about">
       <div className="page-hero split-hero">
@@ -11,7 +13,7 @@ export default function AboutPage() {
             <div className="eyebrow">About us</div>
             <h1>We help businesses get online without the hassle</h1>
             <p className="lead">
-              [Company story: who you are, why you built the platform and who it is for. Two or three sentences.]
+              Bytezora was built to eliminate the complexity and agency costs of going digital. We provide small businesses, agencies, and independent creators with an intuitive visual editor and AI copilot to design, publish, and scale websites effortlessly.
             </p>
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <Link to="/signup" className="btn p lg">
@@ -51,9 +53,9 @@ export default function AboutPage() {
         <div className="wrap grid g2" style={{ gap: "56px", alignItems: "center" }}>
           <div className="stack">
             <div className="eyebrow plain">Our mission</div>
-            <h2 style={{ fontSize: "34px" }}>[Mission statement in one line]</h2>
+            <h2 style={{ fontSize: "34px" }}>Build your website free, pay only for hosting</h2>
             <p className="lead">
-              [A short paragraph about what the company does and the problem it solves for small businesses.]
+              Every business deserves a modern, lightning-fast web presence without costly retainers or steep technical curves. Bytezora equips entrepreneurs to create professional, mobile-ready websites in minutes—complete with custom domain mapping, automated SEO, and reliable managed cloud hosting.
             </p>
           </div>
           <div className="facts">
@@ -62,7 +64,7 @@ export default function AboutPage() {
               <span>ways to build: by hand or with AI</span>
             </div>
             <div className="fact c1-bg">
-              <b>{TPLS.length}</b>
+              <b>{templateCount}</b>
               <span>starter templates at launch</span>
             </div>
             <div className="fact c2-bg">
@@ -85,27 +87,27 @@ export default function AboutPage() {
           <div className="tl">
             <div className="tl-i">
               <span className="tl-dot c0-bg" />
-              <b>[Year]</b>
-              <h3>The idea</h3>
-              <p>[What problem you saw small businesses struggling with.]</p>
+              <b>01</b>
+              <h3>The spark</h3>
+              <p>Recognizing how small businesses struggle with overpriced agencies and convoluted CMS platforms, our founders in Kerala set out to build a streamlined, zero-friction alternative.</p>
             </div>
             <div className="tl-i">
               <span className="tl-dot c1-bg" />
-              <b>[Year]</b>
+              <b>02</b>
               <h3>First version</h3>
-              <p>[The first product and first customers.]</p>
+              <p>Shipped our visual page builder with pre-built component blocks, responsive live previews, and automated SSL hosting for our early business clients.</p>
             </div>
             <div className="tl-i">
               <span className="tl-dot c2-bg" />
-              <b>[Year]</b>
-              <h3>AI builder</h3>
-              <p>[When AI website generation was added.]</p>
+              <b>03</b>
+              <h3>AI Copilot</h3>
+              <p>Introduced AI-driven layout generation and smart content drafting, letting users produce fully styled, tailored websites from simple prompts in seconds.</p>
             </div>
             <div className="tl-i">
               <span className="tl-dot c3-bg" />
-              <b>Today</b>
-              <h3>[Where you are now]</h3>
-              <p>[Team size, cities served or next goal.]</p>
+              <b>04</b>
+              <h3>Growing platform</h3>
+              <p>Headquartered in Ernakulam, Kerala, supporting creators and businesses with instant cloud publishing, custom domain routing, and agency multi-site tools.</p>
             </div>
           </div>
         </div>
@@ -137,56 +139,6 @@ export default function AboutPage() {
               </span>
               <h3>Private by default</h3>
               <p>Your websites, media and data are only visible to your account.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section style={{ paddingTop: "0" }}>
-        <div className="wrap">
-          <div className="sec-head center">
-            <div className="eyebrow">Team</div>
-            <h2>The people behind WebBuilder</h2>
-          </div>
-          <div className="grid g4">
-            <div className="stack" style={{ gap: "8px" }}>
-              <div className="avatar" aria-hidden="true">
-                <svg viewBox="0 0 100 90">
-                  <circle cx="50" cy="32" r="20" fill="currentColor" />
-                  <path d="M12 90c0-24 17-38 38-38s38 14 38 38z" fill="currentColor" />
-                </svg>
-              </div>
-              <b>[Name]</b>
-              <span className="hint">[Role]</span>
-            </div>
-            <div className="stack" style={{ gap: "8px" }}>
-              <div className="avatar" aria-hidden="true">
-                <svg viewBox="0 0 100 90">
-                  <circle cx="50" cy="32" r="20" fill="currentColor" />
-                  <path d="M12 90c0-24 17-38 38-38s38 14 38 38z" fill="currentColor" />
-                </svg>
-              </div>
-              <b>[Name]</b>
-              <span className="hint">[Role]</span>
-            </div>
-            <div className="stack" style={{ gap: "8px" }}>
-              <div className="avatar" aria-hidden="true">
-                <svg viewBox="0 0 100 90">
-                  <circle cx="50" cy="32" r="20" fill="currentColor" />
-                  <path d="M12 90c0-24 17-38 38-38s38 14 38 38z" fill="currentColor" />
-                </svg>
-              </div>
-              <b>[Name]</b>
-              <span className="hint">[Role]</span>
-            </div>
-            <div className="stack" style={{ gap: "8px" }}>
-              <div className="avatar" aria-hidden="true">
-                <svg viewBox="0 0 100 90">
-                  <circle cx="50" cy="32" r="20" fill="currentColor" />
-                  <path d="M12 90c0-24 17-38 38-38s38 14 38 38z" fill="currentColor" />
-                </svg>
-              </div>
-              <b>[Name]</b>
-              <span className="hint">[Role]</span>
             </div>
           </div>
         </div>
