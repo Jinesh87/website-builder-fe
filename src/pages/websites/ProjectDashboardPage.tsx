@@ -36,6 +36,7 @@ import ProjectTabs, {
   parseProjectTab,
   type ProjectTab,
 } from "../../components/dashboard/ProjectTabs.tsx";
+import ShopPanel from "../../components/shop/ShopPanel.tsx";
 import SitePreviewCard from "../../components/dashboard/SitePreviewCard.tsx";
 import HostingAlert from "../../components/hosting/HostingAlert.tsx";
 import HostingCheckoutModal from "../../components/hosting/HostingCheckoutModal.tsx";
@@ -113,12 +114,13 @@ export default function ProjectDashboardPage() {
   const backTo = isAdmin ? "/admin/websites" : "/websites";
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = parseProjectTab(searchParams.get("tab"));
   const setTab = useCallback(
     (next: ProjectTab) => setSearchParams(next === "overview" ? {} : { tab: next }, { replace: true }),
     [setSearchParams],
   );
   const [website, setWebsite] = useState<WebsiteDetail | null>(null);
+  const showShop = Boolean(website?.shopFeatureEnabled);
+  const tab = parseProjectTab(searchParams.get("tab"), showShop);
   const [hosting, setHosting] = useState<WebsiteHosting | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   /** Set when the checkout was opened by Publish, so publishing continues once paid. */
@@ -402,7 +404,7 @@ export default function ProjectDashboardPage() {
 
         {hosting && tab !== "hosting" && <HostingAlert hosting={hosting} onOpen={() => setTab("hosting")} />}
 
-        <ProjectTabs value={tab} onChange={setTab} />
+        <ProjectTabs value={tab} onChange={setTab} showShop={showShop} />
 
         {tab === "overview" && (
           <div className="space-y-6">
@@ -546,6 +548,8 @@ export default function ProjectDashboardPage() {
               <Spinner aria-label="Loading hosting" />
             </div>
           ))}
+
+        {tab === "shop" && <ShopPanel website={website} onChange={setWebsite} />}
 
         {tab === "settings" && (
           <ProjectSettingsPanel

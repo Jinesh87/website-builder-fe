@@ -21,6 +21,7 @@ export type Client = {
   businessName: string;
   address: string | null;
   source: ClientSource;
+  shopFeatureEnabled: boolean;
   createdAt: string;
   updatedAt: string;
   owner: ClientOwner | null;
@@ -80,6 +81,9 @@ export const adminClientsApi = {
 
   update: (id: string, input: ClientDetailsInput) =>
     request<ClientResponse>(`${BASE}/${id}`, { method: "PATCH", body: input }).then((data) => data.client),
+
+  setShopFeature: (id: string, shopFeatureEnabled: boolean) =>
+    request<ClientResponse>(`${BASE}/${id}/shop`, { method: "PATCH", body: { shopFeatureEnabled } }).then((data) => data.client),
 
   suspend: (id: string) =>
     request<ClientResponse>(`${BASE}/${id}/suspend`, { method: "POST" }).then((data) => data.client),

@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { Button, Spinner } from "@heroui/react";
+import { Button, Label, Spinner, Switch } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
 import { ArrowLeft } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -322,6 +322,12 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
 
     {client && (
       <div className="mt-6">
+        <ShopFeaturePanel client={client} onChange={setClient} />
+      </div>
+    )}
+
+    {client && (
+      <div className="mt-6">
         <ClientHostingPanel clientId={client.id} />
       </div>
     )}
@@ -332,6 +338,48 @@ function ClientForm({ clientId }: { clientId: string | undefined }) {
       </div>
     )}
     </div>
+  );
+}
+
+function ShopFeaturePanel({ client, onChange }: { client: Client; onChange: (client: Client) => void }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggle(shopFeatureEnabled: boolean) {
+    setSaving(true);
+    setError(null);
+    try {
+      onChange(await adminClientsApi.setShopFeature(client.id, shopFeatureEnabled));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="rounded-xl border border-line bg-surface p-6">
+      <h2 className="text-base font-semibold text-ink">Shop</h2>
+      <p className="mt-1 max-w-2xl text-sm text-ink-body">
+        Allow this company to turn on a shop for each website. They can then add categories, products, and a price for
+        every variant.
+      </p>
+      <div className="mt-4">
+        <Switch isSelected={client.shopFeatureEnabled} onChange={toggle} isDisabled={saving}>
+          <Switch.Content>
+            <Switch.Control>
+              <Switch.Thumb />
+            </Switch.Control>
+            <Label className="text-sm text-ink">Shop available for this company</Label>
+          </Switch.Content>
+        </Switch>
+      </div>
+      {error && (
+        <div className="mt-4 max-w-2xl">
+          <FormAlert status="danger">{error}</FormAlert>
+        </div>
+      )}
+    </section>
   );
 }
 
