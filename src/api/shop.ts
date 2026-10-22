@@ -60,6 +60,23 @@ export type ShopProductInput = {
   images?: { mediaId: string; alt?: string }[];
 };
 
+export type ShopPaymentConfig = {
+  configured: boolean;
+  mode: "test" | "live" | null;
+  razorpayKeyId: string | null;
+  razorpayKeySecretMasked: string | null;
+  webhookConfigured: boolean;
+  webhookUrl: string;
+  siteUrl: string;
+  updatedAt: string | null;
+};
+
+export type ShopPaymentInput = {
+  razorpayKeyId: string;
+  razorpayKeySecret?: string;
+  razorpayWebhookSecret?: string;
+};
+
 export type ShopProductQuery = {
   search?: string;
   categoryId?: string;
@@ -108,4 +125,15 @@ export const shopApi = {
 
   deleteProduct: (websiteId: string, productId: string) =>
     request<void>(`${base(websiteId)}/products/${productId}`, { method: "DELETE" }),
+
+  paymentConfig: (websiteId: string) =>
+    request<{ config: ShopPaymentConfig }>(`${base(websiteId)}/payments`).then((data) => data.config),
+
+  updatePaymentConfig: (websiteId: string, input: ShopPaymentInput) =>
+    request<{ config: ShopPaymentConfig }>(`${base(websiteId)}/payments`, { method: "PUT", body: input }).then((data) => data.config),
+
+  revealPaymentSecrets: (websiteId: string) =>
+    request<{ secrets: { razorpayKeySecret: string | null; razorpayWebhookSecret: string | null } }>(
+      `${base(websiteId)}/payments/secrets`,
+    ).then((data) => data.secrets),
 };

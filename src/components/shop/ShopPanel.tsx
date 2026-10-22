@@ -6,6 +6,7 @@ import { shopApi, type ShopCategory, type ShopImage, type ShopProduct, type Shop
 import { errorMessage } from "../../api/http.ts";
 import { formatPaise } from "../../api/wallet.ts";
 import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
+import ShopRazorpayPanel from "./ShopRazorpayPanel.tsx";
 import CommonModal from "../ui/CommonModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import TextAreaInput from "../ui/TextAreaInput.tsx";
@@ -148,12 +149,13 @@ function setsFromProduct(product: ShopProduct): SetDraft[] {
   return [blankSet()];
 }
 
-type ShopSection = "category" | "settings" | "products";
+type ShopSection = "category" | "settings" | "products" | "razorpay";
 
 const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "category", label: "Category" },
   { id: "settings", label: "Shop settings" },
   { id: "products", label: "Products" },
+  { id: "razorpay", label: "Razorpay" },
 ];
 
 function optionSummary(product: ShopProduct): string {
@@ -235,7 +237,9 @@ export default function ShopPanel({
         </section>
       )}
 
-      {section !== "settings" && !website.shopEnabled && (
+      {section === "razorpay" && <ShopRazorpayPanel websiteId={website.id} />}
+
+      {(section === "category" || section === "products") && !website.shopEnabled && (
         <section className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
           <p className="text-sm text-ink-body">Turn the shop on in Shop settings before adding categories or products.</p>
           <Button size="sm" variant="outline" className="mt-4" onPress={() => setSection("settings")}>
@@ -244,7 +248,7 @@ export default function ShopPanel({
         </section>
       )}
 
-      {section !== "settings" && website.shopEnabled && (
+      {(section === "category" || section === "products") && website.shopEnabled && (
         <ShopCatalog websiteId={website.id} clientId={website.clientId} section={section} />
       )}
     </div>
@@ -258,7 +262,7 @@ function ShopCatalog({
 }: {
   websiteId: string;
   clientId: string;
-  section: Exclude<ShopSection, "settings">;
+  section: "category" | "products";
 }) {
   const [categories, setCategories] = useState<ShopCategory[] | null>(null);
   const [products, setProducts] = useState<ShopProduct[] | null>(null);
