@@ -206,19 +206,27 @@ export default function ContactPage() {
               <h3>Contact details</h3>
               <div>
                 <div className="hint">Email</div>
-                <div>[support@yourdomain.com]</div>
+                <div>
+                  <a href="mailto:Support@bytezoracoders.com" style={{ color: "inherit", textDecoration: "none" }}>
+                    Support@bytezoracoders.com
+                  </a>
+                </div>
               </div>
               <div>
                 <div className="hint">Phone</div>
-                <div>[+91 00000 00000]</div>
+                <div>
+                  <a href="tel:+919995070483" style={{ color: "inherit", textDecoration: "none" }}>
+                    +91 (999) 50-70483
+                  </a>
+                </div>
               </div>
               <div>
-                <div className="hint">Office</div>
-                <div>[Address line, City, Postcode]</div>
+                <div className="hint">Office (India Headquarters)</div>
+                <div>Ground Floor, 287/A, Ernakulam, Kerala – 682315</div>
               </div>
               <div>
                 <div className="hint">Hours</div>
-                <div>[Mon–Fri, 9:00–18:00]</div>
+                <div>Mon–Fri, 9:00–18:00 IST</div>
               </div>
             </div>
             <div className="stack" style={{ gap: "8px" }}>
@@ -236,7 +244,7 @@ export default function ContactPage() {
                   <circle cx="270" cy="68" r="10" fill="var(--surface)" />
                 </svg>
               </div>
-              <span className="hint">[Office address]. Link to your map listing here.</span>
+              <span className="hint">Ground Floor, 287/A, Ernakulam, Kerala – 682315</span>
             </div>
           </div>
         </div>
