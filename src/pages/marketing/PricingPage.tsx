@@ -1,17 +1,13 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import type { BillingCycle } from "../../api/hosting.ts";
-import { formatConnects, formatPaise } from "../../api/wallet.ts";
-import { PLANS } from "./data.ts";
+import type { BillingCycle, HostingPackage } from "../../api/hosting.ts";
+import { formatPaise } from "../../api/wallet.ts";
+import { bestYearlySaving, yearlySavingPercent } from "../../utils/hosting-pricing.ts";
 import Icon from "./Icon.tsx";
-import {
-  cyclePrice,
-  quarterlyPremiumPercent,
-  usePublicPricing,
-  yearlySavingPercent,
-  type CyclePrice,
-} from "./use-pricing.ts";
+import Tabs from "./Tabs.tsx";
+import { CYCLE_MONTHS, CYCLE_UNIT, usePublicPricing } from "./use-pricing.ts";
 
-const CYCLE_UNIT: Record<BillingCycle, string> = { QUARTERLY: "/ 3 months", YEARLY: "/ year" };
+const CYCLE_NAMES: Record<BillingCycle, string> = { QUARTERLY: "quarterly", YEARLY: "yearly" };
 
 function Tick() {
   return (
@@ -31,18 +27,83 @@ function Tick() {
   );
 }
 
-function priceCell(price: CyclePrice | null): string {
-  return price ? `${formatConnects(price.connects)} (${formatPaise(price.paise)})` : "–";
+/** Every feature any package lists, in first-seen order, for the comparison table. */
+function allFeatures(packages: HostingPackage[]): string[] {
+  return [...new Set(packages.flatMap((pkg) => pkg.features))];
+}
+
+function PlanCard({ plan, cycle, onStart }: { plan: HostingPackage; cycle: BillingCycle; onStart: (plan: HostingPackage) => void }) {
+  const price = plan.prices[cycle];
+  const saving = cycle === "YEARLY" ? yearlySavingPercent(plan.prices) : 0;
+  const badge = saving > 0 ? `Save ${saving}%` : plan.featured ? "Most popular" : null;
+
+  return (
+    <div className={plan.featured ? "card plan feat" : "card plan"}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
+        <h3 style={{ fontSize: "20px" }}>{plan.name}</h3>
+        {badge && <span className="badge">{badge}</span>}
+      </div>
+      <p>{plan.description}</p>
+      {plan.isCustom ? (
+        <>
+          <div className="price">
+            <b>Let's talk</b>
+          </div>
+          <p className="hint">Priced for what you need. We'll send you a quote.</p>
+          <Link to="/contact" className="btn lg block">
+            Request a custom quote
+          </Link>
+        </>
+      ) : (
+        <>
+          <div className="price">
+            <b>{price ? formatPaise(price) : "—"}</b>
+            {price && <span className="muted">{CYCLE_UNIT[cycle]}</span>}
+          </div>
+          <p className="hint">
+            {price
+              ? `About ${formatPaise(Math.round(price / CYCLE_MONTHS[cycle]))} a month, billed ${CYCLE_NAMES[cycle]}.`
+              : `Not offered with ${CYCLE_NAMES[cycle]} billing.`}
+          </p>
+          <button
+            className={plan.featured ? "btn p lg block" : "btn lg block"}
+            type="button"
+            disabled={!price}
+            onClick={() => onStart(plan)}
+          >
+            Get started
+          </button>
+        </>
+      )}
+      {plan.features.length > 0 && (
+        <ul>
+          {plan.features.map((feature) => (
+            <li key={feature} className="tick">
+              <Tick />
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 export default function PricingPage() {
   const navigate = useNavigate();
   const { pricing, failed } = usePublicPricing();
-  const loading = !pricing && !failed;
-  const saving = yearlySavingPercent(pricing);
-  const premium = quarterlyPremiumPercent(pricing);
-  const quarterly = cyclePrice(pricing, "QUARTERLY");
-  const yearly = cyclePrice(pricing, "YEARLY");
+  const [cycle, setCycle] = useState<BillingCycle>("YEARLY");
+  const packages = pricing?.packages ?? [];
+  const saving = bestYearlySaving(packages);
+  const features = allFeatures(packages);
+
+  function start(plan: HostingPackage) {
+    navigate("/signup", {
+      state: {
+        notice: `Plan selected: ${plan.name}, billed ${CYCLE_NAMES[cycle]}. You choose hosting for each website when you publish it.`,
+      },
+    });
+  }
 
   return (
     <div className="view" data-view="pricing">
@@ -51,76 +112,52 @@ export default function PricingPage() {
           <div className="eyebrow">Pricing</div>
           <h1>Simple, transparent pricing</h1>
           <p className="lead">
-            Pay for hosting with connects, quarterly or yearly. Need something made for you? Ask us for a custom plan.
+            Hosting for each website, billed quarterly or yearly in rupees. Need something made for you? Ask us for a custom plan.
           </p>
         </div>
       </div>
       <section>
         <div className="wrap stack" style={{ gap: "28px" }}>
-          <div className="grid g3" style={{ alignItems: "start" }} aria-busy={loading}>
-            {PLANS.map((plan) => {
-              const price = plan.cycle && cyclePrice(pricing, plan.cycle);
-              const badge =
-                plan.cycle === "YEARLY" && saving > 0
-                  ? `Save ${saving}%`
-                  : plan.cycle === "QUARTERLY" && premium > 0
-                    ? `+${premium}% vs yearly`
-                    : plan.featured
-                      ? "Most popular"
-                      : null;
-              return (
-                <div key={plan.name} className={plan.featured ? "card plan feat" : "card plan"}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
-                    <h3 style={{ fontSize: "20px" }}>{plan.name}</h3>
-                    {badge && <span className="badge">{badge}</span>}
-                  </div>
-                  <p>{plan.description}</p>
-                  {plan.cycle && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Tabs
+              label="Billing period"
+              value={cycle}
+              onChange={setCycle}
+              items={[
+                { key: "QUARTERLY", label: "Quarterly" },
+                {
+                  key: "YEARLY",
+                  label: (
                     <>
-                      <div className="price">
-                        <b>{price ? price.connects.toLocaleString("en-IN") : loading ? "…" : "Contact us"}</b>
-                        {price && <span className="muted">connects {CYCLE_UNIT[plan.cycle]}</span>}
-                      </div>
-                      <p className="hint">
-                        {price
-                          ? `= ${formatPaise(price.paise)} ${CYCLE_UNIT[plan.cycle]}`
-                          : loading
-                            ? "Loading current prices."
-                            : "Prices are being finalised. Contact us for details."}
-                      </p>
+                      Yearly
+                      {saving > 0 && <span className="badge">Save up to {saving}%</span>}
                     </>
-                  )}
-                  {plan.cycle ? (
-                    <button
-                      className={plan.featured ? "btn p lg block" : "btn lg block"}
-                      type="button"
-                      onClick={() =>
-                        navigate("/signup", {
-                          state: {
-                            notice: `Plan selected: ${plan.name}. Hosting is set up after you verify your email.`,
-                          },
-                        })
-                      }
-                    >
-                      Get started
-                    </button>
-                  ) : (
-                    <Link to="/contact" className="btn lg block">
-                      Request a custom quote
-                    </Link>
-                  )}
-                  <ul>
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="tick">
-                        <Tick />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
+                  ),
+                },
+              ]}
+            />
           </div>
+
+          {failed ? (
+            <p className="hint" style={{ textAlign: "center" }}>
+              We couldn't load prices right now. Please refresh, or <Link to="/contact">contact us</Link> for a quote.
+            </p>
+          ) : !pricing ? (
+            <div className="grid g3" aria-busy="true">
+              {[0, 1, 2].map((index) => (
+                <div key={index} className="card plan" style={{ minHeight: "320px" }}>
+                  <p className="hint">Loading current prices…</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid g3" style={{ alignItems: "start" }}>
+              {packages.map((plan) => (
+                <PlanCard key={plan.id} plan={plan} cycle={cycle} onStart={start} />
+              ))}
+            </div>
+          )}
+
           <div className="incl">
             <span className="incl-t">Every plan includes</span>
             <span className="incl-i">
@@ -161,82 +198,57 @@ export default function PricingPage() {
             </span>
           </div>
           <p className="hint" style={{ textAlign: "center" }}>
-            Prices are per website. AI builder usage is paid separately from your connects balance.
+            Prices are per website, in Indian rupees. AI builder usage is paid separately with connects.
           </p>
         </div>
       </section>
-      <section className="band">
-        <div className="wrap">
-          <div className="sec-head center">
-            <div className="eyebrow">Compare plans</div>
-            <h2>What's in each plan</h2>
+      {packages.length > 0 && (
+        <section className="band">
+          <div className="wrap">
+            <div className="sec-head center">
+              <div className="eyebrow">Compare plans</div>
+              <h2>What's in each plan</h2>
+            </div>
+            <div className="cmp">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Feature</th>
+                    {packages.map((plan) => (
+                      <th key={plan.id} scope="col" className={plan.featured ? "us" : undefined}>
+                        {plan.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Price ({CYCLE_NAMES[cycle]})</td>
+                    {packages.map((plan) => {
+                      const price = plan.prices[cycle];
+                      return (
+                        <td key={plan.id} className={plan.featured ? "us" : undefined}>
+                          {plan.isCustom ? "Custom quote" : price ? `${formatPaise(price)} ${CYCLE_UNIT[cycle]}` : "–"}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  {features.map((feature) => (
+                    <tr key={feature}>
+                      <td>{feature}</td>
+                      {packages.map((plan) => (
+                        <td key={plan.id} className={plan.featured ? "us" : undefined}>
+                          {plan.features.includes(feature) ? <b className="y">✓</b> : <b className="n">–</b>}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div className="cmp">
-            <table>
-              <thead>
-                <tr>
-                  <th scope="col">Feature</th>
-                  <th scope="col">Quarterly</th>
-                  <th scope="col" className="us">
-                    Yearly
-                  </th>
-                  <th scope="col">Custom</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Price</td>
-                  <td>{priceCell(quarterly)}</td>
-                  <td className="us">{priceCell(yearly)}</td>
-                  <td>–</td>
-                </tr>
-                <tr>
-                  <td>Billed</td>
-                  <td>Every 3 months</td>
-                  <td className="us">Once a year</td>
-                  <td>–</td>
-                </tr>
-                <tr>
-                  <td>Unlimited templates</td>
-                  <td>
-                    <b className="y">✓</b>
-                  </td>
-                  <td className="us">
-                    <b className="y">✓</b>
-                  </td>
-                  <td>
-                    <b className="y">✓</b>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Manual and AI builder</td>
-                  <td>
-                    <b className="y">✓</b>
-                  </td>
-                  <td className="us">
-                    <b className="y">✓</b>
-                  </td>
-                  <td>
-                    <b className="y">✓</b>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Custom-designed template</td>
-                  <td>
-                    <b className="n">–</b>
-                  </td>
-                  <td className="us">
-                    <b className="n">–</b>
-                  </td>
-                  <td>
-                    <b className="y">✓</b>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
       <section>
         <div className="wrap faq">
           <div className="stack" style={{ gap: "10px" }}>
@@ -248,15 +260,19 @@ export default function PricingPage() {
           </div>
           <div>
             <details open>
-              <summary>What are connects?</summary>
+              <summary>How do I pay for hosting?</summary>
               <p>
-                Connects are your account credits. You top them up online in rupees and pay for hosting from your
-                balance.
+                Online through Razorpay, by card, UPI or net banking, when you publish a website.
+                {pricing?.allowConnectsPayment && " You can also pay from your connects balance if you prefer."}
               </p>
             </details>
             <details>
-              <summary>Can I switch between quarterly and yearly?</summary>
-              <p>Yes. Change the billing period for a website at any time. The new period applies from your next payment.</p>
+              <summary>What are connects?</summary>
+              <p>Connects are credits for the AI builder. You top them up in rupees and spend them as you use AI features.</p>
+            </details>
+            <details>
+              <summary>Can I switch plans or billing period?</summary>
+              <p>Yes. Change the plan or billing period for a website at any time. The change applies from your next payment.</p>
             </details>
             <details>
               <summary>What happens if I don't renew on time?</summary>

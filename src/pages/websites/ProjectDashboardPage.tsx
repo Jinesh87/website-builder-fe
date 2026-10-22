@@ -41,10 +41,10 @@ import HostingAlert from "../../components/hosting/HostingAlert.tsx";
 import HostingCheckoutModal from "../../components/hosting/HostingCheckoutModal.tsx";
 import HostingRequiredCard from "../../components/hosting/HostingRequiredCard.tsx";
 import {
-  CYCLE_LABELS,
   formatBillingDate,
   HostingStatusChip,
   hostingBlocksPublish,
+  planLabel,
 } from "../../components/hosting/hosting-labels.tsx";
 import LiveSiteLink from "../../components/websites/LiveSiteLink.tsx";
 import PublishSuccessModal from "../../components/websites/PublishSuccessModal.tsx";
@@ -440,7 +440,7 @@ export default function ProjectDashboardPage() {
                         <HostingStatusChip subscription={hosting.subscription} />
                         {hosting.subscription?.currentPeriodEnd && (
                           <span className="text-ed-sm font-normal text-ink-body">
-                            {CYCLE_LABELS[hosting.subscription.cycle]} · till{" "}
+                            {planLabel(hosting.subscription)} · till{" "}
                             {formatBillingDate(hosting.subscription.currentPeriodEnd)}
                           </span>
                         )}
@@ -677,7 +677,7 @@ export default function ProjectDashboardPage() {
           title={publishAfterPay ? "Choose a hosting plan to publish" : undefined}
           notice={
             publishAfterPay && (
-              <HostingRequiredCard hosting={hosting} isAdmin={isAdmin} compact />
+              <HostingRequiredCard hosting={hosting} isAdmin={isAdmin} />
             )
           }
         />

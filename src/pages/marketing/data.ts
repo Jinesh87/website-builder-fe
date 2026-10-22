@@ -1,5 +1,3 @@
-import type { BillingCycle } from "../../api/hosting.ts";
-
 export interface Template {
   /** Unique ID (e.g. "2134") */
   id: string;
@@ -884,40 +882,6 @@ export function findTemplateById(id: string): { template: Template; index: numbe
 }
 
 export const HOME_TEMPLATES = [17, 22, 21]; // 2151 (UX Designer · Midnight), 2156 (Design Institute · Elegant), 2155 (Tech Academy · Modern)
-
-/** Prices come from the global hosting plan in Settings → Hosting. */
-export interface PricingPlan {
-  name: string;
-  description: string;
-  features: string[];
-  featured: boolean;
-  /** Null for the custom plan, which has no listed price. */
-  cycle: BillingCycle | null;
-}
-
-export const PLANS: PricingPlan[] = [
-  {
-    name: "Quarterly",
-    description: "Hosting for one website, billed every 3 months.",
-    features: ["Unlimited templates", "Manual and AI builder", "Renews every 3 months"],
-    featured: false,
-    cycle: "QUARTERLY",
-  },
-  {
-    name: "Yearly",
-    description: "Hosting for one website, billed once a year.",
-    features: ["Unlimited templates", "Manual and AI builder", "Renews once a year"],
-    featured: true,
-    cycle: "YEARLY",
-  },
-  {
-    name: "Custom",
-    description: "A custom-designed template tailored to specific client requirements.",
-    features: ["Custom-designed template", "Unlimited templates", "Manual and AI builder"],
-    featured: false,
-    cycle: null,
-  },
-];
 
 export const DOCS = {
   terms: {

@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { Button, Modal } from "@heroui/react";
+import { buttonVariants } from "@heroui/styles";
 import { History, Rocket } from "lucide-react";
-import { hostingApi, type WebsiteHosting } from "../../../api/hosting.ts";
+import { hostingApi, type PlanChoice, type WebsiteHosting } from "../../../api/hosting.ts";
 import { ApiError, errorMessage } from "../../../api/http.ts";
+import { formatPaise } from "../../../api/wallet.ts";
 import { websitesApi, type WebsiteDetail, type WebsiteVersion } from "../../../api/websites.ts";
 import HostingCheckoutModal from "../../../components/hosting/HostingCheckoutModal.tsx";
-import HostingRequiredCard, { type SelectedHostingOption } from "../../../components/hosting/HostingRequiredCard.tsx";
+import HostingRequiredCard from "../../../components/hosting/HostingRequiredCard.tsx";
 import { hostingBlocksPublish } from "../../../components/hosting/hosting-labels.tsx";
+import PlanPicker from "../../../components/hosting/PlanPicker.tsx";
 import FormAlert from "../../../components/ui/FormAlert.tsx";
 import PublishSeoAudit from "../../../components/websites/PublishSeoAudit.tsx";
+import { defaultPlan } from "../../../utils/hosting-pricing.ts";
 import { getLiveSiteDomain } from "../../../utils/live-url.ts";
 import { useEditor } from "../editor-context.ts";
 
@@ -28,7 +32,7 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
   const [versions, setVersions] = useState<WebsiteVersion[] | null>(null);
   const [hosting, setHosting] = useState<WebsiteHosting | null>(null);
   const [hostingLoaded, setHostingLoaded] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<SelectedHostingOption>("QUARTERLY");
+  const [selectedPlan, setSelectedPlan] = useState<PlanChoice | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
@@ -47,9 +51,7 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
       .then((loaded) => {
         if (!cancelled) {
           setHosting(loaded);
-          if (loaded?.subscription?.cycle) {
-            setSelectedPlan(loaded.subscription.cycle);
-          }
+          setSelectedPlan(defaultPlan(loaded));
         }
       })
       .catch(() => !cancelled && setHosting(null))
@@ -62,6 +64,8 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
   const visiblePages = draft.pages.filter((page) => page.visible);
   const hiddenSections = visiblePages.reduce((count, page) => count + page.sections.filter((section) => section.hidden).length, 0);
   const needsPlan = hostingBlocksPublish(hosting);
+  const selectedPrice =
+    selectedPlan && hosting?.packages.find((pkg) => pkg.id === selectedPlan.packageId)?.prices[selectedPlan.cycle];
 
   async function publish(currentHosting: WebsiteHosting | null = hosting) {
     setError(null);
@@ -102,15 +106,28 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
             <Modal.Body>
               <div className="flex flex-col gap-4 text-sm text-ink-body">
                 {needsPlan && hosting && (
-                  <HostingRequiredCard
-                    hosting={hosting}
-                    isAdmin={isAdmin}
-                    selectedOption={selectedPlan}
-                    onSelect={(option) => {
-                      setSelectedPlan(option);
-                      setCheckoutOpen(true);
-                    }}
-                  />
+                  <>
+                    <HostingRequiredCard hosting={hosting} isAdmin={isAdmin} />
+                    <PlanPicker
+                      packages={hosting.packages}
+                      value={selectedPlan}
+                      onChange={setSelectedPlan}
+                      currentPackageId={hosting.subscription?.packageId}
+                      onEditCustom={isAdmin ? () => setCheckoutOpen(true) : undefined}
+                      customAction={
+                        isAdmin ? undefined : (
+                          <a
+                            href="/contact"
+                            target="_blank"
+                            rel="noreferrer"
+                            className={buttonVariants({ size: "sm", variant: "outline", className: "w-full" })}
+                          >
+                            Contact us
+                          </a>
+                        )
+                      }
+                    />
+                  </>
                 )}
 
                 <p>
@@ -162,7 +179,11 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
                 <Button isPending>Checking hosting…</Button>
               ) : needsPlan ? (
                 <Button onPress={() => setCheckoutOpen(true)} isDisabled={publishing}>
-                  {isAdmin ? "Record payment & publish" : "Choose plan & publish"}
+                  {isAdmin
+                    ? "Record payment & publish"
+                    : selectedPrice == null
+                      ? "Choose plan & publish"
+                      : `Continue · ${selectedPrice === 0 ? "Free" : formatPaise(selectedPrice)}`}
                 </Button>
               ) : (
                 <Button onPress={() => void publish()} isPending={publishing}>
@@ -180,12 +201,11 @@ export default function PublishDialog({ isOpen, onClose, onPublished }: PublishD
           onClose={() => setCheckoutOpen(false)}
           hosting={hosting}
           isAdmin={isAdmin}
-          initialCycle={selectedPlan === "CUSTOM" ? (hosting.subscription?.cycle ?? "QUARTERLY") : selectedPlan}
-          initialEditingPrice={selectedPlan === "CUSTOM"}
+          initialPlan={selectedPlan}
+          onChangePlan={() => setCheckoutOpen(false)}
           onPaid={handlePaid}
           onHostingChange={setHosting}
           title="Choose a hosting plan to publish"
-          notice={<HostingRequiredCard hosting={hosting} isAdmin={isAdmin} compact />}
         />
       )}
     </>

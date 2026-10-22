@@ -1,18 +1,19 @@
-import { Chip } from "@heroui/react";
+import { Chip, Label, Switch } from "@heroui/react";
 import type {
   BillingCycle,
   HostingPayer,
+  HostingPayment,
   HostingPaymentMethod,
   HostingSubscription,
-  PriceSource,
   WebsiteHosting,
 } from "../../api/hosting.ts";
-import { connectsPriceInPaise, formatPaise } from "../../api/wallet.ts";
+import { formatConnects, formatPaise } from "../../api/wallet.ts";
 
 export const CYCLE_LABELS: Record<BillingCycle, string> = { QUARTERLY: "Quarterly", YEARLY: "Yearly" };
 export const CYCLE_PERIOD: Record<BillingCycle, string> = { QUARTERLY: "3 months", YEARLY: "1 year" };
 
 export const METHOD_LABELS: Record<HostingPaymentMethod, string> = {
+  RAZORPAY: "Online",
   WALLET: "Connects",
   CASH: "Cash",
   UPI: "UPI",
@@ -25,11 +26,24 @@ export const PAYER_LABELS: Record<HostingPayer, string> = {
   SYSTEM: "Auto-renewal",
 };
 
-export const PRICE_SOURCE_LABELS: Record<PriceSource, string> = {
-  WEBSITE: "Custom · website",
-  CLIENT: "Custom · client",
-  GLOBAL: "Global default",
-};
+/** "Standard · Yearly"; just the cycle for plans and payments from before packages. */
+export function planLabel(plan: { packageName: string | null; cycle: BillingCycle }): string {
+  return plan.packageName ? `${plan.packageName} · ${CYCLE_LABELS[plan.cycle]}` : CYCLE_LABELS[plan.cycle];
+}
+
+/** A plan's price per period: "₹2,100", "Free", or "Not set" when it can't be paid yet. */
+export function formatPlanPrice(paise: number | null): string {
+  if (paise === null) return "Not set";
+  return paise === 0 ? "Free" : formatPaise(paise);
+}
+
+/** What a payment cost, and in connects when it was paid from the wallet. */
+export function paymentAmountLabel(payment: Pick<HostingPayment, "amountPaise" | "connects">): { amount: string; detail: string | null } {
+  return {
+    amount: formatPlanPrice(payment.amountPaise),
+    detail: payment.connects ? formatConnects(payment.connects) : null,
+  };
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -47,10 +61,6 @@ export function formatPeriod(start: string, end: string): string {
 /** Whole days from now until `iso`; negative once it has passed. */
 export function daysUntil(iso: string): number {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / DAY_MS);
-}
-
-export function formatConnectsPrice(connects: number, connectsPerRupee: number): string {
-  return `${connects.toLocaleString("en-IN")} connects (${formatPaise(connectsPriceInPaise(connects, connectsPerRupee))})`;
 }
 
 /** Same rule as the server's publish check: billing on and no paid (or grace) plan. */
@@ -101,8 +111,31 @@ export function HostingStatusChip({ subscription }: { subscription: HostingSubsc
   }
 }
 
-/** Whole-connects field styled like the other settings inputs; empty means "not set". */
-export function ConnectsInput({
+export function SwitchField({
+  label,
+  isSelected,
+  onChange,
+  isDisabled,
+}: {
+  label: string;
+  isSelected: boolean;
+  onChange: (value: boolean) => void;
+  isDisabled?: boolean;
+}) {
+  return (
+    <Switch isSelected={isSelected} onChange={onChange} isDisabled={isDisabled}>
+      <Switch.Content>
+        <Switch.Control>
+          <Switch.Thumb />
+        </Switch.Control>
+        <Label className="text-sm text-ink">{label}</Label>
+      </Switch.Content>
+    </Switch>
+  );
+}
+
+/** Rupee amount field styled like the other settings inputs; empty means "not set". */
+export function RupeesInput({
   id,
   label,
   value,
@@ -111,6 +144,7 @@ export function ConnectsInput({
   hint,
   error,
   isDisabled,
+  autoFocus,
 }: {
   id: string;
   label: string;
@@ -120,6 +154,7 @@ export function ConnectsInput({
   hint?: string;
   error?: string;
   isDisabled?: boolean;
+  autoFocus?: boolean;
 }) {
   return (
     <div>
@@ -133,19 +168,20 @@ export function ConnectsInput({
             : "border-ed-border focus-within:border-ed-accent focus-within:ring-ed-accent/15"
         }`}
       >
+        <span className="pl-3 text-sm text-ink-muted" aria-hidden>
+          ₹
+        </span>
         <input
           id={id}
-          inputMode="numeric"
+          inputMode="decimal"
           value={value}
           placeholder={placeholder}
           disabled={isDisabled}
+          autoFocus={autoFocus}
           aria-invalid={Boolean(error)}
-          onChange={(event) => onChange(event.target.value.replace(/\D/g, "").slice(0, 8))}
-          className="w-full min-w-0 bg-transparent px-3 text-sm text-ink placeholder:text-ink-muted/60 focus:outline-none disabled:cursor-not-allowed"
+          onChange={(event) => onChange(event.target.value.replace(/[^\d.,]/g, "").slice(0, 12))}
+          className="w-full min-w-0 bg-transparent px-2 text-sm text-ink placeholder:text-ink-muted/60 focus:outline-none disabled:cursor-not-allowed"
         />
-        <span className="pr-3 text-xs text-ink-muted" aria-hidden>
-          connects
-        </span>
       </div>
       {error ? (
         <p className="mt-1 text-xs text-ed-danger">{error}</p>
@@ -154,10 +190,4 @@ export function ConnectsInput({
       )}
     </div>
   );
-}
-
-/** Text from a ConnectsInput: null when empty. */
-export function parseConnects(value: string): number | null {
-  const trimmed = value.trim();
-  return trimmed === "" ? null : Number(trimmed);
 }

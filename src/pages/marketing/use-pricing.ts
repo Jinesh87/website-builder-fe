@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { pricingApi, type BillingCycle, type PublicPricing } from "../../api/hosting.ts";
+import { pricingApi, type BillingCycle, type HostingPackage, type PublicPricing } from "../../api/hosting.ts";
 
 export type PricingState = { pricing: PublicPricing | null; failed: boolean };
-export type CyclePrice = { connects: number; paise: number };
 
 export function usePublicPricing(): PricingState {
   const [state, setState] = useState<PricingState>({ pricing: null, failed: false });
@@ -25,28 +24,11 @@ export function usePublicPricing(): PricingState {
   return state;
 }
 
-/** Null when the price isn't set yet (0), so the page can ask visitors to contact sales instead. */
-export function cyclePrice(pricing: PublicPricing | null, cycle: BillingCycle): CyclePrice | null {
-  if (!pricing) return null;
-  const price =
-    cycle === "YEARLY"
-      ? { connects: pricing.yearlyConnects, paise: pricing.yearlyPaise }
-      : { connects: pricing.quarterlyConnects, paise: pricing.quarterlyPaise };
-  return price.connects > 0 ? price : null;
-}
+export const CYCLE_UNIT: Record<BillingCycle, string> = { QUARTERLY: "/ 3 months", YEARLY: "/ year" };
+export const CYCLE_MONTHS: Record<BillingCycle, number> = { QUARTERLY: 3, YEARLY: 12 };
 
-/** Whole-percent saving of yearly over four quarters; 0 when there is no saving. */
-export function yearlySavingPercent(pricing: PublicPricing | null): number {
-  const quarterly = cyclePrice(pricing, "QUARTERLY");
-  const yearly = cyclePrice(pricing, "YEARLY");
-  if (!quarterly || !yearly) return 0;
-  return Math.max(0, Math.round((1 - yearly.connects / (quarterly.connects * 4)) * 100));
-}
-
-/** Whole-percent extra that four quarters cost over one year; 0 when quarterly isn't dearer. */
-export function quarterlyPremiumPercent(pricing: PublicPricing | null): number {
-  const quarterly = cyclePrice(pricing, "QUARTERLY");
-  const yearly = cyclePrice(pricing, "YEARLY");
-  if (!quarterly || !yearly) return 0;
-  return Math.max(0, Math.round(((quarterly.connects * 4) / yearly.connects - 1) * 100));
+/** The lowest listed price on a cycle, for "from ₹…" teasers; null when nothing is listed. */
+export function lowestPrice(packages: HostingPackage[], cycle: BillingCycle): number | null {
+  const prices = packages.map((pkg) => pkg.prices[cycle]).filter((price): price is number => price !== null && price > 0);
+  return prices.length ? Math.min(...prices) : null;
 }

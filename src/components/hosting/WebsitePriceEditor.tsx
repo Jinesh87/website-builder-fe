@@ -1,84 +1,67 @@
 import { useEffect, useState } from "react";
 import { Button } from "@heroui/react";
-import { adminHostingApi, hostingApi, type BillingCycle, type WebsiteHosting } from "../../api/hosting.ts";
+import { hostingApi, type BillingCycle, type WebsiteHosting } from "../../api/hosting.ts";
 import { errorMessage } from "../../api/http.ts";
-import { connectsPriceInPaise, formatPaise } from "../../api/wallet.ts";
+import { defaultPlan, paiseToRupeesInput, rupeesInputToPaise } from "../../utils/hosting-pricing.ts";
 import FormAlert from "../ui/FormAlert.tsx";
-import { ConnectsInput, parseConnects } from "./hosting-labels.tsx";
+import { RupeesInput } from "./hosting-labels.tsx";
 
 type WebsitePriceEditorProps = {
   hosting: WebsiteHosting;
-  /** Receives the website's hosting reloaded after the change, with prices resolved again. */
+  /** Receives the website's hosting reloaded after the change. */
   onSaved: (hosting: WebsiteHosting) => void;
   onCancel?: () => void;
-  /** Cycle for the plan created when the website has none yet. */
-  cycle?: BillingCycle;
-  /** When false, hides the Global default option and only edits this website's price. */
-  allowGlobal?: boolean;
+  /** The cycle the admin is looking at; the plan moves to it when the new price offers it. */
+  preferredCycle?: BillingCycle;
+  autoFocus?: boolean;
 };
 
-type Prices = { quarterlyPrice: number | null; yearlyPrice: number | null };
-type PriceScope = "WEBSITE" | "GLOBAL";
-
-function toText(prices: Prices) {
-  return { quarterly: prices.quarterlyPrice?.toString() ?? "", yearly: prices.yearlyPrice?.toString() ?? "" };
-}
-
 /**
- * Super Admin: sets this website's own price, or the global default. A website price left empty
- * inherits (client price, then global); the global default always has a value.
+ * Super Admin: the price agreed for this website on the custom package. Saving puts the website on the custom
+ * package; removing it moves the website back to a listed package. Applies from the next payment.
  */
-export default function WebsitePriceEditor({
-  hosting,
-  onSaved,
-  onCancel,
-  cycle = "QUARTERLY",
-  allowGlobal = true,
-}: WebsitePriceEditorProps) {
-  const { priceLevels, connectsPerRupee, website } = hosting;
-  const [scope, setScope] = useState<PriceScope>("WEBSITE");
-  const [values, setValues] = useState(() => toText(priceLevels.website));
+export default function WebsitePriceEditor({ hosting, onSaved, onCancel, preferredCycle, autoFocus }: WebsitePriceEditorProps) {
+  const { subscription, website } = hosting;
+  const custom = hosting.packages.find((pkg) => pkg.isCustom);
+  const listed = defaultPlan({ packages: hosting.packages.filter((pkg) => !pkg.isCustom), subscription: null });
+  const stored = { quarterly: subscription?.customQuarterlyPaise ?? null, yearly: subscription?.customYearlyPaise ?? null };
+
+  const [quarterly, setQuarterly] = useState(paiseToRupeesInput(stored.quarterly));
+  const [yearly, setYearly] = useState(paiseToRupeesInput(stored.yearly));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const stored: Prices = scope === "WEBSITE" ? priceLevels.website : priceLevels.global;
-
   useEffect(() => {
-    setValues(toText(stored));
+    setQuarterly(paiseToRupeesInput(stored.quarterly));
+    setYearly(paiseToRupeesInput(stored.yearly));
     setError(null);
-    // Re-seed only when the level or its saved prices change.
-  }, [scope, stored.quarterlyPrice, stored.yearlyPrice]);
+  }, [stored.quarterly, stored.yearly]);
 
-  const next: Prices = { quarterlyPrice: parseConnects(values.quarterly), yearlyPrice: parseConnects(values.yearly) };
-  const changed = next.quarterlyPrice !== stored.quarterlyPrice || next.yearlyPrice !== stored.yearlyPrice;
-  const canInherit = scope !== "GLOBAL";
-  const missingGlobal = scope === "GLOBAL" && (next.quarterlyPrice === null || next.yearlyPrice === null);
-  const hasOwn = canInherit && (stored.quarterlyPrice !== null || stored.yearlyPrice !== null);
+  const next = { quarterly: rupeesInputToPaise(quarterly), yearly: rupeesInputToPaise(yearly) };
+  const invalid = Number.isNaN(next.quarterly) || Number.isNaN(next.yearly);
+  const empty = next.quarterly === null && next.yearly === null;
+  const changed = next.quarterly !== stored.quarterly || next.yearly !== stored.yearly;
+  const hasOwn = stored.quarterly !== null || stored.yearly !== null;
 
-  /** What an empty field falls back to at this level. */
-  function fallback(target: BillingCycle): { amount: number; label: string } {
-    const key = target === "QUARTERLY" ? "quarterlyPrice" : "yearlyPrice";
-    if (scope === "WEBSITE" && priceLevels.client[key] !== null) return { amount: priceLevels.client[key]!, label: "client price" };
-    return { amount: priceLevels.global[key], label: "global default" };
+  /** Keeps the wanted cycle when the custom price offers it, else the cycle that has a price. */
+  function customCycle(): BillingCycle {
+    const current = preferredCycle ?? subscription?.cycle ?? "YEARLY";
+    if ((current === "QUARTERLY" ? next.quarterly : next.yearly) !== null) return current;
+    return next.quarterly !== null ? "QUARTERLY" : "YEARLY";
   }
 
-  async function save(prices: Prices) {
+  async function save(remove: boolean) {
     setSaving(true);
     setError(null);
     try {
-      if (scope === "WEBSITE") {
-        onSaved(await hostingApi.updatePlan(website.id, { ...prices, ...(hosting.subscription ? {} : { cycle }) }));
-        return;
-      }
-      const settings = await adminHostingApi.settings();
-      await adminHostingApi.updateSettings({
-        enabled: settings.enabled,
-        reminderDays: settings.reminderDays,
-        graceDays: settings.graceDays,
-        quarterlyPrice: prices.quarterlyPrice ?? 0,
-        yearlyPrice: prices.yearlyPrice ?? 0,
-      });
-      onSaved(await hostingApi.get(website.id));
+      onSaved(
+        await hostingApi.updatePlan(
+          website.id,
+          remove
+            ? { customQuarterlyPaise: null, customYearlyPaise: null, ...(listed ? { packageId: listed.packageId, cycle: listed.cycle } : {}) }
+            : { customQuarterlyPaise: next.quarterly, customYearlyPaise: next.yearly, packageId: custom!.id, cycle: customCycle() },
+        ),
+      );
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -86,80 +69,51 @@ export default function WebsitePriceEditor({
     }
   }
 
-  const field = (target: BillingCycle) => {
-    const key = target === "QUARTERLY" ? "quarterly" : "yearly";
-    const own = parseConnects(values[key]);
-    const inherit = fallback(target);
+  if (!custom) {
     return (
-      <ConnectsInput
-        id={`price-${target.toLowerCase()}-${website.id}`}
-        label={target === "QUARTERLY" ? "Quarterly (3 months)" : "Yearly (12 months)"}
-        value={values[key]}
-        onChange={(value) => setValues((current) => ({ ...current, [key]: value }))}
-        placeholder={canInherit ? `Inherit · ${inherit.amount.toLocaleString("en-IN")}` : "Required"}
-        hint={
-          own !== null
-            ? own === 0
-              ? "Free"
-              : `= ${formatPaise(connectsPriceInPaise(own, connectsPerRupee))}`
-            : canInherit
-              ? `Uses ${inherit.label}: ${inherit.amount.toLocaleString("en-IN")}`
-              : undefined
-        }
-        isDisabled={saving}
-      />
+      <FormAlert status="warning">
+        The Custom package is hidden. Show it in Settings → Hosting to agree a price for a website.
+      </FormAlert>
     );
-  };
-
-  const scopes: { id: PriceScope; label: string }[] = [
-    { id: "WEBSITE", label: "This website" },
-    { id: "GLOBAL", label: "Global default" },
-  ];
+  }
 
   return (
     <div className="flex flex-col gap-3">
-      {allowGlobal && (
-        <div role="radiogroup" aria-label="Apply price to" className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-surface p-1">
-          {scopes.map((option) => {
-            const selected = option.id === scope;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => setScope(option.id)}
-                disabled={saving}
-                className={`truncate rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
-                  selected ? "bg-ink text-white shadow-xs" : "text-ink-muted hover:bg-canvas hover:text-ink"
-                }`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
       <div className="grid gap-3 sm:grid-cols-2">
-        {field("QUARTERLY")}
-        {field("YEARLY")}
+        <RupeesInput
+          id={`custom-quarterly-${website.id}`}
+          label="Quarterly (3 months)"
+          value={quarterly}
+          onChange={setQuarterly}
+          placeholder="Not offered"
+          error={Number.isNaN(next.quarterly) ? "Enter an amount like 2100 or 2100.50" : undefined}
+          isDisabled={saving}
+          autoFocus={autoFocus && preferredCycle !== "YEARLY"}
+        />
+        <RupeesInput
+          id={`custom-yearly-${website.id}`}
+          label="Yearly (12 months)"
+          value={yearly}
+          onChange={setYearly}
+          placeholder="Not offered"
+          error={Number.isNaN(next.yearly) ? "Enter an amount like 7000 or 7000.50" : undefined}
+          isDisabled={saving}
+          autoFocus={autoFocus && preferredCycle === "YEARLY"}
+        />
       </div>
-
       <p className="text-xs text-ink-muted">
-        {scope === "WEBSITE" ? "Only this website. Empty uses the default price. 0 = free." : "The default for every website without its own price."}{" "}
-        Applies from the next payment.
+        Only this website, on the {custom.name} package. Leave a cycle empty to not offer it; 0 = free. Applies from the next payment.
       </p>
 
       {error && <FormAlert status="danger">{error}</FormAlert>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" onPress={() => void save(next)} isPending={saving} isDisabled={!changed || missingGlobal}>
-          {scope === "GLOBAL" ? "Save global default" : "Save price"}
+        <Button size="sm" onPress={() => void save(false)} isPending={saving} isDisabled={!changed || invalid || empty}>
+          Save price
         </Button>
         {hasOwn && (
-          <Button size="sm" variant="ghost" isDisabled={saving} onPress={() => void save({ quarterlyPrice: null, yearlyPrice: null })}>
-            Reset to default
+          <Button size="sm" variant="ghost" isDisabled={saving || !listed} onPress={() => void save(true)}>
+            Remove custom price
           </Button>
         )}
         {onCancel && (

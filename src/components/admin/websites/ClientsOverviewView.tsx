@@ -210,10 +210,10 @@ export default function ClientsOverviewView() {
                         )}
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 text-right">
-                        <p className="font-semibold text-ink">{item.paid.connects.toLocaleString("en-IN")}</p>
+                        <p className="font-semibold text-ink">{formatPaise(item.paid.amountPaise)}</p>
                         <p className="text-xs text-ink-muted">
                           {item.paid.payments} {item.paid.payments === 1 ? "payment" : "payments"}
-                          {item.paid.collectedPaise > 0 && ` · ${formatPaise(item.paid.collectedPaise)}`}
+                          {item.paid.collectedPaise > 0 && ` · ${formatPaise(item.paid.collectedPaise)} offline`}
                         </p>
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 text-right text-ink-body">{formatConnects(item.balance)}</td>

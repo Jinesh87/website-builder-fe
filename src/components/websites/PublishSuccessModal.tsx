@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import type { WebsiteHosting } from "../../api/hosting.ts";
-import { CYCLE_LABELS, formatBillingDate } from "../hosting/hosting-labels.tsx";
+import { formatBillingDate, planLabel } from "../hosting/hosting-labels.tsx";
 import CommonModal from "../ui/CommonModal.tsx";
 import LiveSiteLink from "./LiveSiteLink.tsx";
 
@@ -36,7 +36,7 @@ const CONFETTI = Array.from({ length: 16 }, (_, index) => {
 function hostingLine(hosting: WebsiteHosting | null | undefined): string | null {
   const subscription = hosting?.subscription;
   if (!subscription?.currentPeriodEnd || (subscription.status !== "ACTIVE" && subscription.status !== "GRACE")) return null;
-  return `Hosting active · ${CYCLE_LABELS[subscription.cycle]} · till ${formatBillingDate(subscription.currentPeriodEnd)}`;
+  return `Hosting active · ${planLabel(subscription)} · till ${formatBillingDate(subscription.currentPeriodEnd)}`;
 }
 
 export default function PublishSuccessModal({ isOpen, onClose, website, hosting, title, redirect }: PublishSuccessModalProps) {
