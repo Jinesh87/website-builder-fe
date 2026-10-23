@@ -5,7 +5,7 @@ import { formatPaise } from "../../api/wallet.ts";
 import { bestYearlySaving, yearlySavingPercent } from "../../utils/hosting-pricing.ts";
 import Icon from "./Icon.tsx";
 import Tabs from "./Tabs.tsx";
-import { CYCLE_MONTHS, CYCLE_UNIT, usePublicPricing } from "./use-pricing.ts";
+import { CUSTOM_STARTING_PAISE, CYCLE_MONTHS, CYCLE_UNIT, customStartingLabel, usePublicPricing } from "./use-pricing.ts";
 
 const CYCLE_NAMES: Record<BillingCycle, string> = { QUARTERLY: "quarterly", YEARLY: "yearly" };
 
@@ -47,9 +47,11 @@ function PlanCard({ plan, cycle, onStart }: { plan: HostingPackage; cycle: Billi
       {plan.isCustom ? (
         <>
           <div className="price">
-            <b>Let's talk</b>
+            <span className="muted">Starting from</span>
+            <b>{formatPaise(CUSTOM_STARTING_PAISE[cycle])}</b>
+            <span className="muted">{CYCLE_UNIT[cycle]}</span>
           </div>
-          <p className="hint">Priced for what you need. We'll send you a quote.</p>
+          <p className="hint">The final price depends on your project. We'll send you a quote.</p>
           <Link to="/contact" className="btn lg block">
             Request a custom quote
           </Link>
@@ -151,7 +153,7 @@ export default function PricingPage() {
               ))}
             </div>
           ) : (
-            <div className="grid g3" style={{ alignItems: "start" }}>
+            <div className="grid g3">
               {packages.map((plan) => (
                 <PlanCard key={plan.id} plan={plan} cycle={cycle} onStart={start} />
               ))}
@@ -228,7 +230,7 @@ export default function PricingPage() {
                       const price = plan.prices[cycle];
                       return (
                         <td key={plan.id} className={plan.featured ? "us" : undefined}>
-                          {plan.isCustom ? "Custom quote" : price ? `${formatPaise(price)} ${CYCLE_UNIT[cycle]}` : "–"}
+                          {plan.isCustom ? customStartingLabel(cycle) : price ? `${formatPaise(price)} ${CYCLE_UNIT[cycle]}` : "–"}
                         </td>
                       );
                     })}

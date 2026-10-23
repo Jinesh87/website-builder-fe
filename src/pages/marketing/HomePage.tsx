@@ -7,7 +7,7 @@ import { prefersReducedMotion } from "./marketing-context.ts";
 import { MediaTile, TemplateFrame, type SitePart } from "./MiniSite.tsx";
 import TemplateCard from "./TemplateCard.tsx";
 import HeroGalleryBanner from "./HeroGalleryBanner.tsx";
-import { lowestPrice, usePublicPricing } from "./use-pricing.ts";
+import { customStartingLabel, lowestPrice, usePublicPricing } from "./use-pricing.ts";
 
 
 
@@ -649,7 +649,7 @@ export default function HomePage() {
                 Pricing
               </div>
               <h2>Simple hosting plans</h2>
-              <p>Basic, Standard or Custom, billed quarterly or yearly in rupees.</p>
+              <p>Starter, Dedicated or Custom, billed quarterly or yearly in rupees.</p>
             </div>
             <div className="pt-plans">
               {plans.map((plan) => {
@@ -659,7 +659,7 @@ export default function HomePage() {
                   <span key={plan.id} className={plan.featured ? "hot" : undefined}>
                     <b>{plan.name}</b>
                     {plan.isCustom
-                      ? "Custom quote"
+                      ? customStartingLabel("YEARLY")
                       : yearly
                         ? `${formatPaise(yearly)} / year`
                         : quarterly && `${formatPaise(quarterly)} / 3 months`}
