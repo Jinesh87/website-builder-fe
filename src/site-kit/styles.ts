@@ -7,6 +7,7 @@
 import { AUTH_CSS } from "./auth-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
 import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
+import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
 
 const NOT_CHROME = ":not(.wb-editor-chrome, .wb-editor-chrome *)";
 
@@ -7688,6 +7689,7 @@ details[open] > summary .wb-faq-plus {
 ${AUTH_CSS}
 ${BLOG_CSS}
 ${PREMIUM_HEADER_CSS}
+${CONTACT_BUILDER_CSS}
 .wb-device-scroll {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;

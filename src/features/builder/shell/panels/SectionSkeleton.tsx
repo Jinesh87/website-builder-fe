@@ -742,6 +742,7 @@ export function SectionSkeleton({ preset }: { preset: SectionPreset }) {
         </div>
       );
 
+    case "contact-builder":
     case "contact-form":
       return (
         <div className="grid h-full w-full grid-cols-2 items-center gap-2 p-2">

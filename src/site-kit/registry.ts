@@ -3083,6 +3083,59 @@ export const SECTION_PRESETS: SectionPreset[] = [
       }),
   },
   {
+    key: "contact-builder",
+    type: "contact",
+    label: "Contact · Custom Builder (drag & drop)",
+    category: "Contact",
+    description:
+      "Form card beside detail cards and a map. Rearrange columns, blocks and form fields freely.",
+    create: () =>
+      createSection("contact", {
+        data: {
+          variant: "custom",
+          heading: "Contact us",
+          text: "Have a question or a project in mind? Send us a message and we will get back to you.",
+          showHeader: true,
+          showForm: true,
+          submitLabel: "Send Message",
+          layout: {
+            gap: "lg",
+            align: "start",
+            columns: [
+              {
+                id: "col-form",
+                width: 8,
+                boxed: true,
+                blocks: [
+                  { id: "block-form-heading", type: "heading", text: "Send us a Message", level: 3 },
+                  { id: "block-form", type: "form" },
+                ],
+              },
+              {
+                id: "col-details",
+                width: 4,
+                blocks: [
+                  { id: "block-location", type: "info", kind: "address", label: "Our Location", value: "100 Main Street, Kochi, Kerala", boxed: true },
+                  { id: "block-phone", type: "info", kind: "phone", label: "Phone", value: "+91 98765 43210", boxed: true },
+                  { id: "block-whatsapp", type: "button", label: "Chat on WhatsApp", href: "https://wa.me/919876543210", tone: "secondary" },
+                  { id: "block-email", type: "info", kind: "email", label: "Email", value: "hello@example.com", boxed: true },
+                  { id: "block-hours", type: "info", kind: "hours", label: "Business Hours", value: "Mon - Sat: 9:00 AM - 6:00 PM\nSunday: Closed", boxed: true },
+                  { id: "block-map", type: "map", query: "Kochi, Kerala", height: "sm" },
+                ],
+              },
+            ],
+          },
+          formFields: [
+            { id: "name", type: "text", label: "Full Name", placeholder: "John Doe", required: true, width: "half" },
+            { id: "phone", type: "tel", label: "Phone Number", placeholder: "+91 98765 43210", width: "half" },
+            { id: "email", type: "email", label: "Email Address", placeholder: "john@example.com", required: true, width: "full" },
+            { id: "subject", type: "text", label: "Subject", placeholder: "Inquiry about our products", width: "full" },
+            { id: "message", type: "textarea", label: "Message", placeholder: "Tell us more about your requirements...", required: true, width: "full" },
+          ],
+        },
+      }),
+  },
+  {
     key: "contact-form",
     type: "contact",
     label: "Contact · Simple Form + Info",
