@@ -1,37 +1,56 @@
 import { useEffect, useId, useState } from "react";
 import { Spinner } from "@heroui/react";
 import { LayoutTemplate, Pencil } from "lucide-react";
+import type { TemplateCategory } from "../../api/admin-template-categories.ts";
 import { adminTemplatesApi, type AdminTemplate, type StudioStartFrom, type TemplateDetails } from "../../api/admin-templates.ts";
 import { ApiError, errorMessage } from "../../api/http.ts";
-import { PLATFORM_TEMPLATE_CATEGORIES, websitesApi, type PlatformTemplateCategory, type WebsiteSummary } from "../../api/websites.ts";
+import { websitesApi, type WebsiteSummary } from "../../api/websites.ts";
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
 import CommonModal from "../ui/AppModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../ui/SelectInput.tsx";
 import TextAreaInput from "../ui/TextAreaInput.tsx";
 import TextInput from "../ui/TextInput.tsx";
+import TemplatePicker from "./TemplatePicker.tsx";
 
 type StartFrom = StudioStartFrom["startFrom"];
 
 const START_OPTIONS: { value: StartFrom; label: string; hint: string }[] = [
   { value: "blank", label: "Blank", hint: "One empty home page." },
-  { value: "template", label: "A prebuilt template", hint: "Copy a live template and change it." },
-  { value: "website", label: "A client's website", hint: "Copies its pages and images; the client's site isn't changed." },
+  { value: "template", label: "A template", hint: "Copy a live template." },
+  { value: "website", label: "A client's website", hint: "Copy its pages and images." },
 ];
 
-const CATEGORY_OPTIONS: SelectOption<PlatformTemplateCategory | "">[] = [
-  { value: "", label: "Choose a category" },
-  ...PLATFORM_TEMPLATE_CATEGORIES.map((category) => ({ value: category, label: category })),
-];
+const NAME_MAX = 120;
+
+/** Suggested working name for a copy, e.g. "Bakery · Coral copy". */
+const copyName = (name: string) => `${name} copy`.slice(0, NAME_MAX);
+
+function categoryOptions(categories: TemplateCategory[]): SelectOption<string>[] {
+  return [{ value: "", label: "Choose a category" }, ...categories.map((category) => ({ value: category.id, label: category.name }))];
+}
 
 const nameProblem = (name: string) => (name.trim().length < 2 ? "Use at least 2 characters" : undefined);
 
-/** Creates a Template Studio website and hands its id back so the caller can open the editor. */
-export function NewTemplateDialog({ onClose, onCreated }: { onClose: () => void; onCreated: (websiteId: string) => void }) {
+/**
+ * Creates a Template Studio website and hands its id back so the caller can open the editor.
+ * `initialTemplate` preselects "A template" with that live template, e.g. from a card's menu.
+ */
+export function NewTemplateDialog({
+  initialTemplate,
+  onClose,
+  onCreated,
+}: {
+  initialTemplate?: Pick<AdminTemplate, "key" | "name">;
+  onClose: () => void;
+  onCreated: (websiteId: string) => void;
+}) {
   const radioName = useId();
-  const [name, setName] = useState("");
-  const [startFrom, setStartFrom] = useState<StartFrom>("blank");
-  const [templateKey, setTemplateKey] = useState("");
+  const [name, setName] = useState(initialTemplate ? copyName(initialTemplate.name) : "");
+  // Picking a template suggests a name until the admin types their own.
+  const [nameEdited, setNameEdited] = useState(false);
+  const [startFrom, setStartFrom] = useState<StartFrom>(initialTemplate ? "template" : "blank");
+  const [templateKey, setTemplateKey] = useState(initialTemplate?.key ?? "");
   const [templates, setTemplates] = useState<AdminTemplate[] | null>(null);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
@@ -77,6 +96,11 @@ export function NewTemplateDialog({ onClose, onCreated }: { onClose: () => void;
           : null;
   const canSubmit = !nameProblem(name) && source !== null && !submitting;
 
+  function pickTemplate(template: AdminTemplate) {
+    setTemplateKey(template.key);
+    if (!nameEdited) setName(copyName(template.name));
+  }
+
   async function submit() {
     if (!canSubmit || !source) return;
     setSubmitting(true);
@@ -97,7 +121,7 @@ export function NewTemplateDialog({ onClose, onCreated }: { onClose: () => void;
       subtitle="Design it in the editor, then save it to the gallery."
       icon={<LayoutTemplate className="size-5" />}
       iconTone="brand"
-      size="md"
+      size={startFrom === "template" ? "lg" : "md"}
       primaryAction={{ label: "Open in editor", onPress: () => void submit(), isPending: submitting, isDisabled: !canSubmit }}
       secondaryAction={{ label: "Cancel", onPress: onClose }}
     >
@@ -107,52 +131,44 @@ export function NewTemplateDialog({ onClose, onCreated }: { onClose: () => void;
           label="Working name"
           name="templateName"
           value={name}
-          onChange={setName}
+          onChange={(value) => {
+            setName(value);
+            setNameEdited(true);
+          }}
           placeholder="e.g. Dental clinic modern"
           description="You can change it when you save the template."
           error={name ? nameProblem(name) : undefined}
-          autoFocus
+          autoFocus={!initialTemplate}
         />
 
-        <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-medium text-ink">Start from</legend>
-          {START_OPTIONS.map((option) => (
-            <label
-              key={option.value}
-              className={`flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
-                startFrom === option.value ? "border-brand bg-brand-soft/40" : "border-line hover:bg-canvas"
-              }`}
-            >
-              <input
-                type="radio"
-                name={radioName}
-                value={option.value}
-                checked={startFrom === option.value}
-                onChange={() => setStartFrom(option.value)}
-                className="mt-1 accent-(--color-brand)"
-              />
-              <span>
-                <span className="block text-sm font-medium text-ink">{option.label}</span>
-                <span className="block text-xs text-ink-muted">{option.hint}</span>
-              </span>
-            </label>
-          ))}
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium text-ink">Start from</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {START_OPTIONS.map((option) => (
+              <label
+                key={option.value}
+                className={`flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2.5 transition-colors has-focus-visible:ring-2 has-focus-visible:ring-brand/40 ${
+                  startFrom === option.value ? "border-brand bg-brand-soft/40" : "border-line hover:bg-canvas"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={radioName}
+                  value={option.value}
+                  checked={startFrom === option.value}
+                  onChange={() => setStartFrom(option.value)}
+                  className="mt-1 accent-(--color-brand)"
+                />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-ink">{option.label}</span>
+                  <span className="block text-xs text-ink-muted">{option.hint}</span>
+                </span>
+              </label>
+            ))}
+          </div>
         </fieldset>
 
-        {startFrom === "template" &&
-          (templates ? (
-            <SelectInput
-              label="Template"
-              value={templateKey}
-              onChange={setTemplateKey}
-              options={[
-                { value: "", label: templates.length ? "Choose a template" : "No live templates" },
-                ...templates.map((template) => ({ value: template.key, label: `${template.name} · ${template.category}` })),
-              ]}
-            />
-          ) : (
-            <Spinner size="sm" aria-label="Loading templates" />
-          ))}
+        {startFrom === "template" && <TemplatePicker templates={templates} value={templateKey} onChange={pickTemplate} />}
 
         {startFrom === "website" && (
           <div className="flex flex-col gap-2">
@@ -202,24 +218,24 @@ export function NewTemplateDialog({ onClose, onCreated }: { onClose: () => void;
 /** Name, category, description and visibility. Built-in templates only allow visibility. */
 export function TemplateDetailsDialog({
   template,
+  categories,
   onClose,
   onSaved,
 }: {
   template: AdminTemplate;
+  categories: TemplateCategory[];
   onClose: () => void;
   onSaved: (template: AdminTemplate) => void;
 }) {
   const builtIn = template.origin === "BUILT_IN";
   const [name, setName] = useState(template.name);
-  const [category, setCategory] = useState<PlatformTemplateCategory | "">(
-    (PLATFORM_TEMPLATE_CATEGORIES as readonly string[]).includes(template.category) ? (template.category as PlatformTemplateCategory) : "",
-  );
+  const [categoryId, setCategoryId] = useState(template.categoryId ?? "");
   const [description, setDescription] = useState(template.description ?? "");
   const [isActive, setIsActive] = useState(template.status === "LIVE");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const canSubmit = (builtIn || (!nameProblem(name) && category !== "")) && !submitting;
+  const canSubmit = (builtIn || (!nameProblem(name) && categoryId !== "")) && !submitting;
 
   async function submit() {
     if (!canSubmit) return;
@@ -229,7 +245,7 @@ export function TemplateDetailsDialog({
     try {
       const details: Partial<TemplateDetails> = builtIn
         ? { isActive }
-        : { name: name.trim(), ...(category ? { category } : {}), description: description.trim(), isActive };
+        : { name: name.trim(), categoryId, description: description.trim(), isActive };
       onSaved(await adminTemplatesApi.updateDetails(template.id, details));
     } catch (err) {
       if (err instanceof ApiError) setFieldErrors(err.fieldErrors());
@@ -271,10 +287,10 @@ export function TemplateDetailsDialog({
             />
             <SelectInput
               label="Category"
-              value={category}
-              onChange={setCategory}
-              options={CATEGORY_OPTIONS}
-              error={fieldErrors.category}
+              value={categoryId}
+              onChange={setCategoryId}
+              options={categoryOptions(categories)}
+              error={fieldErrors.categoryId}
               isRequired
             />
             <TextAreaInput

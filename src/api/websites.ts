@@ -263,19 +263,6 @@ export type SavedSection = {
 
 export type SaveTemplateInput = { name: string; description?: string };
 
-/** Must match PLATFORM_TEMPLATE_CATEGORIES on the server. */
-export const PLATFORM_TEMPLATE_CATEGORIES = [
-  "Business",
-  "Agency",
-  "Services",
-  "Health",
-  "Food",
-  "Portfolio",
-  "Landing page",
-  "Education",
-] as const;
-export type PlatformTemplateCategory = (typeof PLATFORM_TEMPLATE_CATEGORIES)[number];
-
 export type SavePageContentInput = {
   expectedDraftUpdatedAt: string;
   schemaVersion: number;

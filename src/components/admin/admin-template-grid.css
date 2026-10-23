@@ -1,0 +1,114 @@
+/*
+ * Admin template library: the marketing gallery card (templates-gallery.css) restyled for the light
+ * admin theme, with a steadier hover. Every rule is scoped to .admin-template-grid, so the marketing
+ * gallery is unchanged.
+ */
+
+/* Rendering: no hover lift (it slid the card out from under the cursor and re-triggered hover),
+   no backdrop blur over the large preview, GPU layers only for the hovered card, and off-screen
+   cards skipped until they scroll into view. */
+.admin-template-grid .tcard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 420px;
+}
+
+.admin-template-grid .tcard:hover {
+  transform: none;
+  border-color: var(--color-line-strong);
+  box-shadow: 0 12px 32px -14px rgba(16, 24, 40, 0.22);
+}
+
+.admin-template-grid .tcard-viewport {
+  contain: layout paint;
+  background: var(--color-canvas);
+  border-color: var(--color-line);
+}
+
+.admin-template-grid .tcard-viewport .tframe > .tsite,
+.admin-template-grid .tcard-viewport .tframe > .ts {
+  will-change: auto;
+}
+
+/* The preview only starts scrolling once the cursor rests on a card, not when cards pass under it while scrolling the page. */
+.admin-template-grid .tcard:hover .tcard-viewport .tframe > .tsite,
+.admin-template-grid .tcard:hover .tcard-viewport .tframe > .ts {
+  will-change: transform;
+  transition-delay: 0.35s !important;
+}
+
+.admin-template-grid .tcard-ov {
+  background: rgba(15, 23, 42, 0.28);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Light theme */
+.admin-template-grid .tcard-thumb {
+  background: var(--color-canvas);
+}
+
+.admin-template-grid .tcard-browser-bar {
+  background: var(--color-surface);
+  border-color: var(--color-line);
+}
+
+.admin-template-grid .tcard-url-bar {
+  background: var(--color-canvas);
+  border-color: var(--color-line);
+  color: var(--color-ink-muted);
+}
+
+.admin-template-grid .tcard-badge-pill {
+  color: var(--color-ink-muted);
+}
+
+.admin-template-grid .tname {
+  color: var(--color-ink);
+}
+
+.admin-template-grid .tname:hover {
+  color: var(--color-brand);
+}
+
+.admin-template-grid .thint {
+  color: var(--color-ink-muted);
+}
+
+.admin-template-grid .tid-badge {
+  background: var(--color-canvas);
+  border-color: var(--color-line);
+  color: var(--color-ink-muted);
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-template-grid .tid-badge:hover,
+.admin-template-grid .tid-badge:focus-visible {
+  border-color: var(--color-line-strong);
+  color: var(--color-ink);
+}
+
+.admin-template-grid .tacts .btn-preview,
+.admin-template-grid .tacts .btn-details,
+.admin-template-grid .tacts .btn-fav {
+  background: var(--color-surface);
+  border-color: var(--color-line);
+  color: var(--color-ink);
+}
+
+.admin-template-grid .tacts .btn-preview:hover,
+.admin-template-grid .tacts .btn-details:hover,
+.admin-template-grid .tacts .btn-fav:hover {
+  background: var(--color-canvas);
+  border-color: var(--color-line-strong);
+  color: var(--color-ink);
+}
+
+.admin-template-grid .tacts button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}

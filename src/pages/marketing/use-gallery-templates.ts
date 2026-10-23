@@ -23,6 +23,13 @@ const CURATED: readonly GalleryTemplate[] = TPLS.map((t, index) => ({
   searchText: [t.id, t.n, t.type, t.style, t.c, t.biz].filter(Boolean).join(" ").toLowerCase(),
 }));
 
+const CURATED_INDEX_BY_KEY = new Map(TPLS.map((t, index) => [getTemplateKey(t.id) ?? t.id, index]));
+
+/** Index into TPLS of the curated marketing design for a backend template key, or null when it has none. */
+export function curatedTemplateIndex(key: string): number | null {
+  return CURATED_INDEX_BY_KEY.get(key) ?? null;
+}
+
 let platformTemplates: Promise<WebsiteTemplate[]> | null = null;
 
 /** One request per page load, shared by every gallery consumer; a failure is retried on next use. */

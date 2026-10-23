@@ -138,6 +138,34 @@ export function splitSiteChrome(
   };
 }
 
+/**
+ * The draft after the canvas of page `pageId` shows `canvas`: body sections go to the page, header/footer
+ * edits go where that page keeps them. Returns `draft` itself when nothing changed. Pass the latest draft:
+ * the page's header/footer mode is read from it, so a stale copy would undo a header just removed.
+ */
+export function applyCanvasSections<D extends Chrome & { pages: readonly { id: string; sections: Section[] }[] }>(
+  draft: D,
+  pageId: string,
+  canvas: readonly Section[],
+): D {
+  const page = draft.pages.find((candidate) => candidate.id === pageId);
+  if (!page) return draft;
+  const { body, header, footer } = splitSiteChrome(canvas, draft, page.sections);
+  if (
+    stableJson(page.sections) === stableJson(body) &&
+    stableJson(draft.header) === stableJson(header) &&
+    stableJson(draft.footer) === stableJson(footer)
+  ) {
+    return draft;
+  }
+  return {
+    ...draft,
+    header,
+    footer,
+    pages: draft.pages.map((candidate) => (candidate.id === pageId ? { ...candidate, sections: body } : candidate)),
+  };
+}
+
 /** Page sections switched to the site header/footer, a page-only copy, or none. `seed` replaces the copy's content. */
 export function setPageChrome(
   sections: readonly Section[],

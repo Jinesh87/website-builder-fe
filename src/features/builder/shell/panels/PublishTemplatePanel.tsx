@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Archive, BookUp, Check, Copy, ExternalLink, Info, RotateCw } from "lucide-react";
 import { adminTemplatesApi, type AdminTemplate } from "../../../../api/admin-templates.ts";
 import { ApiError, errorMessage } from "../../../../api/http.ts";
-import { PLATFORM_TEMPLATE_CATEGORIES, type PlatformTemplateCategory } from "../../../../api/websites.ts";
+import { useTemplateCategories } from "../../../../hooks/use-template-categories.ts";
 import { useEditor } from "../../editor-context.ts";
 import { PanelHeader, SectionLabel } from "../ui.tsx";
 
@@ -15,15 +15,13 @@ const inputClass =
   "w-full rounded-ed border border-ed-border bg-ed-panel px-2 text-ed-sm text-ed-text placeholder:text-ed-faint focus:border-ed-accent focus:outline-none aria-invalid:border-ed-danger disabled:opacity-60";
 
 type Load = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; template: AdminTemplate | null };
-type Form = { name: string; category: PlatformTemplateCategory | ""; description: string; isActive: boolean };
+type Form = { name: string; categoryId: string; description: string; isActive: boolean };
 
 function formFrom(template: AdminTemplate | null, fallbackName: string): Form {
-  if (!template) return { name: fallbackName, category: "", description: "", isActive: true };
+  if (!template) return { name: fallbackName, categoryId: "", description: "", isActive: true };
   return {
     name: template.name,
-    category: (PLATFORM_TEMPLATE_CATEGORIES as readonly string[]).includes(template.category)
-      ? (template.category as PlatformTemplateCategory)
-      : "",
+    categoryId: template.categoryId ?? "",
     description: template.description ?? "",
     isActive: template.status === "LIVE",
   };
@@ -40,6 +38,7 @@ export default function PublishTemplatePanel() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
+  const { categories, error: categoriesError } = useTemplateCategories();
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +59,7 @@ export default function PublishTemplatePanel() {
   const template = load.status === "ready" ? load.template : null;
   const archived = template?.status === "ARCHIVED";
   const nameError = form.name.trim().length < 2 ? "Use at least 2 characters" : undefined;
-  const canSubmit = load.status === "ready" && !archived && !nameError && form.category !== "" && !submitting;
+  const canSubmit = load.status === "ready" && !archived && !nameError && form.categoryId !== "" && !submitting;
 
   function update<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -68,8 +67,8 @@ export default function PublishTemplatePanel() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const { category } = form;
-    if (!canSubmit || category === "") return;
+    const { categoryId } = form;
+    if (!canSubmit || categoryId === "") return;
     setSubmitting(true);
     setError(null);
     setFieldErrors({});
@@ -80,7 +79,7 @@ export default function PublishTemplatePanel() {
       }
       const details = {
         name: form.name.trim(),
-        category,
+        categoryId,
         description: form.description.trim(),
         isActive: form.isActive,
       };
@@ -133,7 +132,9 @@ export default function PublishTemplatePanel() {
         {template && (
           <div className="mx-3 mt-3 flex flex-col gap-1.5 rounded-ed border border-ed-border bg-ed-panel p-2.5">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-ed-2xs font-medium uppercase tracking-wider text-ed-faint">Template ID</span>
+              <span className="text-ed-2xs font-medium uppercase tracking-wider text-ed-faint">
+                Template ID{template.number != null && <span className="ml-1.5 normal-case tracking-normal text-ed-text">#{template.number}</span>}
+              </span>
               <span className="text-ed-2xs font-medium text-ed-muted">{STATUS_LABEL[template.status]}</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -212,21 +213,31 @@ export default function PublishTemplatePanel() {
                   </label>
                   <select
                     id={ids.category}
-                    value={form.category}
-                    aria-invalid={Boolean(fieldErrors.category)}
-                    onChange={(event) => update("category", event.target.value as Form["category"])}
+                    value={form.categoryId}
+                    disabled={!categories}
+                    aria-invalid={Boolean(fieldErrors.categoryId)}
+                    onChange={(event) => update("categoryId", event.target.value)}
                     className={`h-8 ${inputClass}`}
                   >
                     <option value="" disabled>
-                      Choose a category
+                      {categories ? "Choose a category" : "Loading categories…"}
                     </option>
-                    {PLATFORM_TEMPLATE_CATEGORIES.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
+                    {categories?.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.name}
                       </option>
                     ))}
                   </select>
-                  {fieldErrors.category && <p className="text-ed-2xs text-ed-danger">{fieldErrors.category}</p>}
+                  {(fieldErrors.categoryId ?? categoriesError) && (
+                    <p className="text-ed-2xs text-ed-danger">{fieldErrors.categoryId ?? categoriesError}</p>
+                  )}
+                  <p className="text-ed-2xs text-ed-faint">
+                    Add or rename categories under{" "}
+                    <Link to="/admin/templates" className="text-ed-accent hover:underline">
+                      Templates
+                    </Link>
+                    .
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-1">

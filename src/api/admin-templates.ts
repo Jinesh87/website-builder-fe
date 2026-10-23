@@ -1,5 +1,5 @@
 import { request } from "./http.ts";
-import type { PlatformTemplateCategory } from "./websites.ts";
+import type { TemplatePreview } from "./websites.ts";
 
 /** BUILT_IN templates come from the seed files and can only be shown or hidden. */
 export type PlatformTemplateOrigin = "BUILT_IN" | "ADMIN";
@@ -9,8 +9,12 @@ export type AdminTemplate = {
   id: string;
   /** Unique template ID, used in gallery links and when creating a website from it. */
   key: string;
+  /** Gallery number (#3001, …) of an admin-made template; null for built-in ones, which use their marketing number. */
+  number: number | null;
   name: string;
+  /** Category name, for display. */
   category: string;
+  categoryId: string | null;
   description: string | null;
   origin: PlatformTemplateOrigin;
   status: PlatformTemplateStatus;
@@ -24,7 +28,8 @@ export type AdminTemplate = {
 
 export type AdminTemplateListParams = {
   status?: "live" | "hidden" | "archived";
-  category?: PlatformTemplateCategory;
+  origin?: "built-in" | "custom";
+  categoryId?: string;
   search?: string;
 };
 
@@ -35,7 +40,7 @@ export type StudioStartFrom =
 
 export type TemplateDetails = {
   name: string;
-  category: PlatformTemplateCategory;
+  categoryId: string;
   description?: string;
   isActive: boolean;
 };
@@ -53,7 +58,7 @@ function toQuery(params: AdminTemplateListParams): string {
 
 type TemplateResponse = { template: AdminTemplate };
 
-/** Super Admin only. Editing or archiving a template never changes websites already created from it. */
+/** Super Admin only. Editing or deleting a template never changes websites already created from it. */
 export const adminTemplatesApi = {
   list: (params: AdminTemplateListParams = {}) =>
     request<{ templates: AdminTemplate[] }>(`${BASE}${toQuery(params)}`).then((data) => data.templates),
@@ -76,10 +81,16 @@ export const adminTemplatesApi = {
   updateDetails: (templateId: string, details: Partial<TemplateDetails>) =>
     request<TemplateResponse>(`${BASE}/${templateId}`, { method: "PATCH", body: details }).then((data) => data.template),
 
+  /** Renders any platform template, including hidden and archived ones. Not cached: admins edit them. */
+  preview: (templateId: string) => request<TemplatePreview>(`${BASE}/${templateId}/preview`),
+
   /** Soft delete; restorable. */
   archive: (templateId: string) =>
     request<TemplateResponse>(`${BASE}/${templateId}`, { method: "DELETE" }).then((data) => data.template),
 
   restore: (templateId: string) =>
     request<TemplateResponse>(`${BASE}/${templateId}/restore`, { method: "POST" }).then((data) => data.template),
+
+  /** Archived, admin-made templates only; removes its Template Studio website too. */
+  deletePermanently: (templateId: string) => request<void>(`${BASE}/${templateId}/permanent`, { method: "DELETE" }),
 };
