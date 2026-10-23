@@ -313,6 +313,7 @@ const baseComponents: { [T in SectionType]: ComponentConfig<SectionProps<T>> } =
   hero: sectionComponent("hero"),
   features: sectionComponent("features"),
   services: sectionComponent("services"),
+  cards: sectionComponent("cards"),
   testimonials: sectionComponent("testimonials"),
   faq: sectionComponent("faq"),
   cta: sectionComponent("cta"),

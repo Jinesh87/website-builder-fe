@@ -1,22 +1,26 @@
 import type { CSSProperties } from "react";
 import {
+  BUTTON_RADIUS_DEFAULT,
+  BUTTON_SHAPE_RADIUS,
+  buttonShapeRadius,
+  clampButtonRadius,
+  isButtonShape,
+} from "./button-shape.ts";
+import {
   HERO_ALIGNS,
-  HERO_BUTTON_RADIUS_MAX,
-  HERO_BUTTON_SHAPES,
   type HeroAlign,
   type HeroAlignElement,
-  type HeroButtonShape,
   type HeroData,
   type SectionSettings,
 } from "./types.ts";
+
+export { clampButtonRadius };
 
 export function isHeroAlign(value: unknown): value is HeroAlign {
   return typeof value === "string" && (HERO_ALIGNS as readonly string[]).includes(value);
 }
 
-export function isHeroButtonShape(value: unknown): value is HeroButtonShape {
-  return typeof value === "string" && (HERO_BUTTON_SHAPES as readonly string[]).includes(value);
-}
+export const isHeroButtonShape = isButtonShape;
 
 /**
  * Alignment applied to every hero element. `undefined` keeps the layout's own
@@ -45,28 +49,11 @@ export function alignAttr(align: HeroAlign | undefined): { "data-wb-align"?: Her
   return align ? { "data-wb-align": align } : {};
 }
 
-export const HERO_BUTTON_RADIUS: Record<Exclude<HeroButtonShape, "custom">, string> = {
-  square: "0px",
-  soft: "6px",
-  rounded: "12px",
-  pill: "9999px",
-  oval: "50%",
-};
+export const HERO_BUTTON_RADIUS = BUTTON_SHAPE_RADIUS;
 
-export const HERO_BUTTON_RADIUS_DEFAULT = 12;
+export const HERO_BUTTON_RADIUS_DEFAULT = BUTTON_RADIUS_DEFAULT;
 
-export function clampButtonRadius(value: unknown): number | undefined {
-  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
-  return Math.min(Math.max(Math.round(value), 0), HERO_BUTTON_RADIUS_MAX);
-}
-
-/** CSS radius for a shape, or `undefined` to keep the theme radius. */
-export function heroButtonRadius(shape: unknown, customRadius: unknown): string | undefined {
-  if (!isHeroButtonShape(shape)) return undefined;
-  if (shape !== "custom") return HERO_BUTTON_RADIUS[shape];
-  const radius = clampButtonRadius(customRadius);
-  return radius === undefined ? undefined : `${radius}px`;
-}
+export const heroButtonRadius = buttonShapeRadius;
 
 type ButtonShapeProps = {
   className: string;

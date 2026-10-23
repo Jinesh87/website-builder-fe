@@ -609,10 +609,14 @@ export function SectionHead({ heading, intro, eyebrow }: { heading?: string; int
   );
 }
 
-export function gridStyle(columns: GridColumns, mobileColumns: GridColumns): CSSProperties {
+export function gridStyle(
+  columns: GridColumns,
+  mobileColumns: GridColumns,
+  tabletColumns?: GridColumns,
+): CSSProperties {
   return {
     "--wb-cols": columns,
-    "--wb-cols-tablet": Math.min(columns, 2),
+    "--wb-cols-tablet": Math.min(tabletColumns ?? 2, columns),
     "--wb-cols-mobile": Math.min(mobileColumns, columns),
   } as CSSProperties;
 }

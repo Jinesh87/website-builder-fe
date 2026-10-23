@@ -73,6 +73,7 @@ import CustomSectionForm from "./CustomSectionForm.tsx";
 import { ContactFormFieldsEditor, ContactLayoutEditor } from "./ContactBuilderFields.tsx";
 import { createContactLayout, layoutHasForm, resolveContactLayout } from "../../../site-kit/contact-builder.ts";
 import AuthSectionForm from "./AuthSectionForm.tsx";
+import CardsSectionForm from "./CardsSectionForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
@@ -4225,6 +4226,13 @@ function DataForm({
     case "services":
       return (
         <ServicesForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "cards":
+      return (
+        <CardsSectionForm
           data={section.data}
           onChange={(data) => onChange({ ...section, data })}
         />
