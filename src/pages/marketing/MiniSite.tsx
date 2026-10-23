@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SitePage, SiteStyles, type SiteData } from "../../site-kit/index.ts";
+import { SharedSiteStyles } from "../../components/websites/use-site-stylesheet.ts";
+import { SitePage, type SiteData } from "../../site-kit/index.ts";
 import { getTemplateSite } from "../../site-kit/templates/index.ts";
 import { ART } from "./art.tsx";
 import { TPLS, type Template } from "./data.ts";
@@ -118,22 +119,18 @@ interface TemplateFrameProps extends Omit<MiniSiteProps, "t" | "mobile" | "style
 }
 
 const homeMarkupCache = new Map<string, string>();
-const MARKUP_VERSION = "2026-v9";
+const MARKUP_VERSION = "2026-v10";
 
 /**
  * Static HTML of a template's real home page. Rendered as markup rather than live
  * components so the thumbnail can sit inside links and buttons without nesting them.
+ * Styles come from the shared stylesheet, not from the markup.
  */
 function templateHomeMarkup(templateId: string, site: SiteData): string {
   const cacheKey = `${templateId}-${MARKUP_VERSION}`;
   let markup = homeMarkupCache.get(cacheKey);
   if (markup === undefined) {
-    markup = renderToStaticMarkup(
-      <>
-        <SiteStyles />
-        <SitePage site={site} page={site.pages[0]} />
-      </>,
-    );
+    markup = renderToStaticMarkup(<SitePage site={site} page={site.pages[0]} />);
     homeMarkupCache.set(cacheKey, markup);
   }
   return markup;
@@ -168,13 +165,16 @@ export function TemplateFrame({ t, className, label, ...siteProps }: TemplateFra
   return (
     <div ref={ref} className={className ? `${className} tframe` : "tframe"} aria-label={label}>
       {realSite ? (
-        <div
-          className="tsite"
-          style={scaleStyle}
-          aria-hidden="true"
-          inert
-          dangerouslySetInnerHTML={{ __html: templateHomeMarkup(template.id, realSite) }}
-        />
+        <>
+          <SharedSiteStyles />
+          <div
+            className="tsite"
+            style={scaleStyle}
+            aria-hidden="true"
+            inert
+            dangerouslySetInnerHTML={{ __html: templateHomeMarkup(template.id, realSite) }}
+          />
+        </>
       ) : (
         <MiniSite t={template} style={scaleStyle} {...siteProps} />
       )}

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import { SitePage, SiteStyles, type PageData, type SiteData } from "../../site-kit/index.ts";
+import { SitePage, type PageData, type SiteData } from "../../site-kit/index.ts";
+import { useSiteStylesheet } from "./use-site-stylesheet.ts";
 
 const VIEWPORT_WIDTH = 1280;
 const VIEWPORT_HEIGHT = 800;
@@ -16,6 +17,7 @@ export default function SiteThumbnail({ site, page, className = "" }: SiteThumbn
   const boxRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
   const target = page ?? site.pages.find((candidate) => candidate.slug === "/") ?? site.pages[0];
+  useSiteStylesheet();
 
   useLayoutEffect(() => {
     const box = boxRef.current;
@@ -34,7 +36,6 @@ export default function SiteThumbnail({ site, page, className = "" }: SiteThumbn
           className="pointer-events-none absolute left-0 top-0 origin-top-left select-none overflow-hidden"
           style={{ width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT, transform: `scale(${scale})` }}
         >
-          <SiteStyles />
           <SitePage site={site} page={target} />
         </div>
       )}

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import "./templates-gallery.css";
 
@@ -50,6 +50,37 @@ function CardLink({ href, newTab, className, label, title, children }: {
     <Link to={href} className={className} aria-label={label} title={title}>
       {children}
     </Link>
+  );
+}
+
+/**
+ * Thumbnails are full home pages, so they mount only once the card nears the viewport;
+ * this also defers any preview request a thumbnail makes on mount.
+ */
+function DeferredViewport({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(() => typeof IntersectionObserver === "undefined");
+
+  useEffect(() => {
+    const node = ref.current;
+    if (visible || !node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visible]);
+
+  return (
+    <div ref={ref} className="tcard-viewport">
+      {visible ? children : null}
+    </div>
   );
 }
 
@@ -107,7 +138,7 @@ export default function TemplateCardShell({
           <span className="tcard-badge-pill">{badge}</span>
         </div>
 
-        <div className="tcard-viewport">{thumbnail}</div>
+        <DeferredViewport>{thumbnail}</DeferredViewport>
 
         <div className="tcard-ov">
           <span>
