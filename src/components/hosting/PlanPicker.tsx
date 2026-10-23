@@ -18,7 +18,7 @@ type PlanPickerProps = {
   isDisabled?: boolean;
 };
 
-/** Cycle switch over Basic / Standard / Custom cards, priced for one website. */
+/** Cycle switch over Starter / Dedicated / Custom cards, priced for one website. */
 export default function PlanPicker({
   packages,
   value,

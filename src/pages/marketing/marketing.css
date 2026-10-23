@@ -229,6 +229,7 @@
 .mk .avatar svg {width:70%;height:auto;color:var(--accent);opacity:.75}
 .mk .plan {gap:18px;padding:30px}
 .mk .plan.feat {border:2px solid var(--accent);box-shadow:var(--shadow)}
+.mk .plan > .btn {margin-top:auto}
 .mk .price {display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
 .mk .price b {font-size:40px;line-height:1}
 .mk .badge {font:600 12px var(--sans);padding:4px 10px;border-radius:12px;background:var(--accent-soft);color:var(--accent-ink);white-space:nowrap}

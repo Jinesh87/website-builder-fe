@@ -138,7 +138,7 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
 
         {pkg.isCustom ? (
           <p className="rounded-lg bg-canvas px-3 py-2 text-xs text-ink-muted">
-            No list price: visitors see "Let's talk" and contact you. Agree a price per website from its Hosting tab.
+            No list price: visitors see a fixed "starting from" price and contact you. Agree a price per website from its Hosting tab.
           </p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
