@@ -21,8 +21,22 @@ export type AdminTemplate = {
   /** Template Studio website that "Edit design" opens; null for built-in templates. */
   sourceWebsiteId: string | null;
   pages: { name: string; slug: string }[];
+  /** The Template Studio design was edited after it was last saved into the template. */
+  hasUnpublishedChanges: boolean;
+  createdByName: string | null;
+  updatedByName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** A Template Studio website not yet saved as a template; never shown to clients. */
+export type TemplateDraft = {
+  websiteId: string;
+  name: string;
+  pageCount: number;
   createdByName: string | null;
   createdAt: string;
+  /** Last edit to the draft's design. */
   updatedAt: string;
 };
 
@@ -30,8 +44,12 @@ export type AdminTemplateListParams = {
   status?: "live" | "hidden" | "archived";
   origin?: "built-in" | "custom";
   categoryId?: string;
+  /** "me": only what the signed-in admin created. */
+  createdBy?: "me";
   search?: string;
 };
+
+export type TemplateDraftListParams = Pick<AdminTemplateListParams, "createdBy" | "search">;
 
 export type StudioStartFrom =
   | { startFrom: "blank" }
@@ -47,7 +65,7 @@ export type TemplateDetails = {
 
 const BASE = "/admin/templates";
 
-function toQuery(params: AdminTemplateListParams): string {
+function toQuery(params: Record<string, string | undefined>): string {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value) query.set(key, value);
@@ -62,6 +80,13 @@ type TemplateResponse = { template: AdminTemplate };
 export const adminTemplatesApi = {
   list: (params: AdminTemplateListParams = {}) =>
     request<{ templates: AdminTemplate[] }>(`${BASE}${toQuery(params)}`).then((data) => data.templates),
+
+  /** Unsaved work in Template Studio, most recently edited first. */
+  listDrafts: (params: TemplateDraftListParams = {}) =>
+    request<{ drafts: TemplateDraft[] }>(`${BASE}/drafts${toQuery(params)}`).then((data) => data.drafts),
+
+  /** Deletes an unsaved draft's Template Studio website. */
+  discardDraft: (websiteId: string) => request<void>(`${BASE}/drafts/${websiteId}`, { method: "DELETE" }),
 
   /** The template this Template Studio website designs, or null before its first save. */
   bySourceWebsite: (websiteId: string) =>

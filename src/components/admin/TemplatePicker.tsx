@@ -113,7 +113,7 @@ export default function TemplatePicker({ templates, value, onChange }: TemplateP
                 }`}
               >
                 <span className="block overflow-hidden border-b border-line">
-                  <AdminTemplateThumbnail templateId={template.id} version={template.updatedAt} />
+                  <AdminTemplateThumbnail source={{ kind: "template", templateId: template.id }} version={template.updatedAt} />
                 </span>
                 <span className="flex min-w-0 flex-col px-2.5 py-2">
                   <span className="truncate text-xs font-semibold text-ink">{template.name}</span>

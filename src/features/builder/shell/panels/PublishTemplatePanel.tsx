@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Archive, BookUp, Check, Copy, ExternalLink, Info, RotateCw } from "lucide-react";
+import { Archive, BookUp, Check, Copy, ExternalLink, Info, RotateCw, Save } from "lucide-react";
 import { adminTemplatesApi, type AdminTemplate } from "../../../../api/admin-templates.ts";
 import { ApiError, errorMessage } from "../../../../api/http.ts";
 import { useTemplateCategories } from "../../../../hooks/use-template-categories.ts";
@@ -9,32 +9,31 @@ import { PanelHeader, SectionLabel } from "../ui.tsx";
 
 const NAME_MAX = 120;
 const DESCRIPTION_MAX = 500;
-const STATUS_LABEL: Record<AdminTemplate["status"], string> = { LIVE: "Live in gallery", HIDDEN: "Hidden", ARCHIVED: "Archived" };
+const STATUS_LABEL: Record<AdminTemplate["status"], string> = { LIVE: "Live in gallery", HIDDEN: "Draft", ARCHIVED: "Archived" };
 
 const inputClass =
   "w-full rounded-ed border border-ed-border bg-ed-panel px-2 text-ed-sm text-ed-text placeholder:text-ed-faint focus:border-ed-accent focus:outline-none aria-invalid:border-ed-danger disabled:opacity-60";
+const buttonClass =
+  "flex h-8 flex-1 items-center justify-center gap-2 rounded-ed px-2.5 text-ed-sm font-medium disabled:opacity-50";
 
 type Load = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; template: AdminTemplate | null };
-type Form = { name: string; categoryId: string; description: string; isActive: boolean };
+type Form = { name: string; categoryId: string; description: string };
+/** "draft" keeps the template out of the gallery; "publish" makes it live for clients. */
+type SaveMode = "draft" | "publish";
 
 function formFrom(template: AdminTemplate | null, fallbackName: string): Form {
-  if (!template) return { name: fallbackName, categoryId: "", description: "", isActive: true };
-  return {
-    name: template.name,
-    categoryId: template.categoryId ?? "",
-    description: template.description ?? "",
-    isActive: template.status === "LIVE",
-  };
+  if (!template) return { name: fallbackName, categoryId: "", description: "" };
+  return { name: template.name, categoryId: template.categoryId ?? "", description: template.description ?? "" };
 }
 
 /** Super Admin, Template Studio websites only: saves this website's design as a platform template, or updates it. */
 export default function PublishTemplatePanel() {
   const { website, autosave, notify } = useEditor();
-  const ids = { name: useId(), category: useId(), description: useId(), active: useId() };
+  const ids = { name: useId(), category: useId(), description: useId() };
   const [attempt, setAttempt] = useState(0);
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [form, setForm] = useState<Form>(() => formFrom(null, website.name));
-  const [submitting, setSubmitting] = useState(false);
+  const [saving, setSaving] = useState<SaveMode | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState(false);
@@ -58,18 +57,18 @@ export default function PublishTemplatePanel() {
 
   const template = load.status === "ready" ? load.template : null;
   const archived = template?.status === "ARCHIVED";
+  const live = template?.status === "LIVE";
   const nameError = form.name.trim().length < 2 ? "Use at least 2 characters" : undefined;
-  const canSubmit = load.status === "ready" && !archived && !nameError && form.categoryId !== "" && !submitting;
+  const canSubmit = load.status === "ready" && !archived && !nameError && form.categoryId !== "" && saving === null;
 
   function update<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function save(mode: SaveMode) {
     const { categoryId } = form;
     if (!canSubmit || categoryId === "") return;
-    setSubmitting(true);
+    setSaving(mode);
     setError(null);
     setFieldErrors({});
     try {
@@ -77,24 +76,31 @@ export default function PublishTemplatePanel() {
         setError("Save your changes before updating the template.");
         return;
       }
-      const details = {
-        name: form.name.trim(),
-        categoryId,
-        description: form.description.trim(),
-        isActive: form.isActive,
-      };
+      const details = { name: form.name.trim(), categoryId, description: form.description.trim(), isActive: mode === "publish" };
       const saved = template
         ? await adminTemplatesApi.updateFromSource(template.id, details)
         : await adminTemplatesApi.create(website.id, details);
       setLoad({ status: "ready", template: saved });
       setForm(formFrom(saved, website.name));
-      notify(template ? `“${saved.name}” updated for new websites` : `“${saved.name}” added to templates`);
+      notify(
+        mode === "draft"
+          ? `“${saved.name}” saved as a draft. Clients can't see it yet.`
+          : live
+            ? `“${saved.name}” updated for new websites`
+            : `“${saved.name}” is live in the gallery`,
+      );
     } catch (err) {
       if (err instanceof ApiError) setFieldErrors(err.fieldErrors());
       setError(errorMessage(err));
     } finally {
-      setSubmitting(false);
+      setSaving(null);
     }
+  }
+
+  // Enter keeps a live template live and anything else a draft; publishing is always an explicit click.
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void save(live ? "publish" : "draft");
   }
 
   async function copyId(key: string) {
@@ -180,15 +186,17 @@ export default function PublishTemplatePanel() {
             <p className="mx-3 mt-3 flex gap-2 rounded-ed border border-ed-border bg-ed-subtle p-2.5 text-ed-xs leading-relaxed text-ed-muted">
               <Info className="mt-0.5 size-3.5 shrink-0 text-ed-faint" aria-hidden />
               <span>
-                {template
-                  ? "Updating changes the template for new websites only. Websites already made from it, draft or live, keep their own copy."
-                  : "Remove any client's name, contact details, photos and testimonials before saving."}
+                {!template
+                  ? "Save a draft to keep working on it later; only admins see drafts. Remove any client's name, contact details, photos and testimonials before publishing."
+                  : live
+                    ? "Updating changes the template for new websites only. Websites already made from it, draft or live, keep their own copy."
+                    : "This template is a draft: only admins see it. Publish it when it's ready for clients."}
               </span>
             </p>
 
             <SectionLabel>Template details</SectionLabel>
             <form onSubmit={submit} noValidate className="flex flex-col gap-3 px-3">
-              <fieldset disabled={archived || submitting} className="flex flex-col gap-3">
+              <fieldset disabled={archived || saving !== null} className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
                   <label htmlFor={ids.name} className="text-ed-xs font-medium text-ed-text">
                     Template name
@@ -257,20 +265,6 @@ export default function PublishTemplatePanel() {
                     {form.description.length}/{DESCRIPTION_MAX}
                   </p>
                 </div>
-
-                <label htmlFor={ids.active} className="flex items-start gap-2 text-ed-xs text-ed-text">
-                  <input
-                    id={ids.active}
-                    type="checkbox"
-                    checked={form.isActive}
-                    onChange={(event) => update("isActive", event.target.checked)}
-                    className="mt-0.5 accent-(--color-ed-accent)"
-                  />
-                  <span>
-                    Show in the gallery
-                    <span className="block text-ed-2xs text-ed-faint">Untick to keep it hidden from clients.</span>
-                  </span>
-                </label>
               </fieldset>
 
               {error && (
@@ -279,14 +273,37 @@ export default function PublishTemplatePanel() {
                 </p>
               )}
 
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="flex h-8 items-center justify-center gap-2 rounded-ed bg-ed-accent px-2.5 text-ed-sm font-medium text-white hover:bg-ed-accent-hover disabled:opacity-50"
-              >
-                <BookUp className="size-3.5" aria-hidden />
-                {submitting ? "Saving…" : template ? "Update template" : "Save as template"}
-              </button>
+              <div className="flex gap-2">
+                {!live && (
+                  <button
+                    type="button"
+                    disabled={!canSubmit}
+                    onClick={() => void save("draft")}
+                    className={`${buttonClass} border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-hover`}
+                  >
+                    <Save className="size-3.5" aria-hidden />
+                    {saving === "draft" ? "Saving…" : "Save draft"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={!canSubmit}
+                  onClick={() => void save("publish")}
+                  className={`${buttonClass} bg-ed-accent text-white hover:bg-ed-accent-hover`}
+                >
+                  <BookUp className="size-3.5" aria-hidden />
+                  {saving === "publish" ? "Publishing…" : live ? "Update live template" : "Publish to gallery"}
+                </button>
+              </div>
+              {live && (
+                <p className="text-ed-2xs text-ed-faint">
+                  To take it out of the gallery, use Unpublish on the{" "}
+                  <Link to="/admin/templates" className="text-ed-accent hover:underline">
+                    Templates
+                  </Link>{" "}
+                  page.
+                </p>
+              )}
             </form>
           </>
         )}

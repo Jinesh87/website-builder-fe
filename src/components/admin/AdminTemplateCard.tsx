@@ -15,9 +15,13 @@ type MenuItem = { id: AdminTemplateAction | "preview"; label: string; danger?: b
 
 const STATUS_TAG: Record<PlatformTemplateStatus, { label: string; className: string }> = {
   LIVE: { label: "Live", className: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  HIDDEN: { label: "Hidden", className: "border-line bg-canvas text-ink-muted" },
+  HIDDEN: { label: "Draft", className: "border-line bg-canvas text-ink-muted" },
   ARCHIVED: { label: "Archived", className: "border-amber-200 bg-amber-50 text-amber-700" },
 };
+
+/** A built-in template that isn't live was taken out of the gallery, not drafted. */
+const statusLabel = (template: AdminTemplate) =>
+  template.origin === "BUILT_IN" && template.status === "HIDDEN" ? "Hidden" : STATUS_TAG[template.status].label;
 
 const dangerButton = "text-red-600! border-red-200! hover:bg-red-50!";
 
@@ -46,13 +50,15 @@ export default function AdminTemplateCard({ template, busy, onAction }: AdminTem
   const status = STATUS_TAG[template.status];
   // Built-in templates use their marketing number (#2134…); admin-made ones are numbered from #3001.
   const displayNumber = curated?.id ?? template.number;
+  const toggleLabel = builtIn ? (live ? "Hide from gallery" : "Show in gallery") : live ? "Unpublish (back to drafts)" : "Publish to gallery";
+  const editedBy = template.updatedByName && template.updatedByName !== template.createdByName ? template.updatedByName : null;
 
   const menu: MenuItem[] = [
     ...(inGallery ? [{ id: "preview" as const, label: "Open in gallery" }] : []),
     // A new template can only be copied from a live one.
     ...(live ? [{ id: "duplicate" as const, label: "Use as starting point" }] : []),
     ...(!builtIn && !archived ? [{ id: "details" as const, label: "Edit details" }] : []),
-    ...(!archived ? [{ id: "toggle" as const, label: live ? "Hide from gallery" : "Show in gallery" }] : []),
+    ...(!archived ? [{ id: "toggle" as const, label: toggleLabel }] : []),
     { id: "copy", label: "Copy template ID" },
     ...(!builtIn && !archived ? [{ id: "archive" as const, label: "Delete", danger: true }] : []),
   ];
@@ -113,7 +119,7 @@ export default function AdminTemplateCard({ template, busy, onAction }: AdminTem
         curatedIndex !== null && builtIn ? (
           <TemplateFrame t={curatedIndex} />
         ) : (
-          <AdminTemplateThumbnail templateId={template.id} version={template.updatedAt} />
+          <AdminTemplateThumbnail source={{ kind: "template", templateId: template.id }} version={template.updatedAt} />
         )
       }
       nameExtra={
@@ -129,11 +135,24 @@ export default function AdminTemplateCard({ template, busy, onAction }: AdminTem
           </button>
         ) : undefined
       }
-      tag={<span className={`tag border ${status.className}`}>{status.label}</span>}
+      tag={
+        <span className="flex shrink-0 items-center gap-1.5">
+          {template.hasUnpublishedChanges && !archived && (
+            <span
+              className="tag border border-sky-200 bg-sky-50 text-sky-700"
+              title="The design was edited after it was last saved to this template. Open Edit design and click Update template to publish the edits."
+            >
+              Unpublished edits
+            </span>
+          )}
+          <span className={`tag border ${status.className}`}>{statusLabel(template)}</span>
+        </span>
+      }
       hint={
         <>
           {template.category} · {pageCount} {pageCount === 1 ? "page" : "pages"}
           {template.createdByName ? ` · by ${template.createdByName}` : ""}
+          {editedBy ? ` · edited by ${editedBy}` : ""}
         </>
       }
       actions={

@@ -2,10 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, SearchField, Spinner } from "@heroui/react";
 import { FolderTree, LayoutTemplate, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { adminTemplatesApi, type AdminTemplate, type AdminTemplateListParams } from "../../api/admin-templates.ts";
+import {
+  adminTemplatesApi,
+  type AdminTemplate,
+  type AdminTemplateListParams,
+  type TemplateDraft,
+} from "../../api/admin-templates.ts";
 import { errorMessage } from "../../api/http.ts";
 import AdminTemplateCard, { type AdminTemplateAction } from "../../components/admin/AdminTemplateCard.tsx";
 import TemplateCategoriesDialog from "../../components/admin/TemplateCategoriesDialog.tsx";
+import TemplateDraftCard from "../../components/admin/TemplateDraftCard.tsx";
 import { NewTemplateDialog, TemplateDetailsDialog } from "../../components/admin/TemplateDialogs.tsx";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import ConfirmDialog from "../../components/ui/ConfirmDialog.tsx";
@@ -18,6 +24,7 @@ import "../../components/admin/admin-template-grid.css";
 
 type StatusFilter = NonNullable<AdminTemplateListParams["status"]> | "";
 type OriginFilter = NonNullable<AdminTemplateListParams["origin"]> | "";
+type OwnerFilter = NonNullable<AdminTemplateListParams["createdBy"]> | "";
 type Feedback = { status: "success" | "danger"; message: string } | null;
 type Dialog =
   | { kind: "new"; from?: AdminTemplate }
@@ -25,14 +32,16 @@ type Dialog =
   | { kind: "details"; template: AdminTemplate }
   | { kind: "archive"; template: AdminTemplate }
   | { kind: "purge"; template: AdminTemplate }
+  | { kind: "discard"; draft: TemplateDraft }
   | null;
 
 const ALL = "all";
 
+// "Drafts" covers saved templates that aren't published and unsaved work in Template Studio.
 const STATUS_OPTIONS: SelectOption<StatusFilter>[] = [
-  { value: "", label: "Live and hidden" },
+  { value: "", label: "Live and drafts" },
   { value: "live", label: "Live" },
-  { value: "hidden", label: "Hidden" },
+  { value: "hidden", label: "Drafts" },
   { value: "archived", label: "Archived" },
 ];
 
@@ -40,6 +49,11 @@ const ORIGIN_OPTIONS: SelectOption<OriginFilter>[] = [
   { value: "", label: "Built-in and custom" },
   { value: "built-in", label: "Built-in" },
   { value: "custom", label: "Custom" },
+];
+
+const OWNER_OPTIONS: SelectOption<OwnerFilter>[] = [
+  { value: "", label: "Everyone's" },
+  { value: "me", label: "Created by me" },
 ];
 
 const chipClass = (selected: boolean) =>
@@ -52,34 +66,39 @@ export default function TemplatesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("");
   const [origin, setOrigin] = useState<OriginFilter>("");
+  const [owner, setOwner] = useState<OwnerFilter>("");
   const [categoryId, setCategoryId] = useState<string>(ALL);
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
   const { categories, error: categoriesError, reload: reloadCategories } = useTemplateCategories();
 
   const [templates, setTemplates] = useState<AdminTemplate[] | null>(null);
+  const [drafts, setDrafts] = useState<TemplateDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
 
+  // Unsaved drafts are custom work with no category or status yet.
+  const showsDrafts = (status === "" || status === "hidden") && origin !== "built-in";
+
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
+    const shared = { search: debouncedSearch || undefined, createdBy: owner || undefined };
     try {
-      setTemplates(
-        await adminTemplatesApi.list({
-          search: debouncedSearch || undefined,
-          status: status || undefined,
-          origin: origin || undefined,
-        }),
-      );
+      const [loadedTemplates, loadedDrafts] = await Promise.all([
+        adminTemplatesApi.list({ ...shared, status: status || undefined, origin: origin || undefined }),
+        showsDrafts ? adminTemplatesApi.listDrafts(shared) : Promise.resolve([]),
+      ]);
+      setTemplates(loadedTemplates);
+      setDrafts(loadedDrafts);
     } catch (err) {
       setLoadError(errorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, status, origin]);
+  }, [debouncedSearch, status, origin, owner, showsDrafts]);
 
   useEffect(() => {
     void load();
@@ -103,9 +122,11 @@ export default function TemplatesPage() {
     () => (templates ?? []).filter((template) => categoryId === ALL || template.categoryId === categoryId),
     [templates, categoryId],
   );
+  const visibleDrafts = categoryId === ALL ? drafts : [];
+  const isEmpty = visibleTemplates.length + visibleDrafts.length === 0;
 
-  async function run(template: AdminTemplate, action: () => Promise<unknown>, success: string) {
-    setBusyId(template.id);
+  async function run(item: { id: string }, action: () => Promise<unknown>, success: string) {
+    setBusyId(item.id);
     setFeedback(null);
     try {
       await action();
@@ -137,10 +158,11 @@ export default function TemplatesPage() {
         return;
       case "toggle": {
         const show = template.status !== "LIVE";
+        const hidden = template.origin === "BUILT_IN" ? "is hidden from clients" : "is back in drafts; clients can't pick it";
         void run(
           template,
           () => adminTemplatesApi.updateDetails(template.id, { isActive: show }),
-          show ? `“${template.name}” is live in the gallery.` : `“${template.name}” is hidden from clients.`,
+          show ? `“${template.name}” is live in the gallery.` : `“${template.name}” ${hidden}.`,
         );
         return;
       }
@@ -151,7 +173,7 @@ export default function TemplatesPage() {
         setDialog({ kind: "archive", template });
         return;
       case "restore":
-        void run(template, () => adminTemplatesApi.restore(template.id), `“${template.name}” restored as hidden. Show it when it's ready.`);
+        void run(template, () => adminTemplatesApi.restore(template.id), `“${template.name}” restored as a draft. Publish it when it's ready.`);
         return;
       case "purge":
         setDialog({ kind: "purge", template });
@@ -159,19 +181,19 @@ export default function TemplatesPage() {
     }
   }
 
-  async function runAndClose(template: AdminTemplate, action: () => Promise<unknown>, success: string) {
-    await run(template, action, success);
+  async function runAndClose(item: { id: string }, action: () => Promise<unknown>, success: string) {
+    await run(item, action, success);
     setDialog(null);
   }
 
-  const hasFilters = Boolean(debouncedSearch || status || origin || categoryId !== ALL);
+  const hasFilters = Boolean(debouncedSearch || status || origin || owner || categoryId !== ALL);
   const selectedCategory = categories?.find((category) => category.id === categoryId);
 
   return (
     <div className="px-6 py-8 sm:px-8">
       <PageHeader
         title="Templates"
-        description="Prebuilt templates clients start new websites from. Changes only affect websites created afterwards."
+        description="Prebuilt templates clients start new websites from. Drafts stay private until published, and changes only affect websites created afterwards."
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onPress={() => setDialog({ kind: "categories" })}>
@@ -194,13 +216,14 @@ export default function TemplatesPage() {
         </SearchField>
         <SelectInput ariaLabel="Filter by status" value={status} onChange={setStatus} options={STATUS_OPTIONS} />
         <SelectInput ariaLabel="Filter by origin" value={origin} onChange={setOrigin} options={ORIGIN_OPTIONS} />
+        <SelectInput ariaLabel="Filter by creator" value={owner} onChange={setOwner} options={OWNER_OPTIONS} />
         {loading && templates && <Spinner size="sm" aria-label="Updating" />}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Filter templates by category">
         <button type="button" className={chipClass(categoryId === ALL)} aria-pressed={categoryId === ALL} onClick={() => setCategoryId(ALL)}>
           All categories
-          <span className="text-xs opacity-70">{templates?.length ?? 0}</span>
+          <span className="text-xs opacity-70">{(templates?.length ?? 0) + drafts.length}</span>
         </button>
         {categories?.map((category) => (
           <button
@@ -231,7 +254,7 @@ export default function TemplatesPage() {
         <div className="mt-4 grid place-items-center rounded-xl border border-line bg-surface py-16">
           <Spinner aria-label="Loading templates" />
         </div>
-      ) : templates && visibleTemplates.length === 0 ? (
+      ) : templates && isEmpty ? (
         <section className="mt-4 rounded-xl border border-line bg-surface px-6 py-14 text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-full bg-brand-soft text-brand">
             <LayoutTemplate className="size-6" aria-hidden />
@@ -240,7 +263,7 @@ export default function TemplatesPage() {
             {hasFilters ? "No templates match these filters" : "No templates yet"}
           </h2>
           <p className="mt-1 text-sm text-ink-body">
-            {selectedCategory && !debouncedSearch && !status && !origin
+            {selectedCategory && !debouncedSearch && !status && !origin && !owner
               ? `Nothing is in “${selectedCategory.name}” yet. Pick it when you save a template.`
               : hasFilters
                 ? "Try a different search or filter."
@@ -251,6 +274,14 @@ export default function TemplatesPage() {
         templates && (
           <section aria-label="Templates" className="admin-template-grid mt-4">
             <div className="gallery-grid">
+              {visibleDrafts.map((draft) => (
+                <TemplateDraftCard
+                  key={draft.websiteId}
+                  draft={draft}
+                  busy={busyId === draft.websiteId}
+                  onDiscard={() => setDialog({ kind: "discard", draft })}
+                />
+              ))}
               {visibleTemplates.map((template) => (
                 <AdminTemplateCard
                   key={template.id}
@@ -324,6 +355,26 @@ export default function TemplatesPage() {
       >
         “{dialog?.kind === "purge" ? dialog.template.name : ""}” and its Template Studio design are removed and can't be restored.
         Websites already created from it, draft or live, keep working exactly as they are.
+      </ConfirmDialog>
+      <ConfirmDialog
+        isOpen={dialog?.kind === "discard"}
+        title="Discard draft?"
+        confirmLabel="Discard"
+        tone="danger"
+        isPending={dialog?.kind === "discard" && busyId === dialog.draft.websiteId}
+        onCancel={() => setDialog(null)}
+        onConfirm={() => {
+          if (dialog?.kind !== "discard") return;
+          const { draft } = dialog;
+          void runAndClose(
+            { id: draft.websiteId },
+            () => adminTemplatesApi.discardDraft(draft.websiteId),
+            `Draft “${draft.name}” discarded.`,
+          );
+        }}
+      >
+        “{dialog?.kind === "discard" ? dialog.draft.name : ""}” was never saved as a template, so no client has used it.
+        Its design is deleted and can't be recovered.
       </ConfirmDialog>
     </div>
   );

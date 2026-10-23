@@ -306,8 +306,10 @@ export function TemplateDetailsDialog({
         <label className="flex items-start gap-3 text-sm text-ink">
           <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)} className="mt-1 accent-(--color-brand)" />
           <span>
-            Show in the gallery
-            <span className="block text-xs text-ink-muted">Hidden templates can't be picked for new websites.</span>
+            {builtIn ? "Show in the gallery" : "Published in the gallery"}
+            <span className="block text-xs text-ink-muted">
+              {builtIn ? "Hidden templates can't be picked for new websites." : "Untick to keep it as a draft that only admins see."}
+            </span>
           </span>
         </label>
       </div>
