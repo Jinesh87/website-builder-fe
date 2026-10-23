@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { SectionHead, SectionShell, SiteImage, SiteLink } from "../primitives.tsx";
 import { StaticStates, useStaticRender } from "../render-mode.tsx";
 import type {
@@ -622,22 +622,24 @@ function CarouselImageStrip({
   showDots: boolean;
 }) {
   const aspectClass = `wb-aspect-${aspect.replace(":", "-")}`;
-  const maxIndex = Math.max(0, slides.length - columns);
-  const safeIndex = Math.min(activeIndex, maxIndex);
-  const slideWidthPct = 100 / columns;
+  const hasControls = slides.length > 1;
+  const stripVars = {
+    "--wb-strip-cols": columns,
+    "--wb-strip-count": slides.length,
+    "--wb-strip-index": activeIndex,
+  } as CSSProperties;
 
   return (
-    <div className="wb-carousel-strip-wrapper">
+    <div
+      className={`wb-carousel-strip-wrapper${slides.length <= columns ? " wb-carousel-strip-fits" : ""}`}
+      style={stripVars}
+    >
       <div className="wb-carousel-strip-track-container">
-        <div
-          className="wb-carousel-strip-track"
-          style={{ transform: `translateX(-${safeIndex * slideWidthPct}%)` }}
-        >
+        <div className="wb-carousel-strip-track">
           {slides.map((slide, index) => (
             <div
               key={index}
               className={`wb-carousel-strip-item ${index === activeIndex ? "wb-strip-active" : ""}`}
-              style={{ width: `${slideWidthPct}%` }}
               onClick={() => onSelect(index)}
               data-wb-go={index}
             >
@@ -665,23 +667,23 @@ function CarouselImageStrip({
       </div>
 
       {/* Controls */}
-      <div className="wb-carousel-controls-bar">
-        {showDots && slides.length > columns && (
+      <div className="wb-carousel-controls-bar wb-carousel-strip-controls">
+        {showDots && hasControls && (
           <div className="wb-carousel-dots">
-            {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+            {slides.map((_, i) => (
               <button
                 key={i}
                 type="button"
-                className={`wb-carousel-dot ${i === safeIndex ? "wb-dot-active" : ""}`}
+                className={`wb-carousel-dot ${i === activeIndex ? "wb-dot-active" : ""}`}
                 onClick={() => onSelect(i)}
                 data-wb-go={i}
-                aria-label={`Position ${i + 1}`}
+                aria-label={`Image ${i + 1}`}
               />
             ))}
           </div>
         )}
 
-        {showArrows && slides.length > columns && (
+        {showArrows && hasControls && (
           <div className="wb-carousel-arrows">
             <button
               type="button"
