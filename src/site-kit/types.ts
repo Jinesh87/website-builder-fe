@@ -318,6 +318,32 @@ export type HeroCampaignTickerItem = {
   avatarIcon?: string;
 };
 
+export const HERO_ALIGNS = ["left", "center", "right"] as const;
+export type HeroAlign = (typeof HERO_ALIGNS)[number];
+
+export const HERO_ALIGN_ELEMENTS = [
+  "badge",
+  "heading",
+  "subheading",
+  "description",
+  "actions",
+  "trustedBy",
+] as const;
+export type HeroAlignElement = (typeof HERO_ALIGN_ELEMENTS)[number];
+
+/** `all` aligns every hero element; per-element keys override it. Unset keys keep the layout default. */
+export type HeroAlignment = { all?: HeroAlign } & Partial<Record<HeroAlignElement, HeroAlign>>;
+
+export const BUTTON_SHAPES = ["square", "soft", "rounded", "pill", "oval", "custom"] as const;
+export type ButtonShape = (typeof BUTTON_SHAPES)[number];
+
+export const BUTTON_RADIUS_MAX = 48;
+
+export const HERO_BUTTON_SHAPES = BUTTON_SHAPES;
+export type HeroButtonShape = ButtonShape;
+
+export const HERO_BUTTON_RADIUS_MAX = BUTTON_RADIUS_MAX;
+
 export type HeroData = {
   variant: HeroVariant;
   eyebrow?: string;
@@ -346,7 +372,13 @@ export type HeroData = {
   overlayOpacity?: number;
   overlayBlur?: boolean;
   minHeight?: "auto" | "compact" | "screen" | "tall";
-  contentAlign?: "center" | "left" | "right";
+  /** Legacy video-banner text alignment; only read by "campaign-banner", and `alignment.all` takes precedence. */
+  contentAlign?: HeroAlign;
+  alignment?: HeroAlignment;
+  /** Unset follows the theme's corner radius. */
+  buttonShape?: HeroButtonShape;
+  /** Corner radius in px, used only when `buttonShape` is "custom". */
+  buttonRadius?: number;
   bottomShape?: "none" | "wave" | "curve" | "curved" | "slant" | "tilt" | "arch" | "normal";
   rating?: HeroRating;
   floatingCards?: HeroFloatingCard[];
@@ -1258,12 +1290,118 @@ export type BlogDetailData = {
   newsletterDescription?: string;
 };
 
+export const CARDS_VARIANTS = [
+  "product-classic",
+  "image-overlay",
+  "horizontal-split",
+  "minimal-accent",
+  "floating-panel",
+] as const;
+export type CardsVariant = (typeof CARDS_VARIANTS)[number];
+
+export const CARDS_CARD_STYLES = ["bordered", "shadow", "flat", "glass", "elevated"] as const;
+export type CardsCardStyle = (typeof CARDS_CARD_STYLES)[number];
+
+export const CARDS_CORNERS = ["square", "soft", "rounded", "large", "custom"] as const;
+export type CardsCorner = (typeof CARDS_CORNERS)[number];
+
+export const CARDS_BUTTON_VARIANTS = ["filled", "outline", "soft", "ghost", "link"] as const;
+export type CardsButtonVariant = (typeof CARDS_BUTTON_VARIANTS)[number];
+
+export const CARDS_BUTTON_SIZES = ["sm", "md", "lg"] as const;
+export type CardsButtonSize = (typeof CARDS_BUTTON_SIZES)[number];
+
+export const CARDS_IMAGE_ASPECTS = ["16:9", "4:3", "1:1", "3:4", "auto"] as const;
+export type CardsImageAspect = (typeof CARDS_IMAGE_ASPECTS)[number];
+
+export const CARDS_HOVER_EFFECTS = ["none", "lift", "zoom", "glow"] as const;
+export type CardsHoverEffect = (typeof CARDS_HOVER_EFFECTS)[number];
+
+export const CARDS_HEADER_LAYOUTS = ["center", "left", "split"] as const;
+export type CardsHeaderLayout = (typeof CARDS_HEADER_LAYOUTS)[number];
+
+export const CARDS_DESCRIPTION_LINES_MAX = 8;
+export const CARDS_RADIUS_MAX = 48;
+
+export type CardsButtonSettings = {
+  /** Unset uses the design's own default. */
+  variant?: CardsButtonVariant;
+  secondaryVariant?: CardsButtonVariant;
+  /** Unset follows the theme's corner radius. */
+  shape?: ButtonShape;
+  /** Corner radius in px, used only when `shape` is "custom". */
+  radius?: number;
+  size?: CardsButtonSize;
+  fullWidth?: boolean;
+  showArrow?: boolean;
+};
+
+export type CardItem = {
+  title: string;
+  subtitle?: string;
+  description?: string;
+  image?: ImageRef;
+  icon?: IconName | string;
+  badge?: string;
+  tags?: string[];
+  price?: string;
+  link?: LinkRef;
+  secondaryLink?: LinkRef;
+  /** #rrggbb; the card's text switches to a readable colour automatically. */
+  backgroundColor?: string;
+  /** #rrggbb used for the accent bar, icon tint and badge. */
+  accentColor?: string;
+  featured?: boolean;
+};
+
+export type CardsData = {
+  variant?: CardsVariant;
+  eyebrow?: string;
+  heading: string;
+  intro?: string;
+  headerLayout?: CardsHeaderLayout;
+  /** Header link such as "View all products", shown beside or under the heading. */
+  headerLink?: LinkRef;
+  bottomCta?: LinkRef;
+  columns: GridColumns;
+  /** Unset shows at most 2 columns on tablets. */
+  tabletColumns?: GridColumns;
+  mobileColumns: GridColumns;
+  /** "scroll" turns the grid into a swipeable row on phones. */
+  mobileLayout?: "stack" | "scroll";
+  gap?: "sm" | "md" | "lg";
+  cardStyle?: CardsCardStyle;
+  /** Unset follows the theme's corner radius. */
+  cardCorners?: CardsCorner;
+  /** Corner radius in px, used only when `cardCorners` is "custom". */
+  cardRadius?: number;
+  imageAspect?: CardsImageAspect;
+  imageFit?: "cover" | "contain";
+  imagePosition?: "left" | "right";
+  contentAlign?: "left" | "center";
+  hoverEffect?: CardsHoverEffect;
+  /** Clamp descriptions to this many lines; 0 shows the full text. */
+  descriptionLines?: number;
+  /** Makes the whole card open the primary link. */
+  clickableCards?: boolean;
+  showImages?: boolean;
+  showIcons?: boolean;
+  showBadges?: boolean;
+  showTags?: boolean;
+  showDescription?: boolean;
+  showPrices?: boolean;
+  showNumbers?: boolean;
+  button?: CardsButtonSettings;
+  items: CardItem[];
+};
+
 export type SectionDataMap = {
   header: HeaderData;
   footer: FooterData;
   hero: HeroData;
   features: FeaturesData;
   services: ServicesData;
+  cards: CardsData;
   testimonials: TestimonialsData;
   faq: FaqData;
   cta: CtaData;

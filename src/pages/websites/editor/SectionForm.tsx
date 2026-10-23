@@ -67,11 +67,13 @@ import {
   VideoField,
 } from "./fields.tsx";
 import { FontPicker } from "./FontPicker.tsx";
+import { HeroAlignmentGroup, HeroButtonShapeGroup } from "./HeroLayoutFields.tsx";
 import { cardImageSize, heroImageSize, MEDIA_HINT, MEDIA_SIZE, wideImageSize } from "./media-dimensions.ts";
 import CustomSectionForm from "./CustomSectionForm.tsx";
 import { ContactFormFieldsEditor, ContactLayoutEditor } from "./ContactBuilderFields.tsx";
 import { createContactLayout, layoutHasForm, resolveContactLayout } from "../../../site-kit/contact-builder.ts";
 import AuthSectionForm from "./AuthSectionForm.tsx";
+import CardsSectionForm from "./CardsSectionForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
@@ -442,6 +444,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
         )}
       </FormGroup>
 
+      <HeroAlignmentGroup data={data} onChange={onChange} />
+
       {data.variant === "curved-carousel" && (
         <FormGroup title="3D Carousel Settings">
           <SelectField
@@ -505,24 +509,6 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
       {data.variant === "campaign-banner" && (
         <>
           <FormGroup title="Video Banner Layout & Bottom Edge">
-            <SelectField
-              label="Text alignment"
-              value={data.contentAlign ?? "left"}
-              options={[
-                {
-                  value: "left",
-                  label: "Left aligned (Clean non-centered layout)",
-                },
-                { value: "center", label: "Center aligned" },
-              ]}
-              onChange={(align) =>
-                onChange({
-                  ...data,
-                  contentAlign: align as HeroData["contentAlign"],
-                })
-              }
-              hint="Position of headline and description text across the banner."
-            />
             <SelectField
               label="Bottom shape divider"
               value={
@@ -966,6 +952,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
           fallback={{ label: "Watch 2-min demo", href: "#demo" }}
         />
       </FormGroup>
+
+      <HeroButtonShapeGroup data={data} onChange={onChange} />
 
       {data.variant === "curved-carousel" ? (
         <FormGroup title="Carousel Cards & Imagery">
@@ -4238,6 +4226,13 @@ function DataForm({
     case "services":
       return (
         <ServicesForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "cards":
+      return (
+        <CardsSectionForm
           data={section.data}
           onChange={(data) => onChange({ ...section, data })}
         />

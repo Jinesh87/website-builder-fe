@@ -5,6 +5,7 @@ import {
   PAGE_HEADER_ID,
   SITE_FOOTER_ID,
   SITE_HEADER_ID,
+  applyCanvasSections,
   canvasChromeFix,
   liftSiteChrome,
   pageChromeMode,
@@ -184,6 +185,34 @@ describe("per-page header and footer", () => {
       const split = splitSiteChrome(canvas, chrome, [hero]);
       const fix = canvasChromeFix(canvas, split.body, split);
       expect(fix?.header).toMatchObject({ id: SITE_HEADER_ID, data: { design: "centered", siteName: "Taqueria" } });
+    });
+  });
+
+  describe("applying a canvas change to the draft", () => {
+    const draft = { header, footer, pages: [{ id: "home", sections: [hero] }] };
+
+    it("returns the same draft when the canvas already matches it", () => {
+      const saved = applyCanvasSections(draft, "home", withSiteChrome([hero], draft));
+      expect(applyCanvasSections(saved, "home", withSiteChrome(saved.pages[0]!.sections, saved))).toBe(saved);
+      expect(applyCanvasSections(draft, "missing", [hero])).toBe(draft);
+    });
+
+    it("keeps a header just removed from the page when the canvas without it is applied", () => {
+      const removed = { ...draft, pages: [{ id: "home", sections: setPageChrome([hero], "header", "none", draft) }] };
+      const canvas = withSiteChrome([hero], draft).filter((section) => section.type !== "header");
+      const next = applyCanvasSections(removed, "home", canvas);
+      expect(pageChromeMode(next.pages[0]!.sections, "header")).toBe("none");
+      expect(withSiteChrome(next.pages[0]!.sections, next).map((s) => s.type)).toEqual(["hero", "footer"]);
+      expect(next.header).toBe(header);
+    });
+
+    it("saves body edits to the page and site header edits to the site", () => {
+      const [shown, , shownFooter] = withSiteChrome([hero], draft);
+      const editedHero = { ...hero, data: { ...hero.data, heading: "Hola mundo" } } as Section;
+      const editedHeader = { ...shown!, data: { ...(shown!.data as HeaderData), siteName: "Cantina" } } as Section;
+      const next = applyCanvasSections(draft, "home", [editedHeader, editedHero, shownFooter!]);
+      expect(next.pages[0]!.sections).toEqual([editedHero]);
+      expect(next.header.siteName).toBe("Cantina");
     });
   });
 

@@ -8,6 +8,8 @@ import { AUTH_CSS } from "./auth-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
 import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
 import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
+import { HERO_CONTROLS_CSS } from "./hero-controls-styles.ts";
+import { CARDS_CSS } from "./cards-styles.ts";
 
 const NOT_CHROME = ":not(.wb-editor-chrome, .wb-editor-chrome *)";
 
@@ -7087,15 +7089,31 @@ details[open] > summary .wb-faq-plus {
   overflow: hidden;
   width: 100%;
 }
+.wb-carousel-strip-wrapper {
+  --wb-strip-visible: var(--wb-strip-cols, 3);
+  --wb-strip-offset: min(var(--wb-strip-index, 0), max(0, var(--wb-strip-count, 1) - var(--wb-strip-visible)));
+}
 .wb-carousel-strip-track {
   display: flex;
+  transform: translateX(calc(var(--wb-strip-offset) * -100% / var(--wb-strip-visible)));
   transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
   will-change: transform;
 }
 .wb-carousel-strip-item {
-  flex-shrink: 0;
+  flex: 0 0 calc(100% / var(--wb-strip-visible));
+  width: calc(100% / var(--wb-strip-visible));
+  min-width: 0;
   padding: 0 8px;
   box-sizing: border-box;
+}
+.wb-carousel-strip-fits .wb-carousel-strip-controls { display: none; }
+@container wb-site (max-width: 900px) {
+  .wb-carousel-strip-wrapper { --wb-strip-visible: min(var(--wb-strip-cols, 3), 2); }
+  .wb-carousel-strip-fits .wb-carousel-strip-controls { display: flex; }
+}
+@container wb-site (max-width: 600px) {
+  .wb-carousel-strip-wrapper { --wb-strip-visible: 1; }
+  .wb-carousel-strip-item { padding: 0 4px; }
 }
 .wb-carousel-strip-card {
   display: flex;
@@ -7137,6 +7155,10 @@ details[open] > summary .wb-faq-plus {
   padding: 4px 9px;
   border-radius: 9999px;
   z-index: 2;
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .wb-carousel-strip-overlay {
   position: absolute;
@@ -7690,6 +7712,8 @@ ${AUTH_CSS}
 ${BLOG_CSS}
 ${PREMIUM_HEADER_CSS}
 ${CONTACT_BUILDER_CSS}
+${HERO_CONTROLS_CSS}
+${CARDS_CSS}
 .wb-device-scroll {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;

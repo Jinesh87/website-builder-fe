@@ -7,7 +7,7 @@ import type { WebsiteHosting } from "../../api/hosting.ts";
 import type { SavedSection, ThemeOption, WebsiteDetail, WebsitePage } from "../../api/websites.ts";
 import type { Device } from "../../components/websites/DevicePreview.tsx";
 import PublishSuccessModal from "../../components/websites/PublishSuccessModal.tsx";
-import { draftFromWebsite, homePage, updatePage, updateSections, type EditorDraft } from "../../pages/websites/editor/editor-state.ts";
+import { draftFromWebsite, homePage, updatePage, type EditorDraft } from "../../pages/websites/editor/editor-state.ts";
 import { LinkTargetsContext, MediaTargetContext } from "../../pages/websites/editor/fields.tsx";
 import type { Section } from "../../site-kit/index.ts";
 import { useAutosave } from "./autosave/use-autosave.ts";
@@ -35,14 +35,7 @@ import {
   type BuilderItem,
 } from "./puck/adapter.ts";
 import { selectSection, useBuilderPuck } from "./puck/puck-api.ts";
-import {
-  canvasChromeFix,
-  isChromeSection,
-  setPageChrome,
-  splitSiteChrome,
-  stableJson,
-  withSiteChrome,
-} from "./utils/site-chrome.ts";
+import { applyCanvasSections, canvasChromeFix, isChromeSection, setPageChrome, withSiteChrome } from "./utils/site-chrome.ts";
 import { lazyWithRetry } from "../../utils/lazy-with-retry.ts";
 import AiDrawerSkeleton from "./shell/AiDrawerSkeleton.tsx";
 
@@ -66,8 +59,6 @@ export type EditorAppProps = {
   backTo: string;
   justCreated: boolean;
 };
-
-const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 // Puck merges this prop into its state, so unlocking must pass explicit `true`s rather than `undefined`.
 const EDITABLE_PERMISSIONS: Permissions = { drag: true, duplicate: true, delete: true, edit: true, insert: true };
@@ -325,17 +316,11 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
         return;
       }
       // Edits to the site-wide header/footer apply to every page; a page's own apply to it alone.
-      const current = draftRef.current.pages.find((candidate) => candidate.id === page.id);
-      const { body, header, footer } = splitSiteChrome(sections, draftRef.current, current?.sections);
-      if (
-        current &&
-        sameJson(current.sections, body) &&
-        stableJson(draftRef.current.header) === stableJson(header) &&
-        stableJson(draftRef.current.footer) === stableJson(footer)
-      ) {
-        return;
-      }
-      editDraft((d) => ({ ...updateSections(d, page.id, () => body), header, footer }));
+      // Puck reports changes synchronously, before React applies updates queued in the same action
+      // (removing the header from this page, say), so the change is applied to the latest draft;
+      // `draftRef` only skips changes that are already saved.
+      if (applyCanvasSections(draftRef.current, page.id, sections) === draftRef.current) return;
+      editDraft((d) => applyCanvasSections(d, page.id, sections));
     },
     [page.id, editDraft, notify],
   );

@@ -1,5 +1,5 @@
 import { request } from "./http.ts";
-import type { PlatformTemplateCategory } from "./websites.ts";
+import type { TemplatePreview } from "./websites.ts";
 
 /** BUILT_IN templates come from the seed files and can only be shown or hidden. */
 export type PlatformTemplateOrigin = "BUILT_IN" | "ADMIN";
@@ -9,24 +9,47 @@ export type AdminTemplate = {
   id: string;
   /** Unique template ID, used in gallery links and when creating a website from it. */
   key: string;
+  /** Gallery number (#3001, …) of an admin-made template; null for built-in ones, which use their marketing number. */
+  number: number | null;
   name: string;
+  /** Category name, for display. */
   category: string;
+  categoryId: string | null;
   description: string | null;
   origin: PlatformTemplateOrigin;
   status: PlatformTemplateStatus;
   /** Template Studio website that "Edit design" opens; null for built-in templates. */
   sourceWebsiteId: string | null;
   pages: { name: string; slug: string }[];
+  /** The Template Studio design was edited after it was last saved into the template. */
+  hasUnpublishedChanges: boolean;
+  createdByName: string | null;
+  updatedByName: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** A Template Studio website not yet saved as a template; never shown to clients. */
+export type TemplateDraft = {
+  websiteId: string;
+  name: string;
+  pageCount: number;
   createdByName: string | null;
   createdAt: string;
+  /** Last edit to the draft's design. */
   updatedAt: string;
 };
 
 export type AdminTemplateListParams = {
   status?: "live" | "hidden" | "archived";
-  category?: PlatformTemplateCategory;
+  origin?: "built-in" | "custom";
+  categoryId?: string;
+  /** "me": only what the signed-in admin created. */
+  createdBy?: "me";
   search?: string;
 };
+
+export type TemplateDraftListParams = Pick<AdminTemplateListParams, "createdBy" | "search">;
 
 export type StudioStartFrom =
   | { startFrom: "blank" }
@@ -35,14 +58,14 @@ export type StudioStartFrom =
 
 export type TemplateDetails = {
   name: string;
-  category: PlatformTemplateCategory;
+  categoryId: string;
   description?: string;
   isActive: boolean;
 };
 
 const BASE = "/admin/templates";
 
-function toQuery(params: AdminTemplateListParams): string {
+function toQuery(params: Record<string, string | undefined>): string {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value) query.set(key, value);
@@ -53,10 +76,17 @@ function toQuery(params: AdminTemplateListParams): string {
 
 type TemplateResponse = { template: AdminTemplate };
 
-/** Super Admin only. Editing or archiving a template never changes websites already created from it. */
+/** Super Admin only. Editing or deleting a template never changes websites already created from it. */
 export const adminTemplatesApi = {
   list: (params: AdminTemplateListParams = {}) =>
     request<{ templates: AdminTemplate[] }>(`${BASE}${toQuery(params)}`).then((data) => data.templates),
+
+  /** Unsaved work in Template Studio, most recently edited first. */
+  listDrafts: (params: TemplateDraftListParams = {}) =>
+    request<{ drafts: TemplateDraft[] }>(`${BASE}/drafts${toQuery(params)}`).then((data) => data.drafts),
+
+  /** Deletes an unsaved draft's Template Studio website. */
+  discardDraft: (websiteId: string) => request<void>(`${BASE}/drafts/${websiteId}`, { method: "DELETE" }),
 
   /** The template this Template Studio website designs, or null before its first save. */
   bySourceWebsite: (websiteId: string) =>
@@ -76,10 +106,16 @@ export const adminTemplatesApi = {
   updateDetails: (templateId: string, details: Partial<TemplateDetails>) =>
     request<TemplateResponse>(`${BASE}/${templateId}`, { method: "PATCH", body: details }).then((data) => data.template),
 
+  /** Renders any platform template, including hidden and archived ones. Not cached: admins edit them. */
+  preview: (templateId: string) => request<TemplatePreview>(`${BASE}/${templateId}/preview`),
+
   /** Soft delete; restorable. */
   archive: (templateId: string) =>
     request<TemplateResponse>(`${BASE}/${templateId}`, { method: "DELETE" }).then((data) => data.template),
 
   restore: (templateId: string) =>
     request<TemplateResponse>(`${BASE}/${templateId}/restore`, { method: "POST" }).then((data) => data.template),
+
+  /** Archived, admin-made templates only; removes its Template Studio website too. */
+  deletePermanently: (templateId: string) => request<void>(`${BASE}/${templateId}/permanent`, { method: "DELETE" }),
 };

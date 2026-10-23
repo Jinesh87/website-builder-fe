@@ -314,13 +314,10 @@
 
 /* Template Card */
 .tcard {
-  background: #141826;
-  border: 1px solid #23293D;
-  border-radius: 18px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
   min-width: 0;
   position: relative;
   background: #101424;
@@ -328,8 +325,8 @@
   border-radius: 16px;
 }
 
+/* No lift on hover: moving the card out from under the cursor makes hover toggle at its edge. */
 .tcard:hover {
-  transform: translateY(-6px);
   border-color: rgba(99, 102, 241, 0.45);
   box-shadow: 0 24px 50px -16px rgba(0, 0, 0, 0.8), 0 0 28px rgba(79, 70, 229, 0.16);
 }
@@ -424,6 +421,17 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
+  content-visibility: auto;
+}
+
+/* Thumbnails are static previews: running site animations and blurs in every card is costly. */
+.tcard-viewport .wb-site *,
+.tcard-viewport .wb-site *::before,
+.tcard-viewport .wb-site *::after {
+  animation: none !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .tcard-viewport .tframe {
@@ -443,7 +451,6 @@
   left: 0;
   transform-origin: 0 0;
   width: 1200px;
-  will-change: transform;
   transition: transform 0.6s ease-out;
 }
 
@@ -459,28 +466,25 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  will-change: transform;
   transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Smooth Interactive Hover-to-Scroll Effect */
 .tcard:hover .tcard-viewport .tframe > .tsite {
   transform: scale(var(--preview-scale, 0.32)) translateY(-62%) !important;
-  transition: transform 6s cubic-bezier(0.2, 0, 0.25, 1) !important;
+  transition: transform 6s cubic-bezier(0.2, 0, 0.25, 1) 0.25s !important;
 }
 
 .tcard:hover .tcard-viewport .tframe > .ts {
   transform: scale(var(--preview-scale, 0.32)) translateY(-40%) !important;
-  transition: transform 5s cubic-bezier(0.2, 0, 0.25, 1) !important;
+  transition: transform 5s cubic-bezier(0.2, 0, 0.25, 1) 0.25s !important;
 }
 
 .tcard-ov {
   position: absolute;
   inset: 12px 12px 0 12px;
   border-radius: 10px;
-  background: rgba(10, 14, 28, 0.45);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(10, 14, 28, 0.55);
   display: grid;
   place-items: center;
   opacity: 0;

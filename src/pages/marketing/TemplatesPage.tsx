@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { CATS, CAT_LABEL, STYLES } from "./data.ts";
 import { useMarketing } from "./marketing-context.ts";
@@ -19,6 +19,7 @@ export default function TemplatesPage() {
   const [styleFilter, setStyleFilter] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"pop" | "az" | "new">("pop");
   const [searchTerm, setSearchTerm] = useState("");
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
   // Known categories first, then any other category a platform template uses
   const categories = useMemo(() => {
@@ -35,7 +36,7 @@ export default function TemplatesPage() {
 
   // Filtered and sorted templates list
   const filteredTemplates = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
+    const query = deferredSearchTerm.trim().toLowerCase();
     const result = templates.filter((t) => {
       if (selectedCat !== "All" && t.category !== selectedCat) return false;
       if (styleFilter && t.style !== styleFilter) return false;
@@ -51,7 +52,7 @@ export default function TemplatesPage() {
     // "pop" maintains the default curated order where row 1 and row 2 match the reference UI!
 
     return result;
-  }, [templates, selectedCat, styleFilter, sortOrder, searchTerm]);
+  }, [templates, selectedCat, styleFilter, sortOrder, deferredSearchTerm]);
 
   return (
     <div className="gallery-view" data-view="templates">

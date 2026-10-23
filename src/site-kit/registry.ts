@@ -1,4 +1,5 @@
 import { AUTH_PRESETS, createAuthData } from "./auth-defaults.ts";
+import { CARDS_PRESETS, createCardsData } from "./cards-defaults.ts";
 import type {
   Section,
   SectionDataMap,
@@ -13,6 +14,7 @@ export type SectionCategory =
   | "Hero"
   | "Features"
   | "Services"
+  | "Cards"
   | "Social proof"
   | "FAQ"
   | "CTA"
@@ -221,6 +223,14 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
           },
         ],
       }),
+    },
+    cards: {
+      type: "cards",
+      label: "Cards",
+      category: "Cards",
+      description:
+        "Flexible card grid in 5 designs with custom buttons, shapes, colours and responsive layouts.",
+      createData: createCardsData,
     },
     testimonials: {
       type: "testimonials",
@@ -4265,6 +4275,14 @@ export const SECTION_PRESETS: SectionPreset[] = [
         },
       }),
   },
+  ...CARDS_PRESETS.map((preset): SectionPreset => ({
+    key: preset.key,
+    type: "cards",
+    label: preset.label,
+    category: "Cards",
+    description: preset.description,
+    create: () => createSection("cards", { data: preset.data() }),
+  })),
   ...AUTH_PRESETS.map((preset): SectionPreset => ({
     key: preset.key,
     type: "auth",

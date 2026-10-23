@@ -35,7 +35,7 @@ export default function HeroGalleryBanner() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const templates = useGalleryTemplates();
-  const templateCount = templates.length;
+  const templateCountLabel = "400+";
   const industryCount = useMemo(() => new Set(templates.map((t) => t.category)).size, [templates]);
   const designStyleCount = useMemo(
     () => new Set(templates.flatMap((t) => (t.style ? [t.style] : []))).size,
@@ -66,7 +66,7 @@ export default function HeroGalleryBanner() {
             Build Your Website Free, <span>Pay Only for Hosting</span>
           </h1>
           <p className="lead">
-            <b>{templateCount}</b> professionally designed templates for every kind of business. Open any one to see every page on
+            <b>{templateCountLabel}</b> professionally designed templates for every kind of business. Open any one to see every page on
             desktop, tablet and mobile, then start with it for free.
           </p>
 
@@ -97,7 +97,7 @@ export default function HeroGalleryBanner() {
 
           <div className="gstats">
             <div>
-              <b>{templateCount}</b>
+              <b>{templateCountLabel}</b>
               <span>templates</span>
             </div>
             <div>

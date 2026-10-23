@@ -54,7 +54,7 @@ export default function SelectInput<T extends string>({
           </span>
           <ChevronDown className="size-4 shrink-0 text-ink-muted" />
         </Button>
-        <Dropdown.Popover className="min-w-(--trigger-width) rounded-lg border border-ed-border bg-surface p-1 shadow-ed-pop z-(--z-ed-popover)">
+        <Dropdown.Popover className="min-w-(--trigger-width) max-h-72 overflow-y-auto overscroll-contain rounded-lg border border-ed-border bg-surface p-1 shadow-ed-pop z-(--z-ed-popover)">
           <Dropdown.Menu
             selectionMode="single"
             selectedKeys={new Set([String(value)])}

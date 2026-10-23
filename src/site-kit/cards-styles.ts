@@ -1,0 +1,304 @@
+/**
+ * Cards section. Each grid cell is an inline-size container, so card internals
+ * adapt to the card's own width (any column count), while the grid itself
+ * follows the site container like every other section.
+ *
+ * Interpolated into SITE_CSS, so it must not contain backticks or template placeholders.
+ */
+export const CARDS_CSS = `
+.wb-cardset {
+  --wb-cardset-gap: 24px;
+  --wb-cardset-on-media: #ffffff;
+}
+.wb-cardset.wb-cardset-gap-sm { --wb-cardset-gap: 16px; }
+.wb-cardset.wb-cardset-gap-lg { --wb-cardset-gap: 32px; }
+
+/* Header */
+.wb-cardset .wb-cardset-head { display: flex; flex-direction: column; gap: 16px; margin-bottom: 40px; }
+.wb-cardset .wb-cardset-head-copy { display: flex; flex-direction: column; gap: 10px; max-width: 720px; }
+.wb-cardset .wb-cardset-head-center { align-items: center; text-align: center; }
+.wb-cardset .wb-cardset-head-center .wb-cardset-head-copy { align-items: center; margin-inline: auto; }
+.wb-cardset .wb-cardset-head-left { align-items: flex-start; text-align: left; }
+.wb-cardset .wb-cardset-head-split { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 24px; text-align: left; }
+.wb-cardset .wb-cardset-intro { font-size: 17px; }
+.wb-cardset .wb-cardset-head-link {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  font-size: 14px; font-weight: 600; color: var(--wb-primary);
+  white-space: nowrap; text-underline-offset: 3px;
+}
+.wb-cardset .wb-cardset-head-link:hover { text-decoration: underline; }
+.wb-cardset .wb-cardset-head-arrow { width: 16px; height: 16px; transition: transform 0.2s ease; }
+.wb-cardset .wb-cardset-head-link:hover .wb-cardset-head-arrow { transform: translateX(3px); }
+.wb-cardset.wb-bg-primary .wb-cardset-head-link,
+.wb-cardset.wb-bg-dark .wb-cardset-head-link { color: inherit; }
+
+/* Grid */
+.wb-cardset .wb-cardset-grid {
+  display: grid; gap: var(--wb-cardset-gap); align-items: stretch;
+  grid-template-columns: repeat(var(--wb-cols, 3), minmax(0, 1fr));
+}
+.wb-cardset .wb-cardset-cell { container: wb-cardset-card / inline-size; display: flex; min-width: 0; }
+.wb-cardset .wb-cardset-cell > .wb-cardset-card { flex: 1 1 auto; min-width: 0; }
+.wb-cardset .wb-cardset-bottom { display: flex; justify-content: center; margin-top: 40px; }
+.wb-cardset .wb-cardset-bottom .wb-btn { border-radius: var(--wb-cardset-btn-radius, var(--wb-radius)); }
+
+/* Card shell */
+.wb-cardset .wb-cardset-card {
+  --wb-cardset-accent: var(--wb-primary);
+  position: relative; display: flex; flex-direction: column; min-width: 0;
+  color: var(--wb-text);
+  border-radius: var(--wb-cardset-radius, var(--wb-radius));
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.wb-cardset .wb-cardset-surface {
+  background: var(--wb-cardset-card-bg, var(--wb-bg));
+  color: var(--wb-text);
+  border-radius: var(--wb-cardset-radius, var(--wb-radius));
+  overflow: hidden;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+}
+.wb-cardset.wb-cardset-style-bordered .wb-cardset-surface { border: 1px solid var(--wb-border); }
+.wb-cardset.wb-cardset-style-shadow .wb-cardset-surface { box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.08); }
+.wb-cardset.wb-cardset-style-flat .wb-cardset-surface { background: var(--wb-cardset-card-bg, var(--wb-surface)); }
+.wb-cardset.wb-cardset-style-flat.wb-bg-surface .wb-cardset-surface { background: var(--wb-cardset-card-bg, var(--wb-bg)); }
+.wb-cardset.wb-cardset-style-glass .wb-cardset-surface {
+  background: var(--wb-cardset-card-bg, color-mix(in srgb, var(--wb-bg) 72%, transparent));
+  -webkit-backdrop-filter: blur(16px) saturate(140%); backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--wb-text) 10%, transparent);
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.18);
+}
+.wb-cardset.wb-cardset-style-elevated .wb-cardset-surface {
+  border: 1px solid color-mix(in srgb, var(--wb-border) 70%, transparent);
+  box-shadow: 0 14px 34px -10px rgb(0 0 0 / 0.16), 0 4px 10px -6px rgb(0 0 0 / 0.08);
+}
+.wb-cardset .wb-cardset-featured .wb-cardset-surface,
+.wb-cardset .wb-cardset-featured.wb-cardset-surface {
+  box-shadow: 0 0 0 2px var(--wb-cardset-accent), 0 14px 34px -14px color-mix(in srgb, var(--wb-cardset-accent) 45%, transparent);
+}
+
+/* Media */
+.wb-cardset .wb-cardset-media {
+  position: relative; overflow: hidden; flex-shrink: 0;
+  aspect-ratio: var(--wb-cardset-ar, auto);
+  background: color-mix(in srgb, var(--wb-text) 5%, var(--wb-bg));
+}
+.wb-cardset .wb-cardset-img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wb-cardset.wb-cardset-fit-contain .wb-cardset-img { object-fit: contain; padding: 12px; }
+.wb-cardset .wb-cardset-badge {
+  display: inline-flex; align-items: center; width: fit-content; max-width: 100%;
+  padding: 4px 10px; border-radius: 9999px;
+  font-size: 12px; font-weight: 600; line-height: 1.3; letter-spacing: 0.01em;
+  color: var(--wb-cardset-accent);
+  background: color-mix(in srgb, var(--wb-cardset-accent) 12%, transparent);
+}
+.wb-cardset .wb-cardset-badge-floating {
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  color: var(--wb-on-primary); background: var(--wb-cardset-accent);
+  box-shadow: 0 4px 12px -4px rgb(0 0 0 / 0.3);
+}
+
+/* Text */
+.wb-cardset .wb-cardset-body { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-width: 0; padding: clamp(16px, 7cqi, 24px); }
+.wb-cardset .wb-cardset-titles { display: flex; flex-direction: column; gap: 4px; }
+.wb-cardset .wb-cardset-title { font-size: clamp(17px, 6cqi, 21px); font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.wb-cardset .wb-cardset-subtitle { font-size: 13px; font-weight: 500; color: var(--wb-muted); }
+.wb-cardset .wb-cardset-desc { font-size: 15px; line-height: 1.6; color: var(--wb-muted); overflow-wrap: anywhere; }
+.wb-cardset .wb-cardset-desc-clamped {
+  display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+  -webkit-line-clamp: var(--wb-cardset-lines, 3); line-clamp: var(--wb-cardset-lines, 3);
+}
+.wb-cardset .wb-cardset-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.wb-cardset .wb-cardset-tag {
+  padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; line-height: 1.4;
+  color: color-mix(in srgb, var(--wb-cardset-accent) 80%, var(--wb-text));
+  background: color-mix(in srgb, var(--wb-cardset-accent) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wb-cardset-accent) 22%, transparent);
+}
+.wb-cardset .wb-cardset-price { font-size: 18px; font-weight: 700; color: var(--wb-text); }
+.wb-cardset .wb-cardset-marker { display: flex; align-items: center; gap: 12px; }
+.wb-cardset .wb-cardset-marker .wb-icon {
+  margin: 0; color: var(--wb-cardset-accent);
+  background: color-mix(in srgb, var(--wb-cardset-accent) 12%, transparent);
+}
+.wb-cardset .wb-cardset-number { font-family: var(--wb-font-heading); font-size: 14px; font-weight: 700; letter-spacing: 0.06em; color: var(--wb-cardset-accent); }
+.wb-cardset.wb-cardset-content-center .wb-cardset-body,
+.wb-cardset.wb-cardset-content-center .wb-cardset-panel,
+.wb-cardset.wb-cardset-content-center .wb-cardset-overlay-content { text-align: center; align-items: center; }
+.wb-cardset.wb-cardset-content-center :is(.wb-cardset-tags, .wb-cardset-actions, .wb-cardset-marker, .wb-cardset-top) { justify-content: center; }
+
+/* Buttons */
+.wb-cardset .wb-cardset-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: auto; padding-top: 4px; }
+.wb-cardset .wb-cardset-actions-block > .wb-cardset-btn:not(.wb-cardset-btn-link) { flex: 1 1 0; }
+.wb-cardset .wb-cardset-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 40px; max-width: 100%; padding: 0 18px;
+  border: 1.5px solid transparent; border-radius: var(--wb-cardset-btn-radius, var(--wb-radius));
+  font-size: 14px; font-weight: 600; line-height: 1.2; text-align: center;
+  cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.wb-cardset .wb-cardset-btn-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wb-cardset .wb-cardset-btn-sm { min-height: 34px; padding: 0 14px; font-size: 13px; }
+.wb-cardset .wb-cardset-btn-lg { min-height: 48px; padding: 0 24px; font-size: 15px; }
+.wb-cardset .wb-cardset-btn-oval { padding-inline: 28px; }
+.wb-cardset .wb-cardset-btn-arrow { width: 16px; height: 16px; flex-shrink: 0; transition: transform 0.2s ease; }
+.wb-cardset .wb-cardset-btn:focus-visible,
+.wb-cardset .wb-cardset-head-link:focus-visible { outline: 2px solid var(--wb-cardset-accent, var(--wb-primary)); outline-offset: 2px; }
+
+.wb-cardset .wb-cardset-btn-filled { background: var(--wb-cardset-accent); border-color: var(--wb-cardset-accent); color: var(--wb-on-primary); }
+.wb-cardset .wb-cardset-btn-outline { background: transparent; border-color: color-mix(in srgb, var(--wb-text) 24%, transparent); color: var(--wb-text); }
+.wb-cardset .wb-cardset-btn-soft { background: color-mix(in srgb, var(--wb-cardset-accent) 12%, transparent); color: var(--wb-cardset-accent); }
+.wb-cardset .wb-cardset-btn-ghost { background: transparent; color: var(--wb-cardset-accent); }
+.wb-cardset .wb-cardset-btn-link { min-height: 0; padding: 2px 0; border: 0; border-radius: 0; background: none; color: var(--wb-cardset-accent); text-underline-offset: 3px; }
+
+/* Footer row (product design) */
+.wb-cardset .wb-cardset-footer { padding: 14px clamp(16px, 7cqi, 24px) clamp(16px, 7cqi, 20px); border-top: 1px solid var(--wb-border); }
+.wb-cardset .wb-cardset-footer .wb-cardset-actions { margin-top: 0; padding-top: 0; }
+
+/* 1. Product classic */
+.wb-cardset-v-product-classic .wb-cardset-body { gap: 10px; }
+
+/* 2. Image overlay */
+.wb-cardset-v-image-overlay .wb-cardset-card { display: grid; isolation: isolate; background: var(--wb-cardset-card-bg, #0f172a); color: var(--wb-cardset-on-media); }
+.wb-cardset-v-image-overlay .wb-cardset-overlay-media { grid-area: 1 / 1; align-self: stretch; min-height: 340px; aspect-ratio: var(--wb-cardset-ar, auto); background: var(--wb-cardset-card-bg, linear-gradient(160deg, var(--wb-cardset-accent), #0f172a)); }
+.wb-cardset-v-image-overlay .wb-cardset-overlay-media .wb-cardset-img { position: absolute; inset: 0; }
+.wb-cardset-v-image-overlay .wb-cardset-overlay-media::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgb(2 6 23 / 0) 25%, rgb(2 6 23 / 0.55) 55%, rgb(2 6 23 / 0.9) 100%);
+}
+.wb-cardset-v-image-overlay .wb-cardset-overlay-content {
+  grid-area: 1 / 1; align-self: end; z-index: 1;
+  display: flex; flex-direction: column; gap: 10px; padding: clamp(18px, 7cqi, 28px);
+}
+.wb-cardset-v-image-overlay .wb-cardset-title,
+.wb-cardset-v-image-overlay .wb-cardset-price { color: var(--wb-cardset-on-media); }
+.wb-cardset-v-image-overlay :is(.wb-cardset-desc, .wb-cardset-subtitle) { color: rgb(255 255 255 / 0.82); }
+.wb-cardset-v-image-overlay .wb-cardset-badge { color: var(--wb-cardset-on-media); background: rgb(255 255 255 / 0.18); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.wb-cardset-v-image-overlay .wb-cardset-tag { color: var(--wb-cardset-on-media); background: rgb(255 255 255 / 0.12); border-color: rgb(255 255 255 / 0.28); }
+.wb-cardset-v-image-overlay .wb-cardset-btn-outline { color: var(--wb-cardset-on-media); border-color: rgb(255 255 255 / 0.6); }
+.wb-cardset-v-image-overlay .wb-cardset-btn-soft { color: var(--wb-cardset-on-media); background: rgb(255 255 255 / 0.18); }
+.wb-cardset-v-image-overlay :is(.wb-cardset-btn-ghost, .wb-cardset-btn-link) { color: var(--wb-cardset-on-media); }
+.wb-cardset-v-image-overlay .wb-cardset-actions { margin-top: 4px; }
+
+/* 3. Horizontal split */
+.wb-cardset-v-horizontal-split .wb-cardset-card { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+.wb-cardset-v-horizontal-split.wb-cardset-media-right .wb-cardset-card { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+.wb-cardset-v-horizontal-split.wb-cardset-media-right .wb-cardset-media { order: 2; }
+.wb-cardset-v-horizontal-split .wb-cardset-card.wb-cardset-no-image { grid-template-columns: minmax(0, 1fr); }
+.wb-cardset-v-horizontal-split .wb-cardset-media { aspect-ratio: auto; min-height: 220px; height: 100%; }
+.wb-cardset-v-horizontal-split .wb-cardset-media .wb-cardset-img { position: absolute; inset: 0; }
+.wb-cardset-v-horizontal-split .wb-cardset-body { justify-content: center; }
+
+/* 4. Minimal accent */
+.wb-cardset-v-minimal-accent .wb-cardset-card::before {
+  content: ""; position: absolute; top: 0; left: 0; z-index: 1;
+  width: 56px; height: 4px; border-radius: 0 0 4px 0;
+  background: var(--wb-cardset-accent);
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wb-cardset-v-minimal-accent.wb-cardset-content-center .wb-cardset-card::before { left: 50%; transform: translateX(-50%); border-radius: 0 0 4px 4px; }
+.wb-cardset-v-minimal-accent .wb-cardset-body { gap: 14px; padding: clamp(20px, 8cqi, 32px); }
+.wb-cardset-v-minimal-accent .wb-cardset-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wb-cardset-v-minimal-accent .wb-cardset-top:empty { display: none; }
+.wb-cardset-v-minimal-accent .wb-cardset-number { font-size: 28px; line-height: 1; letter-spacing: -0.02em; }
+
+/* 5. Floating panel */
+.wb-cardset-v-floating-panel .wb-cardset-card { padding-bottom: 4px; }
+.wb-cardset-v-floating-panel .wb-cardset-media { border-radius: var(--wb-cardset-radius, var(--wb-radius)); }
+/* Unpositioned (flex items honour z-index) so a whole-card link can cover the image too. */
+.wb-cardset-v-floating-panel .wb-cardset-panel {
+  z-index: 1; flex: 1 1 auto;
+  display: flex; flex-direction: column; gap: 10px;
+  margin: -56px clamp(10px, 5cqi, 18px) 0;
+  padding: clamp(16px, 7cqi, 22px);
+  border-radius: calc(var(--wb-cardset-radius, var(--wb-radius)) * 0.75);
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.28);
+}
+.wb-cardset-v-floating-panel .wb-cardset-no-image .wb-cardset-panel { margin: 0; }
+.wb-cardset-v-floating-panel .wb-cardset-span { grid-column: span 2; }
+.wb-cardset-v-floating-panel .wb-cardset-span .wb-cardset-media { aspect-ratio: var(--wb-cardset-ar-wide, auto); }
+
+/* Whole-card link */
+.wb-cardset.wb-cardset-clickable .wb-cardset-stretch::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.wb-cardset.wb-cardset-clickable .wb-cardset-card { cursor: pointer; }
+.wb-cardset.wb-cardset-clickable .wb-cardset-actions > :not(.wb-cardset-stretch) { position: relative; z-index: 2; }
+.wb-cardset.wb-cardset-clickable .wb-cardset-card:has(.wb-cardset-stretch:focus-visible) { outline: 2px solid var(--wb-cardset-accent); outline-offset: 3px; }
+.wb-cardset.wb-cardset-clickable .wb-cardset-stretch:focus-visible { outline: none; }
+
+/* Hover effects: pointer devices only, mirrored on keyboard focus */
+@media (hover: hover) and (pointer: fine) {
+  .wb-cardset .wb-cardset-btn-filled:hover { background: color-mix(in srgb, var(--wb-cardset-accent) 86%, #000); border-color: color-mix(in srgb, var(--wb-cardset-accent) 86%, #000); }
+  .wb-cardset .wb-cardset-btn-outline:hover { border-color: var(--wb-cardset-accent); color: var(--wb-cardset-accent); }
+  .wb-cardset .wb-cardset-btn-soft:hover { background: color-mix(in srgb, var(--wb-cardset-accent) 20%, transparent); }
+  .wb-cardset .wb-cardset-btn-ghost:hover { background: color-mix(in srgb, var(--wb-cardset-accent) 9%, transparent); }
+  .wb-cardset .wb-cardset-btn-link:hover { text-decoration: underline; }
+  .wb-cardset .wb-cardset-btn:hover .wb-cardset-btn-arrow { transform: translateX(3px); }
+  .wb-cardset-v-image-overlay .wb-cardset-btn-outline:hover { color: var(--wb-cardset-on-media); border-color: var(--wb-cardset-on-media); background: rgb(255 255 255 / 0.12); }
+  .wb-cardset-v-image-overlay .wb-cardset-btn-soft:hover { background: rgb(255 255 255 / 0.28); }
+  .wb-cardset-v-image-overlay .wb-cardset-btn-ghost:hover { background: rgb(255 255 255 / 0.12); }
+  .wb-cardset-v-minimal-accent .wb-cardset-card:hover::before { width: 100%; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .wb-cardset.wb-cardset-hover-lift .wb-cardset-card:hover { transform: translateY(-4px); }
+  .wb-cardset.wb-cardset-hover-lift .wb-cardset-card:hover .wb-cardset-surface,
+  .wb-cardset.wb-cardset-hover-lift .wb-cardset-card.wb-cardset-surface:hover { box-shadow: 0 20px 40px -16px rgb(0 0 0 / 0.24); }
+  .wb-cardset.wb-cardset-hover-zoom .wb-cardset-card:hover .wb-cardset-img { transform: scale(1.06); }
+  .wb-cardset.wb-cardset-hover-glow .wb-cardset-card:hover .wb-cardset-surface,
+  .wb-cardset.wb-cardset-hover-glow .wb-cardset-card.wb-cardset-surface:hover {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--wb-cardset-accent) 55%, transparent), 0 16px 40px -12px color-mix(in srgb, var(--wb-cardset-accent) 40%, transparent);
+  }
+}
+.wb-cardset.wb-cardset-hover-lift .wb-cardset-card:focus-within { transform: translateY(-4px); }
+.wb-cardset.wb-cardset-hover-zoom .wb-cardset-card:focus-within .wb-cardset-img { transform: scale(1.06); }
+
+/* Touch: comfortable tap targets */
+@media (pointer: coarse) {
+  .wb-cardset .wb-cardset-btn:not(.wb-cardset-btn-link) { min-height: 44px; }
+  .wb-cardset .wb-cardset-btn-link { min-height: 44px; }
+}
+
+/* Card-width adaptations (any column count) */
+@container wb-cardset-card (max-width: 520px) {
+  .wb-cardset-v-horizontal-split .wb-cardset-card,
+  .wb-cardset-v-horizontal-split.wb-cardset-media-right .wb-cardset-card { grid-template-columns: minmax(0, 1fr); }
+  .wb-cardset-v-horizontal-split.wb-cardset-media-right .wb-cardset-media { order: 0; }
+  .wb-cardset-v-horizontal-split .wb-cardset-media { height: auto; min-height: 0; aspect-ratio: var(--wb-cardset-ar, 16 / 9); }
+}
+@container wb-cardset-card (max-width: 240px) {
+  .wb-cardset .wb-cardset-actions { flex-direction: column; align-items: stretch; }
+  .wb-cardset .wb-cardset-btn { width: 100%; padding-inline: 12px; }
+  .wb-cardset .wb-cardset-desc { font-size: 14px; }
+  .wb-cardset-v-image-overlay .wb-cardset-overlay-media { min-height: 280px; }
+  .wb-cardset-v-floating-panel .wb-cardset-panel { margin-top: -32px; }
+}
+
+/* Tablet */
+@container wb-site (max-width: 900px) {
+  .wb-cardset .wb-cardset-grid { grid-template-columns: repeat(var(--wb-cols-tablet, 2), minmax(0, 1fr)); }
+  .wb-cardset-v-floating-panel .wb-cardset-span { grid-column: 1 / -1; }
+  .wb-cardset .wb-cardset-head { margin-bottom: 32px; }
+}
+
+/* Mobile */
+@container wb-site (max-width: 600px) {
+  .wb-cardset .wb-cardset-grid { grid-template-columns: repeat(var(--wb-cols-mobile, 1), minmax(0, 1fr)); gap: min(var(--wb-cardset-gap), 16px); }
+  .wb-cardset .wb-cardset-head { margin-bottom: 24px; }
+  .wb-cardset .wb-cardset-head-split { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .wb-cardset .wb-cardset-intro { font-size: 16px; }
+  .wb-cardset .wb-cardset-bottom { margin-top: 28px; }
+  .wb-cardset .wb-cardset-bottom .wb-btn { width: 100%; }
+
+  .wb-cardset.wb-cardset-mobile-scroll .wb-cardset-grid {
+    display: flex; gap: 14px;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory; scroll-padding-inline: 16px;
+    margin-inline: -16px; padding: 4px 16px 14px;
+    scrollbar-width: none;
+  }
+  .wb-cardset.wb-cardset-mobile-scroll .wb-cardset-grid::-webkit-scrollbar { display: none; }
+  .wb-cardset.wb-cardset-mobile-scroll .wb-cardset-cell { flex: 0 0 min(82%, 340px); scroll-snap-align: start; }
+  .wb-cardset.wb-cardset-mobile-scroll .wb-cardset-grid:focus-visible { outline: 2px solid var(--wb-primary); outline-offset: -2px; }
+}
+`;

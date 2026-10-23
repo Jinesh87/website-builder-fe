@@ -20,6 +20,10 @@
   --color-brand-hover: #1d3aa8;
   --color-brand-soft: #e8edfb;
 
+  --color-primary: #2447c7;
+  --color-primary-hover: #1d3aa8;
+  --color-primary-soft: #e8edfb;
+
   --color-ink: #1a1d23;
   --color-ink-body: #4b5160;
   --color-ink-muted: #7a8090;
@@ -70,8 +74,9 @@
   --z-ed-panel: 10;
   --z-ed-toolbar: 20;
   --z-ed-drawer: 30;
-  --z-ed-popover: 40;
-  --z-ed-toast: 50;
+  /* Above modals (z-50), so dropdowns inside a dialog open on top of it. */
+  --z-ed-popover: 60;
+  --z-ed-toast: 70;
   --z-ed-tour: 80;
   --z-ed-tour-pop: 90;
 }

@@ -19,6 +19,7 @@ import {
   HelpCircle,
   Image,
   Layers,
+  LayoutGrid,
   LogIn,
   Mail,
   Megaphone,
@@ -103,6 +104,13 @@ const CATEGORIES: CategoryItem[] = [
     label: "Services",
     shortLabel: "Services",
     icon: Briefcase,
+  },
+  {
+    id: "cards",
+    category: "Cards",
+    label: "Cards",
+    shortLabel: "Cards",
+    icon: LayoutGrid,
   },
   {
     id: "social-proof",

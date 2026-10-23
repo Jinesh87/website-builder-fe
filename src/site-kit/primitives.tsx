@@ -453,9 +453,11 @@ type SectionShellProps = {
   label?: string;
   children: ReactNode;
   fullWidth?: boolean;
+  /** Extra inline styles (e.g. section-scoped CSS variables), merged over the custom colors. */
+  style?: CSSProperties;
 };
 
-export function SectionShell({ sectionId, settings, className, label, children, fullWidth }: SectionShellProps) {
+export function SectionShell({ sectionId, settings, className, label, children, fullWidth, style }: SectionShellProps) {
   const customColors = settings.customColors;
 
   const bg = normalizeHexColor(customColors?.background) ?? customColors?.background;
@@ -495,6 +497,7 @@ export function SectionShell({ sectionId, settings, className, label, children, 
           })`,
         }
       : {}),
+    ...style,
   };
 
   const classes = [
@@ -606,10 +609,14 @@ export function SectionHead({ heading, intro, eyebrow }: { heading?: string; int
   );
 }
 
-export function gridStyle(columns: GridColumns, mobileColumns: GridColumns): CSSProperties {
+export function gridStyle(
+  columns: GridColumns,
+  mobileColumns: GridColumns,
+  tabletColumns?: GridColumns,
+): CSSProperties {
   return {
     "--wb-cols": columns,
-    "--wb-cols-tablet": Math.min(columns, 2),
+    "--wb-cols-tablet": Math.min(tabletColumns ?? 2, columns),
     "--wb-cols-mobile": Math.min(mobileColumns, columns),
   } as CSSProperties;
 }

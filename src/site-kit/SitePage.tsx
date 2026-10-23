@@ -2,6 +2,7 @@ import { Fragment, memo, type ReactNode } from "react";
 import SiteFooter from "./layout/SiteFooter.tsx";
 import SiteHeader from "./layout/SiteHeader.tsx";
 import AuthSection from "./sections/AuthSection.tsx";
+import CardsSection from "./sections/CardsSection.tsx";
 import ContactSection from "./sections/ContactSection.tsx";
 import CtaSection from "./sections/CtaSection.tsx";
 import CustomSection from "./sections/CustomSection.tsx";
@@ -40,6 +41,8 @@ export const SectionView = memo(function SectionView({ section }: { section: Sec
       return <FeaturesSection section={section} />;
     case "services":
       return <ServicesSection section={section} />;
+    case "cards":
+      return <CardsSection section={section} />;
     case "testimonials":
       return <TestimonialsSection section={section} />;
     case "faq":

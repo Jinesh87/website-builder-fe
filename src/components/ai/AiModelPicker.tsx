@@ -32,26 +32,27 @@ export default function AiModelPicker({ models, value, onChange }: AiModelPicker
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(model.id)}
-            className={`relative flex flex-col gap-2 rounded-xl border p-4 text-left transition-all cursor-pointer ${
+            className={`relative flex flex-col gap-2 rounded-xl border-2 p-4 text-left transition-all cursor-pointer ${
               selected
-                ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                : "border-line bg-surface hover:border-ink-muted/40"
+                ? "border-brand bg-brand-soft/40 shadow-sm ring-2 ring-brand/20"
+                : "border-line bg-surface hover:border-ink-muted/50 hover:bg-canvas/40"
             }`}
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold text-ink">{model.label}</p>
+                <p className={`text-sm font-semibold ${selected ? "text-brand" : "text-ink"}`}>{model.label}</p>
                 <p className="font-mono text-[11px] text-ink-muted">{model.id}</p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
+                {selected && (
+                  <span className="flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold text-white shadow-xs">
+                    <Check className="size-3 stroke-[2.5]" aria-hidden />
+                    Selected
+                  </span>
+                )}
                 <Chip size="sm" color={TIER_COLOR[model.tier]}>
                   {TIER_LABELS[model.tier]}
                 </Chip>
-                {selected && (
-                  <span className="grid size-5 place-items-center rounded-full bg-primary text-white">
-                    <Check className="size-3.5" aria-hidden />
-                  </span>
-                )}
               </div>
             </div>
 
