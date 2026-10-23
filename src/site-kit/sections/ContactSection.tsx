@@ -2,6 +2,7 @@ import { safeHref } from "../links.ts";
 import { SectionHead, SectionShell, SiteIcon } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
 import ContactForm from "./ContactFormBackup.tsx";
+import ContactLayoutView from "./ContactLayoutView.tsx";
 
 function MailIcon() {
   return (
@@ -53,6 +54,10 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
   const align = data.align || "left";
 
   const hasStandardDetails = Boolean(data.email || data.phone || data.address || data.officeHours);
+
+  if (variant === "custom") {
+    return <ContactLayoutView section={section} />;
+  }
 
   // 1. Cards Hub Variant (Multi-Channel Grid + Direct Access)
   if (variant === "cards-hub") {
@@ -214,6 +219,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
               submitLabel={data.submitLabel || "Send message"}
               formHeading={data.formHeading || "Send an online enquiry"}
               serviceOptions={data.serviceOptions}
+              fields={data.formFields}
+              sectionId={section.id}
             />
           </div>
         )}
@@ -279,6 +286,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
                     submitLabel={data.submitLabel || "Send message"}
                     formHeading={data.formHeading}
                     serviceOptions={data.serviceOptions}
+                    fields={data.formFields}
+                    sectionId={section.id}
                   />
                 </div>
               )}
@@ -344,6 +353,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
                   submitLabel={data.submitLabel || "Send message"}
                   formHeading={data.formHeading || "Send a direct message"}
                   serviceOptions={data.serviceOptions}
+                  fields={data.formFields}
+                  sectionId={section.id}
                 />
               </div>
             )}
@@ -443,6 +454,8 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
               submitLabel={data.submitLabel || "Send message"}
               formHeading={data.formHeading || "Send an inquiry"}
               serviceOptions={data.serviceOptions}
+              fields={data.formFields}
+              sectionId={section.id}
             />
           </div>
         )}

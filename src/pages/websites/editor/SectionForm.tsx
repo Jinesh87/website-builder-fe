@@ -69,6 +69,8 @@ import {
 import { FontPicker } from "./FontPicker.tsx";
 import { cardImageSize, heroImageSize, MEDIA_HINT, MEDIA_SIZE, wideImageSize } from "./media-dimensions.ts";
 import CustomSectionForm from "./CustomSectionForm.tsx";
+import { ContactFormFieldsEditor, ContactLayoutEditor } from "./ContactBuilderFields.tsx";
+import { createContactLayout, layoutHasForm, resolveContactLayout } from "../../../site-kit/contact-builder.ts";
 import AuthSectionForm from "./AuthSectionForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 
@@ -2592,6 +2594,7 @@ const CONTACT_VARIANT_OPTIONS: { value: ContactVariant; label: string }[] = [
   { value: "cards-hub", label: "Multi-Channel Direct Hub Cards" },
   { value: "minimal-editorial", label: "Minimal Architectural Editorial" },
   { value: "floating-glass", label: "Floating Glass Framed Card" },
+  { value: "custom", label: "Custom builder (drag & drop columns)" },
 ];
 
 const CONTACT_CARD_STYLE_OPTIONS: { value: ContactCardStyle; label: string }[] =
@@ -2606,6 +2609,8 @@ const CONTACT_CARD_STYLE_OPTIONS: { value: ContactCardStyle; label: string }[] =
 
 function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
   const currentVariant = data.variant || "split-form";
+  const isCustom = currentVariant === "custom";
+  const hasForm = isCustom ? layoutHasForm(resolveContactLayout(data)) : data.showForm;
 
   return (
     <>
@@ -2614,7 +2619,11 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
           label="Layout Variant"
           value={currentVariant}
           onChange={(variant) =>
-            onChange({ ...data, variant: variant as ContactVariant })
+            onChange({
+              ...data,
+              variant: variant as ContactVariant,
+              ...(variant === "custom" && !data.layout ? { layout: createContactLayout(data) } : {}),
+            })
           }
           options={CONTACT_VARIANT_OPTIONS}
         />
@@ -2635,6 +2644,8 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
           options={ALIGN_OPTIONS}
         />
       </FormGroup>
+
+      {isCustom && <ContactLayoutEditor data={data} onChange={onChange} />}
 
       <FormGroup title="Header & Meta">
         <TextField
@@ -2673,6 +2684,8 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
         />
       </FormGroup>
 
+      {!isCustom && (
+      <>
       <FormGroup title="Direct Contact Details">
         <TextField
           label="Primary Email"
@@ -2759,22 +2772,34 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
         />
       </FormGroup>
 
-      <FormGroup title="Interactive Inquiry Form">
-        <CheckboxField
-          label="Show enquiry form"
-          checked={data.showForm}
-          onChange={(showForm) => onChange({ ...data, showForm })}
-          hint="Allows visitors to submit direct project inquiries online."
-        />
-        {data.showForm && (
+      </>
+      )}
+
+      <FormGroup title="Enquiry Form">
+        {!isCustom && (
+          <CheckboxField
+            label="Show enquiry form"
+            checked={data.showForm}
+            onChange={(showForm) => onChange({ ...data, showForm })}
+            hint="Allows visitors to submit direct project inquiries online."
+          />
+        )}
+        {isCustom && !hasForm && (
+          <p className="text-ed-2xs text-ed-muted leading-normal">
+            Add an “Enquiry form” block to a column to show the form.
+          </p>
+        )}
+        {hasForm && (
           <>
-            <TextField
-              label="Form Header / Title"
-              value={data.formHeading || ""}
-              onChange={(formHeading) => onChange({ ...data, formHeading })}
-              maxLength={100}
-              placeholder="e.g. Send us a message"
-            />
+            {!isCustom && (
+              <TextField
+                label="Form Header / Title"
+                value={data.formHeading || ""}
+                onChange={(formHeading) => onChange({ ...data, formHeading })}
+                maxLength={100}
+                placeholder="e.g. Send us a message"
+              />
+            )}
             <TextField
               label="Submit Button Label"
               value={data.submitLabel || "Send Message"}
@@ -2782,15 +2807,18 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
               maxLength={40}
               required
             />
-            <StringList
-              label="Service Interest Tags (Clickable Inquiry Options)"
-              items={data.serviceOptions || []}
-              max={8}
-              onChange={(serviceOptions) =>
-                onChange({ ...data, serviceOptions })
-              }
-              addLabel="Add Service Tag"
-            />
+            <ContactFormFieldsEditor data={data} onChange={onChange} />
+            {!data.formFields && (
+              <StringList
+                label="Service Interest Tags (Clickable Inquiry Options)"
+                items={data.serviceOptions || []}
+                max={8}
+                onChange={(serviceOptions) =>
+                  onChange({ ...data, serviceOptions })
+                }
+                addLabel="Add Service Tag"
+              />
+            )}
           </>
         )}
       </FormGroup>

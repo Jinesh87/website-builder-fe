@@ -629,6 +629,7 @@ export const CONTACT_VARIANTS = [
   "cards-hub",
   "minimal-editorial",
   "floating-glass",
+  "custom",
 ] as const;
 export type ContactVariant = (typeof CONTACT_VARIANTS)[number];
 
@@ -666,6 +667,99 @@ export type ContactData = {
   channels?: ContactChannel[];
   cardStyle?: ContactCardStyle;
   align?: SectionAlign;
+  /** Replaces the default name, email and message fields. */
+  formFields?: ContactFormField[];
+  /** Columns and blocks of the "custom" variant. */
+  layout?: ContactLayout;
+  /** "custom" variant: shows eyebrow, heading and text above the columns. Defaults to true. */
+  showHeader?: boolean;
+};
+
+/** Mirrors the backend content schema; stored in site data, so values are only ever appended. */
+export const CONTACT_FIELD_TYPES = [
+  "text",
+  "email",
+  "tel",
+  "textarea",
+  "select",
+  "radio",
+  "checkboxes",
+  "date",
+  "number",
+] as const;
+export type ContactFieldType = (typeof CONTACT_FIELD_TYPES)[number];
+export type ContactFieldWidth = "full" | "half";
+
+export type ContactFormField = {
+  /** Input name and submission key: lowercase letters, digits, - and _. */
+  id: string;
+  type: ContactFieldType;
+  label: string;
+  placeholder?: string;
+  required?: boolean;
+  width?: ContactFieldWidth;
+  /** Choices of select, radio and checkboxes fields. */
+  options?: string[];
+};
+
+export const CONTACT_BLOCK_TYPES = [
+  "heading",
+  "text",
+  "badge",
+  "info",
+  "form",
+  "map",
+  "button",
+  "image",
+  "divider",
+] as const;
+export type ContactBlockType = (typeof CONTACT_BLOCK_TYPES)[number];
+
+export const CONTACT_INFO_KINDS = [
+  "email",
+  "phone",
+  "whatsapp",
+  "address",
+  "hours",
+  "link",
+  "text",
+] as const;
+export type ContactInfoKind = (typeof CONTACT_INFO_KINDS)[number];
+
+export type ContactMapHeight = "sm" | "md" | "lg";
+
+type ContactBlockBase = { id: string; boxed?: boolean };
+
+export type ContactBlock = ContactBlockBase &
+  (
+    | { type: "heading"; text: string; level?: 2 | 3 }
+    | { type: "text"; text: string }
+    | { type: "badge"; text: string }
+    | { type: "info"; kind: ContactInfoKind; label?: string; value: string; icon?: IconName }
+    | { type: "form" }
+    | { type: "map"; query: string; height?: ContactMapHeight }
+    | { type: "button"; label: string; href: string; tone?: "primary" | "secondary" }
+    | { type: "image"; image: ImageRef }
+    | { type: "divider" }
+  );
+
+export type ContactColumn = {
+  id: string;
+  /** Share of the row out of 12. */
+  width: number;
+  boxed?: boolean;
+  blocks: ContactBlock[];
+};
+
+export type ContactLayoutGap = "sm" | "md" | "lg";
+export type ContactLayoutAlign = "start" | "center" | "stretch";
+
+export type ContactLayout = {
+  columns: ContactColumn[];
+  gap?: ContactLayoutGap;
+  align?: ContactLayoutAlign;
+  /** Stacks the columns last-to-first on small screens. */
+  mobileReverse?: boolean;
 };
 
 export type TextData = {

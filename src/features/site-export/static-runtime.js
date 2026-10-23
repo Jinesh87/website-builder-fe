@@ -144,22 +144,40 @@
     status.textContent = text;
   }
 
+  /** Customized forms send every field by name; ticked checkboxes become a list. */
+  function customFields(form, data) {
+    const fields = Object.create(null);
+    for (const [key, value] of data.entries()) {
+      if (key === "_wb_hp" || typeof value !== "string") continue;
+      const isList = Boolean(form.querySelector(`input[type="checkbox"][name="${CSS.escape(key)}"]`));
+      if (isList) fields[key] = [...(fields[key] || []), value];
+      else fields[key] = value.trim();
+    }
+    return fields;
+  }
+
   async function submitContact(form, url) {
     const data = new FormData(form);
     const services = data.getAll("service").map(String).filter(Boolean);
     const message = String(data.get("message") || "").trim();
+    const honeypot = String(data.get("_wb_hp") || "");
+    const sectionId = form.getAttribute("data-wb-section");
+    const payload = sectionId
+      ? { sectionId, fields: customFields(form, data), _wb_hp: honeypot }
+      : {
+          name: String(data.get("name") || "").trim(),
+          email: String(data.get("email") || "").trim(),
+          phone: String(data.get("phone") || "").trim(),
+          message: services.length ? `Interested in: ${services.join(", ")}\n\n${message}` : message,
+          _wb_hp: honeypot,
+        };
     const button = form.querySelector('[type="submit"]');
     if (button) button.disabled = true;
     try {
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: String(data.get("name") || "").trim(),
-          email: String(data.get("email") || "").trim(),
-          phone: String(data.get("phone") || "").trim(),
-          message: services.length ? `Interested in: ${services.join(", ")}\n\n${message}` : message,
-        }),
+        body: JSON.stringify(payload),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {

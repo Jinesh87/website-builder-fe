@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { Button, Checkbox, Dropdown, Label } from "@heroui/react";
-import { Check, ChevronDown, ChevronUp, Eye, Film, Images, Plus, Trash2, Upload } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Eye, Film, GripVertical, Images, Plus, Trash2, Upload } from "lucide-react";
 import { errorMessage } from "../../../api/http.ts";
 import { ACCEPT_BY_KIND, formatBytes, mediaApi, uploadProblem, type MediaFile } from "../../../api/media.ts";
 import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
@@ -955,6 +955,8 @@ type ItemListProps<T> = {
   renderItem: (item: T, update: (item: T) => void) => ReactNode;
   max: number;
   addLabel?: string;
+  /** Replaces the default add button, e.g. with a menu of item kinds. */
+  renderAdd?: (add: (item: T) => void, full: boolean) => ReactNode;
 };
 
 export function ItemList<T>({
@@ -966,17 +968,40 @@ export function ItemList<T>({
   renderItem,
   max,
   addLabel = "Add item",
+  renderAdd,
 }: ItemListProps<T>) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  /** Drags start only from the grip, so text inside an open item stays selectable. */
+  const [armedIndex, setArmedIndex] = useState<number | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+
+  function moveTo(from: number, to: number) {
+    if (from === to || to < 0 || to >= items.length) return;
+    const next = [...items];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item!);
+    onChange(next);
+    if (openIndex === null) return;
+    if (openIndex === from) setOpenIndex(to);
+    else if (from < openIndex && to >= openIndex) setOpenIndex(openIndex - 1);
+    else if (from > openIndex && to <= openIndex) setOpenIndex(openIndex + 1);
+  }
 
   function move(index: number, delta: number) {
-    const target = index + delta;
-    if (target < 0 || target >= items.length) return;
-    const next = [...items];
-    const [item] = next.splice(index, 1);
-    next.splice(target, 0, item!);
-    onChange(next);
-    setOpenIndex(openIndex === index ? target : openIndex);
+    moveTo(index, index + delta);
+  }
+
+  function endDrag() {
+    setArmedIndex(null);
+    setDragIndex(null);
+    setOverIndex(null);
+  }
+
+  function add(item: T) {
+    if (items.length >= max) return;
+    onChange([...items, item]);
+    setOpenIndex(items.length);
   }
 
   return (
@@ -993,9 +1018,45 @@ export function ItemList<T>({
           return (
             <li
               key={index}
-              className="rounded-ed border border-ed-border bg-ed-panel shadow-ed-xs overflow-hidden transition-colors hover:border-ed-border-strong"
+              draggable={armedIndex === index}
+              onDragStart={(event) => {
+                if (armedIndex !== index) return;
+                event.stopPropagation();
+                event.dataTransfer.effectAllowed = "move";
+                event.dataTransfer.setData("text/plain", String(index));
+                setDragIndex(index);
+              }}
+              onDragOver={(event) => {
+                if (dragIndex === null) return;
+                event.preventDefault();
+                event.stopPropagation();
+                event.dataTransfer.dropEffect = "move";
+                if (overIndex !== index) setOverIndex(index);
+              }}
+              onDrop={(event) => {
+                if (dragIndex === null) return;
+                event.preventDefault();
+                event.stopPropagation();
+                moveTo(dragIndex, index);
+                endDrag();
+              }}
+              onDragEnd={endDrag}
+              className={`rounded-ed border bg-ed-panel shadow-ed-xs overflow-hidden transition-colors hover:border-ed-border-strong ${
+                overIndex === index && dragIndex !== index
+                  ? "border-ed-accent ring-2 ring-ed-accent/20"
+                  : "border-ed-border"
+              } ${dragIndex === index ? "opacity-50" : ""}`}
             >
-              <div className="flex items-center gap-1 pl-2.5 pr-1">
+              <div className="flex items-center gap-1 pl-1 pr-1">
+                <span
+                  role="presentation"
+                  title="Drag to reorder"
+                  onPointerDown={() => setArmedIndex(index)}
+                  onPointerUp={() => setArmedIndex(null)}
+                  className="grid size-6 shrink-0 cursor-grab place-items-center rounded-ed text-ed-faint hover:bg-ed-hover hover:text-ed-text active:cursor-grabbing"
+                >
+                  <GripVertical className="size-3.5" aria-hidden />
+                </span>
                 <button
                   type="button"
                   onClick={() => setOpenIndex(open ? null : index)}
@@ -1044,18 +1105,19 @@ export function ItemList<T>({
           );
         })}
       </ul>
+      {renderAdd ? (
+        renderAdd(add, items.length >= max)
+      ) : (
       <button
         type="button"
         disabled={items.length >= max}
-        onClick={() => {
-          onChange([...items, create()]);
-          setOpenIndex(items.length);
-        }}
+        onClick={() => add(create())}
         className="inline-flex items-center justify-center gap-1.5 rounded-ed border border-dashed border-ed-border-strong py-1.5 text-ed-sm font-medium text-ed-accent hover:bg-ed-accent-soft/60 hover:border-ed-accent transition-colors disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Plus className="size-3.5" aria-hidden />{" "}
         {items.length >= max ? `Maximum ${max}` : addLabel}
       </button>
+      )}
     </div>
   );
 }
