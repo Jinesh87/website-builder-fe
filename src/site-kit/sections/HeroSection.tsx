@@ -20,7 +20,13 @@ import {
   getCuratedFallbackImage,
   normalizeImageUrl,
 } from "../image-utils.ts";
-import type { HeroData, SectionOf } from "../types.ts";
+import {
+  alignAttr,
+  heroBaseAlign,
+  heroButtonShapeProps,
+  heroElementAlign,
+} from "../hero-layout.ts";
+import type { HeroAlign, HeroAlignElement, HeroData, SectionOf } from "../types.ts";
 import CurvedBannerCarousel, {
   DEFAULT_BANNER_ITEMS,
   type CurvedBannerItem,
@@ -227,19 +233,20 @@ function renderHighlightedHeading(
   heading: string,
   highlight: string | undefined,
   gradient: boolean,
+  align?: HeroAlign,
 ): ReactNode {
   if (!highlight || !heading.includes(highlight)) {
     return gradient ? (
-      <h1>
+      <h1 {...alignAttr(align)}>
         <span className="wb-text-gradient">{parseRichText(heading)}</span>
       </h1>
     ) : (
-      <h1>{parseRichText(heading)}</h1>
+      <h1 {...alignAttr(align)}>{parseRichText(heading)}</h1>
     );
   }
   const parts = heading.split(highlight);
   return (
-    <h1>
+    <h1 {...alignAttr(align)}>
       {parseRichText(parts[0])}
       <span className="wb-text-gradient">{parseRichText(highlight)}</span>
       {parseRichText(parts.slice(1).join(highlight))}
@@ -345,10 +352,16 @@ function HeroMockupPlaceholder() {
   );
 }
 
-function TrustedByStrip({ trustedBy }: { trustedBy?: HeroData["trustedBy"] }) {
+function TrustedByStrip({
+  trustedBy,
+  align,
+}: {
+  trustedBy?: HeroData["trustedBy"];
+  align?: HeroAlign;
+}) {
   if (!trustedBy || (!trustedBy.logos?.length && !trustedBy.label)) return null;
   return (
-    <div className="wb-hero-trusted-by">
+    <div className="wb-hero-trusted-by" {...alignAttr(align)}>
       {trustedBy.label && (
         <div className="wb-trusted-label">{trustedBy.label}</div>
       )}
@@ -372,6 +385,11 @@ export default function HeroSection({
 }) {
   const { data } = section;
 
+  const baseAlign = heroBaseAlign(data, section.settings);
+  const alignOf = (element: HeroAlignElement) =>
+    heroElementAlign(data, element, baseAlign);
+  const buttonShape = heroButtonShapeProps(data);
+
   const minHeightClass =
     data.minHeight === "screen"
       ? "wb-hero-min-screen"
@@ -386,7 +404,7 @@ export default function HeroSection({
     : [data.primaryCta, data.secondaryCta].filter(Boolean);
 
   const actions = (allButtons.length > 0 || data.tertiaryCta) && (
-    <div className="wb-hero-actions">
+    <div className="wb-hero-actions" {...alignAttr(alignOf("actions"))}>
       {allButtons.map((btn, idx) =>
         btn ? (
           <SiteButton
@@ -431,7 +449,8 @@ export default function HeroSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className={`wb-hero wb-hero-curved-carousel ${minHeightClass}`}
+        className={`wb-hero wb-hero-curved-carousel ${minHeightClass} ${buttonShape.className}`}
+        style={buttonShape.style}
         label="Hero"
         fullWidth={true}
       >
@@ -440,7 +459,10 @@ export default function HeroSection({
             {/* Eyebrow / Pill Badge */}
             {(data.eyebrow || data.badgeIcon) && (
               <div className="wb-hero-curved-badge-wrap">
-                <span className="wb-hero-curved-badge">
+                <span
+                  className="wb-hero-curved-badge"
+                  {...alignAttr(alignOf("badge"))}
+                >
                   {data.badgeIcon && <span>{data.badgeIcon}</span>}
                   {data.eyebrow && <span>{data.eyebrow}</span>}
                 </span>
@@ -457,13 +479,17 @@ export default function HeroSection({
                     section.settings.customColors?.gradientFrom ||
                     section.settings.customColors?.gradientTo,
                   ),
+                  alignOf("heading"),
                 )}
               </div>
             )}
 
             {/* Centered Subheading */}
             {data.subheading && (
-              <p className="wb-hero-curved-sub">
+              <p
+                className="wb-hero-curved-sub"
+                {...alignAttr(alignOf("subheading"))}
+              >
                 {parseRichText(data.subheading)}
               </p>
             )}
@@ -486,7 +512,10 @@ export default function HeroSection({
 
           {/* Action CTAs */}
           {allButtons.length > 0 && (
-            <div className="wb-hero-curved-actions">
+            <div
+              className="wb-hero-curved-actions"
+              {...alignAttr(alignOf("actions"))}
+            >
               {allButtons.map((btn, idx) =>
                 btn ? (
                   <SiteButton
@@ -556,7 +585,9 @@ export default function HeroSection({
     const curveDepth =
       typeof data.bannerCurveDepth === "number" ? data.bannerCurveDepth : 80;
 
-    const contentAlign = data.contentAlign ?? "left";
+    const contentAlign = baseAlign ?? "left";
+    const overrideOf = (element: HeroAlignElement) =>
+      heroElementAlign(data, element, undefined);
 
     // Sanitize legacy "Swim in Pink" and "Donate" texts for clean dummy presentation
     const headingText =
@@ -673,7 +704,8 @@ export default function HeroSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className={`wb-hero wb-hero-campaign-banner ${minHeightClass}`}
+        className={`wb-hero wb-hero-campaign-banner ${minHeightClass} ${buttonShape.className}`}
+        style={buttonShape.style}
         label="Hero"
         fullWidth={true}
       >
@@ -733,10 +765,18 @@ export default function HeroSection({
             secondaryAction) && (
             <div className={`wb-campaign-copy-wrap wb-align-${contentAlign}`}>
               {data.eyebrow && (
-                <span className="wb-campaign-eyebrow">{data.eyebrow}</span>
+                <span
+                  className="wb-campaign-eyebrow"
+                  {...alignAttr(overrideOf("badge"))}
+                >
+                  {data.eyebrow}
+                </span>
               )}
               {headingText && (
-                <div className="wb-campaign-heading">
+                <div
+                  className="wb-campaign-heading"
+                  {...alignAttr(overrideOf("heading"))}
+                >
                   {renderHighlightedHeading(
                     headingText,
                     data.highlightText,
@@ -748,14 +788,20 @@ export default function HeroSection({
                 </div>
               )}
               {subheadingText && (
-                <p className="wb-campaign-subheading">
+                <p
+                  className="wb-campaign-subheading"
+                  {...alignAttr(overrideOf("subheading"))}
+                >
                   {parseRichText(subheadingText)}
                 </p>
               )}
 
               {/* Simple CTA Buttons Design (Replaces bulky cards with clean modern hero buttons) */}
               {(primaryAction || secondaryAction) && (
-                <div className={`wb-campaign-actions wb-align-${contentAlign}`}>
+                <div
+                  className={`wb-campaign-actions wb-align-${contentAlign}`}
+                  {...alignAttr(overrideOf("actions"))}
+                >
                   {primaryAction && (
                     <SiteLink
                       link={primaryAction}
@@ -964,9 +1010,12 @@ export default function HeroSection({
   }
 
   const copy = (
-    <div className="wb-hero-copy">
+    <div
+      className="wb-hero-copy"
+      {...(baseAlign ? { "data-wb-content-align": baseAlign } : {})}
+    >
       {(data.eyebrow || data.badgeIcon) && (
-        <div className="wb-hero-badge">
+        <div className="wb-hero-badge" {...alignAttr(alignOf("badge"))}>
           {data.badgeIcon && <span>{data.badgeIcon}</span>}
           {data.eyebrow && <span>{data.eyebrow}</span>}
         </div>
@@ -980,21 +1029,30 @@ export default function HeroSection({
               section.settings.customColors?.gradientFrom ||
               section.settings.customColors?.gradientTo,
             ),
+            alignOf("heading"),
           )
         : null}
 
       {data.subheading && (
-        <p className="wb-hero-sub wb-muted">{parseRichText(data.subheading)}</p>
+        <p
+          className="wb-hero-sub wb-muted"
+          {...alignAttr(alignOf("subheading"))}
+        >
+          {parseRichText(data.subheading)}
+        </p>
       )}
       {data.description && (
-        <p className="wb-hero-desc wb-muted">
+        <p
+          className="wb-hero-desc wb-muted"
+          {...alignAttr(alignOf("description"))}
+        >
           {parseRichText(data.description)}
         </p>
       )}
 
       {actions}
 
-      <TrustedByStrip trustedBy={data.trustedBy} />
+      <TrustedByStrip trustedBy={data.trustedBy} align={alignOf("trustedBy")} />
     </div>
   );
 
@@ -1138,7 +1196,8 @@ export default function HeroSection({
         isLeft ? "wb-hero-split-left" : ""
       } ${minHeightClass} ${
         hasBgMedia ? "wb-hero-has-bg-media" : ""
-      } ${isDarkOverlay ? "wb-hero-dark-overlay" : ""}`}
+      } ${isDarkOverlay ? "wb-hero-dark-overlay" : ""} ${buttonShape.className}`}
+      style={buttonShape.style}
       label="Hero"
     >
       {/* Full Background Image / Video media layer */}

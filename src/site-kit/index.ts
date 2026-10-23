@@ -34,5 +34,11 @@ export { SITE_CSS } from "./styles.ts";
 export { SiteRenderModeProvider } from "./render-mode.tsx";
 export type { SiteRenderMode } from "./render-mode.tsx";
 export { SAMPLE_SITE } from "./sample-site.ts";
-export { HERO_VARIANTS } from "./types.ts";
+export {
+  HERO_ALIGN_ELEMENTS,
+  HERO_ALIGNS,
+  HERO_BUTTON_RADIUS_MAX,
+  HERO_BUTTON_SHAPES,
+  HERO_VARIANTS,
+} from "./types.ts";
 export type * from "./types.ts";

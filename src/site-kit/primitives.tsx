@@ -453,9 +453,11 @@ type SectionShellProps = {
   label?: string;
   children: ReactNode;
   fullWidth?: boolean;
+  /** Extra inline styles (e.g. section-scoped CSS variables), merged over the custom colors. */
+  style?: CSSProperties;
 };
 
-export function SectionShell({ sectionId, settings, className, label, children, fullWidth }: SectionShellProps) {
+export function SectionShell({ sectionId, settings, className, label, children, fullWidth, style }: SectionShellProps) {
   const customColors = settings.customColors;
 
   const bg = normalizeHexColor(customColors?.background) ?? customColors?.background;
@@ -495,6 +497,7 @@ export function SectionShell({ sectionId, settings, className, label, children, 
           })`,
         }
       : {}),
+    ...style,
   };
 
   const classes = [

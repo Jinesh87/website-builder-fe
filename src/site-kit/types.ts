@@ -318,6 +318,27 @@ export type HeroCampaignTickerItem = {
   avatarIcon?: string;
 };
 
+export const HERO_ALIGNS = ["left", "center", "right"] as const;
+export type HeroAlign = (typeof HERO_ALIGNS)[number];
+
+export const HERO_ALIGN_ELEMENTS = [
+  "badge",
+  "heading",
+  "subheading",
+  "description",
+  "actions",
+  "trustedBy",
+] as const;
+export type HeroAlignElement = (typeof HERO_ALIGN_ELEMENTS)[number];
+
+/** `all` aligns every hero element; per-element keys override it. Unset keys keep the layout default. */
+export type HeroAlignment = { all?: HeroAlign } & Partial<Record<HeroAlignElement, HeroAlign>>;
+
+export const HERO_BUTTON_SHAPES = ["square", "soft", "rounded", "pill", "oval", "custom"] as const;
+export type HeroButtonShape = (typeof HERO_BUTTON_SHAPES)[number];
+
+export const HERO_BUTTON_RADIUS_MAX = 48;
+
 export type HeroData = {
   variant: HeroVariant;
   eyebrow?: string;
@@ -346,7 +367,13 @@ export type HeroData = {
   overlayOpacity?: number;
   overlayBlur?: boolean;
   minHeight?: "auto" | "compact" | "screen" | "tall";
-  contentAlign?: "center" | "left" | "right";
+  /** Legacy video-banner text alignment; only read by "campaign-banner", and `alignment.all` takes precedence. */
+  contentAlign?: HeroAlign;
+  alignment?: HeroAlignment;
+  /** Unset follows the theme's corner radius. */
+  buttonShape?: HeroButtonShape;
+  /** Corner radius in px, used only when `buttonShape` is "custom". */
+  buttonRadius?: number;
   bottomShape?: "none" | "wave" | "curve" | "curved" | "slant" | "tilt" | "arch" | "normal";
   rating?: HeroRating;
   floatingCards?: HeroFloatingCard[];

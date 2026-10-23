@@ -20,6 +20,10 @@ import {
 import { AiSparklesIcon } from "../../../components/icons/AiSparklesIcon.tsx";
 import {
   DEFAULT_SECTION_SETTINGS,
+  HERO_ALIGN_ELEMENTS,
+  HERO_ALIGNS,
+  HERO_BUTTON_RADIUS_MAX,
+  HERO_BUTTON_SHAPES,
   HERO_VARIANTS,
   SECTION_DEFINITIONS,
   type Section,
@@ -236,6 +240,39 @@ function normalizeSection(raw: Section): Section {
       !validAligns.includes(mergedData.contentAlign as string)
     ) {
       delete mergedData.contentAlign;
+    }
+    if (mergedData.alignment !== undefined) {
+      const alignKeys: readonly string[] = ["all", ...HERO_ALIGN_ELEMENTS];
+      const rawAlignment = mergedData.alignment;
+      const alignment =
+        rawAlignment && typeof rawAlignment === "object"
+          ? Object.fromEntries(
+              Object.entries(rawAlignment).filter(
+                ([key, value]) =>
+                  alignKeys.includes(key) &&
+                  (HERO_ALIGNS as readonly unknown[]).includes(value),
+              ),
+            )
+          : {};
+      if (Object.keys(alignment).length > 0) mergedData.alignment = alignment;
+      else delete mergedData.alignment;
+    }
+    if (
+      mergedData.buttonShape !== undefined &&
+      !(HERO_BUTTON_SHAPES as readonly unknown[]).includes(mergedData.buttonShape)
+    ) {
+      delete mergedData.buttonShape;
+    }
+    if (mergedData.buttonRadius !== undefined) {
+      const radius = mergedData.buttonRadius;
+      if (typeof radius === "number" && Number.isFinite(radius)) {
+        mergedData.buttonRadius = Math.min(
+          Math.max(Math.round(radius), 0),
+          HERO_BUTTON_RADIUS_MAX,
+        );
+      } else {
+        delete mergedData.buttonRadius;
+      }
     }
     const validBottomShapes = [
       "none",
