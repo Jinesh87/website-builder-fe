@@ -10,6 +10,7 @@ import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
 import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
 import { HERO_CONTROLS_CSS } from "./hero-controls-styles.ts";
 import { CARDS_CSS } from "./cards-styles.ts";
+import { SHOP_CSS } from "./shop-styles.ts";
 
 const NOT_CHROME = ":not(.wb-editor-chrome, .wb-editor-chrome *)";
 
@@ -7714,6 +7715,7 @@ ${PREMIUM_HEADER_CSS}
 ${CONTACT_BUILDER_CSS}
 ${HERO_CONTROLS_CSS}
 ${CARDS_CSS}
+${SHOP_CSS}
 .wb-device-scroll {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;

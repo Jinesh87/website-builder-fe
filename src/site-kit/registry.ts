@@ -27,7 +27,8 @@ export type SectionCategory =
   | "Carousel"
   | "Marquee"
   | "Auth"
-  | "Blog";
+  | "Blog"
+  | "Shop";
 
 export type SectionDefinition<T extends SectionType> = {
   type: T;
@@ -718,6 +719,37 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
         showShareButtons: true,
         showAuthorBio: true,
         showNewsletter: true,
+      }),
+    },
+    products: {
+      type: "products",
+      label: "Product list",
+      category: "Shop",
+      description: "Lists this website’s shop products, with search and category filters.",
+      createData: () => ({
+        design: "classic-grid",
+        eyebrow: "Shop",
+        title: "Our products",
+        subtitle: "Browse the catalogue. Each card opens the product page.",
+        layout: "grid-3",
+        showSearch: true,
+        showCategoryFilter: true,
+        showSort: true,
+        detailBase: "/product",
+        emptyMessage: "No products yet.",
+      }),
+    },
+    product_detail: {
+      type: "product_detail",
+      label: "Product detail",
+      category: "Shop",
+      description: "One product, with photos, option prices, and how many are in stock.",
+      createData: () => ({
+        design: "split",
+        backLabel: "All products",
+        backHref: "/shop",
+        showDescription: true,
+        showStock: true,
       }),
     },
   };
@@ -4303,6 +4335,70 @@ export const SECTION_PRESETS: SectionPreset[] = [
     description:
       "Responsive 3-column blog card grid with category pills, cover media, and read time.",
     create: () => createSection("blog"),
+  },
+  {
+    key: "shop-product-list",
+    type: "products",
+    label: "Product list · Classic grid",
+    category: "Shop",
+    description: "Balanced cards with rounded images, search, and category filters.",
+    create: () => createSection("products"),
+  },
+  {
+    key: "shop-product-list-editorial",
+    type: "products",
+    label: "Product list · Filter sidebar",
+    category: "Shop",
+    description: "A catalogue with search, categories, and sorting in a dedicated sidebar.",
+    create: () => createSection("products", { data: { design: "editorial", layout: "grid-2" } }),
+  },
+  {
+    key: "shop-product-list-compact",
+    type: "products",
+    label: "Product list · Compact",
+    category: "Shop",
+    description: "A denser catalogue that fits more products on screen.",
+    create: () => createSection("products", { data: { design: "compact", layout: "grid-3" } }),
+  },
+  {
+    key: "shop-product-list-showcase",
+    type: "products",
+    label: "Product list · Marketplace",
+    category: "Shop",
+    description: "A storefront toolbar above modern image-led product cards.",
+    create: () => createSection("products", { data: { design: "showcase", layout: "grid-3" } }),
+  },
+  {
+    key: "shop-product-detail",
+    type: "product_detail",
+    label: "Product detail · Split",
+    category: "Shop",
+    description: "A familiar two-column product page with gallery and purchase choices.",
+    create: () => createSection("product_detail"),
+  },
+  {
+    key: "shop-product-detail-gallery",
+    type: "product_detail",
+    label: "Product detail · Thumbnail rail",
+    category: "Shop",
+    description: "Vertical thumbnails, a large photo, and a sticky purchase card.",
+    create: () => createSection("product_detail", { data: { design: "gallery-focus" } }),
+  },
+  {
+    key: "shop-product-detail-editorial",
+    type: "product_detail",
+    label: "Product detail · Centered showcase",
+    category: "Shop",
+    description: "A centred title and price, a wide photo, then options and description in cards.",
+    create: () => createSection("product_detail", { data: { design: "editorial" } }),
+  },
+  {
+    key: "shop-product-detail-compact",
+    type: "product_detail",
+    label: "Product detail · Quick view card",
+    category: "Shop",
+    description: "Everything in one compact card: photo on the left, choices on the right.",
+    create: () => createSection("product_detail", { data: { design: "compact" } }),
   },
   {
     key: "blog-detail-minimalist-editorial",

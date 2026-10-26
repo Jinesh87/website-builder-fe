@@ -37,6 +37,8 @@ import type {
   SectionSettings,
   SectionSpacing,
   ServiceItem,
+  ProductDetailData,
+  ProductsData,
   ServicesData,
   ServicesVariant,
   SplitData,
@@ -2814,6 +2816,75 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
   );
 }
 
+function ProductsForm({ data, onChange }: DataFormProps<ProductsData>) {
+  return (
+    <FormGroup title="Product list">
+      <SelectField
+        label="Design"
+        value={data.design ?? "classic-grid"}
+        onChange={(design) => onChange({ ...data, design })}
+        options={[
+          { value: "classic-grid", label: "Classic grid" },
+          { value: "editorial", label: "Filter sidebar" },
+          { value: "compact", label: "Compact catalogue" },
+          { value: "showcase", label: "Marketplace" },
+        ]}
+      />
+      <TextField label="Eyebrow" value={data.eyebrow ?? ""} onChange={(eyebrow) => onChange({ ...data, eyebrow })} maxLength={120} />
+      <TextField label="Heading" value={data.title} onChange={(title) => onChange({ ...data, title })} maxLength={160} />
+      <TextAreaField label="Intro" value={data.subtitle ?? ""} onChange={(subtitle) => onChange({ ...data, subtitle })} rows={3} maxLength={320} />
+      <SelectField
+        label="Columns"
+        value={data.layout ?? "grid-3"}
+        onChange={(layout) => onChange({ ...data, layout })}
+        options={[
+          { value: "grid-3", label: "3 columns" },
+          { value: "grid-2", label: "2 columns" },
+        ]}
+      />
+      <TextField
+        label="Product page address"
+        value={data.detailBase ?? "/product"}
+        onChange={(detailBase) => onChange({ ...data, detailBase })}
+        maxLength={80}
+        hint="Must match the address of the page that has the product detail section. A tee called everyday-tee opens at /product/everyday-tee."
+      />
+      <TextField label="Empty message" value={data.emptyMessage ?? ""} onChange={(emptyMessage) => onChange({ ...data, emptyMessage })} maxLength={200} />
+      <CheckboxField label="Show search" checked={data.showSearch !== false} onChange={(showSearch) => onChange({ ...data, showSearch })} />
+      <CheckboxField label="Show category filter" checked={data.showCategoryFilter !== false} onChange={(showCategoryFilter) => onChange({ ...data, showCategoryFilter })} />
+      <CheckboxField label="Show sorting" checked={data.showSort !== false} onChange={(showSort) => onChange({ ...data, showSort })} />
+    </FormGroup>
+  );
+}
+
+function ProductDetailForm({ data, onChange }: DataFormProps<ProductDetailData>) {
+  return (
+    <FormGroup title="Product page">
+      <SelectField
+        label="Design"
+        value={data.design ?? "split"}
+        onChange={(design) => onChange({ ...data, design })}
+        options={[
+          { value: "split", label: "Split gallery" },
+          { value: "gallery-focus", label: "Thumbnail rail" },
+          { value: "editorial", label: "Centered showcase" },
+          { value: "compact", label: "Quick view card" },
+        ]}
+      />
+      <TextField label="Back link label" value={data.backLabel ?? ""} onChange={(backLabel) => onChange({ ...data, backLabel })} maxLength={80} />
+      <TextField
+        label="Back link address"
+        value={data.backHref ?? ""}
+        onChange={(backHref) => onChange({ ...data, backHref })}
+        maxLength={200}
+        hint="Usually the page that lists the products, such as /shop."
+      />
+      <CheckboxField label="Show description" checked={data.showDescription !== false} onChange={(showDescription) => onChange({ ...data, showDescription })} />
+      <CheckboxField label="Show stock" checked={data.showStock !== false} onChange={(showStock) => onChange({ ...data, showStock })} />
+    </FormGroup>
+  );
+}
+
 function TextForm({ data, onChange }: DataFormProps<TextData>) {
   return (
     <FormGroup title="Content">
@@ -4345,6 +4416,20 @@ function DataForm({
     case "custom":
       return (
         <CustomSectionForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "products":
+      return (
+        <ProductsForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "product_detail":
+      return (
+        <ProductDetailForm
           data={section.data}
           onChange={(data) => onChange({ ...section, data })}
         />

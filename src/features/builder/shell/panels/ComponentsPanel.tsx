@@ -24,6 +24,7 @@ import {
   PlaySquare,
   Rocket,
   SearchX,
+  ShoppingBag,
   SlidersHorizontal,
   Users,
   type LucideProps,
@@ -56,6 +57,8 @@ const SECTION_ICONS: Record<SectionType, ComponentType<LucideProps>> = {
   custom: LayoutDashboard,
   blog: BookOpen,
   blog_detail: FileText,
+  products: ShoppingBag,
+  product_detail: ShoppingBag,
 };
 
 /** Drag-to-insert list backed by Puck's drawer, rendered with the builder's own styling and icons. */

@@ -12,6 +12,7 @@ import {
 import { Drawer } from "@puckeditor/core";
 import {
   BookOpen,
+  ShoppingBag,
   Briefcase,
   CreditCard,
   FileText,
@@ -202,6 +203,13 @@ const CATEGORIES: CategoryItem[] = [
     label: "Blog",
     shortLabel: "Blog",
     icon: BookOpen,
+  },
+  {
+    id: "shop",
+    category: "Shop",
+    label: "Shop",
+    shortLabel: "Shop",
+    icon: ShoppingBag,
   },
   {
     id: "footer",

@@ -1420,6 +1420,8 @@ export type SectionDataMap = {
   custom: CustomData;
   blog: BlogData;
   blog_detail: BlogDetailData;
+  products: ProductsData;
+  product_detail: ProductDetailData;
 };
 
 export type SectionType = keyof SectionDataMap;
@@ -1445,9 +1447,62 @@ export type PageData = {
   sections: Section[];
 };
 
+export type ShopCatalogImage = { url: string; alt: string };
+
+export type ShopCatalogVariant = {
+  id: string;
+  name: string;
+  pricePaise: number;
+  quantity: number;
+  images: ShopCatalogImage[];
+  options: { name: string; value: string; list?: boolean }[];
+};
+
+export type ShopCatalogProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  categoryName: string;
+  images: ShopCatalogImage[];
+  variants: ShopCatalogVariant[];
+};
+
+/** Real shop catalogue. `live` means empty is "no products", not "show samples". */
+export type ShopCatalog = {
+  products: ShopCatalogProduct[];
+  productSlug?: string;
+  /** Option values to preselect, from the shop-card link. */
+  selection?: Record<string, string>;
+  live: boolean;
+};
+
+export type ProductsData = {
+  design?: "classic-grid" | "editorial" | "compact" | "showcase";
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  layout?: "grid-3" | "grid-2";
+  showSearch?: boolean;
+  showCategoryFilter?: boolean;
+  showSort?: boolean;
+  /** Address of the page that holds the product detail section, such as "/product". */
+  detailBase?: string;
+  emptyMessage?: string;
+};
+
+export type ProductDetailData = {
+  design?: "split" | "gallery-focus" | "editorial" | "compact";
+  backLabel?: string;
+  backHref?: string;
+  showDescription?: boolean;
+  showStock?: boolean;
+};
+
 export type SiteData = {
   theme: ThemeSettings;
   header: HeaderData;
   footer: FooterData;
   pages: PageData[];
+  shop?: ShopCatalog;
 };
