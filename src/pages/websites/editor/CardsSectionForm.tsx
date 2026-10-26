@@ -9,6 +9,11 @@ import type {
   CardsData,
   CardsHeaderLayout,
   CardsHoverEffect,
+  CardsIconAlign,
+  CardsIconPlacement,
+  CardsIconShape,
+  CardsIconSize,
+  CardsIconVariant,
   CardsImageAspect,
   CardsVariant,
   GridColumns,
@@ -26,6 +31,7 @@ import {
   cardsCornerRadius,
   clampCardRadius,
   clampDescriptionLines,
+  resolveCardsIcon,
   resolveCardsVariant,
   safeHexColor,
 } from "../../../site-kit/cards-layout.ts";
@@ -42,11 +48,14 @@ import {
   TextField,
 } from "./fields.tsx";
 import { cardImageSize } from "./media-dimensions.ts";
+import { IconPickerField } from "./IconPicker.tsx";
 
 type Props = { data: CardsData; onChange: (data: CardsData) => void };
 
 const VARIANT_OPTIONS: { value: CardsVariant; label: string }[] = [
   { value: "product-classic", label: "Product classic · Image, tags, footer button" },
+  { value: "dos-donts", label: "Do's & Don'ts · Guidelines comparison checklist cards" },
+  { value: "floating-icon", label: "Floating icon badge · Image with seam icon badge, title & description" },
   { value: "image-overlay", label: "Image overlay · Text over full-bleed photo" },
   { value: "horizontal-split", label: "Horizontal split · Image beside content" },
   { value: "minimal-accent", label: "Minimal accent · Icon, accent bar, text-first" },
@@ -118,12 +127,13 @@ const HOVER_OPTIONS: { value: CardsHoverEffect; label: string }[] = [
 ];
 
 const HEADER_OPTIONS: { value: CardsHeaderLayout; label: string }[] = [
-  { value: "center", label: "Centered" },
   { value: "left", label: "Left aligned" },
+  { value: "center", label: "Centered" },
+  { value: "right", label: "Right aligned" },
   { value: "split", label: "Heading left, link right" },
 ];
 
-const ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
+export const ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
   { value: "", label: "No icon" },
   ...(
     [
@@ -133,6 +143,185 @@ const ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
     ] as const
   ).map((name) => ({ value: name, label: name.charAt(0).toUpperCase() + name.slice(1) })),
 ];
+
+const ICON_PLACEMENT_OPTIONS: { value: CardsIconPlacement; label: string }[] = [
+  { value: "float-seam", label: "Floating seam · Overlaps image & content (Featured)" },
+  { value: "inline", label: "Inline · Standard inside card content" },
+  { value: "float-top", label: "Floating top · Corner badge over image" },
+];
+
+const ICON_ALIGN_OPTIONS: { value: CardsIconAlign; label: string }[] = [
+  { value: "left", label: "Left" },
+  { value: "center", label: "Center / Middle" },
+  { value: "right", label: "Right" },
+];
+
+const ICON_VARIANT_OPTIONS: { value: CardsIconVariant; label: string }[] = [
+  { value: "filled", label: "Solid filled · Solid theme/custom badge" },
+  { value: "soft", label: "Soft tint · Light pastel background" },
+  { value: "outline", label: "Outlined · Bordered badge" },
+  { value: "surface", label: "White / Surface · Elevated card surface" },
+];
+
+const ICON_SHAPE_OPTIONS: { value: CardsIconShape; label: string }[] = [
+  { value: "rounded", label: "Rounded square (10px · like preview)" },
+  { value: "square", label: "Sharp square (0px)" },
+  { value: "circle", label: "Circle / Pill" },
+  { value: "custom", label: "Custom radius" },
+];
+
+const ICON_SIZE_OPTIONS: { value: CardsIconSize; label: string }[] = [
+  { value: "sm", label: "Small (36px)" },
+  { value: "md", label: "Medium (44px · standard)" },
+  { value: "lg", label: "Large (52px)" },
+  { value: "xl", label: "Extra Large (60px)" },
+];
+
+function IconBadgeFields({ data, onChange }: Props) {
+  const icon = resolveCardsIcon(data);
+  const placement = data.iconPlacement ?? "float-seam";
+  const shape = data.iconShape ?? "rounded";
+  const showIcons = data.showIcons !== false;
+
+  const set = (patch: Partial<CardsData>) => onChange({ ...data, ...patch });
+
+  return (
+    <FormGroup
+      title="Floating icon & badge"
+      description="Customize the floating icon badge shown on cards (like the left/middle floating icon structure)."
+    >
+      <div className="flex items-center justify-between pb-1">
+        <CheckboxField
+          label="Enable icons on cards"
+          checked={showIcons}
+          onChange={(v) => set({ showIcons: v })}
+        />
+        {/* Live Badge Preview */}
+        <div className="flex items-center gap-2">
+          <span className="text-ed-2xs text-ed-muted">Preview:</span>
+          <div
+            className="flex items-center justify-center shadow-sm"
+            style={{
+              width: `${Math.min(icon.boxSize, 40)}px`,
+              height: `${Math.min(icon.boxSize, 40)}px`,
+              borderRadius: icon.radius,
+              backgroundColor:
+                icon.variant === "filled"
+                  ? (icon.bgColor || "var(--wb-primary, #1d4ed8)")
+                  : icon.variant === "soft"
+                  ? (icon.bgColor ? `${icon.bgColor}22` : "rgba(29, 78, 216, 0.14)")
+                  : icon.variant === "outline"
+                  ? "transparent"
+                  : "#ffffff",
+              border:
+                icon.variant === "outline"
+                  ? `2px solid ${icon.bgColor || "var(--wb-primary, #1d4ed8)"}`
+                  : icon.variant === "surface"
+                  ? "1px solid rgba(0,0,0,0.12)"
+                  : "none",
+              color:
+                icon.variant === "filled"
+                  ? (icon.color || "#ffffff")
+                  : (icon.color || icon.bgColor || "var(--wb-primary, #1d4ed8)"),
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ width: `${Math.min(icon.svgSize, 20)}px`, height: `${Math.min(icon.svgSize, 20)}px` }}
+            >
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <SelectField<CardsIconPlacement>
+          label="Icon placement"
+          value={placement}
+          options={ICON_PLACEMENT_OPTIONS}
+          onChange={(value) => set({ iconPlacement: value })}
+        />
+        <SelectField<CardsIconAlign>
+          label="Horizontal alignment"
+          value={data.iconAlign ?? "left"}
+          options={ICON_ALIGN_OPTIONS}
+          onChange={(value) => set({ iconAlign: value })}
+        />
+      </div>
+
+      <IconPickerField
+        label="Default icon (applied to all cards without custom icon)"
+        value={data.defaultIcon ?? ""}
+        onChange={({ icon }) => set({ defaultIcon: icon || undefined })}
+      />
+
+      <div className="grid grid-cols-2 gap-2">
+        <SelectField<CardsIconVariant>
+          label="Badge style"
+          value={data.iconVariant ?? "filled"}
+          options={ICON_VARIANT_OPTIONS}
+          onChange={(value) => set({ iconVariant: value })}
+        />
+        <SelectField<CardsIconSize>
+          label="Badge size"
+          value={data.iconSize ?? "md"}
+          options={ICON_SIZE_OPTIONS}
+          onChange={(value) => set({ iconSize: value })}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <SelectField<CardsIconShape>
+          label="Badge shape"
+          value={shape}
+          options={ICON_SHAPE_OPTIONS}
+          onChange={(value) =>
+            set({
+              iconShape: value,
+              iconRadius: value === "custom" ? (data.iconRadius ?? 10) : undefined,
+            })
+          }
+        />
+        {shape === "custom" ? (
+          <TextField
+            label="Corner radius (0–48px)"
+            type="number"
+            value={String(data.iconRadius ?? 10)}
+            onChange={(raw) => set({ iconRadius: Math.min(Math.max(Number.parseInt(raw, 10) || 0, 0), 48) })}
+          />
+        ) : (
+          <TextField
+            label="Vertical offset Y (px)"
+            type="number"
+            value={String(data.iconOffsetY ?? 0)}
+            onChange={(raw) => set({ iconOffsetY: Math.min(Math.max(Number.parseInt(raw, 10) || 0, -50), 50) })}
+            hint="Fine-tune float position: 0 is centered on seam"
+          />
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <ItemColorField
+          label="Badge background color"
+          value={data.iconBgColor}
+          onChange={(iconBgColor) => set({ iconBgColor })}
+        />
+        <ItemColorField
+          label="Icon glyph color"
+          value={data.iconColor}
+          onChange={(iconColor) => set({ iconColor })}
+        />
+      </div>
+    </FormGroup>
+  );
+}
 
 function withButton(data: CardsData, patch: Partial<CardsButtonSettings>): CardsData {
   const next: CardsButtonSettings = { ...data.button, ...patch };
@@ -348,6 +537,8 @@ export default function CardsSectionForm({ data, onChange }: Props) {
         />
       </FormGroup>
 
+      <IconBadgeFields data={data} onChange={onChange} />
+
       <FormGroup title="Layout & responsive">
         <div className="grid grid-cols-3 gap-2">
           <SelectField<GridColumns>
@@ -461,6 +652,7 @@ export default function CardsSectionForm({ data, onChange }: Props) {
           create={() => ({
             title: "New card",
             description: "Describe what makes this item worth a click.",
+            icon: "check",
             tags: ["Tag"],
             link: { label: "View details", href: "/contact" },
           })}
@@ -493,6 +685,25 @@ export default function CardsSectionForm({ data, onChange }: Props) {
                 onChange={(description) => update({ ...item, description: description || undefined })}
                 maxLength={800}
               />
+              <TextAreaField
+                label="Checklist points (one per line)"
+                value={
+                  item.checklist
+                    ? item.checklist
+                        .map((c) => (typeof c === "string" ? c : c.text))
+                        .join("\n")
+                    : ""
+                }
+                onChange={(raw) => {
+                  const lines = raw
+                    .split("\n")
+                    .map((l) => l.trim())
+                    .filter(Boolean);
+                  update({ ...item, checklist: lines.length > 0 ? lines : undefined });
+                }}
+                maxLength={2000}
+                hint="Used for Do's & Don'ts or comparison points (each line gets a check or cross icon)."
+              />
               {usesImages && (
                 <ImageField
                   label="Image"
@@ -516,12 +727,26 @@ export default function CardsSectionForm({ data, onChange }: Props) {
                   maxLength={50}
                 />
               </div>
-              <SelectField<IconName | "">
+              <IconPickerField
                 label="Icon"
-                value={(item.icon as IconName | undefined) ?? ""}
-                options={ICON_OPTIONS}
-                onChange={(icon) => update({ ...item, icon: icon || undefined })}
+                value={(item.icon as string | undefined) ?? ""}
+                imageValue={item.iconImage}
+                onChange={({ icon, iconImage }) =>
+                  update({ ...item, icon, iconImage })
+                }
               />
+              <div className="grid grid-cols-2 gap-2">
+                <ItemColorField
+                  label="Card icon background"
+                  value={item.iconBgColor}
+                  onChange={(iconBgColor) => update({ ...item, iconBgColor })}
+                />
+                <ItemColorField
+                  label="Card icon color"
+                  value={item.iconColor}
+                  onChange={(iconColor) => update({ ...item, iconColor })}
+                />
+              </div>
               <CommaListField
                 label="Tags (comma separated)"
                 value={item.tags ?? []}

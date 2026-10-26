@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { Button, Checkbox, Dropdown, Label } from "@heroui/react";
-import { Check, ChevronDown, ChevronUp, Eye, Film, GripVertical, Images, Plus, Trash2, Upload } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Download, Eye, FileText, Film, Globe, GripVertical, Images, Plus, Trash2, Upload } from "lucide-react";
 import { errorMessage } from "../../../api/http.ts";
 import { ACCEPT_BY_KIND, formatBytes, mediaApi, uploadProblem, type MediaFile } from "../../../api/media.ts";
 import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
@@ -16,6 +16,10 @@ import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
 const MediaPickerDialog = lazyWithRetry(
   () => import("../../../components/media/MediaPickerDialog.tsx"),
   { reloadKey: "fields_media_picker" },
+);
+const IconPickerField = lazyWithRetry(
+  () => import("./IconPicker.tsx"),
+  { reloadKey: "fields_icon_picker" },
 );
 import { CellColorPicker } from "../../../components/ui/CellColorPicker.tsx";
 import { Lightbox } from "../../../components/ui/Lightbox.tsx";
@@ -349,6 +353,65 @@ export function ColorField({
   );
 }
 
+export function CompactColorField({
+  label,
+  value,
+  onChange,
+  fallback = "#ffffff",
+  hint,
+  placeholder = "Auto",
+}: {
+  label: string;
+  value: string | undefined;
+  onChange: (value: string | undefined) => void;
+  fallback?: string;
+  hint?: string;
+  placeholder?: string;
+}) {
+  const isAuto = !value || value === "default" || value === "auto";
+
+  return (
+    <div className="flex flex-col gap-1 w-full min-w-0">
+      <div className="flex items-center justify-between gap-1 h-4">
+        <span className="text-ed-xs font-medium text-ed-text truncate select-none">
+          {label}
+        </span>
+        {!isAuto && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            className="text-[11px] font-medium text-ed-muted hover:text-ed-danger transition-colors cursor-pointer shrink-0"
+            title="Reset to default"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+      <CellColorPicker
+        value={isAuto ? undefined : value}
+        onChange={(val) => onChange(val || undefined)}
+        fallback={fallback}
+        className="w-full"
+      >
+        <div className="flex items-center gap-1.5 h-8 w-full min-w-0">
+          <CellColorPicker.Trigger className="!size-8 rounded-ed shrink-0 cursor-pointer" />
+          <div className="flex-1 min-w-0">
+            <CellColorPicker.ValueDisplay
+              placeholder={placeholder}
+              className="!h-8 rounded-ed text-ed-xs font-mono w-full"
+            />
+          </div>
+        </div>
+        <CellColorPicker.Popover>
+          <CellColorPicker.Swatch />
+        </CellColorPicker.Popover>
+      </CellColorPicker>
+      {hint && <p className="text-ed-2xs text-ed-muted leading-normal">{hint}</p>}
+    </div>
+  );
+}
+
 type LinkFieldProps = {
   label: string;
   value: LinkRef;
@@ -357,41 +420,297 @@ type LinkFieldProps = {
 
 export function LinkField({ label, value, onChange }: LinkFieldProps) {
   const targets = useContext(LinkTargetsContext);
+  const media = useContext(MediaTargetContext);
   const listId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pickingDoc, setPickingDoc] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const isDownload = value.actionType
+    ? value.actionType === "download"
+    : Boolean(value.href && /\.pdf($|\?)/i.test(value.href));
+
   const hrefError =
-    value.href && !SAFE_HREF.test(value.href.trim())
+    !isDownload && value.href && !SAFE_HREF.test(value.href.trim())
       ? "Use a page like /contact, https://…, mailto: or tel:"
       : undefined;
+
+  async function handleFileUpload(file: File) {
+    if (!media) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const uploaded = await mediaApi.upload({
+        file,
+        clientId: media.clientId,
+        websiteId: media.websiteId,
+      });
+      onChange({
+        ...value,
+        href: uploaded.url,
+        actionType: "download",
+        downloadFileName: value.downloadFileName || file.name,
+        icon: value.icon || "download",
+      });
+    } catch (err) {
+      setUploadError(errorMessage(err));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const setActionType = (type: "link" | "download") => {
+    if (type === "download") {
+      onChange({
+        ...value,
+        actionType: "download",
+        icon: value.icon || "download",
+        label: value.label === "Contact us" || value.label === "Link" ? "Download Brochure" : value.label,
+        href: value.href === "/contact" || value.href === "/" ? "" : value.href,
+      });
+    } else {
+      onChange({
+        ...value,
+        actionType: "link",
+        icon: value.icon === "download" ? undefined : value.icon,
+        label: value.label === "Download Brochure" ? "Contact us" : value.label,
+        href: value.href === "" ? "/contact" : value.href,
+      });
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-2.5 rounded-ed-lg border border-ed-border/90 bg-ed-subtle/40 p-3 shadow-2xs">
-      <div className="flex items-center gap-1.5">
-        <span className="size-1.5 rounded-full bg-ed-accent" />
-        <span className="text-ed-xs font-semibold text-ed-text">{label}</span>
+    <div className="flex flex-col gap-3 rounded-ed-lg border border-ed-border/90 bg-ed-subtle/40 p-3 shadow-2xs">
+      {/* Header and Action Type Segmented Control */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <span className="size-1.5 rounded-full bg-ed-accent" />
+          <span className="text-ed-xs font-semibold text-ed-text">{label}</span>
+        </div>
+
+        {/* Action Type Switcher */}
+        <div className="inline-flex rounded-ed border border-ed-border bg-ed-panel p-0.5 text-[11px] font-medium shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setActionType("link")}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded cursor-pointer transition ${
+              !isDownload
+                ? "bg-ed-accent text-white shadow-xs font-semibold"
+                : "text-ed-muted hover:text-ed-text"
+            }`}
+          >
+            <Globe className="size-3" />
+            <span>Link / Page</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActionType("download")}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded cursor-pointer transition ${
+              isDownload
+                ? "bg-ed-accent text-white shadow-xs font-semibold"
+                : "text-ed-muted hover:text-ed-text"
+            }`}
+          >
+            <Download className="size-3" />
+            <span>Download</span>
+          </button>
+        </div>
       </div>
+
+      {/* Button Text Input */}
       <TextField
         label="Button / Link text"
         value={value.label}
         onChange={(text) => onChange({ ...value, label: text })}
+        placeholder={isDownload ? "e.g. Download Brochure" : "e.g. Contact Us"}
         maxLength={80}
         required
       />
-      <TextField
-        label="Destination page or URL"
-        value={value.href}
-        onChange={(href) => onChange({ ...value, href })}
-        placeholder="/contact or https://…"
-        list={listId}
-        maxLength={2048}
-        required
-        error={hrefError}
-      />
-      <datalist id={listId}>
-        {targets.map((target) => (
-          <option key={target.href} value={target.href}>
-            {target.label}
-          </option>
-        ))}
-      </datalist>
+
+      {/* Normal Page / URL Mode */}
+      {!isDownload ? (
+        <div className="flex flex-col gap-2">
+          <TextField
+            label="Destination page or URL"
+            value={value.href}
+            onChange={(href) => onChange({ ...value, href })}
+            placeholder="/contact or https://…"
+            list={listId}
+            maxLength={2048}
+            required
+            error={hrefError}
+          />
+          <datalist id={listId}>
+            {targets.map((target) => (
+              <option key={target.href} value={target.href}>
+                {target.label}
+              </option>
+            ))}
+          </datalist>
+
+          <label className="flex items-center gap-2 cursor-pointer select-none text-[12px] text-ed-muted hover:text-ed-text transition mt-0.5">
+            <input
+              type="checkbox"
+              checked={Boolean(value.openInNewTab)}
+              onChange={(e) => onChange({ ...value, openInNewTab: e.target.checked })}
+              className="rounded border-ed-border text-brand focus:ring-brand/30"
+            />
+            <span>Open in new tab</span>
+          </label>
+        </div>
+      ) : (
+        /* Download File Mode */
+        <div className="flex flex-col gap-2.5 rounded-ed border border-dashed border-ed-accent/30 bg-ed-accent-soft/20 p-2.5">
+          <div className="flex items-center justify-between gap-1 flex-wrap">
+            <span className="text-[11px] font-semibold text-ed-accent flex items-center gap-1">
+              <Download className="size-3" />
+              <span>Brochure / File to Download</span>
+            </span>
+            <div className="flex items-center gap-1.5">
+              {media && (
+                <>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.zip,.csv,.xlsx,.png,.jpg,.jpeg,.webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void handleFileUpload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer disabled:opacity-50"
+                  >
+                    <Upload className="size-3" />
+                    <span>{uploading ? "Uploading…" : "Upload File"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPickingDoc(true)}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer"
+                  >
+                    <FileText className="size-3" />
+                    <span>Media Library</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {uploadError && (
+            <p className="text-[11px] text-ed-danger font-medium">{uploadError}</p>
+          )}
+
+          <TextField
+            label="File URL"
+            value={value.href}
+            onChange={(href) => onChange({ ...value, href })}
+            placeholder="Upload file or enter URL (e.g. /api/media/files/... or https://...)"
+            maxLength={2048}
+            required
+            hint="Supports PDF brochures, documents, images or catalogs"
+          />
+
+          <TextField
+            label="Download filename (optional)"
+            value={value.downloadFileName || ""}
+            onChange={(name) => onChange({ ...value, downloadFileName: name || undefined })}
+            placeholder="e.g. Brochure.pdf"
+            maxLength={100}
+            hint="Browser saves the file with this name"
+          />
+        </div>
+      )}
+
+      {/* Button Icon & Placement */}
+      <div className="flex flex-col gap-2 pt-1 border-t border-ed-border/60">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-medium text-ed-muted">Button Icon (Optional)</span>
+          {value.icon && (
+            <button
+              type="button"
+              onClick={() => onChange({ ...value, icon: undefined, iconImage: undefined })}
+              className="text-[10px] text-ed-danger hover:underline cursor-pointer"
+            >
+              Remove icon
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+          <Suspense fallback={<div className="h-8 rounded-ed bg-ed-subtle animate-pulse" />}>
+            <IconPickerField
+              label=""
+              value={value.icon}
+              imageValue={value.iconImage}
+              onChange={(val) =>
+                onChange({
+                  ...value,
+                  icon: val.icon,
+                  iconImage: val.iconImage,
+                })
+              }
+            />
+          </Suspense>
+
+          {Boolean(value.icon || value.iconImage?.url) && (
+            <div className="inline-flex rounded-ed border border-ed-border bg-ed-panel p-0.5 text-[11px] font-medium h-8 items-center">
+              <button
+                type="button"
+                onClick={() => onChange({ ...value, iconPosition: "left" })}
+                className={`px-2 py-0.5 rounded cursor-pointer transition ${
+                  (value.iconPosition || "left") === "left"
+                    ? "bg-ed-accent text-white font-semibold"
+                    : "text-ed-muted hover:text-ed-text"
+                }`}
+                title="Icon on left"
+              >
+                Left
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange({ ...value, iconPosition: "right" })}
+                className={`px-2 py-0.5 rounded cursor-pointer transition ${
+                  value.iconPosition === "right"
+                    ? "bg-ed-accent text-white font-semibold"
+                    : "text-ed-muted hover:text-ed-text"
+                }`}
+                title="Icon on right"
+              >
+                Right
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Document Picker Modal */}
+      {pickingDoc && media && (
+        <Suspense fallback={null}>
+          <MediaPickerDialog
+            clientId={media.clientId}
+            websiteId={media.websiteId}
+            kind="DOCUMENT"
+            onPick={(file) => {
+              onChange({
+                ...value,
+                href: file.url,
+                actionType: "download",
+                downloadFileName: value.downloadFileName || file.fileName,
+                icon: value.icon || "download",
+              });
+              setPickingDoc(false);
+            }}
+            onClose={() => setPickingDoc(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

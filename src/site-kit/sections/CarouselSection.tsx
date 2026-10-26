@@ -824,11 +824,13 @@ export default function CarouselSection({ section }: { section: SectionOf<"carou
 
   if (slides.length === 0) return null;
 
+  const align = data.align || section.settings.align || "left";
+
   return (
     <SectionShell
       sectionId={section.id}
       settings={section.settings}
-      className={`wb-carousel wb-carousel-variant-${variant}`}
+      className={`wb-carousel wb-carousel-variant-${variant} wb-align-${align}`}
       label={data.heading || "Carousel"}
     >
       <div
@@ -837,9 +839,9 @@ export default function CarouselSection({ section }: { section: SectionOf<"carou
         onMouseLeave={() => data.pauseOnHover && setIsPaused(false)}
       >
         {(data.heading || data.intro || data.eyebrow) && variant !== "hero-slider" && (
-          <div className={`wb-carousel-header-wrapper wb-align-${data.align || "left"}`}>
+          <div className={`wb-carousel-header-wrapper wb-align-${align}`}>
             {data.eyebrow && <span className="wb-carousel-eyebrow">{data.eyebrow}</span>}
-            {data.heading && <SectionHead heading={data.heading} intro={data.intro} />}
+            {data.heading && <SectionHead heading={data.heading} intro={data.intro} align={align} />}
             {data.badge && (
               <div className="wb-carousel-badge-pill">
                 <span className="wb-carousel-pulse-dot" aria-hidden="true" />
@@ -892,7 +894,7 @@ export default function CarouselSection({ section }: { section: SectionOf<"carou
       <CarouselHeroSlider
         slides={slides}
         cardStyle={data.cardStyle}
-        align={data.align}
+        align={align}
         activeIndex={activeIndex}
         onPrev={prevSlide}
         onNext={nextSlide}

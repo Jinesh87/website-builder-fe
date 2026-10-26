@@ -1,7 +1,7 @@
 import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
 import { isExternalHref, safeHref } from "./links.ts";
 import { sectionFontStyle } from "./theme.ts";
-import type { GridColumns, IconName, ImageRef, LinkRef, SectionSettings } from "./types.ts";
+import type { GridColumns, IconName, ImageRef, LinkRef, SectionAlign, SectionSettings } from "./types.ts";
 import { isLightColor, normalizeHexColor } from "../utils/colors.ts";
 import { getCuratedFallbackImage, normalizeImageUrl } from "./image-utils.ts";
 
@@ -11,16 +11,52 @@ type SiteLinkProps = {
   children?: ReactNode;
 };
 
+function formatDownloadHref(href: string, isDownload: boolean): string {
+  if (!isDownload || !href) return href;
+  if (href.startsWith("/api/media/files/") || href.includes("/media/files/")) {
+    const separator = href.includes("?") ? "&" : "?";
+    if (!href.includes("download=")) {
+      return `${href}${separator}download=1`;
+    }
+  }
+  return href;
+}
+
 export function SiteLink({ link, className, children }: SiteLinkProps) {
-  const href = safeHref(link.href);
-  const external = isExternalHref(href);
+  const isDownload = link.actionType === "download";
+  const rawHref = safeHref(link.href);
+  const href = formatDownloadHref(rawHref, isDownload);
+  const external = isExternalHref(href) || Boolean(link.openInNewTab);
+  const downloadAttr = isDownload ? (link.downloadFileName?.trim() || true) : undefined;
+
+  const hasIcon = Boolean(link.icon || link.iconImage?.url);
+  const iconPos = link.iconPosition || "left";
+  const iconNode = hasIcon ? (
+    <span className="wb-btn-icon-wrapper" aria-hidden="true">
+      <SiteIcon
+        name={link.icon}
+        image={link.iconImage}
+        inline
+        size={18}
+        className="wb-btn-icon"
+      />
+    </span>
+  ) : null;
+
   return (
     <a
       href={href}
       className={className}
-      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      {...(isDownload ? { download: downloadAttr } : {})}
+      {...(external || isDownload ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
-      {children ?? link.label}
+      {children ?? (
+        <>
+          {iconPos === "left" && iconNode}
+          <span className="wb-btn-text">{link.label}</span>
+          {iconPos === "right" && iconNode}
+        </>
+      )}
     </a>
   );
 }
@@ -229,11 +265,79 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
   ),
 };
 
-export function SiteIcon({ name }: { name: IconName | string }) {
-  const iconPath = ICON_PATHS[name as IconName];
-  if (iconPath) {
+import { icons as lucideIcons } from "lucide-react";
+
+function toPascalCase(str: string): string {
+  return str
+    .replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ""))
+    .replace(/^(.)/, (c) => c.toUpperCase());
+}
+
+const LUCIDE_NAME_ALIASES: Record<string, string> = {
+  home: "House",
+  house: "House",
+  tv: "Tv",
+  television: "Tv",
+  bath: "Bath",
+  bathtub: "Bath",
+};
+
+function resolveLucideComponent(name: string) {
+  if (!name) return null;
+  const alias = LUCIDE_NAME_ALIASES[name.toLowerCase()];
+  if (alias && lucideIcons[alias as keyof typeof lucideIcons]) {
+    return lucideIcons[alias as keyof typeof lucideIcons];
+  }
+  if (lucideIcons[name as keyof typeof lucideIcons]) {
+    return lucideIcons[name as keyof typeof lucideIcons];
+  }
+  const pascal = toPascalCase(name);
+  if (lucideIcons[pascal as keyof typeof lucideIcons]) {
+    return lucideIcons[pascal as keyof typeof lucideIcons];
+  }
+  return null;
+}
+
+export type SiteIconProps = {
+  name?: IconName | string;
+  image?: ImageRef;
+  className?: string;
+  style?: CSSProperties;
+  inline?: boolean;
+  size?: number | string;
+};
+
+export function SiteIcon({ name, image, className = "", style, inline = false, size }: SiteIconProps) {
+  const baseClass = inline ? `wb-icon-inline ${className}` : `wb-icon ${className}`;
+  const customImgUrl =
+    image?.url ||
+    (typeof name === "string" &&
+    (name.startsWith("http://") ||
+      name.startsWith("https://") ||
+      name.startsWith("/api/") ||
+      name.startsWith("data:image/"))
+      ? name
+      : undefined);
+
+  if (customImgUrl) {
     return (
-      <span className="wb-icon" aria-hidden="true">
+      <span className={`${baseClass} wb-icon-custom`} style={style} aria-hidden="true">
+        <img
+          src={customImgUrl}
+          alt={image?.alt || ""}
+          className="wb-icon-custom-img"
+          loading="lazy"
+        />
+      </span>
+    );
+  }
+
+  if (!name) return null;
+
+  const legacyIcon = ICON_PATHS[name as IconName];
+  if (legacyIcon) {
+    return (
+      <span className={baseClass} style={style} aria-hidden="true">
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -241,14 +345,26 @@ export function SiteIcon({ name }: { name: IconName | string }) {
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
+          style={size ? { width: size, height: size } : undefined}
         >
-          {iconPath}
+          {legacyIcon}
         </svg>
       </span>
     );
   }
+
+  const LucideComp = resolveLucideComponent(name);
+  if (LucideComp) {
+    const iconSize = size ?? (inline ? "1.15em" : 22);
+    return (
+      <span className={baseClass} style={style} aria-hidden="true">
+        <LucideComp size={iconSize} strokeWidth={1.8} />
+      </span>
+    );
+  }
+
   return (
-    <span className="wb-icon wb-icon-emoji" aria-hidden="true">
+    <span className={`${baseClass} wb-icon-emoji`} style={style} aria-hidden="true">
       {name}
     </span>
   );
@@ -506,7 +622,7 @@ export function SectionShell({ sectionId, settings, className, label, children, 
     text && "wb-custom-text",
     muted && "wb-custom-muted",
     settings.spacing && settings.spacing !== "default" && `wb-space-${settings.spacing}`,
-    settings.align === "left" && "wb-align-left",
+    `wb-align-${settings.align || "center"}`,
     settings.hideOnMobile && "wb-hide-mobile",
     settings.hideOnDesktop && "wb-hide-desktop",
     className,
@@ -598,10 +714,20 @@ export function parseRichText(text?: string | null): ReactNode {
   return elements.length > 0 ? <>{elements}</> : text;
 }
 
-export function SectionHead({ heading, intro, eyebrow }: { heading?: string; intro?: string; eyebrow?: string }) {
+export function SectionHead({
+  heading,
+  intro,
+  eyebrow,
+  align,
+}: {
+  heading?: string;
+  intro?: string;
+  eyebrow?: string;
+  align?: SectionAlign;
+}) {
   if (!heading && !intro && !eyebrow) return null;
   return (
-    <div className="wb-section-head">
+    <div className={`wb-section-head${align ? ` wb-align-${align}` : ""}`}>
       {eyebrow && <p className="wb-eyebrow">{parseRichText(eyebrow)}</p>}
       {heading && <h2>{parseRichText(heading)}</h2>}
       {intro && <p className="wb-muted">{parseRichText(intro)}</p>}

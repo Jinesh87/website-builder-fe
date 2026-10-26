@@ -39,18 +39,20 @@ export default function BlogSection({ section }: { section: SectionOf<"blog"> })
 
   const layoutColsClass = data.layout === "grid-2" ? "cols-2" : "";
 
+  const align = data.align || section.settings.align || "center";
+
   return (
-    <SectionShell sectionId={section.id} settings={section.settings}>
+    <SectionShell sectionId={section.id} settings={section.settings} className={`wb-align-${align}`}>
       <div className="wb-blog-section">
         {/* Header */}
-        <div className="wb-blog-header">
+        <div className={`wb-blog-header wb-align-${align}`}>
           {data.eyebrow && <span className="wb-blog-eyebrow">{parseRichText(data.eyebrow)}</span>}
           {data.title && <h2 className="wb-blog-title">{parseRichText(data.title)}</h2>}
           {data.subtitle && <p className="wb-blog-subtitle">{parseRichText(data.subtitle)}</p>}
 
           {/* Filter Pills */}
           {categories.length > 1 && (
-            <div className="wb-blog-filters" role="tablist" aria-label="Blog categories">
+            <div className={`wb-blog-filters wb-align-${align}`} role="tablist" aria-label="Blog categories">
               {categories.map((cat) => (
                 <button
                   key={cat}

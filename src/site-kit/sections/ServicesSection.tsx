@@ -96,7 +96,7 @@ export default function ServicesSection({
   const cardStyle = data.cardStyle ?? "surface";
   const iconStyle = data.iconStyle ?? "pastel-circle";
   const imageAspect = data.imageAspect ?? "16:9";
-  const align = data.align ?? "left";
+  const align = data.align ?? section.settings.align ?? "left";
 
   const showBadges = data.showBadges !== false;
   const showIcons = data.showIcons !== false;
@@ -115,8 +115,9 @@ export default function ServicesSection({
     index: number,
     options?: { isBentoHero?: boolean; isHorizontal?: boolean }
   ) => {
-    const itemColor = getItemColor(item, index);
-    const colorClass = `wb-color-${itemColor}`;
+    const isCustomHex = typeof item.iconColor === "string" && item.iconColor.startsWith("#");
+    const itemColor = isCustomHex ? "blue" : getItemColor(item, index);
+    const colorClass = isCustomHex ? "" : `wb-color-${itemColor}`;
     const isFeatured = item.featured || options?.isBentoHero;
     const num = String(index + 1).padStart(2, "0");
 
@@ -125,6 +126,23 @@ export default function ServicesSection({
           backgroundColor: item.backgroundColor,
           background: item.backgroundColor,
         }
+      : undefined;
+
+    const iconCustomStyle = isCustomHex
+      ? iconStyle === "colored-circle"
+        ? { background: item.iconColor, color: "#ffffff" }
+        : iconStyle === "minimal-accent"
+          ? { color: item.iconColor, background: "transparent" }
+          : iconStyle === "square-badge"
+            ? {
+                color: item.iconColor,
+                background: `color-mix(in srgb, ${item.iconColor} 12%, transparent)`,
+                borderColor: `color-mix(in srgb, ${item.iconColor} 26%, transparent)`,
+              }
+            : {
+                color: item.iconColor,
+                background: `color-mix(in srgb, ${item.iconColor} 15%, transparent)`,
+              }
       : undefined;
 
     return (
@@ -167,11 +185,12 @@ export default function ServicesSection({
                   <span className="wb-service-number">{num}</span>
                 )}
 
-                {showIcons && item.icon && iconStyle !== "none" && (
+                {showIcons && (item.icon || item.iconImage?.url) && iconStyle !== "none" && (
                   <div
                     className={`wb-service-icon-wrap wb-icon-style-${iconStyle} ${colorClass}`}
+                    style={iconCustomStyle}
                   >
-                    <SiteIcon name={item.icon} />
+                    <SiteIcon name={item.icon} image={item.iconImage} />
                   </div>
                 )}
               </div>
@@ -251,13 +270,14 @@ export default function ServicesSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className="wb-services-section wb-services-variant-bento"
+        className={`wb-services-section wb-services-variant-bento wb-align-${align}`}
         label={data.heading}
       >
         <SectionHead
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         <div className="wb-services-bento-grid">
@@ -370,8 +390,9 @@ export default function ServicesSection({
           {/* Interactive Row List */}
           <div className="wb-services-interactive-list">
             {data.items.map((item, index) => {
-              const itemColor = getItemColor(item, index);
-              const colorClass = `wb-color-${itemColor}`;
+              const isCustomHex = typeof item.iconColor === "string" && item.iconColor.startsWith("#");
+              const itemColor = isCustomHex ? "blue" : getItemColor(item, index);
+              const colorClass = isCustomHex ? "" : `wb-color-${itemColor}`;
               const isActive = activeIndex === index;
               const num = String(index + 1).padStart(2, "0");
 
@@ -387,9 +408,12 @@ export default function ServicesSection({
                 >
                   <div className="wb-interactive-left">
                     <span className="wb-interactive-number">{num}</span>
-                    {showIcons && item.icon && (
-                      <div className="wb-interactive-icon">
-                        <SiteIcon name={item.icon} />
+                    {showIcons && (item.icon || item.iconImage?.url) && (
+                      <div
+                        className="wb-interactive-icon"
+                        style={isCustomHex ? { color: item.iconColor } : undefined}
+                      >
+                        <SiteIcon name={item.icon} image={item.iconImage} />
                       </div>
                     )}
                     <h3 className="wb-interactive-title">{item.title}</h3>
@@ -478,13 +502,14 @@ export default function ServicesSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className="wb-services-section wb-services-variant-interactive"
+        className={`wb-services-section wb-services-variant-interactive wb-align-${align}`}
         label={data.heading}
       >
         <SectionHead
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         {isStatic ? (
@@ -508,13 +533,14 @@ export default function ServicesSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className="wb-services-section wb-services-variant-horizontal"
+        className={`wb-services-section wb-services-variant-horizontal wb-align-${align}`}
         label={data.heading}
       >
         <SectionHead
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         <div className="wb-services-horizontal-stack">
@@ -538,13 +564,14 @@ export default function ServicesSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className="wb-services-section wb-services-variant-numbered"
+        className={`wb-services-section wb-services-variant-numbered wb-align-${align}`}
         label={data.heading}
       >
         <SectionHead
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         <div
@@ -609,13 +636,14 @@ export default function ServicesSection({
     <SectionShell
       sectionId={section.id}
       settings={section.settings}
-      className={`wb-services-section wb-services-variant-${variant}`}
+      className={`wb-services-section wb-services-variant-${variant} wb-align-${align}`}
       label={data.heading}
     >
       <SectionHead
         heading={data.heading}
         intro={data.intro}
         eyebrow={data.eyebrow}
+        align={align}
       />
 
       <div

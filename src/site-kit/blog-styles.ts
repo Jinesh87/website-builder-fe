@@ -16,6 +16,24 @@ export const BLOG_CSS = `
   max-width: 800px;
   margin: 0 auto 40px;
 }
+.wb-align-left .wb-blog-header,
+.wb-blog-header.wb-align-left {
+  text-align: left;
+  margin-left: 0;
+  margin-right: auto;
+}
+.wb-align-center .wb-blog-header,
+.wb-blog-header.wb-align-center {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.wb-align-right .wb-blog-header,
+.wb-blog-header.wb-align-right {
+  text-align: right;
+  margin-left: auto;
+  margin-right: 0;
+}
 
 .wb-blog-eyebrow {
   display: inline-block;
@@ -50,6 +68,18 @@ export const BLOG_CSS = `
   flex-wrap: wrap;
   gap: 8px;
   margin: 28px 0 44px;
+}
+.wb-align-left .wb-blog-filters,
+.wb-blog-filters.wb-align-left {
+  justify-content: flex-start;
+}
+.wb-align-center .wb-blog-filters,
+.wb-blog-filters.wb-align-center {
+  justify-content: center;
+}
+.wb-align-right .wb-blog-filters,
+.wb-blog-filters.wb-align-right {
+  justify-content: flex-end;
 }
 
 .wb-blog-filter-btn {
