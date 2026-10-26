@@ -19,6 +19,8 @@ export const CARDS_CSS = `
 .wb-cardset .wb-cardset-head-center { align-items: center; text-align: center; }
 .wb-cardset .wb-cardset-head-center .wb-cardset-head-copy { align-items: center; margin-inline: auto; }
 .wb-cardset .wb-cardset-head-left { align-items: flex-start; text-align: left; }
+.wb-cardset .wb-cardset-head-right { align-items: flex-end; text-align: right; }
+.wb-cardset .wb-cardset-head-right .wb-cardset-head-copy { align-items: flex-end; margin-inline-start: auto; margin-inline-end: 0; }
 .wb-cardset .wb-cardset-head-split { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 24px; text-align: left; }
 .wb-cardset .wb-cardset-intro { font-size: 17px; }
 .wb-cardset .wb-cardset-head-link {

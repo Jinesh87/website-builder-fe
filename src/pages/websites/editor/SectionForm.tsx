@@ -185,8 +185,9 @@ const SPACING_OPTIONS: { value: SectionSpacing; label: string }[] = [
 ];
 
 const ALIGN_OPTIONS: { value: SectionAlign; label: string }[] = [
-  { value: "center", label: "Centered" },
   { value: "left", label: "Left aligned" },
+  { value: "center", label: "Centered" },
+  { value: "right", label: "Right aligned" },
 ];
 
 const ANCHOR_PATTERN = /^[a-z][a-z0-9-]{0,39}$/;
@@ -1507,14 +1508,11 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
         <SelectField
           label="Content alignment"
           value={data.align ?? (isSplit ? "left" : "center")}
-          options={[
-            { value: "center", label: "Center aligned" },
-            { value: "left", label: "Left aligned" },
-          ]}
+          options={ALIGN_OPTIONS}
           onChange={(align) =>
             onChange({
               ...data,
-              align: align as "left" | "center",
+              align: align as SectionAlign,
             })
           }
         />
@@ -2172,11 +2170,8 @@ function TestimonialsForm({ data, onChange }: DataFormProps<TestimonialsData>) {
         <SelectField
           label="Header alignment"
           value={data.align || "center"}
-          options={[
-            { value: "center", label: "Center" },
-            { value: "left", label: "Left" },
-          ]}
-          onChange={(align) => onChange({ ...data, align: align as "left" | "center" })}
+          options={ALIGN_OPTIONS}
+          onChange={(align) => onChange({ ...data, align: align as SectionAlign })}
         />
         {currentVariant === "cards-grid" && (
           <SelectField
@@ -2920,6 +2915,12 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
 function TextForm({ data, onChange }: DataFormProps<TextData>) {
   return (
     <FormGroup title="Content">
+      <SelectField
+        label="Text alignment"
+        value={data.align || "center"}
+        options={ALIGN_OPTIONS}
+        onChange={(align) => onChange({ ...data, align: align as SectionAlign })}
+      />
       <TextField
         label="Heading"
         value={data.heading}

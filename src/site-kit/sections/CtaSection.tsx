@@ -24,7 +24,7 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
   const { data } = section;
   const variant = data.variant || "centered-card";
   const cardStyle = data.cardStyle || "default";
-  const align = data.align || "center";
+  const align = data.align || section.settings.align || "center";
 
   // 1. Split Visual Variant (Asymmetric Split + Live Metric Highlight)
   if (variant === "split-visual") {
@@ -190,7 +190,7 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
       className={`wb-cta-section wb-cta-variant-centered wb-align-${align}`}
       label={data.heading}
     >
-      <div className={`wb-cta-centered-container wb-cta-card-style-${cardStyle}`}>
+      <div className={`wb-cta-centered-container wb-cta-card-style-${cardStyle} wb-align-${align}`}>
         {data.eyebrow && (
           <div className="wb-cta-eyebrow-wrap">
             <span className="wb-cta-pulse-dot" />

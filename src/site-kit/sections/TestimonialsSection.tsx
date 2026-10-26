@@ -154,7 +154,7 @@ export default function TestimonialsSection({
   const { data } = section;
   const variant = data.variant || "cards-grid";
   const cardStyle = data.cardStyle || "default";
-  const align = data.align || "center";
+  const align = data.align || section.settings.align || "center";
   const columns = data.columns || 3;
   const showRatings = data.showRatings ?? true;
   const showAvatars = data.showAvatars ?? true;
@@ -195,7 +195,7 @@ export default function TestimonialsSection({
         className={`wb-testimonials-section wb-align-${align}`}
         label={data.heading}
       >
-        <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} />
+        <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} align={align} />
         {data.ratingMetric && (
           <div style={{ textAlign: align }}>
             <RatingPill metric={data.ratingMetric} />
@@ -306,7 +306,7 @@ export default function TestimonialsSection({
         fullWidth
       >
         <div className="wb-container">
-          <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} />
+          <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} align={align} />
           {data.ratingMetric && (
             <div style={{ textAlign: align }}>
               <RatingPill metric={data.ratingMetric} />
@@ -347,7 +347,7 @@ export default function TestimonialsSection({
         className={`wb-testimonials-section wb-align-${align}`}
         label={data.heading}
       >
-        <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} />
+        <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} align={align} />
         {data.ratingMetric && (
           <div style={{ textAlign: align }}>
             <RatingPill metric={data.ratingMetric} />
@@ -418,7 +418,7 @@ export default function TestimonialsSection({
         className={`wb-testimonials-section wb-align-${align}`}
         label={data.heading}
       >
-        <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} />
+        <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} align={align} />
         {data.ratingMetric && (
           <div style={{ textAlign: align }}>
             <RatingPill metric={data.ratingMetric} />
@@ -470,7 +470,7 @@ export default function TestimonialsSection({
       className={`wb-testimonials-section wb-align-${align}`}
       label={data.heading}
     >
-      <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} />
+      <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} align={align} />
       {data.ratingMetric && (
         <div style={{ textAlign: align }}>
           <RatingPill metric={data.ratingMetric} />

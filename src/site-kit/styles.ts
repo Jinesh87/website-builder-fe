@@ -2482,6 +2482,22 @@ export const SITE_CSS = `
   justify-content: flex-start;
 }
 
+.wb-feature-card-grid.wb-feature-align-right {
+  text-align: right;
+  align-items: flex-end;
+}
+.wb-feature-card-grid.wb-feature-align-right .wb-feature-icon-wrap {
+  margin-left: auto;
+  margin-right: 0;
+}
+.wb-feature-card-grid.wb-feature-align-right .wb-feature-content {
+  text-align: right;
+  width: 100%;
+}
+.wb-feature-card-grid.wb-feature-align-right .wb-feature-header-row {
+  justify-content: flex-end;
+}
+
 /* Card Surface Variants */
 .wb-feature-card-surface {
   background: var(--wb-surface);
@@ -2732,6 +2748,9 @@ export const SITE_CSS = `
 }
 .wb-features-bottom-cta.wb-align-left {
   justify-content: flex-start;
+}
+.wb-features-bottom-cta.wb-align-right {
+  justify-content: flex-end;
 }
 .wb-features-bottom-link {
   display: inline-flex;
@@ -3403,6 +3422,7 @@ export const SITE_CSS = `
 }
 .wb-services-bottom-cta.wb-align-center { justify-content: center; }
 .wb-services-bottom-cta.wb-align-left { justify-content: flex-start; }
+.wb-services-bottom-cta.wb-align-right { justify-content: flex-end; }
 
 /* ==========================================================================
    Testimonials Section (Modern Multi-Variant Architectural System)
@@ -4311,6 +4331,9 @@ details[open] > summary .wb-faq-plus {
 .wb-cta-actions.wb-align-left {
   justify-content: flex-start;
 }
+.wb-cta-actions.wb-align-right {
+  justify-content: flex-end;
+}
 
 /* Trust Badges */
 .wb-cta-trust-list {
@@ -4327,6 +4350,9 @@ details[open] > summary .wb-faq-plus {
 }
 .wb-cta-trust-list.wb-align-left {
   justify-content: flex-start;
+}
+.wb-cta-trust-list.wb-align-right {
+  justify-content: flex-end;
 }
 .wb-cta-trust-item {
   display: inline-flex;
@@ -4378,6 +4404,108 @@ details[open] > summary .wb-faq-plus {
 .wb-cta-variant-centered {
   text-align: center;
 }
+.wb-cta-variant-centered.wb-align-left,
+.wb-cta-variant-centered.wb-align-left .wb-cta-centered-container,
+.wb-cta-centered-container.wb-align-left,
+.wb-align-left .wb-cta-centered-container {
+  text-align: left;
+}
+.wb-cta-variant-centered.wb-align-left .wb-cta-centered-heading,
+.wb-cta-centered-container.wb-align-left .wb-cta-centered-heading,
+.wb-align-left .wb-cta-centered-heading {
+  text-align: left;
+}
+.wb-cta-variant-centered.wb-align-left .wb-cta-centered-text,
+.wb-cta-centered-container.wb-align-left .wb-cta-centered-text,
+.wb-align-left .wb-cta-centered-text {
+  text-align: left;
+  margin-left: 0;
+  margin-right: auto;
+}
+.wb-cta-variant-centered.wb-align-left .wb-cta-eyebrow-wrap,
+.wb-cta-centered-container.wb-align-left .wb-cta-eyebrow-wrap,
+.wb-align-left .wb-cta-eyebrow-wrap {
+  justify-content: flex-start;
+}
+.wb-cta-variant-centered.wb-align-left .wb-cta-actions,
+.wb-cta-centered-container.wb-align-left .wb-cta-actions,
+.wb-align-left .wb-cta-actions {
+  justify-content: flex-start;
+}
+.wb-cta-variant-centered.wb-align-left .wb-cta-trust-list,
+.wb-cta-centered-container.wb-align-left .wb-cta-trust-list,
+.wb-align-left .wb-cta-trust-list {
+  justify-content: flex-start;
+}
+
+.wb-cta-variant-centered.wb-align-center,
+.wb-cta-variant-centered.wb-align-center .wb-cta-centered-container,
+.wb-cta-centered-container.wb-align-center,
+.wb-align-center .wb-cta-centered-container {
+  text-align: center;
+}
+.wb-cta-variant-centered.wb-align-center .wb-cta-centered-heading,
+.wb-cta-centered-container.wb-align-center .wb-cta-centered-heading,
+.wb-align-center .wb-cta-centered-heading {
+  text-align: center;
+}
+.wb-cta-variant-centered.wb-align-center .wb-cta-centered-text,
+.wb-cta-centered-container.wb-align-center .wb-cta-centered-text,
+.wb-align-center .wb-cta-centered-text {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.wb-cta-variant-centered.wb-align-center .wb-cta-eyebrow-wrap,
+.wb-cta-centered-container.wb-align-center .wb-cta-eyebrow-wrap,
+.wb-align-center .wb-cta-eyebrow-wrap {
+  justify-content: center;
+}
+.wb-cta-variant-centered.wb-align-center .wb-cta-actions,
+.wb-cta-centered-container.wb-align-center .wb-cta-actions,
+.wb-align-center .wb-cta-actions {
+  justify-content: center;
+}
+.wb-cta-variant-centered.wb-align-center .wb-cta-trust-list,
+.wb-cta-centered-container.wb-align-center .wb-cta-trust-list,
+.wb-align-center .wb-cta-trust-list {
+  justify-content: center;
+}
+
+.wb-cta-variant-centered.wb-align-right,
+.wb-cta-variant-centered.wb-align-right .wb-cta-centered-container,
+.wb-cta-centered-container.wb-align-right,
+.wb-align-right .wb-cta-centered-container {
+  text-align: right;
+}
+.wb-cta-variant-centered.wb-align-right .wb-cta-centered-heading,
+.wb-cta-centered-container.wb-align-right .wb-cta-centered-heading,
+.wb-align-right .wb-cta-centered-heading {
+  text-align: right;
+}
+.wb-cta-variant-centered.wb-align-right .wb-cta-centered-text,
+.wb-cta-centered-container.wb-align-right .wb-cta-centered-text,
+.wb-align-right .wb-cta-centered-text {
+  text-align: right;
+  margin-left: auto;
+  margin-right: 0;
+}
+.wb-cta-variant-centered.wb-align-right .wb-cta-eyebrow-wrap,
+.wb-cta-centered-container.wb-align-right .wb-cta-eyebrow-wrap,
+.wb-align-right .wb-cta-eyebrow-wrap {
+  justify-content: flex-end;
+}
+.wb-cta-variant-centered.wb-align-right .wb-cta-actions,
+.wb-cta-centered-container.wb-align-right .wb-cta-actions,
+.wb-align-right .wb-cta-actions {
+  justify-content: flex-end;
+}
+.wb-cta-variant-centered.wb-align-right .wb-cta-trust-list,
+.wb-cta-centered-container.wb-align-right .wb-cta-trust-list,
+.wb-align-right .wb-cta-trust-list {
+  justify-content: flex-end;
+}
+
 .wb-cta-centered-container {
   max-width: 860px;
   margin: 0 auto;
@@ -4535,10 +4663,20 @@ details[open] > summary .wb-faq-plus {
   max-width: 640px;
   margin: 16px 0 0 0;
 }
-.wb-align-center .wb-cta-floating-text {
-  margin-left: auto;
-  margin-right: auto;
-}
+.wb-cta-floating-box.wb-align-left { text-align: left; }
+.wb-cta-floating-box.wb-align-left .wb-cta-floating-heading { text-align: left; }
+.wb-cta-floating-box.wb-align-left .wb-cta-floating-text { text-align: left; margin-left: 0; margin-right: auto; }
+.wb-cta-floating-box.wb-align-left .wb-cta-eyebrow-wrap { justify-content: flex-start; }
+
+.wb-cta-floating-box.wb-align-center { text-align: center; }
+.wb-cta-floating-box.wb-align-center .wb-cta-floating-heading { text-align: center; }
+.wb-cta-floating-box.wb-align-center .wb-cta-floating-text { text-align: center; margin-left: auto; margin-right: auto; }
+.wb-cta-floating-box.wb-align-center .wb-cta-eyebrow-wrap { justify-content: center; }
+
+.wb-cta-floating-box.wb-align-right { text-align: right; }
+.wb-cta-floating-box.wb-align-right .wb-cta-floating-heading { text-align: right; }
+.wb-cta-floating-box.wb-align-right .wb-cta-floating-text { text-align: right; margin-left: auto; margin-right: 0; }
+.wb-cta-floating-box.wb-align-right .wb-cta-eyebrow-wrap { justify-content: flex-end; }
 @container wb-site (max-width: 640px) {
   .wb-cta-floating-box {
     padding: 36px 24px;
@@ -5157,6 +5295,24 @@ details[open] > summary .wb-faq-plus {
 .wb-text h2 { margin-bottom: 20px; }
 .wb-text p + p { margin-top: 16px; }
 .wb-text p { font-size: 17px; }
+.wb-text.wb-align-left,
+.wb-align-left .wb-text {
+  text-align: left;
+  margin-left: 0;
+  margin-right: auto;
+}
+.wb-text.wb-align-center,
+.wb-align-center .wb-text {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.wb-text.wb-align-right,
+.wb-align-right .wb-text {
+  text-align: right;
+  margin-left: auto;
+  margin-right: 0;
+}
 
 /* Gallery */
 .wb-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--wb-radius); }
@@ -5300,8 +5456,73 @@ details[open] > summary .wb-faq-plus {
 .wb-space-none { padding: 0; }
 .wb-space-compact { padding: calc(var(--wb-section-y) * 0.5) 0; }
 .wb-space-relaxed { padding: calc(var(--wb-section-y) * 1.4) 0; }
-.wb-align-left .wb-section-head, .wb-align-left.wb-cta, .wb-align-left .wb-hero-copy, .wb-align-left .wb-gallery-head { text-align: left; margin-left: 0; }
-.wb-align-left .wb-actions { justify-content: flex-start; }
+/* Universal Section Alignment */
+.wb-align-left .wb-section-head,
+.wb-section-head.wb-align-left,
+.wb-align-left.wb-cta,
+.wb-align-left .wb-gallery-head,
+.wb-gallery-head.wb-align-left,
+.wb-align-left .wb-media-head,
+.wb-media-head.wb-align-left,
+.wb-align-left .wb-media figcaption,
+.wb-align-left .wb-logos-head,
+.wb-logos-head.wb-align-left,
+.wb-align-left .wb-hero-copy {
+  text-align: left;
+  margin-left: 0;
+  margin-right: auto;
+}
+.wb-align-left .wb-actions,
+.wb-actions.wb-align-left,
+.wb-align-left .wb-logos-row,
+.wb-logos-row.wb-align-left {
+  justify-content: flex-start;
+}
+.wb-align-left .wb-stat { text-align: left; }
+
+.wb-align-center .wb-section-head,
+.wb-section-head.wb-align-center,
+.wb-align-center .wb-gallery-head,
+.wb-gallery-head.wb-align-center,
+.wb-align-center .wb-media-head,
+.wb-media-head.wb-align-center,
+.wb-align-center .wb-media figcaption,
+.wb-align-center .wb-logos-head,
+.wb-logos-head.wb-align-center,
+.wb-align-center .wb-hero-copy {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+.wb-align-center .wb-actions,
+.wb-actions.wb-align-center,
+.wb-align-center .wb-logos-row,
+.wb-logos-row.wb-align-center {
+  justify-content: center;
+}
+.wb-align-center .wb-stat { text-align: center; }
+
+.wb-align-right .wb-section-head,
+.wb-section-head.wb-align-right,
+.wb-align-right .wb-gallery-head,
+.wb-gallery-head.wb-align-right,
+.wb-align-right .wb-media-head,
+.wb-media-head.wb-align-right,
+.wb-align-right .wb-media figcaption,
+.wb-align-right .wb-logos-head,
+.wb-logos-head.wb-align-right,
+.wb-align-right .wb-hero-copy {
+  text-align: right;
+  margin-left: auto;
+  margin-right: 0;
+}
+.wb-align-right .wb-actions,
+.wb-actions.wb-align-right,
+.wb-align-right .wb-logos-row,
+.wb-logos-row.wb-align-right {
+  justify-content: flex-end;
+}
+.wb-align-right .wb-stat { text-align: right; }
 .wb-empty { padding: 32px; text-align: center; font-size: 14px; color: var(--wb-muted); border: 1px dashed var(--wb-border); border-radius: var(--wb-radius); }
 .wb-media-placeholder { background: color-mix(in srgb, var(--wb-text) 6%, transparent); border-radius: var(--wb-radius); min-height: 240px; display: grid; place-items: center; }
 .wb-media-placeholder .wb-empty { border: 0; }
@@ -5345,6 +5566,9 @@ details[open] > summary .wb-faq-plus {
 }
 .wb-pricing-billing-bar.wb-align-left {
   justify-content: flex-start;
+}
+.wb-pricing-billing-bar.wb-align-right {
+  justify-content: flex-end;
 }
 .wb-pricing-pill-wrap {
   display: inline-flex;
@@ -5523,6 +5747,9 @@ details[open] > summary .wb-faq-plus {
 }
 .wb-pricing-footer-note.wb-align-left {
   text-align: left;
+}
+.wb-pricing-footer-note.wb-align-right {
+  text-align: right;
 }
 
 /* Card Styles */
@@ -5807,6 +6034,7 @@ details[open] > summary .wb-faq-plus {
 .wb-team-header-wrapper { display: flex; flex-direction: column; margin-bottom: 40px; }
 .wb-team-header-wrapper.wb-align-center { align-items: center; text-align: center; }
 .wb-team-header-wrapper.wb-align-left { align-items: flex-start; text-align: left; }
+.wb-team-header-wrapper.wb-align-right { align-items: flex-end; text-align: right; }
 .wb-team-eyebrow {
   display: inline-block;
   font-size: 12px;
@@ -6328,6 +6556,7 @@ details[open] > summary .wb-faq-plus {
 .wb-carousel-header-wrapper { display: flex; flex-direction: column; margin-bottom: 32px; }
 .wb-carousel-header-wrapper.wb-align-center { align-items: center; text-align: center; }
 .wb-carousel-header-wrapper.wb-align-left { align-items: flex-start; text-align: left; }
+.wb-carousel-header-wrapper.wb-align-right { align-items: flex-end; text-align: right; }
 .wb-carousel-eyebrow {
   font-size: 12px;
   font-weight: 700;

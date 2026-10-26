@@ -63,7 +63,7 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
   const { data } = section;
   const variant = data.variant || "accordion-classic";
   const cardStyle = data.cardStyle || "default";
-  const align = data.align || "center";
+  const align = data.align || section.settings.align || "center";
 
   // 1. Two-Column Grid Variant
   if (variant === "two-column-grid") {
@@ -78,6 +78,7 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         <div className="wb-faq-two-cols-grid">
@@ -198,6 +199,7 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         <div className="wb-faq-minimal-container">
@@ -252,6 +254,7 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         <div className="wb-faq-categorized-grid">
@@ -295,6 +298,7 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
         heading={data.heading}
         intro={data.intro}
         eyebrow={data.eyebrow}
+        align={align}
       />
 
       <div className="wb-faq-classic-container">

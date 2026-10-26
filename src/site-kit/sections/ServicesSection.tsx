@@ -96,7 +96,7 @@ export default function ServicesSection({
   const cardStyle = data.cardStyle ?? "surface";
   const iconStyle = data.iconStyle ?? "pastel-circle";
   const imageAspect = data.imageAspect ?? "16:9";
-  const align = data.align ?? "left";
+  const align = data.align ?? section.settings.align ?? "left";
 
   const showBadges = data.showBadges !== false;
   const showIcons = data.showIcons !== false;
@@ -270,13 +270,14 @@ export default function ServicesSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className="wb-services-section wb-services-variant-bento"
+        className={`wb-services-section wb-services-variant-bento wb-align-${align}`}
         label={data.heading}
       >
         <SectionHead
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         <div className="wb-services-bento-grid">
@@ -501,13 +502,14 @@ export default function ServicesSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className="wb-services-section wb-services-variant-interactive"
+        className={`wb-services-section wb-services-variant-interactive wb-align-${align}`}
         label={data.heading}
       >
         <SectionHead
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         {isStatic ? (
@@ -531,13 +533,14 @@ export default function ServicesSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className="wb-services-section wb-services-variant-horizontal"
+        className={`wb-services-section wb-services-variant-horizontal wb-align-${align}`}
         label={data.heading}
       >
         <SectionHead
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         <div className="wb-services-horizontal-stack">
@@ -561,13 +564,14 @@ export default function ServicesSection({
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className="wb-services-section wb-services-variant-numbered"
+        className={`wb-services-section wb-services-variant-numbered wb-align-${align}`}
         label={data.heading}
       >
         <SectionHead
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         <div
@@ -632,13 +636,14 @@ export default function ServicesSection({
     <SectionShell
       sectionId={section.id}
       settings={section.settings}
-      className={`wb-services-section wb-services-variant-${variant}`}
+      className={`wb-services-section wb-services-variant-${variant} wb-align-${align}`}
       label={data.heading}
     >
       <SectionHead
         heading={data.heading}
         intro={data.intro}
         eyebrow={data.eyebrow}
+        align={align}
       />
 
       <div

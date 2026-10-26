@@ -119,8 +119,9 @@ const HOVER_OPTIONS: { value: CardsHoverEffect; label: string }[] = [
 ];
 
 const HEADER_OPTIONS: { value: CardsHeaderLayout; label: string }[] = [
-  { value: "center", label: "Centered" },
   { value: "left", label: "Left aligned" },
+  { value: "center", label: "Centered" },
+  { value: "right", label: "Right aligned" },
   { value: "split", label: "Heading left, link right" },
 ];
 

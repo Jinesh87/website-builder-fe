@@ -209,7 +209,7 @@ export type FooterData = {
 
 export type SectionBackground = "default" | "surface" | "primary" | "dark";
 export type SectionSpacing = "none" | "compact" | "default" | "relaxed";
-export type SectionAlign = "center" | "left";
+export type SectionAlign = "center" | "left" | "right";
 
 export type SectionCustomColors = {
   background?: string;
@@ -454,7 +454,7 @@ export type FeaturesData = {
     | "none";
   iconBackgroundColor?: string;
   cardStyle?: "transparent" | "surface" | "bordered" | "glass";
-  align?: "left" | "center";
+  align?: SectionAlign;
   columns: GridColumns;
   mobileColumns: GridColumns;
   items: FeatureItem[];
@@ -516,7 +516,7 @@ export type ServicesData = {
     | "glow-icon"
     | "none";
   imageAspect?: "16:9" | "4:3" | "1:1" | "21:9" | "auto";
-  align?: "left" | "center";
+  align?: SectionAlign;
   columns: GridColumns;
   mobileColumns: GridColumns;
   items: ServiceItem[];
@@ -573,7 +573,7 @@ export type TestimonialsData = {
   heading: string;
   intro?: string;
   cardStyle?: TestimonialsCardStyle;
-  align?: "left" | "center";
+  align?: SectionAlign;
   columns?: GridColumns;
   showRatings?: boolean;
   showAvatars?: boolean;
@@ -808,6 +808,7 @@ export type TextData = {
   heading?: string;
   /** Plain text; blank lines separate paragraphs. Never rendered as HTML. */
   body: string;
+  align?: SectionAlign;
 };
 
 export type GalleryData = {
@@ -815,12 +816,14 @@ export type GalleryData = {
   columns: GridColumns;
   mobileColumns: GridColumns;
   images: ImageRef[];
+  align?: SectionAlign;
 };
 
 export type LogosData = {
   heading?: string;
   grayscale: boolean;
   logos: ImageRef[];
+  align?: SectionAlign;
 };
 
 export type SplitData = {
@@ -838,6 +841,7 @@ export type StatsData = {
   heading?: string;
   intro?: string;
   items: { value: string; label: string }[];
+  align?: SectionAlign;
 };
 
 export const PRICING_VARIANTS = [
@@ -898,6 +902,7 @@ export type MediaData = {
   videoUrl?: string;
   aspect: MediaAspect;
   width: "contained" | "wide";
+  align?: SectionAlign;
 };
 
 export const TEAM_VARIANTS = [
@@ -1267,6 +1272,7 @@ export type BlogData = {
   newsletterPlaceholder?: string;
   newsletterButtonText?: string;
   posts: BlogPostItem[];
+  align?: SectionAlign;
 };
 
 export type BlogContentSection = {
@@ -1328,7 +1334,7 @@ export type CardsImageAspect = (typeof CARDS_IMAGE_ASPECTS)[number];
 export const CARDS_HOVER_EFFECTS = ["none", "lift", "zoom", "glow"] as const;
 export type CardsHoverEffect = (typeof CARDS_HOVER_EFFECTS)[number];
 
-export const CARDS_HEADER_LAYOUTS = ["center", "left", "split"] as const;
+export const CARDS_HEADER_LAYOUTS = ["center", "left", "right", "split"] as const;
 export type CardsHeaderLayout = (typeof CARDS_HEADER_LAYOUTS)[number];
 
 export const CARDS_DESCRIPTION_LINES_MAX = 8;

@@ -262,7 +262,7 @@ export default function CardsSection({ section }: { section: SectionOf<"cards"> 
   const aspect = cardsAspectRatios(data.imageAspect ?? defaults.aspect);
   const cardRadius = cardsCornerRadius(data.cardCorners, data.cardRadius);
   const clampLines = clampDescriptionLines(data.descriptionLines, defaults.descriptionLines);
-  const headerLayout = data.headerLayout ?? (settings.align === "left" ? "left" : "center");
+  const headerLayout = data.headerLayout ?? (settings.align === "right" ? "right" : settings.align === "left" ? "left" : "center");
   const mobileScroll = data.mobileLayout === "scroll";
   const items = data.items ?? [];
 

@@ -3,10 +3,11 @@ import type { SectionOf } from "../types.ts";
 
 export default function GallerySection({ section }: { section: SectionOf<"gallery"> }) {
   const { data } = section;
+  const align = data.align || section.settings.align || "center";
   return (
-    <SectionShell sectionId={section.id} settings={section.settings} className="wb-gallery" label={data.heading}>
+    <SectionShell sectionId={section.id} settings={section.settings} className={`wb-gallery wb-align-${align}`} label={data.heading}>
       {data.heading && (
-        <div className="wb-gallery-head">
+        <div className={`wb-gallery-head wb-align-${align}`}>
           <h2>{data.heading}</h2>
         </div>
       )}

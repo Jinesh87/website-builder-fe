@@ -176,7 +176,7 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
   const isReversed = data.splitPosition === "right";
   const iconStyle = data.iconStyle ?? (data.variant === "pastel-icons" ? "pastel-circle" : isSplit ? "square-badge" : data.variant === "minimal" ? "minimal-accent" : "pastel-circle");
   const cardStyle = data.cardStyle ?? (data.variant === "cards" ? "surface" : data.variant === "minimal" || data.variant === "pastel-icons" ? "transparent" : "surface");
-  const align = data.align ?? (isSplit ? "left" : "center");
+  const align = data.align ?? section.settings.align ?? (isSplit ? "left" : "center");
 
   // Render a single feature item card
   const renderFeatureItem = (item: FeatureItem, index: number, isStacked = false) => {
@@ -360,7 +360,7 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
       className={`wb-features-section wb-features-variant-${data.variant ?? "grid"}`}
       label={data.heading}
     >
-      <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} />
+      <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} align={align} />
 
       <div
         className={`wb-grid wb-features-grid wb-features-align-${align}`}

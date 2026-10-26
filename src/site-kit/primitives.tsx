@@ -1,7 +1,7 @@
 import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
 import { isExternalHref, safeHref } from "./links.ts";
 import { sectionFontStyle } from "./theme.ts";
-import type { GridColumns, IconName, ImageRef, LinkRef, SectionSettings } from "./types.ts";
+import type { GridColumns, IconName, ImageRef, LinkRef, SectionAlign, SectionSettings } from "./types.ts";
 import { isLightColor, normalizeHexColor } from "../utils/colors.ts";
 import { getCuratedFallbackImage, normalizeImageUrl } from "./image-utils.ts";
 
@@ -609,7 +609,7 @@ export function SectionShell({ sectionId, settings, className, label, children, 
     text && "wb-custom-text",
     muted && "wb-custom-muted",
     settings.spacing && settings.spacing !== "default" && `wb-space-${settings.spacing}`,
-    settings.align === "left" && "wb-align-left",
+    `wb-align-${settings.align || "center"}`,
     settings.hideOnMobile && "wb-hide-mobile",
     settings.hideOnDesktop && "wb-hide-desktop",
     className,
@@ -701,10 +701,20 @@ export function parseRichText(text?: string | null): ReactNode {
   return elements.length > 0 ? <>{elements}</> : text;
 }
 
-export function SectionHead({ heading, intro, eyebrow }: { heading?: string; intro?: string; eyebrow?: string }) {
+export function SectionHead({
+  heading,
+  intro,
+  eyebrow,
+  align,
+}: {
+  heading?: string;
+  intro?: string;
+  eyebrow?: string;
+  align?: SectionAlign;
+}) {
   if (!heading && !intro && !eyebrow) return null;
   return (
-    <div className="wb-section-head">
+    <div className={`wb-section-head${align ? ` wb-align-${align}` : ""}`}>
       {eyebrow && <p className="wb-eyebrow">{parseRichText(eyebrow)}</p>}
       {heading && <h2>{parseRichText(heading)}</h2>}
       {intro && <p className="wb-muted">{parseRichText(intro)}</p>}

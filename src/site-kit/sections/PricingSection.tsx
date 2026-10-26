@@ -42,7 +42,7 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
   const { data } = section;
   const variant = data.variant || "cards-grid";
   const cardStyle = data.cardStyle || "default";
-  const align = data.align || "center";
+  const align = data.align || section.settings.align || "center";
   const fallbackCols = Math.min(Math.max(data.plans.length, 1), 4) as GridColumns;
   const columns = (data.columns || fallbackCols) as GridColumns;
   const mobileCols = data.mobileColumns || 1;
@@ -87,6 +87,7 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         {renderBillingBanner()}
@@ -180,6 +181,7 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         {renderBillingBanner()}
@@ -277,6 +279,7 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
           heading={data.heading}
           intro={data.intro}
           eyebrow={data.eyebrow}
+          align={align}
         />
 
         {renderBillingBanner()}
@@ -365,6 +368,7 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
         heading={data.heading}
         intro={data.intro}
         eyebrow={data.eyebrow}
+        align={align}
       />
 
       {renderBillingBanner()}
