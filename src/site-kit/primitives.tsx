@@ -11,16 +11,52 @@ type SiteLinkProps = {
   children?: ReactNode;
 };
 
+function formatDownloadHref(href: string, isDownload: boolean): string {
+  if (!isDownload || !href) return href;
+  if (href.startsWith("/api/media/files/") || href.includes("/media/files/")) {
+    const separator = href.includes("?") ? "&" : "?";
+    if (!href.includes("download=")) {
+      return `${href}${separator}download=1`;
+    }
+  }
+  return href;
+}
+
 export function SiteLink({ link, className, children }: SiteLinkProps) {
-  const href = safeHref(link.href);
-  const external = isExternalHref(href);
+  const isDownload = link.actionType === "download";
+  const rawHref = safeHref(link.href);
+  const href = formatDownloadHref(rawHref, isDownload);
+  const external = isExternalHref(href) || Boolean(link.openInNewTab);
+  const downloadAttr = isDownload ? (link.downloadFileName?.trim() || true) : undefined;
+
+  const hasIcon = Boolean(link.icon || link.iconImage?.url);
+  const iconPos = link.iconPosition || "left";
+  const iconNode = hasIcon ? (
+    <span className="wb-btn-icon-wrapper" aria-hidden="true">
+      <SiteIcon
+        name={link.icon}
+        image={link.iconImage}
+        inline
+        size={18}
+        className="wb-btn-icon"
+      />
+    </span>
+  ) : null;
+
   return (
     <a
       href={href}
       className={className}
-      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      {...(isDownload ? { download: downloadAttr } : {})}
+      {...(external || isDownload ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
-      {children ?? link.label}
+      {children ?? (
+        <>
+          {iconPos === "left" && iconNode}
+          <span className="wb-btn-text">{link.label}</span>
+          {iconPos === "right" && iconNode}
+        </>
+      )}
     </a>
   );
 }
@@ -255,9 +291,10 @@ export type SiteIconProps = {
   className?: string;
   style?: CSSProperties;
   inline?: boolean;
+  size?: number | string;
 };
 
-export function SiteIcon({ name, image, className = "", style, inline = false }: SiteIconProps) {
+export function SiteIcon({ name, image, className = "", style, inline = false, size }: SiteIconProps) {
   const baseClass = inline ? `wb-icon-inline ${className}` : `wb-icon ${className}`;
   const customImgUrl =
     image?.url ||
@@ -295,6 +332,7 @@ export function SiteIcon({ name, image, className = "", style, inline = false }:
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
+          style={size ? { width: size, height: size } : undefined}
         >
           {legacyIcon}
         </svg>
@@ -304,9 +342,10 @@ export function SiteIcon({ name, image, className = "", style, inline = false }:
 
   const LucideComp = resolveLucideComponent(name);
   if (LucideComp) {
+    const iconSize = size ?? (inline ? "1.15em" : 22);
     return (
       <span className={baseClass} style={style} aria-hidden="true">
-        <LucideComp size={inline ? "100%" : 22} strokeWidth={1.8} />
+        <LucideComp size={iconSize} strokeWidth={1.8} />
       </span>
     );
   }

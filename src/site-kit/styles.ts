@@ -99,11 +99,56 @@ export const SITE_CSS = `
 .wb-section-head p { margin-top: 12px; font-size: 18px; }
 
 .wb-btn {
-  display: inline-flex; align-items: center; justify-content: center;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 44px; padding: 10px 22px;
   border-radius: var(--wb-radius);
   font-weight: 600; font-size: 15px; line-height: 1.2;
   cursor: pointer; transition: opacity 0.15s ease, background-color 0.15s ease;
+  text-decoration: none;
+}
+.wb-btn-icon-wrapper,
+.wb-btn .wb-btn-icon,
+.wb-btn .wb-icon-inline,
+.wb-btn-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 1.15em !important;
+  height: 1.15em !important;
+  min-width: 1.15em !important;
+  min-height: 1.15em !important;
+  max-width: 1.15em !important;
+  max-height: 1.15em !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+}
+.wb-btn-icon-wrapper svg,
+.wb-btn .wb-btn-icon svg,
+.wb-btn .wb-icon-inline svg,
+.wb-btn-icon svg {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  stroke-width: 2 !important;
+}
+.wb-btn-icon-wrapper .wb-icon-custom-img,
+.wb-btn .wb-btn-icon .wb-icon-custom-img,
+.wb-btn .wb-icon-inline .wb-icon-custom-img,
+.wb-btn-icon .wb-icon-custom-img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+}
+.wb-btn-text {
+  display: inline-block;
+  white-space: nowrap;
 }
 .wb-btn:hover { opacity: 0.9; }
 .wb-btn-primary { background: var(--wb-primary); color: var(--wb-on-primary); border: 2px solid var(--wb-primary); }

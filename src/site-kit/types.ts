@@ -15,6 +15,12 @@ export type ImageRef = {
 export type LinkRef = {
   label: string;
   href: string;
+  actionType?: "link" | "download";
+  downloadFileName?: string;
+  icon?: string;
+  iconImage?: ImageRef;
+  iconPosition?: "left" | "right";
+  openInNewTab?: boolean;
 };
 
 export type ButtonStyle = "filled" | "outline";
