@@ -1,5 +1,6 @@
 import type { ClientSource } from "./admin-clients.ts";
 import { request, requestBlob } from "./http.ts";
+import type { AutopayStatus, SubscriptionCheckout, SubscriptionConfirmation } from "./wallet.ts";
 import type { WebsiteStatus } from "./websites.ts";
 
 export type BillingCycle = "QUARTERLY" | "YEARLY";
@@ -69,6 +70,18 @@ export type HostingPayment = {
   createdAt: string;
 };
 
+/** Razorpay autopay on a website's plan, while it can still charge. */
+export type HostingAutopay = {
+  status: AutopayStatus;
+  packageName: string;
+  cycle: BillingCycle;
+  /** Charged each period, in paise. */
+  amountPaise: number;
+  /** First charge; null = it was charged on approval. */
+  startAt: string | null;
+  nextChargeAt: string | null;
+};
+
 export type HostingPaymentOptions = {
   /** Razorpay keys are set up, so the client can pay online. */
   razorpay: boolean;
@@ -92,6 +105,7 @@ export type WebsiteHosting = {
     clientName: string;
   };
   subscription: HostingSubscription | null;
+  autopay: HostingAutopay | null;
   /** Packages this website can choose, priced for it. */
   packages: HostingPackage[];
   /** The period a payment made now would cover. */
@@ -300,6 +314,16 @@ export const hostingApi = {
   /** Super Admin: records a payment collected offline, or charges the client's connects. */
   collect: (websiteId: string, input: CollectInput) =>
     request<HostingResponse>(`${websiteBase(websiteId)}/collect`, { method: "POST", body: input }).then((data) => data.hosting),
+  /** Client: starts Razorpay autopay for the saved plan. */
+  setupAutopay: (websiteId: string) =>
+    request<{ checkout: SubscriptionCheckout }>(`${websiteBase(websiteId)}/autopay`, { method: "POST" }).then((data) => data.checkout),
+  confirmAutopay: (websiteId: string, input: SubscriptionConfirmation) =>
+    request<HostingResponse>(`${websiteBase(websiteId)}/autopay/verify`, { method: "POST", body: input }).then(
+      (data) => data.hosting,
+    ),
+  /** Client or Super Admin: turns autopay off; the paid period stays. */
+  cancelAutopay: (websiteId: string) =>
+    request<HostingResponse>(`${websiteBase(websiteId)}/autopay`, { method: "DELETE" }).then((data) => data.hosting),
 };
 
 /** Packages and list prices, as set in Settings → Hosting. */

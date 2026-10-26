@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@heroui/react";
 import { Receipt } from "lucide-react";
-import { hostingApi, type PlanChoice, type WebsiteHosting } from "../../api/hosting.ts";
+import { hostingApi, type HostingAutopay, type PlanChoice, type WebsiteHosting } from "../../api/hosting.ts";
 import { errorMessage } from "../../api/http.ts";
-import { formatConnects } from "../../api/wallet.ts";
+import { formatConnects, formatPaise, isAutopayLive } from "../../api/wallet.ts";
 import { defaultPlan } from "../../utils/hosting-pricing.ts";
+import { CheckoutDismissedError, openRazorpaySubscriptionCheckout } from "../../utils/razorpay-checkout.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 import {
   CYCLE_PERIOD,
@@ -22,7 +23,24 @@ import {
 import PlanPicker from "./PlanPicker.tsx";
 import WebsitePriceEditor from "./WebsitePriceEditor.tsx";
 
-type Feedback = { status: "success" | "danger"; message: string } | null;
+type Feedback = { status: "success" | "danger" | "warning"; message: string } | null;
+
+/** One line on what autopay does next. */
+function autopayDetail(autopay: HostingAutopay): string {
+  const amount = `${formatPaise(autopay.amountPaise)} per ${CYCLE_PERIOD[autopay.cycle]}`;
+  switch (autopay.status) {
+    case "PENDING":
+      return "The last charge failed. Razorpay is retrying it.";
+    case "HALTED":
+      return "Stopped after failed payments. Turn it off and on again to use another card or UPI ID, or renew now.";
+    case "PAUSED":
+      return "Paused at Razorpay, so nothing is charged.";
+    default: {
+      const next = autopay.nextChargeAt ?? autopay.startAt;
+      return next ? `Next charge ${formatBillingDate(next)} · ${amount}` : amount;
+    }
+  }
+}
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -42,11 +60,12 @@ type WebsiteHostingPanelProps = {
 };
 
 export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay }: WebsiteHostingPanelProps) {
-  const { subscription, payment: options } = hosting;
+  const { subscription, autopay, payment: options } = hosting;
   const [plan, setPlan] = useState<PlanChoice | null>(() => defaultPlan(hosting));
   const [saving, setSaving] = useState(false);
   const [togglingRenew, setTogglingRenew] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [renewFeedback, setRenewFeedback] = useState<Feedback>(null);
 
   useEffect(() => {
     setPlan(defaultPlan({ packages: hosting.packages, subscription }));
@@ -56,6 +75,17 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
   const currentPrice = current && subscription ? current.prices[subscription.cycle] : null;
   const planChanged = plan !== null && (plan.packageId !== subscription?.packageId || plan.cycle !== subscription?.cycle);
   const remaining = subscription && remainingLabel(subscription);
+  // Only the client can approve a mandate; an admin can still turn one off.
+  const canUseAutopay = Boolean(subscription) && (autopay !== null || (!isAdmin && options.razorpay && (currentPrice ?? 0) > 0));
+  const autopayRenews =
+    !isAdmin && subscription?.status === "ACTIVE" && (autopay?.status === "AUTHENTICATED" || autopay?.status === "ACTIVE");
+  const renewalNote = !subscription
+    ? "Pick a plan, then pay to activate."
+    : autopay && isAutopayLive(autopay.status)
+      ? "Renews by autopay."
+      : subscription.autoRenew && options.connects
+        ? "Renews from connects."
+        : "Renew online before the period ends.";
 
   async function savePlan() {
     if (!plan) return;
@@ -78,11 +108,53 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
 
   async function toggleAutoRenew(autoRenew: boolean) {
     setTogglingRenew(true);
-    setFeedback(null);
+    setRenewFeedback(null);
     try {
       onChange(await hostingApi.updatePlan(hosting.website.id, { autoRenew }));
     } catch (err) {
-      setFeedback({ status: "danger", message: errorMessage(err) });
+      setRenewFeedback({ status: "danger", message: errorMessage(err) });
+    } finally {
+      setTogglingRenew(false);
+    }
+  }
+
+  async function turnAutopayOn() {
+    const checkout = await hostingApi.setupAutopay(hosting.website.id);
+    const confirmation = await openRazorpaySubscriptionCheckout(checkout);
+    const updated = await hostingApi.confirmAutopay(hosting.website.id, confirmation);
+    onChange(updated);
+    const paidNow = updated.payments[0]?.id !== hosting.payments[0]?.id;
+    setRenewFeedback({
+      status: "success",
+      message: checkout.startsAt
+        ? `Autopay is on. ${formatPaise(checkout.amountPaise)} is charged on ${formatBillingDate(checkout.startsAt)}.`
+        : paidNow
+          ? "Autopay is on and this period is paid."
+          : "Autopay is on. The first payment is processing; hosting updates as soon as it lands.",
+    });
+  }
+
+  async function toggleAutopay(on: boolean) {
+    setTogglingRenew(true);
+    setRenewFeedback(null);
+    try {
+      if (on) {
+        await turnAutopayOn();
+      } else {
+        const updated = await hostingApi.cancelAutopay(hosting.website.id);
+        onChange(updated);
+        const paidUntil = updated.subscription?.status === "ACTIVE" ? updated.subscription.currentPeriodEnd : null;
+        setRenewFeedback({
+          status: "success",
+          message: paidUntil ? `Autopay is off. Hosting stays paid until ${formatBillingDate(paidUntil)}.` : "Autopay is off.",
+        });
+      }
+    } catch (err) {
+      setRenewFeedback(
+        err instanceof CheckoutDismissedError
+          ? { status: "warning", message: "Autopay wasn't turned on. No money was taken." }
+          : { status: "danger", message: err instanceof Error && err.constructor === Error ? err.message : errorMessage(err) },
+      );
     } finally {
       setTogglingRenew(false);
     }
@@ -126,20 +198,39 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
               <Row label={isAdmin ? "Client's connects" : "Your connects"}>{formatConnects(options.balance)}</Row>
             )}
           </dl>
+          {subscription && (canUseAutopay || options.connects) && (
+            <div className="flex flex-col gap-3 border-t border-line px-5 py-4">
+              {canUseAutopay && (
+                <div>
+                  <SwitchField
+                    label="Autopay with card or UPI"
+                    isSelected={autopay !== null}
+                    onChange={toggleAutopay}
+                    isDisabled={togglingRenew || (isAdmin && autopay === null)}
+                  />
+                  <p className={`mt-1 text-xs ${autopay && !isAutopayLive(autopay.status) ? "text-ed-danger" : "text-ink-muted"}`}>
+                    {autopay
+                      ? autopayDetail(autopay)
+                      : subscription.status === "ACTIVE" && subscription.currentPeriodEnd
+                        ? `Charged automatically when the period ends on ${formatBillingDate(subscription.currentPeriodEnd)}.`
+                        : "Pays this period now, then renews automatically."}
+                  </p>
+                </div>
+              )}
+              {options.connects && (
+                <SwitchField
+                  label="Auto-renew from connects"
+                  isSelected={subscription.autoRenew}
+                  onChange={toggleAutoRenew}
+                  isDisabled={togglingRenew || autopay !== null}
+                />
+              )}
+              {renewFeedback && <FormAlert status={renewFeedback.status}>{renewFeedback.message}</FormAlert>}
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4">
-            {subscription && options.connects ? (
-              <SwitchField
-                label="Auto-renew from connects"
-                isSelected={subscription.autoRenew}
-                onChange={toggleAutoRenew}
-                isDisabled={togglingRenew}
-              />
-            ) : (
-              <span className="text-xs text-ink-muted">
-                {subscription ? "Renew online before the period ends." : "Pick a plan, then pay to activate."}
-              </span>
-            )}
-            <Button size="sm" onPress={onPay} isDisabled={hosting.renewalOpensAt !== null}>
+            <span className="text-xs text-ink-muted">{renewalNote}</span>
+            <Button size="sm" onPress={onPay} isDisabled={hosting.renewalOpensAt !== null || autopayRenews}>
               {isAdmin ? "Record payment" : subscription?.currentPeriodEnd ? "Renew now" : "Pay & activate"}
             </Button>
           </div>

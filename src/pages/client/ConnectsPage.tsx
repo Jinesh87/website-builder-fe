@@ -1,23 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, Spinner } from "@heroui/react";
-import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Coins, Minus, Plus, Receipt, ShieldCheck } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronLeft, ChevronRight, Coins, Minus, Plus, Receipt, Repeat, ShieldCheck } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
 import {
   connectsPriceInPaise,
   formatConnects,
   formatConnectsNumber,
   formatPaise,
+  isAutopayLive,
   walletApi,
   type AiUsageSummary,
+  type AutoTopup,
   type Wallet,
   type WalletTransactionPage,
 } from "../../api/wallet.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
-import { CheckoutDismissedError, openRazorpayCheckout } from "../../utils/razorpay-checkout.ts";
+import { CheckoutDismissedError, openRazorpayCheckout, openRazorpaySubscriptionCheckout } from "../../utils/razorpay-checkout.ts";
 
 type Feedback = { status: "success" | "danger" | "warning"; message: string } | null;
+
+/** Buy a pack once, or start a monthly auto top-up of it. */
+type PurchaseMode = "ONCE" | "MONTHLY";
 
 const PRESET_CONNECTS = [150, 300, 1500, 3000];
 const PAGE_SIZE = 20;
@@ -39,6 +44,19 @@ function formatDate(iso: string, withTime = true): string {
   return new Date(iso).toLocaleString("en-IN", withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" });
 }
 
+function autoTopupDetail(autoTopup: AutoTopup): string | null {
+  switch (autoTopup.status) {
+    case "PENDING":
+      return "The last charge failed. Razorpay is retrying it.";
+    case "HALTED":
+      return "Stopped after failed payments. Turn it off, then set it up again with another card or UPI ID.";
+    case "PAUSED":
+      return "Paused at Razorpay, so nothing is charged.";
+    default:
+      return autoTopup.nextChargeAt ? `Next top-up on ${formatDate(autoTopup.nextChargeAt, false)}.` : null;
+  }
+}
+
 export default function ConnectsPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [history, setHistory] = useState<WalletTransactionPage | null>(null);
@@ -53,6 +71,8 @@ export default function ConnectsPage() {
   const [draft, setDraft] = useState("300");
   const [modalFeedback, setModalFeedback] = useState<Feedback>(null);
   const [paying, setPaying] = useState(false);
+  const [mode, setMode] = useState<PurchaseMode>("ONCE");
+  const [stoppingAutoTopup, setStoppingAutoTopup] = useState(false);
 
   const loadHistory = useCallback((target: number) => {
     return walletApi.transactions(target, PAGE_SIZE).then((loaded) => {
@@ -67,7 +87,8 @@ export default function ConnectsPage() {
     );
   }, [loadHistory]);
 
-  function openModal() {
+  function openModal(next: PurchaseMode) {
+    setMode(next);
     setModalFeedback(null);
     setModalOpen(true);
   }
@@ -97,8 +118,16 @@ export default function ConnectsPage() {
 
     setPaying(true);
     try {
+      if (mode === "MONTHLY") {
+        const checkout = await walletApi.setupAutoTopup(connects);
+        // Razorpay opens its own window; ours would keep focus from it.
+        setModalOpen(false);
+        setWallet(await walletApi.confirmAutoTopup(await openRazorpaySubscriptionCheckout(checkout)));
+        await loadHistory(1);
+        setPageFeedback({ status: "success", message: `Auto top-up is on: ${formatConnects(connects)} every month.` });
+        return;
+      }
       const checkout = await walletApi.createTopup(connects);
-      // Razorpay opens its own window; ours would keep focus from it.
       setModalOpen(false);
       const payment = await openRazorpayCheckout(checkout, formatConnects(connects));
       const result = await walletApi.confirmTopup(payment);
@@ -116,6 +145,19 @@ export default function ConnectsPage() {
       setModalOpen(true);
     } finally {
       setPaying(false);
+    }
+  }
+
+  async function turnOffAutoTopup() {
+    setStoppingAutoTopup(true);
+    setPageFeedback(null);
+    try {
+      setWallet(await walletApi.cancelAutoTopup());
+      setPageFeedback({ status: "success", message: "Auto top-up is off. Connects you already bought stay in your account." });
+    } catch (err) {
+      setPageFeedback({ status: "danger", message: errorMessage(err) });
+    } finally {
+      setStoppingAutoTopup(false);
     }
   }
 
@@ -168,7 +210,7 @@ export default function ConnectsPage() {
               <div className="flex flex-col items-end gap-2">
                 <Button
                   size="lg"
-                  onPress={openModal}
+                  onPress={() => openModal("ONCE")}
                   isDisabled={!wallet.paymentsEnabled || paying}
                   className="bg-white font-semibold text-indigo-700 shadow-sm hover:bg-white/90"
                 >
@@ -182,6 +224,38 @@ export default function ConnectsPage() {
           </section>
 
           {pageFeedback && <FormAlert status={pageFeedback.status}>{pageFeedback.message}</FormAlert>}
+
+          {(wallet.paymentsEnabled || wallet.autoTopup) && (
+            <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-6 py-5 shadow-xs">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-indigo-500/10 text-indigo-600" aria-hidden>
+                  <Repeat className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-base font-semibold text-ink">Auto top-up</h2>
+                  <p className="mt-0.5 text-sm text-ink-body">
+                    {wallet.autoTopup
+                      ? `${formatConnects(wallet.autoTopup.connects)} for ${formatPaise(wallet.autoTopup.amountPaise)} every month, by card or UPI autopay.`
+                      : "Buy the same pack every month by card or UPI autopay, so AI never runs out. Turn it off any time."}
+                  </p>
+                  {wallet.autoTopup && autoTopupDetail(wallet.autoTopup) && (
+                    <p className={`mt-1 text-xs ${isAutopayLive(wallet.autoTopup.status) ? "text-ink-muted" : "text-ed-danger"}`}>
+                      {autoTopupDetail(wallet.autoTopup)}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {wallet.autoTopup ? (
+                <Button size="sm" variant="outline" onPress={turnOffAutoTopup} isPending={stoppingAutoTopup}>
+                  Turn off
+                </Button>
+              ) : (
+                <Button size="sm" variant="outline" onPress={() => openModal("MONTHLY")} isDisabled={paying}>
+                  Set up auto top-up
+                </Button>
+              )}
+            </section>
+          )}
 
           {usage && (
             <section className="rounded-2xl border border-line bg-surface px-6 py-5 shadow-xs">
@@ -317,14 +391,14 @@ export default function ConnectsPage() {
           isOpen={modalOpen}
           onClose={() => !paying && setModalOpen(false)}
           headerDetails={{
-            icon: <Coins className="size-4.5" />,
-            title: "Buy connects",
+            icon: mode === "MONTHLY" ? <Repeat className="size-4.5" /> : <Coins className="size-4.5" />,
+            title: mode === "MONTHLY" ? "Set up auto top-up" : "Buy connects",
             description: `You have ${formatConnects(wallet.balance)}`,
           }}
           iconTone="brand"
           size="sm"
           primaryAction={{
-            label: `Pay ${formatPaise(price)}`,
+            label: mode === "MONTHLY" ? `Start for ${formatPaise(price)} / month` : `Pay ${formatPaise(price)}`,
             onPress: pay,
             isPending: paying,
           }}
@@ -389,7 +463,8 @@ export default function ConnectsPage() {
                 </button>
               </div>
               <p className="mt-1 text-xs text-ink-muted">
-                In steps of {wallet.packSize}. {formatConnects(quantity)} for {formatPaise(price)}.
+                In steps of {wallet.packSize}. {formatConnects(quantity)} for {formatPaise(price)}
+                {mode === "MONTHLY" ? ", charged now and on this day every month." : "."}
               </p>
             </div>
 
