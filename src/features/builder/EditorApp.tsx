@@ -42,6 +42,7 @@ import AiDrawerSkeleton from "./shell/AiDrawerSkeleton.tsx";
 export const AiDrawer = lazyWithRetry(() => import("./shell/AiDrawer.tsx"), {
   reloadKey: "ai_drawer",
 });
+import ShopCatalogBridge from "./ShopCatalogBridge.tsx";
 import CanvasViewport from "./shell/CanvasViewport.tsx";
 import Inspector from "./shell/Inspector.tsx";
 import LeftRail from "./shell/LeftRail.tsx";
@@ -152,6 +153,8 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
 
   const pagesRef = useRef(draft.pages);
   pagesRef.current = draft.pages;
+  const [productSlug, setProductSlug] = useState<string | undefined>();
+  const [productSelection, setProductSelection] = useState<Record<string, string> | undefined>();
 
   const site = useMemo<BuilderSiteValue>(
     () => ({
@@ -167,18 +170,39 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
       openAddPanel: () => setLeftPanel("add"),
       navigateToHref: (href: string) => {
         if (!href || href === "#") return;
-        const clean = href.startsWith("/") ? href : `/${href}`;
-        const target = pagesRef.current.find(
+        const bare = href.split("#")[0] ?? "";
+        const queryAt = bare.indexOf("?");
+        const pathOnly = queryAt === -1 ? bare : bare.slice(0, queryAt);
+        const selection = Object.fromEntries(new URLSearchParams(queryAt === -1 ? "" : bare.slice(queryAt + 1)));
+        const clean = pathOnly.startsWith("/") ? pathOnly : `/${pathOnly}`;
+        const pages = pagesRef.current;
+        const target = pages.find(
           (p) =>
             p.slug === clean ||
-            p.slug === href ||
-            p.id === href ||
-            p.slug.replace(/^\//, "") === href.replace(/^\//, ""),
+            p.slug === pathOnly ||
+            p.id === pathOnly ||
+            p.slug.replace(/^\//, "") === pathOnly.replace(/^\//, ""),
         );
         if (target) {
+          setProductSlug(undefined);
+          setProductSelection(undefined);
           selectPage(target.id);
           notify(`Switched to page: ${target.name}`);
+          return;
         }
+        const detail = pages
+          .filter(
+            (p) =>
+              p.slug !== "/" &&
+              clean.startsWith(`${p.slug}/`) &&
+              p.sections.some((section) => section.type === "product_detail"),
+          )
+          .sort((a, b) => b.slug.length - a.slug.length)[0];
+        if (!detail) return;
+        setProductSlug(decodeURIComponent(clean.slice(detail.slug.length + 1).split("/")[0] ?? ""));
+        setProductSelection(Object.keys(selection).length > 0 ? selection : undefined);
+        selectPage(detail.id);
+        notify(`Switched to page: ${detail.name}`);
       },
     }),
     [draft.theme, draft.header, draft.footer, hasSelection, siteArea, isEmpty, dispatch, setSiteArea, setLeftPanel, selectPage, notify],
@@ -206,7 +230,9 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
           <LeftRail />
           <CanvasViewport device={device} onDeselect={handleDeselect}>
-            <Puck.Preview />
+            <ShopCatalogBridge productSlug={productSlug} selection={productSelection}>
+              <Puck.Preview />
+            </ShopCatalogBridge>
           </CanvasViewport>
           {aiOpen ? (
             <Suspense fallback={<AiDrawerSkeleton onClose={() => setAiOpen(false)} />}>

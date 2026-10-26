@@ -33,6 +33,10 @@ export type ShopProduct = {
 export type ShopOption = {
   name: string;
   values: string[];
+  /** When on, each value is its own card on the shop page. */
+  listOnShop?: boolean;
+  /** Photos shared by every variant that has this value. */
+  images?: { value: string; images: { mediaId: string; alt: string; url?: string }[] }[];
 };
 
 export type ShopOptionSet = {
