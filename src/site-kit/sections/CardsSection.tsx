@@ -30,6 +30,39 @@ function ArrowIcon({ className }: { className: string }) {
   );
 }
 
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <polyline points="4 11 8.5 15.5 16 6" />
+    </svg>
+  );
+}
+
+function CrossIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <line x1="5" y1="5" x2="15" y2="15" />
+      <line x1="15" y1="5" x2="5" y2="15" />
+    </svg>
+  );
+}
+
+function resolveCardChecklist(item: CardItem): { text: string; icon?: string }[] {
+  if (Array.isArray(item.checklist) && item.checklist.length > 0) {
+    return item.checklist.map((c) => (typeof c === "string" ? { text: c } : c));
+  }
+  if (item.description && item.description.trim()) {
+    const lines = item.description
+      .split("\n")
+      .map((l) => l.trim().replace(/^[-*•]\s*/, ""))
+      .filter(Boolean);
+    if (lines.length > 1) {
+      return lines.map((text) => ({ text }));
+    }
+  }
+  return [];
+}
+
 type Display = {
   images: boolean;
   icons: boolean;
@@ -211,6 +244,72 @@ function CardView({ item, index, ctx }: { item: CardItem; index: number; ctx: Ca
   const style = cardColorVars(item);
 
   switch (ctx.variant) {
+    case "dos-donts": {
+      const checklist = resolveCardChecklist(item);
+      const isNegative =
+        item.icon === "x" ||
+        item.icon === "cross" ||
+        /don'?t|avoid|cons|never/i.test(item.title) ||
+        item.accentColor === "#ef4444" ||
+        item.accentColor === "#dc2626";
+      const defaultAccent = isNegative ? "#ef4444" : "#16a34a";
+      const cardAccent = item.accentColor || defaultAccent;
+      const customStyle = {
+        ...style,
+        "--wb-cardset-accent": cardAccent,
+      } as CssVars;
+
+      return (
+        <article className={`${cardClass} wb-cardset-dos-donts-card wb-cardset-surface`} style={customStyle}>
+          <div className="wb-cardset-dos-donts-top-bar" />
+          <div className="wb-cardset-dos-donts-header">
+            <div className={`wb-cardset-dos-donts-badge ${isNegative ? "wb-cardset-is-negative" : "wb-cardset-is-positive"}`}>
+              {isNegative ? (
+                <CrossIcon className="wb-cardset-dos-donts-badge-icon" />
+              ) : (
+                <CheckIcon className="wb-cardset-dos-donts-badge-icon" />
+              )}
+            </div>
+            <h3 className="wb-cardset-dos-donts-title">{parseRichText(item.title)}</h3>
+          </div>
+          <div className="wb-cardset-dos-donts-divider" />
+          <div className="wb-cardset-dos-donts-body">
+            {item.description && checklist.length === 0 && (
+              <p className="wb-cardset-desc">{parseRichText(item.description)}</p>
+            )}
+            {checklist.length > 0 && (
+              <ul className="wb-cardset-checklist" aria-label={item.title}>
+                {checklist.map((checkItem, checkIdx) => {
+                  const itemIsCross =
+                    checkItem.icon === "cross" ||
+                    checkItem.icon === "x" ||
+                    (checkItem.icon === undefined && isNegative);
+                  return (
+                    <li key={checkIdx} className="wb-cardset-checklist-item">
+                      <span
+                        className={`wb-cardset-checklist-icon-wrap ${itemIsCross ? "wb-cardset-is-negative" : "wb-cardset-is-positive"}`}
+                        aria-hidden="true"
+                      >
+                        {itemIsCross ? (
+                          <CrossIcon className="wb-cardset-checklist-icon" />
+                        ) : (
+                          <CheckIcon className="wb-cardset-checklist-icon" />
+                        )}
+                      </span>
+                      <span className="wb-cardset-checklist-text">
+                        {parseRichText(checkItem.text)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <CardActions item={item} ctx={ctx} />
+          </div>
+        </article>
+      );
+    }
+
     case "image-overlay":
       return (
         <article className={`${cardClass} wb-cardset-surface`} style={style}>

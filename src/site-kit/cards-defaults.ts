@@ -280,4 +280,52 @@ export const CARDS_PRESETS: CardsPreset[] = [
       ],
     }),
   },
+  {
+    key: "cards-dos-donts",
+    label: "Cards · Do's & Don'ts Guidelines",
+    description: "Two-column comparison checklist cards with green 'Do's' and red 'Don'ts' indicators, check/cross marks, and a bottom download button.",
+    data: () => ({
+      variant: "dos-donts",
+      heading: "Do's & Don'ts",
+      intro: "Get the best out of your WPC and PVC boards by following these simple guidelines.",
+      headerLayout: "center",
+      columns: 2,
+      mobileColumns: 1,
+      cardStyle: "shadow",
+      cardCorners: "rounded",
+      bottomCta: {
+        label: "Download Installation Guide",
+        href: "/resources",
+        icon: "download",
+        actionType: "download",
+      },
+      items: [
+        {
+          title: "Do's",
+          accentColor: "#16a34a",
+          icon: "check",
+          checklist: [
+            "Always store boards on a flat surface to prevent warping.",
+            "Use appropriate blades designed for plastic or fine-toothed wood blades.",
+            "Allow for thermal expansion gaps during installation (2-3mm).",
+            "Clean surfaces with mild soap and water.",
+            "Pre-drill holes before screwing near edges.",
+          ],
+        },
+        {
+          title: "Don'ts",
+          accentColor: "#ef4444",
+          icon: "x",
+          checklist: [
+            "Do not store boards in direct sunlight for extended periods before installation.",
+            "Do not use harsh chemical solvents or abrasive cleaners.",
+            "Avoid placing extremely hot items directly on the surface.",
+            "Do not over-tighten screws as it may damage the material.",
+            "Do not use for load-bearing structural columns without support.",
+          ],
+        },
+      ],
+    }),
+  },
 ];
+

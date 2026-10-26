@@ -63,7 +63,7 @@ describe("cards layout helpers", () => {
     const variants = SECTION_PRESETS.filter((preset) => preset.type === "cards").map(
       (preset) => (preset.create().data as { variant?: string }).variant,
     );
-    expect(new Set(variants).size).toBe(6);
+    expect(new Set(variants).size).toBe(7);
     expect(createSection("cards").data.items.length).toBeGreaterThan(0);
   });
 

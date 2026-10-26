@@ -1317,6 +1317,7 @@ export const CARDS_VARIANTS = [
   "minimal-accent",
   "floating-panel",
   "floating-icon",
+  "dos-donts",
 ] as const;
 export type CardsVariant = (typeof CARDS_VARIANTS)[number];
 
@@ -1372,6 +1373,11 @@ export type CardsButtonSettings = {
   showArrow?: boolean;
 };
 
+export type CardChecklistItem = {
+  text: string;
+  icon?: "check" | "cross" | "x" | string;
+};
+
 export type CardItem = {
   title: string;
   subtitle?: string;
@@ -1393,6 +1399,7 @@ export type CardItem = {
   /** Custom icon glyph color override (#rrggbb). */
   iconColor?: string;
   featured?: boolean;
+  checklist?: Array<CardChecklistItem | string>;
 };
 
 export type CardsData = {

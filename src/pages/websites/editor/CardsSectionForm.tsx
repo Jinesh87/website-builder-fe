@@ -54,6 +54,7 @@ type Props = { data: CardsData; onChange: (data: CardsData) => void };
 
 const VARIANT_OPTIONS: { value: CardsVariant; label: string }[] = [
   { value: "product-classic", label: "Product classic · Image, tags, footer button" },
+  { value: "dos-donts", label: "Do's & Don'ts · Guidelines comparison checklist cards" },
   { value: "floating-icon", label: "Floating icon badge · Image with seam icon badge, title & description" },
   { value: "image-overlay", label: "Image overlay · Text over full-bleed photo" },
   { value: "horizontal-split", label: "Horizontal split · Image beside content" },
@@ -683,6 +684,25 @@ export default function CardsSectionForm({ data, onChange }: Props) {
                 value={item.description ?? ""}
                 onChange={(description) => update({ ...item, description: description || undefined })}
                 maxLength={800}
+              />
+              <TextAreaField
+                label="Checklist points (one per line)"
+                value={
+                  item.checklist
+                    ? item.checklist
+                        .map((c) => (typeof c === "string" ? c : c.text))
+                        .join("\n")
+                    : ""
+                }
+                onChange={(raw) => {
+                  const lines = raw
+                    .split("\n")
+                    .map((l) => l.trim())
+                    .filter(Boolean);
+                  update({ ...item, checklist: lines.length > 0 ? lines : undefined });
+                }}
+                maxLength={2000}
+                hint="Used for Do's & Don'ts or comparison points (each line gets a check or cross icon)."
               />
               {usesImages && (
                 <ImageField

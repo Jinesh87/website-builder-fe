@@ -372,6 +372,106 @@ export const CARDS_CSS = `
   padding: clamp(18px, 7cqi, 26px);
 }
 
+/* 7. Do's & Don'ts */
+.wb-cardset .wb-cardset-dos-donts-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--wb-cardset-card-bg, var(--wb-bg));
+  border-radius: var(--wb-cardset-radius, 16px);
+  border: 1px solid var(--wb-border);
+  box-shadow: 0 4px 20px -4px rgb(0 0 0 / 0.06), 0 2px 6px -2px rgb(0 0 0 / 0.04);
+}
+.wb-cardset .wb-cardset-dos-donts-top-bar {
+  height: 4px;
+  width: 100%;
+  background: var(--wb-cardset-accent, #16a34a);
+  flex-shrink: 0;
+}
+.wb-cardset .wb-cardset-dos-donts-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 28px 18px 28px;
+}
+.wb-cardset .wb-cardset-dos-donts-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+.wb-cardset .wb-cardset-dos-donts-badge.wb-cardset-is-positive {
+  background: color-mix(in srgb, #16a34a 12%, transparent);
+  color: #16a34a;
+}
+.wb-cardset .wb-cardset-dos-donts-badge.wb-cardset-is-negative {
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+  color: #ef4444;
+}
+.wb-cardset .wb-cardset-dos-donts-badge-icon {
+  width: 19px;
+  height: 19px;
+}
+.wb-cardset .wb-cardset-dos-donts-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--wb-cardset-accent, var(--wb-text));
+}
+.wb-cardset .wb-cardset-dos-donts-divider {
+  height: 1px;
+  width: 100%;
+  background-color: color-mix(in srgb, var(--wb-border) 80%, transparent);
+}
+.wb-cardset .wb-cardset-dos-donts-body {
+  padding: 24px 28px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 16px;
+}
+.wb-cardset .wb-cardset-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.wb-cardset .wb-cardset-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--wb-text) 88%, transparent);
+}
+.wb-cardset .wb-cardset-checklist-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.wb-cardset .wb-cardset-checklist-icon-wrap.wb-cardset-is-positive {
+  color: #16a34a;
+}
+.wb-cardset .wb-cardset-checklist-icon-wrap.wb-cardset-is-negative {
+  color: #ef4444;
+}
+.wb-cardset .wb-cardset-checklist-icon {
+  width: 16px;
+  height: 16px;
+}
+.wb-cardset .wb-cardset-checklist-text {
+  flex: 1 1 auto;
+}
+
 /* Whole-card link */
 .wb-cardset.wb-cardset-clickable .wb-cardset-stretch::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
 .wb-cardset.wb-cardset-clickable .wb-cardset-card { cursor: pointer; }
