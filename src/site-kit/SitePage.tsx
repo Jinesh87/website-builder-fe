@@ -25,6 +25,9 @@ import TestimonialsSection from "./sections/TestimonialsSection.tsx";
 import TextSection from "./sections/TextSection.tsx";
 import BlogSection from "./sections/BlogSection.tsx";
 import BlogDetailSection from "./sections/BlogDetailSection.tsx";
+import ProductsSection from "./sections/ProductsSection.tsx";
+import ProductDetailSection from "./sections/ProductDetailSection.tsx";
+import { ShopCatalogProvider } from "./shop-catalog.tsx";
 import { SITE_CSS } from "./styles.ts";
 import { themeToCssVars } from "./theme.ts";
 import type { FooterData, HeaderData, PageData, Section, SectionOf, SiteData, ThemeSettings } from "./types.ts";
@@ -79,6 +82,10 @@ export const SectionView = memo(function SectionView({ section }: { section: Sec
       return <BlogSection section={section} />;
     case "blog_detail":
       return <BlogDetailSection section={section} />;
+    case "products":
+      return <ProductsSection section={section} />;
+    case "product_detail":
+      return <ProductDetailSection section={section} />;
   }
 }, (prev, next) => {
   if (prev.section === next.section) return true;
@@ -144,6 +151,14 @@ type SitePageProps = {
 
 /** One full page of a client website: header, visible sections, footer. */
 export default function SitePage({ site, page, editor }: SitePageProps) {
+  return (
+    <ShopCatalogProvider value={site.shop ?? null}>
+      <SitePageBody site={site} page={page} editor={editor} />
+    </ShopCatalogProvider>
+  );
+}
+
+function SitePageBody({ site, page, editor }: SitePageProps) {
   // A page's own header/footer replaces the site-wide one; a hidden one means the page has none.
   const pageHeaderSection = page.sections.find((section): section is SectionOf<"header"> => section.type === "header");
   const pageFooterSection = page.sections.find((section): section is SectionOf<"footer"> => section.type === "footer");

@@ -14,7 +14,7 @@ import TextAreaInput from "../ui/TextAreaInput.tsx";
 import TextInput from "../ui/TextInput.tsx";
 import { optimizeImageToWebP } from "../../utils/image-optimizer.ts";
 
-type OptionDraft = { key: string; name: string; values: string[] };
+type OptionDraft = { key: string; name: string; values: string[]; listOnShop: boolean; images: Record<string, ShopImage[]> };
 type SetDraft = {
   key: string;
   price: string;
@@ -36,7 +36,7 @@ type ProductDraft = {
 };
 
 function blankOption(): OptionDraft {
-  return { key: crypto.randomUUID(), name: "", values: [] };
+  return { key: crypto.randomUUID(), name: "", values: [], listOnShop: false, images: {} };
 }
 
 function blankSet(): SetDraft {
@@ -89,8 +89,31 @@ function variantOptions(product: ShopProduct, variantName: string): { name: stri
   return [];
 }
 
+function sharedValuePhotos(product: ShopProduct, variantName: string): ShopImage[] {
+  for (const set of product.optionSets ?? []) {
+    if (set.options.length === 0) continue;
+    const combos = set.options.reduce<string[][]>(
+      (sets, option) => sets.flatMap((prefix) => option.values.map((value) => [...prefix, value])),
+      [[]],
+    );
+    const values = combos.find((combo) => combo.join(" / ") === variantName);
+    if (!values) continue;
+    for (let index = set.options.length - 1; index >= 0; index -= 1) {
+      const option = set.options[index];
+      const value = values[index] ?? "";
+      const photos = (option?.images?.find((group) => group.value.toLowerCase() === value.toLowerCase())?.images ?? []).flatMap((image) =>
+        image.url ? [{ mediaId: image.mediaId, url: image.url, alt: image.alt }] : [],
+      );
+      if (photos.length > 0) return photos;
+    }
+  }
+  return [];
+}
+
 function variantPhotos(product: ShopProduct, variant: ShopVariant): ShopImage[] {
-  return variant.images?.length ? variant.images : (product.images ?? []);
+  if (variant.images?.length) return variant.images;
+  const shared = sharedValuePhotos(product, variant.name);
+  return shared.length > 0 ? shared : (product.images ?? []);
 }
 
 function coverUrl(product: ShopProduct): string | null {
@@ -140,7 +163,19 @@ function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: st
     }
     optionSets.push({
       pricePaise,
-      options: options.map((option) => ({ name: option.name.trim(), values: option.values })),
+      options: options.map((option) => {
+        const images = option.values.flatMap((value) => {
+          const photos = option.images[value.trim().toLowerCase()] ?? [];
+          if (photos.length === 0) return [];
+          return [{ value: value.trim(), images: photos.map((image) => ({ mediaId: image.mediaId, alt: image.alt })) }];
+        });
+        return {
+          name: option.name.trim(),
+          values: option.values,
+          ...(option.listOnShop ? { listOnShop: true } : {}),
+          ...(images.length > 0 ? { images } : {}),
+        };
+      }),
       ...(overrides.length > 0 ? { overrides } : {}),
       ...(imageGroups.length > 0 ? { images: imageGroups } : {}),
     });
@@ -161,7 +196,21 @@ function setsFromProduct(product: ShopProduct): SetDraft[] {
     return product.optionSets.map((set) => ({
       key: crypto.randomUUID(),
       price: paiseToRupees(set.pricePaise),
-      options: set.options.length > 0 ? set.options.map((option) => ({ key: crypto.randomUUID(), name: option.name, values: [...option.values] })) : [],
+      options:
+        set.options.length > 0
+          ? set.options.map((option) => ({
+              key: crypto.randomUUID(),
+              name: option.name,
+              values: [...option.values],
+              listOnShop: option.listOnShop === true,
+              images: Object.fromEntries(
+                (option.images ?? []).flatMap((group) => {
+                  const photos = group.images.flatMap((image) => (image.url ? [{ mediaId: image.mediaId, url: image.url, alt: image.alt }] : []));
+                  return photos.length > 0 ? [[group.value.trim().toLowerCase(), photos] as const] : [];
+                }),
+              ),
+            }))
+          : [],
       overrides: Object.fromEntries((set.overrides ?? []).map((override) => [override.key, paiseToRupees(override.pricePaise)])),
       images: Object.fromEntries((set.images ?? []).map((group) => [group.key, group.images])),
       showPrices: (set.overrides ?? []).length > 0,
@@ -780,7 +829,7 @@ function ProductForm({
         <div className="sm:col-span-2">
           <ImageStrip
             label="Shared photos"
-            hint="Used when a variant has no photos of its own."
+            hint="Used when a value, such as a colour, has no photos of its own."
             images={draft.images}
             onChange={(images) => commit((current) => ({ ...current, images }))}
             clientId={clientId}
@@ -888,25 +937,57 @@ function OptionSetCard({
 
       <div className="mt-4 space-y-3">
         {set.options.map((option) => (
-          <div key={option.key} className="grid gap-2 sm:grid-cols-[180px_minmax(0,1fr)_auto] sm:items-start">
-            <TextInput
-              label="Option"
-              name={`option-${option.key}`}
-              value={option.name}
-              onChange={(name) => updateOption(option.key, { name })}
-              placeholder="Size, colour…"
-            />
-            <ValueChips values={option.values} onChange={(values) => updateOption(option.key, { values })} />
-            <div className="sm:pt-6">
-              <button
-                type="button"
-                onClick={() => onChange({ options: set.options.filter((item) => item.key !== option.key) })}
-                aria-label="Remove option"
-                className="grid size-9 place-items-center rounded-lg text-ink-muted hover:bg-danger/10 hover:text-danger"
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </button>
+          <div key={option.key} className="rounded-lg border border-line/80 p-3">
+            <div className="grid gap-2 sm:grid-cols-[180px_minmax(0,1fr)_auto] sm:items-start">
+              <TextInput
+                label="Option"
+                name={`option-${option.key}`}
+                value={option.name}
+                onChange={(name) => updateOption(option.key, { name })}
+                placeholder="Size, colour…"
+              />
+              <ValueChips values={option.values} onChange={(values) => updateOption(option.key, { values })} />
+              <div className="sm:pt-6">
+                <button
+                  type="button"
+                  onClick={() => onChange({ options: set.options.filter((item) => item.key !== option.key) })}
+                  aria-label="Remove option"
+                  className="grid size-9 place-items-center rounded-lg text-ink-muted hover:bg-danger/10 hover:text-danger"
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </button>
+              </div>
             </div>
+            <Switch isSelected={option.listOnShop} onChange={(listOnShop) => updateOption(option.key, { listOnShop })} className="mt-3">
+              <Switch.Content>
+                <Switch.Control>
+                  <Switch.Thumb />
+                </Switch.Control>
+                <Label className="text-sm text-ink">List on the shop page</Label>
+              </Switch.Content>
+            </Switch>
+            <p className="mt-1 text-xs text-ink-muted">
+              Each value becomes its own card. Turn this on for colour to list blue and red separately, and for size as well to list every size and colour.
+            </p>
+            {option.values.length > 0 && (
+              <div className="mt-3 space-y-3">
+                <p className="text-xs text-ink-muted">Upload once for a value. Every variant with that value uses the same photos.</p>
+                {option.values.map((value) => (
+                  <ImageStrip
+                    key={value}
+                    compact
+                    label={value}
+                    images={option.images[value.trim().toLowerCase()] ?? []}
+                    onChange={(images) => updateOption(option.key, { images: { ...option.images, [value.trim().toLowerCase()]: images } })}
+                    clientId={clientId}
+                    websiteId={websiteId}
+                    altText={altText ? `${altText} ${value}` : value}
+                    onError={onError}
+                    onBusy={onBusy}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         ))}
         <Button size="sm" variant="outline" onPress={() => onChange({ options: [...set.options, blankOption()] })} isDisabled={set.options.length >= 4}>
@@ -954,17 +1035,42 @@ function OptionSetCard({
                   )}
                 </div>
                 <div className="mt-2">
-                  <p className="mb-1 text-xs text-ink-muted">Photos</p>
-                  <ImageStrip
-                    compact
-                    images={set.images[key] ?? []}
-                    onChange={(images) => onChange((current) => ({ images: { ...current.images, [key]: images } }))}
-                    clientId={clientId}
-                    websiteId={websiteId}
-                    altText={altText ? `${altText} ${label}` : label}
-                    onError={onError}
-                    onBusy={onBusy}
-                  />
+                  {key in set.images ? (
+                    <>
+                      <p className="mb-1 text-xs text-ink-muted">Photos for this combination only</p>
+                      <ImageStrip
+                        compact
+                        images={set.images[key] ?? []}
+                        onChange={(images) => onChange((current) => ({ images: { ...current.images, [key]: images } }))}
+                        clientId={clientId}
+                        websiteId={websiteId}
+                        altText={altText ? `${altText} ${label}` : label}
+                        onError={onError}
+                        onBusy={onBusy}
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onChange((current) => {
+                            const images = { ...current.images };
+                            delete images[key];
+                            return { images };
+                          })
+                        }
+                        className="mt-1 text-xs font-medium text-ink-muted hover:text-ink"
+                      >
+                        Use the shared photos
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onChange((current) => ({ images: { ...current.images, [key]: [] } }))}
+                      className="text-xs font-medium text-ink-muted hover:text-ink"
+                    >
+                      Different photos for this combination
+                    </button>
+                  )}
                 </div>
               </li>
             );
