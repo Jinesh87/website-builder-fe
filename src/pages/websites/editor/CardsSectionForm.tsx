@@ -42,6 +42,7 @@ import {
   TextField,
 } from "./fields.tsx";
 import { cardImageSize } from "./media-dimensions.ts";
+import { IconPickerField } from "./IconPicker.tsx";
 
 type Props = { data: CardsData; onChange: (data: CardsData) => void };
 
@@ -123,7 +124,7 @@ const HEADER_OPTIONS: { value: CardsHeaderLayout; label: string }[] = [
   { value: "split", label: "Heading left, link right" },
 ];
 
-const ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
+export const ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
   { value: "", label: "No icon" },
   ...(
     [
@@ -516,11 +517,13 @@ export default function CardsSectionForm({ data, onChange }: Props) {
                   maxLength={50}
                 />
               </div>
-              <SelectField<IconName | "">
+              <IconPickerField
                 label="Icon"
-                value={(item.icon as IconName | undefined) ?? ""}
-                options={ICON_OPTIONS}
-                onChange={(icon) => update({ ...item, icon: icon || undefined })}
+                value={(item.icon as string | undefined) ?? ""}
+                imageValue={item.iconImage}
+                onChange={({ icon, iconImage }) =>
+                  update({ ...item, icon, iconImage })
+                }
               />
               <CommaListField
                 label="Tags (comma separated)"

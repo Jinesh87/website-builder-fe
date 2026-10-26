@@ -134,6 +134,54 @@ export const SITE_CSS = `
   color: var(--wb-primary);
 }
 .wb-icon svg { width: 22px; height: 22px; }
+.wb-icon .wb-icon-custom-img {
+  width: 24px;
+  height: 24px;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.wb-feature-icon-wrap .wb-icon .wb-icon-custom-img,
+.wb-service-icon-wrap .wb-icon .wb-icon-custom-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.wb-marquee-card-icon .wb-icon-custom-img,
+.wb-marquee-pill-icon .wb-icon-custom-img,
+.wb-marquee-text-icon .wb-icon-custom-img,
+.wb-icon-inline,
+.wb-icon-inline.wb-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  line-height: 1 !important;
+}
+.wb-icon-inline svg,
+.wb-icon-inline.wb-icon svg {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+.wb-icon-inline .wb-icon-custom-img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+}
 
 /* Header */
 .wb-announcement { background: var(--wb-surface); color: var(--wb-text); border-bottom: 1px solid var(--wb-border); text-align: center; font-size: 13px; padding: 8px 24px; font-weight: 500; }

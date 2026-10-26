@@ -14,7 +14,6 @@ import type {
   FaqData,
   FaqItem,
   FaqVariant,
-  FeatureItem,
   FeaturesData,
   FontKey,
   GalleryData,
@@ -55,6 +54,7 @@ import type {
 import {
   CheckboxField,
   ColorField,
+  CompactColorField,
   CommaListField,
   FormGroup,
   ImageField,
@@ -75,6 +75,7 @@ import { createContactLayout, layoutHasForm, resolveContactLayout } from "../../
 import AuthSectionForm from "./AuthSectionForm.tsx";
 import CardsSectionForm from "./CardsSectionForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
+import { IconPickerField } from "./IconPicker.tsx";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
 
@@ -85,7 +86,7 @@ const COLUMN_OPTIONS: { value: GridColumns; label: string }[] = [
   { value: 4, label: "4" },
 ];
 
-const ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
+export const ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
   { value: "", label: "No icon" },
   { value: "gear", label: "Settings / Gear ⚙️" },
   { value: "user", label: "User / Profile 👤" },
@@ -127,6 +128,20 @@ const FEATURE_COLOR_OPTIONS = [
   { value: "indigo", label: "Indigo" },
   { value: "red", label: "Red" },
 ];
+
+const NAMED_FEATURE_COLOR_TO_HEX: Record<string, string> = {
+  gray: "#64748b",
+  orange: "#f97316",
+  green: "#10b981",
+  blue: "#3b82f6",
+  yellow: "#eab308",
+  cyan: "#06b6d4",
+  purple: "#a855f7",
+  pink: "#ec4899",
+  indigo: "#6366f1",
+  red: "#ef4444",
+  none: "#94a3b8",
+};
 
 const FEATURE_CARD_BG_PRESETS = [
   { value: "", label: "Default section theme" },
@@ -1510,31 +1525,33 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
           renderItem={(item, update) => (
             <>
               <div className="grid grid-cols-2 gap-2">
-                <SelectField
+                <IconPickerField
                   label="Icon"
                   value={item.icon ?? ""}
-                  options={ICON_OPTIONS}
-                  onChange={(icon) =>
-                    update({ ...item, icon: icon || undefined })
+                  imageValue={item.iconImage}
+                  onChange={({ icon, iconImage }) =>
+                    update({ ...item, icon, iconImage })
                   }
                 />
-                <SelectField
+                <CompactColorField
                   label="Icon color badge"
-                  value={item.iconColor ?? "default"}
-                  options={FEATURE_COLOR_OPTIONS}
+                  value={
+                    item.iconColor && item.iconColor !== "default"
+                      ? (NAMED_FEATURE_COLOR_TO_HEX[item.iconColor] ?? item.iconColor)
+                      : undefined
+                  }
                   onChange={(color) =>
                     update({
                       ...item,
-                      iconColor:
-                        color === "default"
-                          ? undefined
-                          : (color as FeatureItem["iconColor"]),
+                      iconColor: color || undefined,
                     })
                   }
+                  fallback="#3b82f6"
+                  placeholder="Auto"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2 items-end">
+              <div className="grid grid-cols-2 gap-2">
                 <SelectField
                   label="Card background"
                   value={item.backgroundColor ?? ""}
@@ -1558,16 +1575,15 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
                     update({ ...item, backgroundColor: val || undefined })
                   }
                 />
-                <div className="pb-0.5">
-                  <ColorField
-                    label="Custom card background"
-                    value={item.backgroundColor}
-                    onChange={(color) =>
-                      update({ ...item, backgroundColor: color || undefined })
-                    }
-                    fallback="#ffffff"
-                  />
-                </div>
+                <CompactColorField
+                  label="Custom color"
+                  value={item.backgroundColor}
+                  onChange={(color) =>
+                    update({ ...item, backgroundColor: color || undefined })
+                  }
+                  fallback="#ffffff"
+                  placeholder="#ffffff"
+                />
               </div>
               <TextField
                 label="Title"
@@ -1890,34 +1906,36 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
                       badgeColor:
                         col === "default"
                           ? undefined
-                          : (col as FeatureItem["iconColor"]),
+                          : (col as ServiceItem["badgeColor"]),
                     })
                   }
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                <SelectField
+                <IconPickerField
                   label="Icon"
                   value={item.icon ?? ""}
-                  options={ICON_OPTIONS}
-                  onChange={(icon) =>
-                    update({ ...item, icon: icon || undefined })
+                  imageValue={item.iconImage}
+                  onChange={({ icon, iconImage }) =>
+                    update({ ...item, icon, iconImage })
                   }
                 />
-                <SelectField
+                <CompactColorField
                   label="Icon color"
-                  value={item.iconColor ?? "default"}
-                  options={FEATURE_COLOR_OPTIONS}
-                  onChange={(col) =>
+                  value={
+                    item.iconColor && item.iconColor !== "default"
+                      ? (NAMED_FEATURE_COLOR_TO_HEX[item.iconColor] ?? item.iconColor)
+                      : undefined
+                  }
+                  onChange={(color) =>
                     update({
                       ...item,
-                      iconColor:
-                        col === "default"
-                          ? undefined
-                          : (col as FeatureItem["iconColor"]),
+                      iconColor: color || undefined,
                     })
                   }
+                  fallback="#3b82f6"
+                  placeholder="Auto"
                 />
               </div>
 
@@ -1958,7 +1976,7 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
                 addLabel="Add deliverable"
               />
 
-              <div className="grid grid-cols-2 gap-2 items-end">
+              <div className="grid grid-cols-2 gap-2">
                 <SelectField
                   label="Card background"
                   value={item.backgroundColor ?? ""}
@@ -1982,16 +2000,15 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
                     update({ ...item, backgroundColor: val || undefined })
                   }
                 />
-                <div className="pb-0.5">
-                  <ColorField
-                    label="Custom card bg"
-                    value={item.backgroundColor}
-                    onChange={(color) =>
-                      update({ ...item, backgroundColor: color || undefined })
-                    }
-                    fallback="#ffffff"
-                  />
-                </div>
+                <CompactColorField
+                  label="Custom color"
+                  value={item.backgroundColor}
+                  onChange={(color) =>
+                    update({ ...item, backgroundColor: color || undefined })
+                  }
+                  fallback="#ffffff"
+                  placeholder="#ffffff"
+                />
               </div>
 
               <OptionalLinkField
@@ -3936,13 +3953,13 @@ function MarqueeForm({ data, onChange }: DataFormProps<MarqueeData>) {
                   placeholder="e.g. High-throughput edge cluster"
                 />
               )}
-              <SelectField
+              <IconPickerField
                 label="Icon"
                 value={item.icon || ""}
-                onChange={(icon) =>
-                  update({ ...item, icon: (icon as IconName) || undefined })
+                imageValue={item.iconImage}
+                onChange={({ icon, iconImage }) =>
+                  update({ ...item, icon, iconImage })
                 }
-                options={ICON_OPTIONS}
               />
             </>
           )}
@@ -3978,13 +3995,13 @@ function MarqueeForm({ data, onChange }: DataFormProps<MarqueeData>) {
                   onChange={(badge) => update({ ...item, badge })}
                   maxLength={60}
                 />
-                <SelectField
+                <IconPickerField
                   label="Icon"
                   value={item.icon || ""}
-                  onChange={(icon) =>
-                    update({ ...item, icon: (icon as IconName) || undefined })
+                  imageValue={item.iconImage}
+                  onChange={({ icon, iconImage }) =>
+                    update({ ...item, icon, iconImage })
                   }
-                  options={ICON_OPTIONS}
                 />
               </>
             )}

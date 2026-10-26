@@ -349,6 +349,65 @@ export function ColorField({
   );
 }
 
+export function CompactColorField({
+  label,
+  value,
+  onChange,
+  fallback = "#ffffff",
+  hint,
+  placeholder = "Auto",
+}: {
+  label: string;
+  value: string | undefined;
+  onChange: (value: string | undefined) => void;
+  fallback?: string;
+  hint?: string;
+  placeholder?: string;
+}) {
+  const isAuto = !value || value === "default" || value === "auto";
+
+  return (
+    <div className="flex flex-col gap-1 w-full min-w-0">
+      <div className="flex items-center justify-between gap-1 h-4">
+        <span className="text-ed-xs font-medium text-ed-text truncate select-none">
+          {label}
+        </span>
+        {!isAuto && (
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            className="text-[11px] font-medium text-ed-muted hover:text-ed-danger transition-colors cursor-pointer shrink-0"
+            title="Reset to default"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+
+      <CellColorPicker
+        value={isAuto ? undefined : value}
+        onChange={(val) => onChange(val || undefined)}
+        fallback={fallback}
+        className="w-full"
+      >
+        <div className="flex items-center gap-1.5 h-8 w-full min-w-0">
+          <CellColorPicker.Trigger className="!size-8 rounded-ed shrink-0 cursor-pointer" />
+          <div className="flex-1 min-w-0">
+            <CellColorPicker.ValueDisplay
+              placeholder={placeholder}
+              className="!h-8 rounded-ed text-ed-xs font-mono w-full"
+            />
+          </div>
+        </div>
+        <CellColorPicker.Popover>
+          <CellColorPicker.Swatch />
+        </CellColorPicker.Popover>
+      </CellColorPicker>
+      {hint && <p className="text-ed-2xs text-ed-muted leading-normal">{hint}</p>}
+    </div>
+  );
+}
+
 type LinkFieldProps = {
   label: string;
   value: LinkRef;

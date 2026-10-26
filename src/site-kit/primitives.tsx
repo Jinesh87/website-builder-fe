@@ -229,11 +229,65 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
   ),
 };
 
-export function SiteIcon({ name }: { name: IconName | string }) {
-  const iconPath = ICON_PATHS[name as IconName];
-  if (iconPath) {
+import { icons as lucideIcons } from "lucide-react";
+
+function toPascalCase(str: string): string {
+  return str
+    .replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ""))
+    .replace(/^(.)/, (c) => c.toUpperCase());
+}
+
+function resolveLucideComponent(name: string) {
+  if (!name) return null;
+  if (lucideIcons[name as keyof typeof lucideIcons]) {
+    return lucideIcons[name as keyof typeof lucideIcons];
+  }
+  const pascal = toPascalCase(name);
+  if (lucideIcons[pascal as keyof typeof lucideIcons]) {
+    return lucideIcons[pascal as keyof typeof lucideIcons];
+  }
+  return null;
+}
+
+export type SiteIconProps = {
+  name?: IconName | string;
+  image?: ImageRef;
+  className?: string;
+  style?: CSSProperties;
+  inline?: boolean;
+};
+
+export function SiteIcon({ name, image, className = "", style, inline = false }: SiteIconProps) {
+  const baseClass = inline ? `wb-icon-inline ${className}` : `wb-icon ${className}`;
+  const customImgUrl =
+    image?.url ||
+    (typeof name === "string" &&
+    (name.startsWith("http://") ||
+      name.startsWith("https://") ||
+      name.startsWith("/api/") ||
+      name.startsWith("data:image/"))
+      ? name
+      : undefined);
+
+  if (customImgUrl) {
     return (
-      <span className="wb-icon" aria-hidden="true">
+      <span className={`${baseClass} wb-icon-custom`} style={style} aria-hidden="true">
+        <img
+          src={customImgUrl}
+          alt={image?.alt || ""}
+          className="wb-icon-custom-img"
+          loading="lazy"
+        />
+      </span>
+    );
+  }
+
+  if (!name) return null;
+
+  const legacyIcon = ICON_PATHS[name as IconName];
+  if (legacyIcon) {
+    return (
+      <span className={baseClass} style={style} aria-hidden="true">
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -242,13 +296,23 @@ export function SiteIcon({ name }: { name: IconName | string }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          {iconPath}
+          {legacyIcon}
         </svg>
       </span>
     );
   }
+
+  const LucideComp = resolveLucideComponent(name);
+  if (LucideComp) {
+    return (
+      <span className={baseClass} style={style} aria-hidden="true">
+        <LucideComp size={inline ? "100%" : 22} strokeWidth={1.8} />
+      </span>
+    );
+  }
+
   return (
-    <span className="wb-icon wb-icon-emoji" aria-hidden="true">
+    <span className={`${baseClass} wb-icon-emoji`} style={style} aria-hidden="true">
       {name}
     </span>
   );

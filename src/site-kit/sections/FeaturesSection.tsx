@@ -163,7 +163,7 @@ const DEFAULT_COLOR_PALETTE: FeatureColor[] = [
 
 function getItemColor(item: FeatureItem, index: number): FeatureColor {
   if (item.iconColor && item.iconColor !== "default") {
-    return item.iconColor;
+    return item.iconColor as FeatureColor;
   }
   return DEFAULT_COLOR_PALETTE[index % DEFAULT_COLOR_PALETTE.length];
 }
@@ -179,8 +179,9 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
 
   // Render a single feature item card
   const renderFeatureItem = (item: FeatureItem, index: number, isStacked = false) => {
-    const itemColor = getItemColor(item, index);
-    const colorClass = `wb-color-${itemColor}`;
+    const isCustomHex = typeof item.iconColor === "string" && item.iconColor.startsWith("#");
+    const itemColor = isCustomHex ? "blue" : getItemColor(item, index);
+    const colorClass = isCustomHex ? "" : `wb-color-${itemColor}`;
     const itemAlign = isStacked ? "left" : align;
 
     const isDarkBg =
@@ -204,6 +205,23 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
         }
       : undefined;
 
+    const iconCustomStyle = isCustomHex
+      ? iconStyle === "colored-circle"
+        ? { background: item.iconColor, color: "#ffffff" }
+        : iconStyle === "minimal-accent"
+          ? { color: item.iconColor, background: "transparent" }
+          : iconStyle === "square-badge"
+            ? {
+                color: item.iconColor,
+                background: `color-mix(in srgb, ${item.iconColor} 12%, transparent)`,
+                borderColor: `color-mix(in srgb, ${item.iconColor} 26%, transparent)`,
+              }
+            : {
+                color: item.iconColor,
+                background: `color-mix(in srgb, ${item.iconColor} 15%, transparent)`,
+              }
+      : undefined;
+
     return (
       <div
         key={index}
@@ -212,16 +230,26 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
         } ${isDarkBg ? "wb-feature-card-dark" : ""}`}
         style={cardCustomStyle}
       >
-        {item.icon && iconStyle !== "none" && (
-          <div className={`wb-feature-icon-wrap wb-icon-style-${iconStyle} ${colorClass}`}>
-            <SiteIcon name={item.icon} />
+        {(item.icon || item.iconImage?.url) && iconStyle !== "none" && (
+          <div
+            className={`wb-feature-icon-wrap wb-icon-style-${iconStyle} ${colorClass}`}
+            style={iconCustomStyle}
+          >
+            <SiteIcon name={item.icon} image={item.iconImage} />
           </div>
         )}
 
         <div className="wb-feature-content">
           <div className="wb-feature-header-row">
             <h3 className="wb-feature-title">{item.title}</h3>
-            {item.badge && <span className={`wb-feature-badge ${colorClass}`}>{item.badge}</span>}
+            {item.badge && (
+              <span
+                className={`wb-feature-badge ${colorClass}`}
+                style={iconCustomStyle}
+              >
+                {item.badge}
+              </span>
+            )}
           </div>
           <p className="wb-feature-desc wb-muted">{item.description}</p>
           {item.link && (

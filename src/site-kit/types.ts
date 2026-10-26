@@ -424,7 +424,8 @@ export type FeatureColor =
 
 export type FeatureItem = {
   icon?: IconName | string;
-  iconColor?: FeatureColor;
+  iconImage?: ImageRef;
+  iconColor?: FeatureColor | string;
   backgroundColor?: string;
   badge?: string;
   title: string;
@@ -472,9 +473,10 @@ export type ServiceItem = {
   title: string;
   description: string;
   badge?: string;
-  badgeColor?: FeatureColor;
+  badgeColor?: FeatureColor | string;
   icon?: IconName | string;
-  iconColor?: FeatureColor;
+  iconImage?: ImageRef;
+  iconColor?: FeatureColor | string;
   image?: ImageRef;
   price?: string;
   duration?: string;
@@ -1003,7 +1005,8 @@ export type MarqueeVariant = (typeof MARQUEE_VARIANTS)[number];
 export type MarqueeItem = {
   text: string;
   badge?: string;
-  icon?: IconName;
+  icon?: IconName | string;
+  iconImage?: ImageRef;
   link?: string;
   subtext?: string;
 };
@@ -1342,6 +1345,7 @@ export type CardItem = {
   description?: string;
   image?: ImageRef;
   icon?: IconName | string;
+  iconImage?: ImageRef;
   badge?: string;
   tags?: string[];
   price?: string;

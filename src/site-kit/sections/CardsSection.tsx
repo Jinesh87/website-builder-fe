@@ -104,12 +104,12 @@ function CardMedia({ item, ctx, children }: { item: CardItem; ctx: CardContext; 
 }
 
 function CardMarker({ item, index, ctx }: { item: CardItem; index: number; ctx: CardContext }) {
-  const showIcon = ctx.display.icons && Boolean(item.icon);
+  const showIcon = ctx.display.icons && Boolean(item.icon || item.iconImage?.url);
   if (!showIcon && !ctx.display.numbers) return null;
   return (
     <div className="wb-cardset-marker">
       {ctx.display.numbers && <span className="wb-cardset-number">{String(index + 1).padStart(2, "0")}</span>}
-      {showIcon && item.icon && <SiteIcon name={item.icon} />}
+      {showIcon && <SiteIcon name={item.icon} image={item.iconImage} />}
     </div>
   );
 }

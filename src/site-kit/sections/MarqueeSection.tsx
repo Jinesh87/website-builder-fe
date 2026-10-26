@@ -43,9 +43,9 @@ function MarqueeTrack({
           <div key={index} className="wb-marquee-item-wrapper">
             {variant === "cards-stream" ? (
               <div className="wb-marquee-card">
-                {item.icon && (
+                {(item.icon || item.iconImage?.url) && (
                   <div className="wb-marquee-card-icon">
-                    <SiteIcon name={item.icon} />
+                    <SiteIcon name={item.icon} image={item.iconImage} />
                   </div>
                 )}
                 <div className="wb-marquee-card-content">
@@ -56,9 +56,9 @@ function MarqueeTrack({
               </div>
             ) : variant === "pill-badges" ? (
               <div className="wb-marquee-pill">
-                {item.icon && (
+                {(item.icon || item.iconImage?.url) && (
                   <span className="wb-marquee-pill-icon">
-                    <SiteIcon name={item.icon} />
+                    <SiteIcon name={item.icon} image={item.iconImage} />
                   </span>
                 )}
                 <span className="wb-marquee-pill-text">{item.text}</span>
@@ -66,9 +66,9 @@ function MarqueeTrack({
               </div>
             ) : (
               <div className="wb-marquee-text-block">
-                {item.icon && (
+                {(item.icon || item.iconImage?.url) && (
                   <span className="wb-marquee-text-icon">
-                    <SiteIcon name={item.icon} />
+                    <SiteIcon name={item.icon} image={item.iconImage} />
                   </span>
                 )}
                 <span className="wb-marquee-text">{item.text}</span>

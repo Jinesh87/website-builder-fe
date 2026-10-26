@@ -115,8 +115,9 @@ export default function ServicesSection({
     index: number,
     options?: { isBentoHero?: boolean; isHorizontal?: boolean }
   ) => {
-    const itemColor = getItemColor(item, index);
-    const colorClass = `wb-color-${itemColor}`;
+    const isCustomHex = typeof item.iconColor === "string" && item.iconColor.startsWith("#");
+    const itemColor = isCustomHex ? "blue" : getItemColor(item, index);
+    const colorClass = isCustomHex ? "" : `wb-color-${itemColor}`;
     const isFeatured = item.featured || options?.isBentoHero;
     const num = String(index + 1).padStart(2, "0");
 
@@ -125,6 +126,23 @@ export default function ServicesSection({
           backgroundColor: item.backgroundColor,
           background: item.backgroundColor,
         }
+      : undefined;
+
+    const iconCustomStyle = isCustomHex
+      ? iconStyle === "colored-circle"
+        ? { background: item.iconColor, color: "#ffffff" }
+        : iconStyle === "minimal-accent"
+          ? { color: item.iconColor, background: "transparent" }
+          : iconStyle === "square-badge"
+            ? {
+                color: item.iconColor,
+                background: `color-mix(in srgb, ${item.iconColor} 12%, transparent)`,
+                borderColor: `color-mix(in srgb, ${item.iconColor} 26%, transparent)`,
+              }
+            : {
+                color: item.iconColor,
+                background: `color-mix(in srgb, ${item.iconColor} 15%, transparent)`,
+              }
       : undefined;
 
     return (
@@ -167,11 +185,12 @@ export default function ServicesSection({
                   <span className="wb-service-number">{num}</span>
                 )}
 
-                {showIcons && item.icon && iconStyle !== "none" && (
+                {showIcons && (item.icon || item.iconImage?.url) && iconStyle !== "none" && (
                   <div
                     className={`wb-service-icon-wrap wb-icon-style-${iconStyle} ${colorClass}`}
+                    style={iconCustomStyle}
                   >
-                    <SiteIcon name={item.icon} />
+                    <SiteIcon name={item.icon} image={item.iconImage} />
                   </div>
                 )}
               </div>
@@ -370,8 +389,9 @@ export default function ServicesSection({
           {/* Interactive Row List */}
           <div className="wb-services-interactive-list">
             {data.items.map((item, index) => {
-              const itemColor = getItemColor(item, index);
-              const colorClass = `wb-color-${itemColor}`;
+              const isCustomHex = typeof item.iconColor === "string" && item.iconColor.startsWith("#");
+              const itemColor = isCustomHex ? "blue" : getItemColor(item, index);
+              const colorClass = isCustomHex ? "" : `wb-color-${itemColor}`;
               const isActive = activeIndex === index;
               const num = String(index + 1).padStart(2, "0");
 
@@ -387,9 +407,12 @@ export default function ServicesSection({
                 >
                   <div className="wb-interactive-left">
                     <span className="wb-interactive-number">{num}</span>
-                    {showIcons && item.icon && (
-                      <div className="wb-interactive-icon">
-                        <SiteIcon name={item.icon} />
+                    {showIcons && (item.icon || item.iconImage?.url) && (
+                      <div
+                        className="wb-interactive-icon"
+                        style={isCustomHex ? { color: item.iconColor } : undefined}
+                      >
+                        <SiteIcon name={item.icon} image={item.iconImage} />
                       </div>
                     )}
                     <h3 className="wb-interactive-title">{item.title}</h3>
