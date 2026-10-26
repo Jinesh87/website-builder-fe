@@ -114,12 +114,23 @@ export type InventoryLogPage = {
 export type ShopProductQuery = {
   search?: string;
   categoryId?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type ShopProductPage = {
+  products: ShopProduct[];
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
 function productQuery(params: ShopProductQuery): string {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
   if (params.categoryId) query.set("categoryId", params.categoryId);
+  if (params.page) query.set("page", String(params.page));
+  if (params.pageSize) query.set("pageSize", String(params.pageSize));
   const text = query.toString();
   return text ? `?${text}` : "";
 }
@@ -147,7 +158,7 @@ export const shopApi = {
     request<void>(`${base(websiteId)}/categories/${categoryId}`, { method: "DELETE" }),
 
   products: (websiteId: string, params: ShopProductQuery = {}) =>
-    request<{ products: ShopProduct[] }>(`${base(websiteId)}/products${productQuery(params)}`).then((data) => data.products),
+    request<ShopProductPage>(`${base(websiteId)}/products${productQuery(params)}`),
 
   createProduct: (websiteId: string, input: ShopProductInput) =>
     request<{ product: ShopProduct }>(`${base(websiteId)}/products`, { method: "POST", body: input }).then((data) => data.product),
