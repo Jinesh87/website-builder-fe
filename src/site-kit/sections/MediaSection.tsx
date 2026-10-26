@@ -41,17 +41,19 @@ export default function MediaSection({ section }: { section: SectionOf<"media"> 
     );
   }
 
+  const align = data.align || section.settings.align || "center";
+
   return (
     <SectionShell
       sectionId={section.id}
       settings={section.settings}
-      className={`wb-media wb-media-${data.width}`}
+      className={`wb-media wb-media-${data.width} wb-align-${align}`}
       label={data.heading || "Media"}
     >
-      {data.heading && <h2 className="wb-media-head">{data.heading}</h2>}
+      {data.heading && <h2 className={`wb-media-head wb-align-${align}`}>{data.heading}</h2>}
       <figure>
         {media}
-        {data.caption && <figcaption className="wb-muted">{data.caption}</figcaption>}
+        {data.caption && <figcaption className={`wb-muted wb-align-${align}`}>{data.caption}</figcaption>}
       </figure>
     </SectionShell>
   );

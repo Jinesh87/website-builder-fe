@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   gridStyle,
   SectionHead,
@@ -8,6 +9,7 @@ import {
   SiteLink,
 } from "../primitives.tsx";
 import type { FeatureColor, FeatureItem, SectionOf } from "../types.ts";
+import { isLightColor } from "../../utils/colors.ts";
 
 /**
  * Modern 3D isometric mockup illustration used as default visual
@@ -163,7 +165,7 @@ const DEFAULT_COLOR_PALETTE: FeatureColor[] = [
 
 function getItemColor(item: FeatureItem, index: number): FeatureColor {
   if (item.iconColor && item.iconColor !== "default") {
-    return item.iconColor;
+    return item.iconColor as FeatureColor;
   }
   return DEFAULT_COLOR_PALETTE[index % DEFAULT_COLOR_PALETTE.length];
 }
@@ -175,21 +177,31 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
   const isReversed = data.splitPosition === "right";
   const iconStyle = data.iconStyle ?? (data.variant === "pastel-icons" ? "pastel-circle" : isSplit ? "square-badge" : data.variant === "minimal" ? "minimal-accent" : "pastel-circle");
   const cardStyle = data.cardStyle ?? (data.variant === "cards" ? "surface" : data.variant === "minimal" || data.variant === "pastel-icons" ? "transparent" : "surface");
-  const align = data.align ?? (isSplit ? "left" : "center");
+  const align = data.align ?? section.settings.align ?? (isSplit ? "left" : "center");
+
+  const isSectionDark =
+    section.settings.background === "dark" ||
+    section.settings.background === "primary" ||
+    (Boolean(section.settings.customColors?.background) && !isLightColor(section.settings.customColors?.background));
 
   // Render a single feature item card
   const renderFeatureItem = (item: FeatureItem, index: number, isStacked = false) => {
-    const itemColor = getItemColor(item, index);
-    const colorClass = `wb-color-${itemColor}`;
+    const isCustomHex = typeof item.iconColor === "string" && item.iconColor.startsWith("#");
+    const itemColor = isCustomHex ? "blue" : getItemColor(item, index);
+    const colorClass = isCustomHex ? "" : `wb-color-${itemColor}`;
     const itemAlign = isStacked ? "left" : align;
 
-    const isDarkBg =
-      item.backgroundColor &&
+    const isItemExplicitDark =
+      Boolean(item.backgroundColor) &&
       (item.backgroundColor === "#0f172a" ||
         item.backgroundColor === "#020617" ||
-        item.backgroundColor.toLowerCase().includes("0f172a") ||
-        item.backgroundColor.toLowerCase().includes("#000") ||
-        item.backgroundColor.toLowerCase().includes("black"));
+        item.backgroundColor?.toLowerCase().includes("0f172a") ||
+        item.backgroundColor?.toLowerCase().includes("#000") ||
+        item.backgroundColor?.toLowerCase().includes("black"));
+
+    const isDarkBg =
+      isItemExplicitDark ||
+      (isSectionDark && (!item.backgroundColor || item.backgroundColor === "transparent"));
 
     const cardCustomStyle = item.backgroundColor
       ? {
@@ -204,6 +216,55 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
         }
       : undefined;
 
+    const activeIconBg = item.iconBackgroundColor || data.iconBackgroundColor;
+
+    const iconCustomStyle: CSSProperties | undefined = activeIconBg
+      ? {
+          background: activeIconBg,
+          backgroundColor: activeIconBg,
+          color: isCustomHex ? (item.iconColor as string) : undefined,
+          borderRadius:
+            iconStyle === "pastel-circle" || iconStyle === "colored-circle"
+              ? "9999px"
+              : "16px",
+          width: "56px",
+          height: "56px",
+          minWidth: "56px",
+          minHeight: "56px",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "16px",
+          border:
+            activeIconBg.startsWith("rgba") || activeIconBg === "transparent"
+              ? "1px solid rgba(255, 255, 255, 0.15)"
+              : undefined,
+        }
+      : isCustomHex
+        ? iconStyle === "colored-circle"
+          ? { background: item.iconColor, color: "#ffffff" }
+          : iconStyle === "minimal-accent"
+            ? { color: item.iconColor, background: "transparent" }
+            : iconStyle === "square-badge"
+              ? {
+                  color: item.iconColor,
+                  background: `color-mix(in srgb, ${item.iconColor} 12%, transparent)`,
+                  borderColor: `color-mix(in srgb, ${item.iconColor} 26%, transparent)`,
+                }
+              : {
+                  color: item.iconColor,
+                  background: `color-mix(in srgb, ${item.iconColor} 15%, transparent)`,
+                }
+        : undefined;
+
+    const badgeCustomStyle: CSSProperties | undefined = isCustomHex
+      ? {
+          color: item.iconColor,
+          borderColor: `color-mix(in srgb, ${item.iconColor} 30%, transparent)`,
+          background: `color-mix(in srgb, ${item.iconColor} 10%, transparent)`,
+        }
+      : undefined;
+
     return (
       <div
         key={index}
@@ -212,16 +273,26 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
         } ${isDarkBg ? "wb-feature-card-dark" : ""}`}
         style={cardCustomStyle}
       >
-        {item.icon && iconStyle !== "none" && (
-          <div className={`wb-feature-icon-wrap wb-icon-style-${iconStyle} ${colorClass}`}>
-            <SiteIcon name={item.icon} />
+        {(item.icon || item.iconImage?.url) && iconStyle !== "none" && (
+          <div
+            className={`wb-feature-icon-wrap wb-icon-style-${iconStyle} ${colorClass}`}
+            style={iconCustomStyle}
+          >
+            <SiteIcon name={item.icon} image={item.iconImage} />
           </div>
         )}
 
         <div className="wb-feature-content">
           <div className="wb-feature-header-row">
             <h3 className="wb-feature-title">{item.title}</h3>
-            {item.badge && <span className={`wb-feature-badge ${colorClass}`}>{item.badge}</span>}
+            {item.badge && (
+              <span
+                className={`wb-feature-badge ${colorClass}`}
+                style={badgeCustomStyle}
+              >
+                {item.badge}
+              </span>
+            )}
           </div>
           <p className="wb-feature-desc wb-muted">{item.description}</p>
           {item.link && (
@@ -299,11 +370,18 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
       className={`wb-features-section wb-features-variant-${data.variant ?? "grid"}`}
       label={data.heading}
     >
-      <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} />
+      <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} align={align} />
 
       <div
-        className={`wb-grid wb-features-grid wb-features-align-${align}`}
-        style={gridStyle(data.columns, data.mobileColumns)}
+        className={`wb-grid wb-features-grid wb-features-align-${align} ${
+          data.showDividers ? "wb-features-grid-divided" : ""
+        } ${data.showDividers ? `wb-features-divided-${data.dividerStyle ?? "inset"}` : ""} ${
+          isSectionDark ? "wb-features-dark" : ""
+        }`}
+        style={{
+          ...gridStyle(data.columns, data.mobileColumns),
+          ...(data.dividerColor ? ({ "--wb-feature-divider": data.dividerColor } as CSSProperties) : {}),
+        }}
       >
         {data.items.map((item, index) => renderFeatureItem(item, index, false))}
       </div>

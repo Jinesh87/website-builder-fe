@@ -319,6 +319,24 @@ export function SectionSkeleton({ preset }: { preset: SectionPreset }) {
         </div>
       );
 
+    case "features-mission-vision":
+      return (
+        <div className="flex h-full w-full items-center justify-between rounded-sm bg-brand px-2 py-1.5 text-white">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className={`flex flex-1 flex-col items-center gap-1 px-1 text-center ${
+                i < 2 ? "border-r border-white/25" : ""
+              }`}
+            >
+              <div className="h-2 w-10 rounded-xs bg-white/90" />
+              <div className="h-1 w-full rounded-full bg-white/60" />
+              <div className="h-1 w-4/5 rounded-full bg-white/45" />
+            </div>
+          ))}
+        </div>
+      );
+
     case "features-3":
       return (
         <div className="grid h-full w-full grid-cols-3 items-center gap-1.5 p-2">

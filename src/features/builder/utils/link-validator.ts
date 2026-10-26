@@ -28,7 +28,12 @@ export function isExternalOrAnchor(href: string): boolean {
     trimmed.startsWith("mailto:") ||
     trimmed.startsWith("tel:") ||
     trimmed.startsWith("#") ||
-    trimmed.startsWith("//")
+    trimmed.startsWith("//") ||
+    trimmed.startsWith("/api/") ||
+    trimmed.startsWith("/uploads/") ||
+    trimmed.startsWith("blob:") ||
+    trimmed.startsWith("data:") ||
+    /\.(pdf|doc|docx|zip|csv|xlsx|png|jpe?g|webp|svg)($|\?)/i.test(trimmed)
   );
 }
 

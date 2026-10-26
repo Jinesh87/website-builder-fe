@@ -15,6 +15,12 @@ export type ImageRef = {
 export type LinkRef = {
   label: string;
   href: string;
+  actionType?: "link" | "download";
+  downloadFileName?: string;
+  icon?: string;
+  iconImage?: ImageRef;
+  iconPosition?: "left" | "right";
+  openInNewTab?: boolean;
 };
 
 export type ButtonStyle = "filled" | "outline";
@@ -203,7 +209,7 @@ export type FooterData = {
 
 export type SectionBackground = "default" | "surface" | "primary" | "dark";
 export type SectionSpacing = "none" | "compact" | "default" | "relaxed";
-export type SectionAlign = "center" | "left";
+export type SectionAlign = "center" | "left" | "right";
 
 export type SectionCustomColors = {
   background?: string;
@@ -424,7 +430,9 @@ export type FeatureColor =
 
 export type FeatureItem = {
   icon?: IconName | string;
-  iconColor?: FeatureColor;
+  iconImage?: ImageRef;
+  iconColor?: FeatureColor | string;
+  iconBackgroundColor?: string;
   backgroundColor?: string;
   badge?: string;
   title: string;
@@ -434,7 +442,7 @@ export type FeatureItem = {
 };
 
 export type FeaturesData = {
-  heading: string;
+  heading?: string;
   eyebrow?: string;
   intro?: string;
   variant?: "grid" | "split" | "minimal" | "cards" | "pastel-icons";
@@ -444,8 +452,9 @@ export type FeaturesData = {
     | "minimal-accent"
     | "colored-circle"
     | "none";
+  iconBackgroundColor?: string;
   cardStyle?: "transparent" | "surface" | "bordered" | "glass";
-  align?: "left" | "center";
+  align?: SectionAlign;
   columns: GridColumns;
   mobileColumns: GridColumns;
   items: FeatureItem[];
@@ -455,6 +464,9 @@ export type FeaturesData = {
   splitCta?: LinkRef;
   secondaryCta?: LinkRef;
   bottomCta?: LinkRef;
+  showDividers?: boolean;
+  dividerStyle?: "inset" | "full";
+  dividerColor?: string;
 };
 
 export const SERVICES_VARIANTS = [
@@ -472,9 +484,10 @@ export type ServiceItem = {
   title: string;
   description: string;
   badge?: string;
-  badgeColor?: FeatureColor;
+  badgeColor?: FeatureColor | string;
   icon?: IconName | string;
-  iconColor?: FeatureColor;
+  iconImage?: ImageRef;
+  iconColor?: FeatureColor | string;
   image?: ImageRef;
   price?: string;
   duration?: string;
@@ -506,7 +519,7 @@ export type ServicesData = {
     | "glow-icon"
     | "none";
   imageAspect?: "16:9" | "4:3" | "1:1" | "21:9" | "auto";
-  align?: "left" | "center";
+  align?: SectionAlign;
   columns: GridColumns;
   mobileColumns: GridColumns;
   items: ServiceItem[];
@@ -563,7 +576,7 @@ export type TestimonialsData = {
   heading: string;
   intro?: string;
   cardStyle?: TestimonialsCardStyle;
-  align?: "left" | "center";
+  align?: SectionAlign;
   columns?: GridColumns;
   showRatings?: boolean;
   showAvatars?: boolean;
@@ -798,6 +811,7 @@ export type TextData = {
   heading?: string;
   /** Plain text; blank lines separate paragraphs. Never rendered as HTML. */
   body: string;
+  align?: SectionAlign;
 };
 
 export type GalleryData = {
@@ -805,12 +819,14 @@ export type GalleryData = {
   columns: GridColumns;
   mobileColumns: GridColumns;
   images: ImageRef[];
+  align?: SectionAlign;
 };
 
 export type LogosData = {
   heading?: string;
   grayscale: boolean;
   logos: ImageRef[];
+  align?: SectionAlign;
 };
 
 export type SplitData = {
@@ -828,6 +844,7 @@ export type StatsData = {
   heading?: string;
   intro?: string;
   items: { value: string; label: string }[];
+  align?: SectionAlign;
 };
 
 export const PRICING_VARIANTS = [
@@ -888,6 +905,7 @@ export type MediaData = {
   videoUrl?: string;
   aspect: MediaAspect;
   width: "contained" | "wide";
+  align?: SectionAlign;
 };
 
 export const TEAM_VARIANTS = [
@@ -1003,7 +1021,8 @@ export type MarqueeVariant = (typeof MARQUEE_VARIANTS)[number];
 export type MarqueeItem = {
   text: string;
   badge?: string;
-  icon?: IconName;
+  icon?: IconName | string;
+  iconImage?: ImageRef;
   link?: string;
   subtext?: string;
 };
@@ -1256,6 +1275,7 @@ export type BlogData = {
   newsletterPlaceholder?: string;
   newsletterButtonText?: string;
   posts: BlogPostItem[];
+  align?: SectionAlign;
 };
 
 export type BlogContentSection = {
@@ -1296,6 +1316,8 @@ export const CARDS_VARIANTS = [
   "horizontal-split",
   "minimal-accent",
   "floating-panel",
+  "floating-icon",
+  "dos-donts",
 ] as const;
 export type CardsVariant = (typeof CARDS_VARIANTS)[number];
 
@@ -1317,11 +1339,26 @@ export type CardsImageAspect = (typeof CARDS_IMAGE_ASPECTS)[number];
 export const CARDS_HOVER_EFFECTS = ["none", "lift", "zoom", "glow"] as const;
 export type CardsHoverEffect = (typeof CARDS_HOVER_EFFECTS)[number];
 
-export const CARDS_HEADER_LAYOUTS = ["center", "left", "split"] as const;
+export const CARDS_HEADER_LAYOUTS = ["center", "left", "right", "split"] as const;
 export type CardsHeaderLayout = (typeof CARDS_HEADER_LAYOUTS)[number];
 
 export const CARDS_DESCRIPTION_LINES_MAX = 8;
 export const CARDS_RADIUS_MAX = 48;
+
+export const CARDS_ICON_PLACEMENTS = ["inline", "float-seam", "float-top"] as const;
+export type CardsIconPlacement = (typeof CARDS_ICON_PLACEMENTS)[number];
+
+export const CARDS_ICON_ALIGNS = ["left", "center", "right"] as const;
+export type CardsIconAlign = (typeof CARDS_ICON_ALIGNS)[number];
+
+export const CARDS_ICON_VARIANTS = ["filled", "soft", "outline", "surface"] as const;
+export type CardsIconVariant = (typeof CARDS_ICON_VARIANTS)[number];
+
+export const CARDS_ICON_SHAPES = ["rounded", "square", "circle", "custom"] as const;
+export type CardsIconShape = (typeof CARDS_ICON_SHAPES)[number];
+
+export const CARDS_ICON_SIZES = ["sm", "md", "lg", "xl"] as const;
+export type CardsIconSize = (typeof CARDS_ICON_SIZES)[number];
 
 export type CardsButtonSettings = {
   /** Unset uses the design's own default. */
@@ -1336,12 +1373,18 @@ export type CardsButtonSettings = {
   showArrow?: boolean;
 };
 
+export type CardChecklistItem = {
+  text: string;
+  icon?: "check" | "cross" | "x" | string;
+};
+
 export type CardItem = {
   title: string;
   subtitle?: string;
   description?: string;
   image?: ImageRef;
   icon?: IconName | string;
+  iconImage?: ImageRef;
   badge?: string;
   tags?: string[];
   price?: string;
@@ -1351,7 +1394,12 @@ export type CardItem = {
   backgroundColor?: string;
   /** #rrggbb used for the accent bar, icon tint and badge. */
   accentColor?: string;
+  /** Custom badge background color override (#rrggbb). */
+  iconBgColor?: string;
+  /** Custom icon glyph color override (#rrggbb). */
+  iconColor?: string;
   featured?: boolean;
+  checklist?: Array<CardChecklistItem | string>;
 };
 
 export type CardsData = {
@@ -1391,6 +1439,26 @@ export type CardsData = {
   showDescription?: boolean;
   showPrices?: boolean;
   showNumbers?: boolean;
+  /** Default icon for cards in this section when not specified on the card item. */
+  defaultIcon?: string;
+  /** Position of the icon marker: inline (inside content), float-seam (overlapping image and body), float-top (on image). */
+  iconPlacement?: CardsIconPlacement;
+  /** Horizontal alignment of the icon: left, center, right. */
+  iconAlign?: CardsIconAlign;
+  /** Visual variant of the icon badge: filled (solid color), soft (light tint), outline, surface (white card bg). */
+  iconVariant?: CardsIconVariant;
+  /** Shape of the icon badge: rounded (rounded-square), square, circle, custom. */
+  iconShape?: CardsIconShape;
+  /** Corner radius in px when shape is custom. */
+  iconRadius?: number;
+  /** Size of the icon badge: sm, md, lg, xl. */
+  iconSize?: CardsIconSize;
+  /** Custom background color for the icon badge (#rrggbb). */
+  iconBgColor?: string;
+  /** Custom icon glyph color (#rrggbb). */
+  iconColor?: string;
+  /** Fine-tune vertical float offset in px (-50 to 50). */
+  iconOffsetY?: number;
   button?: CardsButtonSettings;
   items: CardItem[];
 };

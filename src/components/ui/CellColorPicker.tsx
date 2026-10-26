@@ -191,8 +191,10 @@ CellColorPicker.Trigger = function CellColorPickerTrigger({
 /* Compound: ValueDisplay */
 CellColorPicker.ValueDisplay = function CellColorPickerValueDisplay({
   className = "",
+  placeholder,
 }: {
   className?: string;
+  placeholder?: string;
 }) {
   const { value, onChange, fallback, id } = useCellColorPicker();
 
@@ -214,7 +216,7 @@ CellColorPicker.ValueDisplay = function CellColorPickerValueDisplay({
         id={id}
         type="text"
         value={value ?? ""}
-        placeholder={fallback}
+        placeholder={placeholder ?? fallback}
         onChange={(e) => {
           const val = e.target.value.trim();
           if (!val) {

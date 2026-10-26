@@ -2120,6 +2120,49 @@ export const SECTION_PRESETS: SectionPreset[] = [
       }),
   },
   {
+    key: "features-mission-vision",
+    type: "features",
+    label: "Features · Mission & Vision banner",
+    category: "Features",
+    description:
+      "Full-width primary banner with 3 centered columns separated by clean vertical divider lines.",
+    create: () =>
+      createSection("features", {
+        settings: {
+          background: "primary",
+          spacing: "default",
+        },
+        data: {
+          variant: "minimal",
+          iconStyle: "none",
+          cardStyle: "transparent",
+          align: "center",
+          heading: "",
+          columns: 3,
+          mobileColumns: 1,
+          showDividers: true,
+          dividerStyle: "inset",
+          items: [
+            {
+              title: "Our Mission",
+              description:
+                "To deliver superior quality WPC & PVC solutions that enhance living spaces while preserving our natural forests.",
+            },
+            {
+              title: "Our Vision",
+              description:
+                "To be the most preferred brand for alternative wood solutions in the global market.",
+            },
+            {
+              title: "Our Values",
+              description:
+                "Integrity, Innovation, Sustainability, and unwavering commitment to Quality.",
+            },
+          ],
+        },
+      }),
+  },
+  {
     key: "features-3",
     type: "features",
     label: "Features · 3 columns",

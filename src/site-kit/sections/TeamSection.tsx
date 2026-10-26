@@ -454,9 +454,9 @@ export default function TeamSection({ section }: { section: SectionOf<"team"> })
       className={`wb-team wb-team-variant-${variant}`}
       label={data.heading}
     >
-      <div className={`wb-team-header-wrapper wb-align-${data.align || "center"}`}>
+      <div className={`wb-team-header-wrapper wb-align-${data.align || section.settings.align || "center"}`}>
         {data.eyebrow && <span className="wb-team-eyebrow">{data.eyebrow}</span>}
-        <SectionHead heading={data.heading} intro={data.intro} />
+        <SectionHead heading={data.heading} intro={data.intro} align={data.align || section.settings.align || "center"} />
         {data.badge && (
           <div className="wb-team-badge-pill">
             <span className="wb-team-pulse-dot" aria-hidden="true" />

@@ -3,8 +3,10 @@ import {
   cardColorVars,
   cardsAspectRatios,
   cardsCornerRadius,
+  cardsIconRadius,
   clampDescriptionLines,
   resolveCardsButton,
+  resolveCardsIcon,
   resolveCardsVariant,
   safeHexColor,
 } from "./cards-layout.ts";
@@ -61,7 +63,60 @@ describe("cards layout helpers", () => {
     const variants = SECTION_PRESETS.filter((preset) => preset.type === "cards").map(
       (preset) => (preset.create().data as { variant?: string }).variant,
     );
-    expect(new Set(variants).size).toBe(5);
+    expect(new Set(variants).size).toBe(7);
     expect(createSection("cards").data.items.length).toBeGreaterThan(0);
+  });
+
+  it("resolves cards floating icon options with adjustable dimensions and radius", () => {
+    expect(
+      resolveCardsIcon({
+        heading: "Test",
+        columns: 3,
+        mobileColumns: 1,
+        items: [],
+      }),
+    ).toMatchObject({
+      placement: "float-seam",
+      align: "left",
+      variant: "filled",
+      shape: "rounded",
+      size: "md",
+      boxSize: 44,
+      svgSize: 22,
+      radius: "10px",
+      offsetY: 0,
+    });
+
+    expect(
+      resolveCardsIcon({
+        heading: "Test",
+        columns: 3,
+        mobileColumns: 1,
+        items: [],
+        iconPlacement: "float-seam",
+        iconAlign: "center",
+        iconVariant: "outline",
+        iconShape: "circle",
+        iconSize: "lg",
+        iconBgColor: "#1d4ed8",
+        iconColor: "#ffffff",
+        iconOffsetY: 4,
+      }),
+    ).toMatchObject({
+      placement: "float-seam",
+      align: "center",
+      variant: "outline",
+      shape: "circle",
+      size: "lg",
+      boxSize: 52,
+      svgSize: 26,
+      radius: "9999px",
+      bgColor: "#1D4ED8",
+      color: "#FFFFFF",
+      offsetY: 4,
+    });
+
+    expect(cardsIconRadius("square")).toBe("0px");
+    expect(cardsIconRadius("custom", 14)).toBe("14px");
   });
 });

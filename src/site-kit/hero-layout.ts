@@ -32,7 +32,7 @@ export function heroBaseAlign(data: HeroData, settings: SectionSettings): HeroAl
   if (data.variant === "campaign-banner") {
     return isHeroAlign(data.contentAlign) ? data.contentAlign : undefined;
   }
-  return settings.align === "left" ? "left" : undefined;
+  return isHeroAlign(settings.align) ? settings.align : undefined;
 }
 
 export function heroElementAlign(
