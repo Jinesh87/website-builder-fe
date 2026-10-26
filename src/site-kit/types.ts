@@ -426,6 +426,7 @@ export type FeatureItem = {
   icon?: IconName | string;
   iconImage?: ImageRef;
   iconColor?: FeatureColor | string;
+  iconBackgroundColor?: string;
   backgroundColor?: string;
   badge?: string;
   title: string;
@@ -445,6 +446,7 @@ export type FeaturesData = {
     | "minimal-accent"
     | "colored-circle"
     | "none";
+  iconBackgroundColor?: string;
   cardStyle?: "transparent" | "surface" | "bordered" | "glass";
   align?: "left" | "center";
   columns: GridColumns;

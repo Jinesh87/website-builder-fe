@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   gridStyle,
   SectionHead,
@@ -205,21 +206,53 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
         }
       : undefined;
 
-    const iconCustomStyle = isCustomHex
-      ? iconStyle === "colored-circle"
-        ? { background: item.iconColor, color: "#ffffff" }
-        : iconStyle === "minimal-accent"
-          ? { color: item.iconColor, background: "transparent" }
-          : iconStyle === "square-badge"
-            ? {
-                color: item.iconColor,
-                background: `color-mix(in srgb, ${item.iconColor} 12%, transparent)`,
-                borderColor: `color-mix(in srgb, ${item.iconColor} 26%, transparent)`,
-              }
-            : {
-                color: item.iconColor,
-                background: `color-mix(in srgb, ${item.iconColor} 15%, transparent)`,
-              }
+    const activeIconBg = item.iconBackgroundColor || data.iconBackgroundColor;
+
+    const iconCustomStyle: CSSProperties | undefined = activeIconBg
+      ? {
+          background: activeIconBg,
+          backgroundColor: activeIconBg,
+          color: isCustomHex ? (item.iconColor as string) : undefined,
+          borderRadius:
+            iconStyle === "pastel-circle" || iconStyle === "colored-circle"
+              ? "9999px"
+              : "16px",
+          width: "56px",
+          height: "56px",
+          minWidth: "56px",
+          minHeight: "56px",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: "16px",
+          border:
+            activeIconBg.startsWith("rgba") || activeIconBg === "transparent"
+              ? "1px solid rgba(255, 255, 255, 0.15)"
+              : undefined,
+        }
+      : isCustomHex
+        ? iconStyle === "colored-circle"
+          ? { background: item.iconColor, color: "#ffffff" }
+          : iconStyle === "minimal-accent"
+            ? { color: item.iconColor, background: "transparent" }
+            : iconStyle === "square-badge"
+              ? {
+                  color: item.iconColor,
+                  background: `color-mix(in srgb, ${item.iconColor} 12%, transparent)`,
+                  borderColor: `color-mix(in srgb, ${item.iconColor} 26%, transparent)`,
+                }
+              : {
+                  color: item.iconColor,
+                  background: `color-mix(in srgb, ${item.iconColor} 15%, transparent)`,
+                }
+        : undefined;
+
+    const badgeCustomStyle: CSSProperties | undefined = isCustomHex
+      ? {
+          color: item.iconColor,
+          borderColor: `color-mix(in srgb, ${item.iconColor} 30%, transparent)`,
+          background: `color-mix(in srgb, ${item.iconColor} 10%, transparent)`,
+        }
       : undefined;
 
     return (
@@ -245,7 +278,7 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
             {item.badge && (
               <span
                 className={`wb-feature-badge ${colorClass}`}
-                style={iconCustomStyle}
+                style={badgeCustomStyle}
               >
                 {item.badge}
               </span>

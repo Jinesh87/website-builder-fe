@@ -157,6 +157,19 @@ const FEATURE_CARD_BG_PRESETS = [
   { value: "#0f172a", label: "Dark Slate (#0f172a)" },
 ];
 
+const FEATURE_ICON_BG_PRESETS = [
+  { value: "", label: "Auto / Default" },
+  { value: "rgba(255, 255, 255, 0.15)", label: "Translucent White (Glass / Overlay)" },
+  { value: "rgba(255, 255, 255, 0.25)", label: "Semi-opaque White" },
+  { value: "#ffffff", label: "Pure White (#ffffff)" },
+  { value: "#f8fafc", label: "Light Slate (#f8fafc)" },
+  { value: "#f1f5f9", label: "Soft Light Gray (#f1f5f9)" },
+  { value: "#eff6ff", label: "Soft Blue Tint (#eff6ff)" },
+  { value: "#1e40af", label: "Deep Blue (#1e40af)" },
+  { value: "#0f172a", label: "Dark Slate (#0f172a)" },
+  { value: "rgba(0, 0, 0, 0.06)", label: "Subtle Dark Tint" },
+];
+
 const BACKGROUND_OPTIONS: { value: SectionBackground; label: string }[] = [
   { value: "default", label: "Page background" },
   { value: "surface", label: "Tinted" },
@@ -1423,6 +1436,41 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
           }
         />
 
+        <div className="grid grid-cols-2 gap-2">
+          <SelectField
+            label="Section icon bg"
+            value={data.iconBackgroundColor ?? ""}
+            options={[
+              ...FEATURE_ICON_BG_PRESETS,
+              ...(data.iconBackgroundColor &&
+              !FEATURE_ICON_BG_PRESETS.some(
+                (p) =>
+                  p.value.toLowerCase() ===
+                  data.iconBackgroundColor?.toLowerCase(),
+              )
+                ? [
+                    {
+                      value: data.iconBackgroundColor,
+                      label: `Custom (${data.iconBackgroundColor})`,
+                    },
+                  ]
+                : []),
+            ]}
+            onChange={(val) =>
+              onChange({ ...data, iconBackgroundColor: val || undefined })
+            }
+          />
+          <CompactColorField
+            label="Custom icon bg"
+            value={data.iconBackgroundColor}
+            onChange={(color) =>
+              onChange({ ...data, iconBackgroundColor: color || undefined })
+            }
+            fallback="rgba(255, 255, 255, 0.15)"
+            placeholder="Auto"
+          />
+        </div>
+
         <SelectField
           label="Card container style"
           value={
@@ -1547,6 +1595,44 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
                     })
                   }
                   fallback="#3b82f6"
+                  placeholder="Auto"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <SelectField
+                  label="Icon background"
+                  value={item.iconBackgroundColor ?? ""}
+                  options={[
+                    ...FEATURE_ICON_BG_PRESETS,
+                    ...(item.iconBackgroundColor &&
+                    !FEATURE_ICON_BG_PRESETS.some(
+                      (p) =>
+                        p.value.toLowerCase() ===
+                        item.iconBackgroundColor?.toLowerCase(),
+                    )
+                      ? [
+                          {
+                            value: item.iconBackgroundColor,
+                            label: `Custom (${item.iconBackgroundColor})`,
+                          },
+                        ]
+                      : []),
+                  ]}
+                  onChange={(val) =>
+                    update({ ...item, iconBackgroundColor: val || undefined })
+                  }
+                />
+                <CompactColorField
+                  label="Icon bg color"
+                  value={item.iconBackgroundColor}
+                  onChange={(color) =>
+                    update({
+                      ...item,
+                      iconBackgroundColor: color || undefined,
+                    })
+                  }
+                  fallback="rgba(255, 255, 255, 0.15)"
                   placeholder="Auto"
                 />
               </div>

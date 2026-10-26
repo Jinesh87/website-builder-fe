@@ -2553,7 +2553,7 @@ export const SITE_CSS = `
   min-width: 44px;
   min-height: 44px;
   margin-bottom: 18px;
-  background: transparent !important;
+  background: transparent;
   color: var(--wb-primary);
 }
 .wb-icon-style-minimal-accent .wb-icon svg {
