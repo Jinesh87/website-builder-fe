@@ -8,6 +8,38 @@ type SortMode = "featured" | "price-low" | "price-high" | "name";
 
 /** Named categories kept visible before the rest sit behind More. */
 const CATEGORY_PREVIEW = 5;
+const PAGE_SIZES = [8, 12, 24, 48];
+const DEFAULT_PAGE_SIZE = 12;
+
+type ShopListState = {
+  search: string;
+  category: string;
+  sort: SortMode;
+  page: number;
+  pageSize: number;
+  total: number;
+  categories: string[];
+};
+
+function listHref(list: ShopListState, patch: Partial<Pick<ShopListState, "search" | "category" | "sort" | "page" | "pageSize">>): string {
+  const next = { ...list, ...patch };
+  const params = new URLSearchParams();
+  if (next.search) params.set("q", next.search);
+  if (next.category && next.category !== "All") params.set("cat", next.category);
+  if (next.sort !== "featured") params.set("sort", next.sort);
+  if (next.page > 1) params.set("page", String(next.page));
+  if (next.pageSize !== DEFAULT_PAGE_SIZE) params.set("per", String(next.pageSize));
+  const text = params.toString();
+  return text ? `?${text}` : "?";
+}
+
+function pageNumbers(page: number, pages: number): number[] {
+  const width = 7;
+  const start = Math.max(1, Math.min(page - 3, pages - width + 1));
+  const end = Math.min(pages, start + width - 1);
+  const from = Math.max(1, end - width + 1);
+  return Array.from({ length: end - from + 1 }, (_, index) => from + index);
+}
 
 const SAMPLES: ShopCatalogProduct[] = [
   {
@@ -59,16 +91,22 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
   const catalog = useShopCatalog();
   const stat = useStaticRender();
   const live = catalog?.live === true;
+  const serverList = live ? catalog?.list : undefined;
   const products = live ? catalog.products : SAMPLES;
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [sort, setSort] = useState<SortMode>("featured");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const listings = useMemo(() => products.flatMap((product) => shopListings(product)), [products]);
-  const categories = useMemo(() => ["All", ...new Set(products.map((product) => product.categoryName).filter(Boolean))], [products]);
+  const categories = useMemo(
+    () => (serverList ? ["All", ...serverList.categories] : ["All", ...new Set(products.map((product) => product.categoryName).filter(Boolean))]),
+    [products, serverList],
+  );
   const extraCategoryCount = Math.max(0, categories.length - 1 - CATEGORY_PREVIEW);
   const visible = useMemo(() => {
-    if (stat) return listings;
+    if (serverList) return listings;
     const needle = query.trim().toLowerCase();
     const filtered = listings.filter((listing) => {
       if (category !== "All" && listing.product.categoryName !== category) return false;
@@ -78,7 +116,16 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
     if (sort === "price-high") return [...filtered].sort((a, b) => (b.variants[0]?.pricePaise ?? 0) - (a.variants[0]?.pricePaise ?? 0));
     if (sort === "name") return [...filtered].sort((a, b) => a.product.name.localeCompare(b.product.name));
     return filtered;
-  }, [listings, query, category, sort, stat]);
+  }, [listings, query, category, sort, serverList]);
+  const total = serverList ? serverList.total : visible.length;
+  const currentSize = serverList ? serverList.pageSize : pageSize;
+  const pageCount = Math.max(1, Math.ceil(total / currentSize));
+  const currentPage = serverList ? serverList.page : Math.min(page, pageCount);
+  const pageListings = serverList ? listings : visible.slice((currentPage - 1) * currentSize, currentPage * currentSize);
+  const activeCategory = serverList ? serverList.category : category;
+  const activeSort = serverList ? serverList.sort : sort;
+  const from = total === 0 ? 0 : (currentPage - 1) * currentSize + 1;
+  const to = total === 0 ? 0 : Math.min(total, from + pageListings.length - 1);
 
   const heading = (
     <div className="wb-shop-head">
@@ -88,85 +135,115 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
     </div>
   );
 
-  const tools =
-    (data.showSearch !== false || data.showCategoryFilter !== false || data.showSort !== false) && products.length > 0 ? (
-      <div className="wb-shop-tools">
-        {data.showSearch !== false && (
-          <label className="wb-shop-search-wrap">
-            <span className="wb-shop-tool-label">Search</span>
+  const hasCatalog = serverList ? serverList.categories.length > 0 || serverList.total > 0 || serverList.search !== "" : products.length > 0;
+  const toolBody = (
+    <>
+      {data.showSearch !== false && (
+        <label className="wb-shop-search-wrap">
+          <span className="wb-shop-tool-label">Search</span>
+          <span className="wb-shop-search-row">
             <input
               className="wb-shop-search"
               type="search"
+              name={serverList ? "q" : undefined}
               placeholder="Search products"
               aria-label="Search products"
               data-wb-shop-search=""
-              value={stat ? undefined : query}
-              onChange={stat ? undefined : (event) => setQuery(event.target.value)}
+              defaultValue={serverList ? serverList.search : undefined}
+              value={serverList ? undefined : query}
+              onChange={serverList ? undefined : (event) => { setQuery(event.target.value); setPage(1); }}
             />
-          </label>
-        )}
-        {data.showCategoryFilter !== false && categories.length > 1 && (
-          <div className="wb-shop-filter-group">
-            <span className="wb-shop-tool-label">Categories</span>
-            <div className={`wb-shop-filters${!stat && categoriesOpen ? " is-expanded" : ""}`} role="tablist" aria-label="Product categories">
-              {categories.map((name, index) => (
+            {serverList && <button className="wb-shop-search-go" type="submit">Search</button>}
+          </span>
+        </label>
+      )}
+      {data.showCategoryFilter !== false && categories.length > 1 && (
+        <div className="wb-shop-filter-group">
+          <span className="wb-shop-tool-label">Categories</span>
+          <div className={`wb-shop-filters${!serverList && categoriesOpen ? " is-expanded" : ""}`} role="tablist" aria-label="Product categories">
+            {categories.map((name, index) => {
+              const active = activeCategory === name;
+              const className = `wb-shop-filter${active ? " is-active" : ""}${index > CATEGORY_PREVIEW ? " is-extra" : ""}`;
+              return serverList ? (
+                <a
+                  key={name}
+                  className={className}
+                  href={listHref(serverList, { category: name, page: 1 })}
+                  aria-current={active ? "true" : undefined}
+                  data-wb-shop-filter={name}
+                >
+                  {name}
+                </a>
+              ) : (
                 <button
                   key={name}
                   type="button"
-                  className={`wb-shop-filter${(stat ? name === "All" : category === name) ? " is-active" : ""}${index > CATEGORY_PREVIEW ? " is-extra" : ""}`}
-                  aria-pressed={stat ? name === "All" : category === name}
+                  className={className}
+                  aria-pressed={active}
                   data-wb-shop-filter={name}
-                  onClick={stat ? undefined : () => setCategory(name)}
+                  onClick={() => { setCategory(name); setPage(1); }}
                 >
                   {name}
                 </button>
-              ))}
-              {extraCategoryCount > 0 && (
-                <button
-                  type="button"
-                  className="wb-shop-more"
-                  data-wb-shop-more=""
-                  data-more={`More (${extraCategoryCount})`}
-                  data-less="Less"
-                  aria-expanded={stat ? undefined : categoriesOpen}
-                  onClick={stat ? undefined : () => setCategoriesOpen((open) => !open)}
-                >
-                  {stat || !categoriesOpen ? `More (${extraCategoryCount})` : "Less"}
-                </button>
-              )}
-            </div>
+              );
+            })}
+            {extraCategoryCount > 0 && (
+              <button
+                type="button"
+                className="wb-shop-more"
+                data-wb-shop-more=""
+                data-more={`More (${extraCategoryCount})`}
+                data-less="Less"
+                aria-expanded={serverList ? undefined : categoriesOpen}
+                onClick={serverList ? undefined : () => setCategoriesOpen((open) => !open)}
+              >
+                {serverList || !categoriesOpen ? `More (${extraCategoryCount})` : "Less"}
+              </button>
+            )}
           </div>
-        )}
-        {data.showSort !== false && (
-          <label className="wb-shop-sort-wrap">
-            <span className="wb-shop-tool-label">Sort by</span>
-            <select
-              className="wb-shop-sort"
-              aria-label="Sort products"
-              data-wb-shop-sort=""
-              value={stat ? "featured" : sort}
-              onChange={stat ? undefined : (event) => setSort(event.target.value as SortMode)}
-            >
-              <option value="featured">Featured</option>
-              <option value="price-low">Price: low to high</option>
-              <option value="price-high">Price: high to low</option>
-              <option value="name">Name: A to Z</option>
-            </select>
-          </label>
-        )}
-      </div>
-    ) : null;
-
-  const grid =
-    products.length === 0 ? (
-      <p className="wb-shop-empty">{data.emptyMessage || "No products yet."}</p>
-    ) : (
-      <div className="wb-shop-results">
-        <div className="wb-shop-result-bar">
-          <span data-wb-shop-count="">{visible.length} {visible.length === 1 ? "product" : "products"}</span>
         </div>
+      )}
+      {data.showSort !== false && (
+        <label className="wb-shop-sort-wrap">
+          <span className="wb-shop-tool-label">Sort by</span>
+          <select
+            className="wb-shop-sort"
+            aria-label="Sort products"
+            name={serverList ? "sort" : undefined}
+            data-wb-shop-sort=""
+            defaultValue={serverList ? serverList.sort : undefined}
+            value={serverList ? undefined : activeSort}
+            onChange={serverList ? undefined : (event) => { setSort(event.target.value as SortMode); setPage(1); }}
+          >
+            <option value="featured">Featured</option>
+            <option value="price-low">Price: low to high</option>
+            <option value="price-high">Price: high to low</option>
+            <option value="name">Name: A to Z</option>
+          </select>
+        </label>
+      )}
+    </>
+  );
+  const tools = !hasCatalog ? null : serverList ? (
+    <form className="wb-shop-tools" method="get" action="" data-wb-shop-form="">
+      {toolBody}
+      <input type="hidden" name="page" value="1" />
+      <input type="hidden" name="cat" value={serverList.category === "All" ? "" : serverList.category} />
+    </form>
+  ) : (
+    <div className="wb-shop-tools">{toolBody}</div>
+  );
+
+  const pageLinks = pageNumbers(currentPage, pageCount);
+  const grid = !hasCatalog ? (
+    <p className="wb-shop-empty">{data.emptyMessage || "No products yet."}</p>
+  ) : (
+      <div className="wb-shop-results">
+        {pageListings.length === 0 ? (
+          <p className="wb-shop-empty">No products match that search.</p>
+        ) : (
         <div className={`wb-shop-grid${data.layout === "grid-2" ? " is-2" : ""}`}>
-          {visible.map((listing, index) => {
+          {pageListings.map((listing, index) => {
             const image = listingImage(listing.product, listing.variants);
             const href = productHref(data.detailBase, listing.product.slug, listingSelection(listing));
             const price = listingPrice(listing);
@@ -225,8 +302,47 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
             );
           })}
         </div>
+        )}
+        <nav className="wb-shop-pager" aria-label="Product pages">
+          <span className="wb-shop-result-count" data-wb-shop-count="">{total === 0 ? "0 products" : `Showing ${from}–${to} of ${total}`}</span>
+          <label className="wb-shop-per-wrap">
+            <span className="wb-shop-tool-label">Per page</span>
+            <select
+              className="wb-shop-per"
+              aria-label="Products per page"
+              name={serverList ? "per" : undefined}
+              data-wb-shop-per=""
+              defaultValue={serverList ? String(serverList.pageSize) : undefined}
+              value={serverList ? undefined : String(pageSize)}
+              onChange={serverList ? undefined : (event) => { setPageSize(Number(event.target.value)); setPage(1); }}
+            >
+              {PAGE_SIZES.map((size) => (
+                <option key={size} value={size}>{size}</option>
+              ))}
+            </select>
+          </label>
+          {total > 0 && (
+            <div className="wb-shop-pages">
+              {serverList ? (
+                <a className="wb-shop-page" href={currentPage > 1 ? listHref(serverList, { page: currentPage - 1 }) : undefined} aria-disabled={currentPage <= 1 || undefined}>Previous</a>
+              ) : (
+                <button type="button" className="wb-shop-page" disabled={currentPage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>Previous</button>
+              )}
+              {pageLinks.map((number) => serverList ? (
+                <a key={number} className={`wb-shop-page${number === currentPage ? " is-active" : ""}`} href={listHref(serverList, { page: number })} aria-current={number === currentPage ? "page" : undefined}>{number}</a>
+              ) : (
+                <button key={number} type="button" className={`wb-shop-page${number === currentPage ? " is-active" : ""}`} onClick={() => setPage(number)}>{number}</button>
+              ))}
+              {serverList ? (
+                <a className="wb-shop-page" href={currentPage < pageCount ? listHref(serverList, { page: currentPage + 1 }) : undefined} aria-disabled={currentPage >= pageCount || undefined}>Next</a>
+              ) : (
+                <button type="button" className="wb-shop-page" disabled={currentPage >= pageCount} onClick={() => setPage((current) => Math.min(pageCount, current + 1))}>Next</button>
+              )}
+            </div>
+          )}
+        </nav>
       </div>
-    );
+  );
 
   return (
     <SectionShell
@@ -235,7 +351,7 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
       fullWidth
       className={data.design === "editorial" ? "wb-shop-bleed" : undefined}
     >
-      <div className={`wb-shop wb-shop-list is-${data.design || "classic-grid"}`} data-wb-shop="">
+      <div className={`wb-shop wb-shop-list is-${data.design || "classic-grid"}`} data-wb-shop="" data-wb-shop-paged={serverList ? "" : undefined}>
         {data.design === "editorial" ? (
           <div className="wb-shop-catalog-shell">
             <aside className="wb-shop-sidebar">{heading}{tools}</aside>

@@ -1542,6 +1542,16 @@ export type ShopCatalog = {
   productSlug?: string;
   /** Option values to preselect, from the shop-card link. */
   selection?: Record<string, string>;
+  /** Present on a published product list. The products array is already this page. */
+  list?: {
+    search: string;
+    category: string;
+    sort: "featured" | "price-low" | "price-high" | "name";
+    page: number;
+    pageSize: number;
+    total: number;
+    categories: string[];
+  };
   live: boolean;
 };
 

@@ -345,6 +345,9 @@ function ShopCatalog({
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(0);
   const [categoryName, setCategoryName] = useState("");
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [savingCategory, setSavingCategory] = useState(false);
@@ -352,7 +355,10 @@ function ShopCatalog({
   const [viewing, setViewing] = useState<ShopProduct | null>(null);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setQuery(search.trim()), 300);
+    const timer = window.setTimeout(() => {
+      setQuery(search.trim());
+      setPage(1);
+    }, 300);
     return () => window.clearTimeout(timer);
   }, [search]);
 
@@ -375,9 +381,13 @@ function ShopCatalog({
     let cancelled = false;
     setProducts(null);
     shopApi
-      .products(websiteId, { search: query || undefined, categoryId: categoryId || undefined })
+      .products(websiteId, { search: query || undefined, categoryId: categoryId || undefined, page, pageSize })
       .then((loaded) => {
-        if (!cancelled) setProducts(loaded);
+        if (!cancelled) {
+          setProducts(loaded.products);
+          setTotal(loaded.total);
+          if (loaded.page !== page) setPage(loaded.page);
+        }
       })
       .catch((err: unknown) => {
         if (!cancelled) setLoadError(errorMessage(err));
@@ -385,7 +395,7 @@ function ShopCatalog({
     return () => {
       cancelled = true;
     };
-  }, [websiteId, query, categoryId]);
+  }, [websiteId, query, categoryId, page, pageSize]);
 
   async function addCategory() {
     const name = categoryName.trim();
@@ -519,7 +529,10 @@ function ShopCatalog({
           </div>
           <select
             value={categoryId}
-            onChange={(event) => setCategoryId(event.target.value)}
+            onChange={(event) => {
+              setCategoryId(event.target.value);
+              setPage(1);
+            }}
             aria-label="Filter by category"
             className="h-9 rounded-lg border border-ed-border bg-surface px-3 text-sm text-ink"
           >
@@ -585,6 +598,43 @@ function ShopCatalog({
             );
           })}
         </div>
+        {products && (
+          <div className="flex items-center justify-end gap-3 border-t border-line px-5 py-3">
+            {total > 0 && (
+              <p className="mr-auto text-xs text-ink-muted">
+                Showing {(page - 1) * pageSize + 1}–{Math.min(total, (page - 1) * pageSize + products.length)} of {total}
+              </p>
+            )}
+            <select
+              value={String(pageSize)}
+              onChange={(event) => {
+                setPageSize(Number(event.target.value));
+                setPage(1);
+              }}
+              aria-label="Products per page"
+              className="h-9 rounded-lg border border-ed-border bg-surface px-3 text-sm text-ink"
+            >
+              {[10, 20, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size} per page
+                </option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onPress={() => setPage((current) => Math.max(1, current - 1))} isDisabled={page <= 1 || total === 0}>
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onPress={() => setPage((current) => current + 1)}
+                isDisabled={total === 0 || page >= Math.max(1, Math.ceil(total / pageSize))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
         </>
         )}
 
