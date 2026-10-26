@@ -6,9 +6,11 @@ import {
   cardsCornerRadius,
   clampDescriptionLines,
   resolveCardsButton,
+  resolveCardsIcon,
   resolveCardsVariant,
   type CssVars,
   type ResolvedCardsButton,
+  type ResolvedCardsIcon,
 } from "../cards-layout.ts";
 import { gridStyle, parseRichText, SectionShell, SiteIcon, SiteImage, SiteLink } from "../primitives.tsx";
 import type {
@@ -44,6 +46,7 @@ type CardContext = {
   variant: CardsVariant;
   display: Display;
   button: ResolvedCardsButton;
+  icon: ResolvedCardsIcon;
 };
 
 function CardButton({
@@ -103,13 +106,59 @@ function CardMedia({ item, ctx, children }: { item: CardItem; ctx: CardContext; 
   );
 }
 
-function CardMarker({ item, index, ctx }: { item: CardItem; index: number; ctx: CardContext }) {
-  const showIcon = ctx.display.icons && Boolean(item.icon || item.iconImage?.url);
+function getCardIcon(item: CardItem, ctx: CardContext) {
+  if (item.iconImage?.url) return { icon: undefined, iconImage: item.iconImage };
+  if (item.icon && item.icon.trim()) return { icon: item.icon.trim(), iconImage: undefined };
+  if (ctx.icon.defaultIcon && ctx.icon.defaultIcon.trim()) {
+    return { icon: ctx.icon.defaultIcon.trim(), iconImage: undefined };
+  }
+  return { icon: undefined, iconImage: undefined };
+}
+
+function CardIconBadge({
+  item,
+  index,
+  ctx,
+  className = "",
+}: {
+  item: CardItem;
+  index: number;
+  ctx: CardContext;
+  className?: string;
+}) {
+  if (!ctx.display.icons && !ctx.display.numbers) return null;
+  const { icon, iconImage } = getCardIcon(item, ctx);
+  const showIcon = ctx.display.icons && Boolean(icon || iconImage?.url);
   if (!showIcon && !ctx.display.numbers) return null;
+
+  const badgeClass = [
+    "wb-cardset-icon-badge",
+    `wb-cardset-icon-v-${ctx.icon.variant}`,
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className="wb-cardset-marker">
+    <div className={badgeClass}>
+      {ctx.display.numbers && !showIcon && (
+        <span className="wb-cardset-number">{String(index + 1).padStart(2, "0")}</span>
+      )}
+      {showIcon && <SiteIcon inline name={icon} image={iconImage} />}
+    </div>
+  );
+}
+
+function CardMarker({ item, index, ctx }: { item: CardItem; index: number; ctx: CardContext }) {
+  if (!ctx.display.icons && !ctx.display.numbers) return null;
+  const { icon, iconImage } = getCardIcon(item, ctx);
+  const showIcon = ctx.display.icons && Boolean(icon || iconImage?.url);
+  if (!showIcon && !ctx.display.numbers) return null;
+
+  return (
+    <div className={`wb-cardset-marker wb-cardset-marker-align-${ctx.icon.align}`}>
       {ctx.display.numbers && <span className="wb-cardset-number">{String(index + 1).padStart(2, "0")}</span>}
-      {showIcon && <SiteIcon name={item.icon} image={item.iconImage} />}
+      {showIcon && <CardIconBadge item={item} index={index} ctx={ctx} />}
     </div>
   );
 }
@@ -144,10 +193,18 @@ function CardText({ item, ctx }: { item: CardItem; ctx: CardContext }) {
 
 function CardView({ item, index, ctx }: { item: CardItem; index: number; ctx: CardContext }) {
   const hasImage = ctx.display.images && Boolean(item.image?.url);
+  const { icon, iconImage } = getCardIcon(item, ctx);
+  const hasIcon = ctx.display.icons && Boolean(icon || iconImage?.url);
+  const hasMarker = hasIcon || ctx.display.numbers;
+  const isSeamIcon = ctx.icon.placement === "float-seam" && hasMarker;
+  const isTopIcon = ctx.icon.placement === "float-top" && hasMarker;
+  const isInlineIcon = !isSeamIcon && !isTopIcon && hasMarker;
+
   const cardClass = [
     "wb-cardset-card",
     item.featured && "wb-cardset-featured",
     !hasImage && "wb-cardset-no-image",
+    isSeamIcon && hasImage && "wb-cardset-has-seam-icon",
   ]
     .filter(Boolean)
     .join(" ");
@@ -161,9 +218,15 @@ function CardView({ item, index, ctx }: { item: CardItem; index: number; ctx: Ca
             {hasImage && item.image && (
               <SiteImage image={item.image} className="wb-cardset-img" contextText={item.title} />
             )}
+            {isTopIcon && (
+              <div className={`wb-cardset-icon-float-top wb-cardset-icon-align-${ctx.icon.align}`}>
+                <CardIconBadge item={item} index={index} ctx={ctx} />
+              </div>
+            )}
           </div>
           <div className="wb-cardset-overlay-content">
             <CardBadge item={item} ctx={ctx} />
+            {(isInlineIcon || isSeamIcon) && <CardMarker item={item} index={index} ctx={ctx} />}
             <CardText item={item} ctx={ctx} />
             <CardActions item={item} ctx={ctx} />
           </div>
@@ -175,10 +238,15 @@ function CardView({ item, index, ctx }: { item: CardItem; index: number; ctx: Ca
         <article className={`${cardClass} wb-cardset-surface`} style={style}>
           <CardMedia item={item} ctx={ctx}>
             <CardBadge item={item} ctx={ctx} floating />
+            {isTopIcon && (
+              <div className={`wb-cardset-icon-float-top wb-cardset-icon-align-${ctx.icon.align}`}>
+                <CardIconBadge item={item} index={index} ctx={ctx} />
+              </div>
+            )}
           </CardMedia>
           <div className="wb-cardset-body">
             {!hasImage && <CardBadge item={item} ctx={ctx} />}
-            <CardMarker item={item} index={index} ctx={ctx} />
+            {(isInlineIcon || isSeamIcon || !hasImage) && <CardMarker item={item} index={index} ctx={ctx} />}
             <CardText item={item} ctx={ctx} />
             <CardActions item={item} ctx={ctx} />
           </div>
@@ -204,10 +272,49 @@ function CardView({ item, index, ctx }: { item: CardItem; index: number; ctx: Ca
         <article className={cardClass} style={style}>
           <CardMedia item={item} ctx={ctx}>
             <CardBadge item={item} ctx={ctx} floating />
+            {isTopIcon && (
+              <div className={`wb-cardset-icon-float-top wb-cardset-icon-align-${ctx.icon.align}`}>
+                <CardIconBadge item={item} index={index} ctx={ctx} />
+              </div>
+            )}
           </CardMedia>
           <div className="wb-cardset-panel wb-cardset-surface">
             {!hasImage && <CardBadge item={item} ctx={ctx} />}
-            <CardMarker item={item} index={index} ctx={ctx} />
+            {isSeamIcon && hasImage && (
+              <div className={`wb-cardset-panel-seam-icon wb-cardset-icon-align-${ctx.icon.align}`}>
+                <CardIconBadge item={item} index={index} ctx={ctx} />
+              </div>
+            )}
+            {(isInlineIcon || (isSeamIcon && !hasImage) || (isTopIcon && !hasImage)) && (
+              <CardMarker item={item} index={index} ctx={ctx} />
+            )}
+            <CardText item={item} ctx={ctx} />
+            <CardActions item={item} ctx={ctx} />
+          </div>
+        </article>
+      );
+
+    case "floating-icon":
+      return (
+        <article className={`${cardClass} wb-cardset-surface`} style={style}>
+          <CardMedia item={item} ctx={ctx}>
+            <CardBadge item={item} ctx={ctx} floating />
+            {isTopIcon && (
+              <div className={`wb-cardset-icon-float-top wb-cardset-icon-align-${ctx.icon.align}`}>
+                <CardIconBadge item={item} index={index} ctx={ctx} />
+              </div>
+            )}
+          </CardMedia>
+          {isSeamIcon && hasImage && (
+            <div className={`wb-cardset-seam-icon-row wb-cardset-icon-align-${ctx.icon.align}`}>
+              <CardIconBadge item={item} index={index} ctx={ctx} />
+            </div>
+          )}
+          <div className="wb-cardset-body">
+            {!hasImage && <CardBadge item={item} ctx={ctx} />}
+            {(isInlineIcon || (isSeamIcon && !hasImage) || (isTopIcon && !hasImage)) && (
+              <CardMarker item={item} index={index} ctx={ctx} />
+            )}
             <CardText item={item} ctx={ctx} />
             <CardActions item={item} ctx={ctx} />
           </div>
@@ -219,10 +326,22 @@ function CardView({ item, index, ctx }: { item: CardItem; index: number; ctx: Ca
         <article className={`${cardClass} wb-cardset-surface`} style={style}>
           <CardMedia item={item} ctx={ctx}>
             <CardBadge item={item} ctx={ctx} floating />
+            {isTopIcon && (
+              <div className={`wb-cardset-icon-float-top wb-cardset-icon-align-${ctx.icon.align}`}>
+                <CardIconBadge item={item} index={index} ctx={ctx} />
+              </div>
+            )}
           </CardMedia>
+          {isSeamIcon && hasImage && (
+            <div className={`wb-cardset-seam-icon-row wb-cardset-icon-align-${ctx.icon.align}`}>
+              <CardIconBadge item={item} index={index} ctx={ctx} />
+            </div>
+          )}
           <div className="wb-cardset-body">
             {!hasImage && <CardBadge item={item} ctx={ctx} />}
-            <CardMarker item={item} index={index} ctx={ctx} />
+            {(isInlineIcon || (isSeamIcon && !hasImage) || (isTopIcon && !hasImage)) && (
+              <CardMarker item={item} index={index} ctx={ctx} />
+            )}
             <CardText item={item} ctx={ctx} />
           </div>
           {(item.link || item.secondaryLink) && (
@@ -266,9 +385,12 @@ export default function CardsSection({ section }: { section: SectionOf<"cards"> 
   const mobileScroll = data.mobileLayout === "scroll";
   const items = data.items ?? [];
 
+  const icon = resolveCardsIcon(data);
+
   const ctx: CardContext = {
     variant,
     button,
+    icon,
     display: {
       images: data.showImages !== false && variant !== "minimal-accent",
       icons: data.showIcons !== false,
@@ -288,6 +410,12 @@ export default function CardsSection({ section }: { section: SectionOf<"cards"> 
   if (cardRadius) vars["--wb-cardset-radius"] = cardRadius;
   if (button.radius) vars["--wb-cardset-btn-radius"] = button.radius;
   if (clampLines > 0) vars["--wb-cardset-lines"] = clampLines;
+  if (icon.boxSize) vars["--wb-cardset-icon-size"] = `${icon.boxSize}px`;
+  if (icon.svgSize) vars["--wb-cardset-icon-svg-size"] = `${icon.svgSize}px`;
+  if (icon.radius) vars["--wb-cardset-icon-radius"] = icon.radius;
+  if (icon.bgColor) vars["--wb-cardset-icon-bg"] = icon.bgColor;
+  if (icon.color) vars["--wb-cardset-icon-color"] = icon.color;
+  if (icon.offsetY !== 0) vars["--wb-cardset-icon-offset-y"] = `${icon.offsetY}px`;
 
   const className = [
     "wb-cardset",

@@ -1316,6 +1316,7 @@ export const CARDS_VARIANTS = [
   "horizontal-split",
   "minimal-accent",
   "floating-panel",
+  "floating-icon",
 ] as const;
 export type CardsVariant = (typeof CARDS_VARIANTS)[number];
 
@@ -1342,6 +1343,21 @@ export type CardsHeaderLayout = (typeof CARDS_HEADER_LAYOUTS)[number];
 
 export const CARDS_DESCRIPTION_LINES_MAX = 8;
 export const CARDS_RADIUS_MAX = 48;
+
+export const CARDS_ICON_PLACEMENTS = ["inline", "float-seam", "float-top"] as const;
+export type CardsIconPlacement = (typeof CARDS_ICON_PLACEMENTS)[number];
+
+export const CARDS_ICON_ALIGNS = ["left", "center", "right"] as const;
+export type CardsIconAlign = (typeof CARDS_ICON_ALIGNS)[number];
+
+export const CARDS_ICON_VARIANTS = ["filled", "soft", "outline", "surface"] as const;
+export type CardsIconVariant = (typeof CARDS_ICON_VARIANTS)[number];
+
+export const CARDS_ICON_SHAPES = ["rounded", "square", "circle", "custom"] as const;
+export type CardsIconShape = (typeof CARDS_ICON_SHAPES)[number];
+
+export const CARDS_ICON_SIZES = ["sm", "md", "lg", "xl"] as const;
+export type CardsIconSize = (typeof CARDS_ICON_SIZES)[number];
 
 export type CardsButtonSettings = {
   /** Unset uses the design's own default. */
@@ -1372,6 +1388,10 @@ export type CardItem = {
   backgroundColor?: string;
   /** #rrggbb used for the accent bar, icon tint and badge. */
   accentColor?: string;
+  /** Custom badge background color override (#rrggbb). */
+  iconBgColor?: string;
+  /** Custom icon glyph color override (#rrggbb). */
+  iconColor?: string;
   featured?: boolean;
 };
 
@@ -1412,6 +1432,26 @@ export type CardsData = {
   showDescription?: boolean;
   showPrices?: boolean;
   showNumbers?: boolean;
+  /** Default icon for cards in this section when not specified on the card item. */
+  defaultIcon?: string;
+  /** Position of the icon marker: inline (inside content), float-seam (overlapping image and body), float-top (on image). */
+  iconPlacement?: CardsIconPlacement;
+  /** Horizontal alignment of the icon: left, center, right. */
+  iconAlign?: CardsIconAlign;
+  /** Visual variant of the icon badge: filled (solid color), soft (light tint), outline, surface (white card bg). */
+  iconVariant?: CardsIconVariant;
+  /** Shape of the icon badge: rounded (rounded-square), square, circle, custom. */
+  iconShape?: CardsIconShape;
+  /** Corner radius in px when shape is custom. */
+  iconRadius?: number;
+  /** Size of the icon badge: sm, md, lg, xl. */
+  iconSize?: CardsIconSize;
+  /** Custom background color for the icon badge (#rrggbb). */
+  iconBgColor?: string;
+  /** Custom icon glyph color (#rrggbb). */
+  iconColor?: string;
+  /** Fine-tune vertical float offset in px (-50 to 50). */
+  iconOffsetY?: number;
   button?: CardsButtonSettings;
   items: CardItem[];
 };

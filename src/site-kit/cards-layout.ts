@@ -11,7 +11,13 @@ import {
   type CardsButtonSize,
   type CardsButtonVariant,
   type CardsCorner,
+  type CardsData,
   type CardsHoverEffect,
+  type CardsIconAlign,
+  type CardsIconPlacement,
+  type CardsIconShape,
+  type CardsIconSize,
+  type CardsIconVariant,
   type CardsImageAspect,
   type CardsVariant,
 } from "./types.ts";
@@ -34,6 +40,7 @@ export const CARDS_VARIANT_DEFAULTS: Record<CardsVariant, VariantDefaults> = {
   "horizontal-split": { button: "filled", fullWidth: false, showArrow: true, aspect: "16:9", hover: "lift", descriptionLines: 3 },
   "minimal-accent": { button: "link", fullWidth: false, showArrow: true, aspect: "16:9", hover: "glow", descriptionLines: 0 },
   "floating-panel": { button: "soft", fullWidth: false, showArrow: true, aspect: "4:3", hover: "lift", descriptionLines: 3 },
+  "floating-icon": { button: "filled", fullWidth: false, showArrow: false, aspect: "4:3", hover: "lift", descriptionLines: 3 },
 };
 
 export function isCardsVariant(value: unknown): value is CardsVariant {
@@ -133,14 +140,88 @@ export function safeHexColor(value: unknown): string | undefined {
   return hex && /^#[0-9A-F]{6}$/.test(hex) ? hex : undefined;
 }
 
+export const CARDS_ICON_SIZE_VALUES: Record<CardsIconSize, { box: number; svg: number }> = {
+  sm: { box: 36, svg: 18 },
+  md: { box: 44, svg: 22 },
+  lg: { box: 52, svg: 26 },
+  xl: { box: 60, svg: 30 },
+};
+
+export const CARDS_ICON_SHAPE_RADIUS: Record<Exclude<CardsIconShape, "custom">, string> = {
+  square: "0px",
+  rounded: "10px",
+  circle: "9999px",
+};
+
+export function cardsIconRadius(shape?: CardsIconShape, custom?: number): string {
+  if (shape === "custom" && typeof custom === "number" && Number.isFinite(custom)) {
+    return `${Math.min(Math.max(Math.round(custom), 0), 48)}px`;
+  }
+  return CARDS_ICON_SHAPE_RADIUS[shape && shape in CARDS_ICON_SHAPE_RADIUS ? (shape as Exclude<CardsIconShape, "custom">) : "rounded"];
+}
+
+export type ResolvedCardsIcon = {
+  placement: CardsIconPlacement;
+  align: CardsIconAlign;
+  variant: CardsIconVariant;
+  shape: CardsIconShape;
+  size: CardsIconSize;
+  radius: string;
+  boxSize: number;
+  svgSize: number;
+  bgColor?: string;
+  color?: string;
+  defaultIcon?: string;
+  offsetY: number;
+};
+
+export function resolveCardsIcon(data: CardsData): ResolvedCardsIcon {
+  const placement = data.iconPlacement ?? "float-seam";
+  const align = data.iconAlign ?? "left";
+  const variant = data.iconVariant ?? "filled";
+  const shape = data.iconShape ?? "rounded";
+  const size = data.iconSize ?? "md";
+  const sizeVal = CARDS_ICON_SIZE_VALUES[size] ?? CARDS_ICON_SIZE_VALUES.md;
+  const radius = cardsIconRadius(shape, data.iconRadius);
+  const bgColor = safeHexColor(data.iconBgColor);
+  const color = safeHexColor(data.iconColor);
+  const defaultIcon =
+    typeof data.defaultIcon === "string" && data.defaultIcon.trim() ? data.defaultIcon.trim() : undefined;
+  const offsetY =
+    typeof data.iconOffsetY === "number" && Number.isFinite(data.iconOffsetY)
+      ? Math.min(Math.max(Math.round(data.iconOffsetY), -50), 50)
+      : 0;
+
+  return {
+    placement,
+    align,
+    variant,
+    shape,
+    size,
+    radius,
+    boxSize: sizeVal.box,
+    svgSize: sizeVal.svg,
+    bgColor,
+    color,
+    defaultIcon,
+    offsetY,
+  };
+}
+
 /** Per-card colour overrides, with readable text on custom backgrounds. */
-export function cardColorVars(item: Pick<CardItem, "backgroundColor" | "accentColor">): CssVars | undefined {
+export function cardColorVars(
+  item: Pick<CardItem, "backgroundColor" | "accentColor" | "iconBgColor" | "iconColor">,
+): CssVars | undefined {
   const background = safeHexColor(item.backgroundColor);
   const accent = safeHexColor(item.accentColor);
-  if (!background && !accent) return undefined;
+  const iconBg = safeHexColor(item.iconBgColor);
+  const iconColor = safeHexColor(item.iconColor);
+  if (!background && !accent && !iconBg && !iconColor) return undefined;
 
   const vars: CssVars = {};
   if (accent) vars["--wb-cardset-accent"] = accent;
+  if (iconBg) vars["--wb-cardset-item-icon-bg"] = iconBg;
+  if (iconColor) vars["--wb-cardset-item-icon-color"] = iconColor;
   if (background) {
     const light = isLightColor(background);
     vars["--wb-cardset-card-bg"] = background;

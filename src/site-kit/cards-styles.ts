@@ -120,11 +120,132 @@ export const CARDS_CSS = `
   border: 1px solid color-mix(in srgb, var(--wb-cardset-accent) 22%, transparent);
 }
 .wb-cardset .wb-cardset-price { font-size: 18px; font-weight: 700; color: var(--wb-text); }
+
+/* Card Marker & Floating Icon Badge */
 .wb-cardset .wb-cardset-marker { display: flex; align-items: center; gap: 12px; }
+.wb-cardset .wb-cardset-marker-align-left { justify-content: flex-start; }
+.wb-cardset .wb-cardset-marker-align-center { justify-content: center; }
+.wb-cardset .wb-cardset-marker-align-right { justify-content: flex-end; }
 .wb-cardset .wb-cardset-marker .wb-icon {
-  margin: 0; color: var(--wb-cardset-accent);
-  background: color-mix(in srgb, var(--wb-cardset-accent) 12%, transparent);
+  margin: 0;
 }
+
+/* Floating Seam Row (Icon badge overlapping image bottom and content top) */
+.wb-cardset .wb-cardset-seam-icon-row {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  height: 0;
+  padding-inline: clamp(16px, 7cqi, 24px);
+  pointer-events: none;
+}
+.wb-cardset .wb-cardset-seam-icon-row > * {
+  pointer-events: auto;
+  transform: translateY(-50%) translateY(var(--wb-cardset-icon-offset-y, 0px));
+}
+.wb-cardset .wb-cardset-seam-icon-row.wb-cardset-icon-align-left {
+  justify-content: flex-start;
+}
+.wb-cardset .wb-cardset-seam-icon-row.wb-cardset-icon-align-center {
+  justify-content: center;
+}
+.wb-cardset .wb-cardset-seam-icon-row.wb-cardset-icon-align-right {
+  justify-content: flex-end;
+}
+
+/* Buffer top padding of body when seam icon is present with image */
+.wb-cardset .wb-cardset-has-seam-icon .wb-cardset-body {
+  padding-top: calc(clamp(16px, 7cqi, 24px) + (var(--wb-cardset-icon-size, 44px) * 0.5) + 8px);
+}
+.wb-cardset .wb-cardset-has-seam-icon .wb-cardset-panel {
+  padding-top: calc(clamp(16px, 7cqi, 22px) + (var(--wb-cardset-icon-size, 44px) * 0.5) + 8px);
+}
+
+/* Floating Top on Media */
+.wb-cardset .wb-cardset-media .wb-cardset-icon-float-top {
+  position: absolute;
+  top: 12px;
+  z-index: 2;
+  display: flex;
+}
+.wb-cardset .wb-cardset-media .wb-cardset-icon-float-top.wb-cardset-icon-align-left {
+  left: 12px;
+}
+.wb-cardset .wb-cardset-media .wb-cardset-icon-float-top.wb-cardset-icon-align-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+.wb-cardset .wb-cardset-media .wb-cardset-icon-float-top.wb-cardset-icon-align-right {
+  right: 12px;
+}
+
+/* Icon Badge */
+.wb-cardset .wb-cardset-icon-badge {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--wb-cardset-icon-size, 44px);
+  height: var(--wb-cardset-icon-size, 44px);
+  border-radius: var(--wb-cardset-icon-radius, 10px);
+  box-sizing: border-box;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+.wb-cardset .wb-cardset-icon-badge :is(.wb-icon, .wb-icon-inline) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: var(--wb-cardset-icon-svg-size, 22px) !important;
+  height: var(--wb-cardset-icon-svg-size, 22px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+.wb-cardset .wb-cardset-icon-badge svg {
+  width: var(--wb-cardset-icon-svg-size, 22px) !important;
+  height: var(--wb-cardset-icon-svg-size, 22px) !important;
+  stroke-width: 2;
+  color: inherit !important;
+}
+.wb-cardset .wb-cardset-icon-badge .wb-icon-custom-img {
+  width: var(--wb-cardset-icon-svg-size, 22px);
+  height: var(--wb-cardset-icon-svg-size, 22px);
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Badge variants */
+.wb-cardset .wb-cardset-icon-badge.wb-cardset-icon-v-filled {
+  background: var(--wb-cardset-item-icon-bg, var(--wb-cardset-icon-bg, var(--wb-cardset-accent)));
+  color: var(--wb-cardset-item-icon-color, var(--wb-cardset-icon-color, #ffffff));
+  box-shadow: 0 4px 14px -3px rgb(0 0 0 / 0.25);
+}
+.wb-cardset .wb-cardset-icon-badge.wb-cardset-icon-v-soft {
+  background: var(--wb-cardset-item-icon-bg, var(--wb-cardset-icon-bg, color-mix(in srgb, var(--wb-cardset-accent) 14%, transparent)));
+  color: var(--wb-cardset-item-icon-color, var(--wb-cardset-icon-color, var(--wb-cardset-accent)));
+}
+.wb-cardset .wb-cardset-icon-badge.wb-cardset-icon-v-outline {
+  background: transparent;
+  border: 1.5px solid var(--wb-cardset-item-icon-bg, var(--wb-cardset-icon-bg, var(--wb-cardset-accent)));
+  color: var(--wb-cardset-item-icon-color, var(--wb-cardset-icon-color, var(--wb-cardset-accent)));
+}
+.wb-cardset .wb-cardset-icon-badge.wb-cardset-icon-v-surface {
+  background: var(--wb-cardset-item-icon-bg, var(--wb-cardset-icon-bg, var(--wb-cardset-card-bg, var(--wb-bg))));
+  color: var(--wb-cardset-item-icon-color, var(--wb-cardset-icon-color, var(--wb-cardset-accent)));
+  border: 1px solid var(--wb-border);
+  box-shadow: 0 4px 14px -2px rgb(0 0 0 / 0.12);
+}
+
+.wb-cardset-hover-lift .wb-cardset-card:hover :is(.wb-cardset-seam-icon-row, .wb-cardset-panel-seam-icon) > *,
+.wb-cardset-hover-zoom .wb-cardset-card:hover :is(.wb-cardset-seam-icon-row, .wb-cardset-panel-seam-icon) > * {
+  transform: translateY(-50%) translateY(calc(var(--wb-cardset-icon-offset-y, 0px) - 3px));
+  box-shadow: 0 8px 20px -4px rgb(0 0 0 / 0.35);
+}
+
 .wb-cardset .wb-cardset-number { font-family: var(--wb-font-heading); font-size: 14px; font-weight: 700; letter-spacing: 0.06em; color: var(--wb-cardset-accent); }
 .wb-cardset.wb-cardset-content-center .wb-cardset-body,
 .wb-cardset.wb-cardset-content-center .wb-cardset-panel,
@@ -209,8 +330,8 @@ export const CARDS_CSS = `
 /* 5. Floating panel */
 .wb-cardset-v-floating-panel .wb-cardset-card { padding-bottom: 4px; }
 .wb-cardset-v-floating-panel .wb-cardset-media { border-radius: var(--wb-cardset-radius, var(--wb-radius)); }
-/* Unpositioned (flex items honour z-index) so a whole-card link can cover the image too. */
 .wb-cardset-v-floating-panel .wb-cardset-panel {
+  position: relative;
   z-index: 1; flex: 1 1 auto;
   display: flex; flex-direction: column; gap: 10px;
   margin: -56px clamp(10px, 5cqi, 18px) 0;
@@ -218,9 +339,38 @@ export const CARDS_CSS = `
   border-radius: calc(var(--wb-cardset-radius, var(--wb-radius)) * 0.75);
   box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.28);
 }
+.wb-cardset-v-floating-panel .wb-cardset-panel-seam-icon {
+  position: absolute;
+  top: 0;
+  left: clamp(16px, 7cqi, 22px);
+  right: clamp(16px, 7cqi, 22px);
+  display: flex;
+  height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.wb-cardset-v-floating-panel .wb-cardset-panel-seam-icon > * {
+  pointer-events: auto;
+  transform: translateY(-50%) translateY(var(--wb-cardset-icon-offset-y, 0px));
+}
+.wb-cardset-v-floating-panel .wb-cardset-panel-seam-icon.wb-cardset-icon-align-left {
+  justify-content: flex-start;
+}
+.wb-cardset-v-floating-panel .wb-cardset-panel-seam-icon.wb-cardset-icon-align-center {
+  justify-content: center;
+}
+.wb-cardset-v-floating-panel .wb-cardset-panel-seam-icon.wb-cardset-icon-align-right {
+  justify-content: flex-end;
+}
 .wb-cardset-v-floating-panel .wb-cardset-no-image .wb-cardset-panel { margin: 0; }
 .wb-cardset-v-floating-panel .wb-cardset-span { grid-column: span 2; }
 .wb-cardset-v-floating-panel .wb-cardset-span .wb-cardset-media { aspect-ratio: var(--wb-cardset-ar-wide, auto); }
+
+/* 6. Floating icon badge */
+.wb-cardset-v-floating-icon .wb-cardset-body {
+  gap: 12px;
+  padding: clamp(18px, 7cqi, 26px);
+}
 
 /* Whole-card link */
 .wb-cardset.wb-cardset-clickable .wb-cardset-stretch::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }

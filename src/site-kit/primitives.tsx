@@ -273,8 +273,21 @@ function toPascalCase(str: string): string {
     .replace(/^(.)/, (c) => c.toUpperCase());
 }
 
+const LUCIDE_NAME_ALIASES: Record<string, string> = {
+  home: "House",
+  house: "House",
+  tv: "Tv",
+  television: "Tv",
+  bath: "Bath",
+  bathtub: "Bath",
+};
+
 function resolveLucideComponent(name: string) {
   if (!name) return null;
+  const alias = LUCIDE_NAME_ALIASES[name.toLowerCase()];
+  if (alias && lucideIcons[alias as keyof typeof lucideIcons]) {
+    return lucideIcons[alias as keyof typeof lucideIcons];
+  }
   if (lucideIcons[name as keyof typeof lucideIcons]) {
     return lucideIcons[name as keyof typeof lucideIcons];
   }
