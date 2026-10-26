@@ -442,7 +442,7 @@ export type FeatureItem = {
 };
 
 export type FeaturesData = {
-  heading: string;
+  heading?: string;
   eyebrow?: string;
   intro?: string;
   variant?: "grid" | "split" | "minimal" | "cards" | "pastel-icons";
@@ -464,6 +464,9 @@ export type FeaturesData = {
   splitCta?: LinkRef;
   secondaryCta?: LinkRef;
   bottomCta?: LinkRef;
+  showDividers?: boolean;
+  dividerStyle?: "inset" | "full";
+  dividerColor?: string;
 };
 
 export const SERVICES_VARIANTS = [

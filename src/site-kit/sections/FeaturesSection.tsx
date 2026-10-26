@@ -9,6 +9,7 @@ import {
   SiteLink,
 } from "../primitives.tsx";
 import type { FeatureColor, FeatureItem, SectionOf } from "../types.ts";
+import { isLightColor } from "../../utils/colors.ts";
 
 /**
  * Modern 3D isometric mockup illustration used as default visual
@@ -178,6 +179,11 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
   const cardStyle = data.cardStyle ?? (data.variant === "cards" ? "surface" : data.variant === "minimal" || data.variant === "pastel-icons" ? "transparent" : "surface");
   const align = data.align ?? section.settings.align ?? (isSplit ? "left" : "center");
 
+  const isSectionDark =
+    section.settings.background === "dark" ||
+    section.settings.background === "primary" ||
+    (Boolean(section.settings.customColors?.background) && !isLightColor(section.settings.customColors?.background));
+
   // Render a single feature item card
   const renderFeatureItem = (item: FeatureItem, index: number, isStacked = false) => {
     const isCustomHex = typeof item.iconColor === "string" && item.iconColor.startsWith("#");
@@ -185,13 +191,17 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
     const colorClass = isCustomHex ? "" : `wb-color-${itemColor}`;
     const itemAlign = isStacked ? "left" : align;
 
-    const isDarkBg =
-      item.backgroundColor &&
+    const isItemExplicitDark =
+      Boolean(item.backgroundColor) &&
       (item.backgroundColor === "#0f172a" ||
         item.backgroundColor === "#020617" ||
-        item.backgroundColor.toLowerCase().includes("0f172a") ||
-        item.backgroundColor.toLowerCase().includes("#000") ||
-        item.backgroundColor.toLowerCase().includes("black"));
+        item.backgroundColor?.toLowerCase().includes("0f172a") ||
+        item.backgroundColor?.toLowerCase().includes("#000") ||
+        item.backgroundColor?.toLowerCase().includes("black"));
+
+    const isDarkBg =
+      isItemExplicitDark ||
+      (isSectionDark && (!item.backgroundColor || item.backgroundColor === "transparent"));
 
     const cardCustomStyle = item.backgroundColor
       ? {
@@ -363,8 +373,15 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
       <SectionHead heading={data.heading} intro={data.intro} eyebrow={data.eyebrow} align={align} />
 
       <div
-        className={`wb-grid wb-features-grid wb-features-align-${align}`}
-        style={gridStyle(data.columns, data.mobileColumns)}
+        className={`wb-grid wb-features-grid wb-features-align-${align} ${
+          data.showDividers ? "wb-features-grid-divided" : ""
+        } ${data.showDividers ? `wb-features-divided-${data.dividerStyle ?? "inset"}` : ""} ${
+          isSectionDark ? "wb-features-dark" : ""
+        }`}
+        style={{
+          ...gridStyle(data.columns, data.mobileColumns),
+          ...(data.dividerColor ? ({ "--wb-feature-divider": data.dividerColor } as CSSProperties) : {}),
+        }}
       >
         {data.items.map((item, index) => renderFeatureItem(item, index, false))}
       </div>

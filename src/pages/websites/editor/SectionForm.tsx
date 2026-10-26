@@ -1516,6 +1516,44 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
             })
           }
         />
+
+        {!isSplit && (
+          <>
+            <CheckboxField
+              label="Show vertical column dividers"
+              checked={data.showDividers ?? false}
+              onChange={(showDividers) => onChange({ ...data, showDividers })}
+              hint="Adds sleek vertical divider lines between columns (ideal for Mission, Vision & Values banners)."
+            />
+            {data.showDividers && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <SelectField
+                  label="Divider line style"
+                  value={data.dividerStyle ?? "inset"}
+                  options={[
+                    { value: "inset", label: "Inset centered line" },
+                    { value: "full", label: "Full height line" },
+                  ]}
+                  onChange={(dividerStyle) =>
+                    onChange({
+                      ...data,
+                      dividerStyle: dividerStyle as "inset" | "full",
+                    })
+                  }
+                />
+                <CompactColorField
+                  label="Divider color"
+                  value={data.dividerColor}
+                  onChange={(dividerColor) =>
+                    onChange({ ...data, dividerColor: dividerColor || undefined })
+                  }
+                  fallback="rgba(255, 255, 255, 0.2)"
+                  placeholder="Auto"
+                />
+              </div>
+            )}
+          </>
+        )}
       </FormGroup>
 
       <FormGroup title="Headings & copy">
@@ -1529,11 +1567,10 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
           placeholder="Capabilities"
         />
         <TextField
-          label="Main heading"
-          value={data.heading}
+          label="Main heading (optional)"
+          value={data.heading ?? ""}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
-          required
         />
         <TextAreaField
           label="Intro description (optional)"

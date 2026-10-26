@@ -2534,6 +2534,68 @@ export const SITE_CSS = `
   color: #cbd5e1 !important;
 }
 
+/* Column Dividers System */
+.wb-features-grid.wb-features-grid-divided {
+  gap: 0 !important;
+  position: relative;
+}
+.wb-features-grid-divided .wb-feature-card {
+  position: relative;
+  border-radius: 0;
+  padding: 24px 32px;
+}
+.wb-features-grid-divided .wb-feature-card-transparent {
+  padding: 20px 28px;
+}
+.wb-features-grid-divided {
+  --wb-divider-color: var(--wb-feature-divider, rgba(226, 232, 240, 0.8));
+}
+.wb-section.wb-bg-primary .wb-features-grid-divided,
+.wb-section.wb-bg-dark .wb-features-grid-divided,
+.wb-features-grid-divided.wb-features-dark {
+  --wb-divider-color: var(--wb-feature-divider, rgba(255, 255, 255, 0.22));
+}
+@media (min-width: 768px) {
+  .wb-features-grid-divided.wb-features-divided-inset .wb-feature-card:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 18%;
+    bottom: 18%;
+    width: 1px;
+    background: var(--wb-divider-color);
+    pointer-events: none;
+  }
+  .wb-features-grid-divided.wb-features-divided-full .wb-feature-card:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--wb-divider-color);
+    pointer-events: none;
+  }
+}
+@media (max-width: 767px) {
+  .wb-features-grid-divided .wb-feature-card {
+    padding: 20px 16px;
+  }
+  .wb-features-grid-divided .wb-feature-card:not(:last-child) {
+    border-bottom: 1px solid var(--wb-divider-color, rgba(255, 255, 255, 0.15));
+  }
+}
+
+/* Ensure text on primary/dark backgrounds is readable and crisp */
+.wb-section.wb-bg-primary .wb-feature-card-transparent .wb-feature-title,
+.wb-section.wb-bg-dark .wb-feature-card-transparent .wb-feature-title {
+  color: #ffffff;
+}
+.wb-section.wb-bg-primary .wb-feature-card-transparent .wb-feature-desc,
+.wb-section.wb-bg-dark .wb-feature-card-transparent .wb-feature-desc {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 /* Feature Icon Badges - Pixel-Perfect Centering & Alignment */
 .wb-feature-icon-wrap {
   display: flex !important;
