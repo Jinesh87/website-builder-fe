@@ -1,4 +1,4 @@
-import type { TopupConfirmation } from "../api/wallet.ts";
+import type { SubscriptionCheckout, SubscriptionConfirmation, TopupConfirmation } from "../api/wallet.ts";
 
 /** The server-created order Checkout pays: a connects purchase or a hosting period. */
 export type RazorpayOrder = {
@@ -13,6 +13,7 @@ export type RazorpayOrder = {
 const CHECKOUT_SRC = "https://checkout.razorpay.com/v1/checkout.js";
 
 type RazorpaySuccess = { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
+type RazorpaySubscriptionSuccess = { razorpay_subscription_id: string; razorpay_payment_id: string; razorpay_signature: string };
 type RazorpayFailure = { error: { description?: string; reason?: string } };
 
 type RazorpayInstance = {
@@ -52,32 +53,18 @@ export class CheckoutDismissedError extends Error {
   }
 }
 
-/**
- * Opens Razorpay Checkout for an order. Resolves with what the server needs to verify the payment;
- * rejects with CheckoutDismissedError when the user closes it without paying.
- */
-export async function openRazorpayCheckout(checkout: RazorpayOrder, description: string): Promise<TopupConfirmation> {
+/** Opens Checkout and resolves with its success response; rejects with CheckoutDismissedError when closed unpaid. */
+async function openCheckout<T>(options: Record<string, unknown>): Promise<T> {
   await loadCheckout();
   const Razorpay = window.Razorpay;
   if (!Razorpay) throw new Error("Couldn't load Razorpay. Please try again.");
 
-  return new Promise<TopupConfirmation>((resolve, reject) => {
+  return new Promise<T>((resolve, reject) => {
     let lastFailure: string | null = null;
     const instance = new Razorpay({
-      key: checkout.keyId,
-      order_id: checkout.orderId,
-      amount: checkout.amountPaise,
-      currency: checkout.currency,
-      name: checkout.businessName,
-      description,
-      prefill: checkout.prefill,
+      ...options,
       theme: { color: "#4f46e5" },
-      handler: (response: RazorpaySuccess) =>
-        resolve({
-          razorpayOrderId: response.razorpay_order_id,
-          razorpayPaymentId: response.razorpay_payment_id,
-          razorpaySignature: response.razorpay_signature,
-        }),
+      handler: (response: T) => resolve(response),
       modal: {
         // Checkout lets the user retry after a failure, so only give up when they close it.
         ondismiss: () => reject(lastFailure ? new Error(lastFailure) : new CheckoutDismissedError()),
@@ -88,4 +75,41 @@ export async function openRazorpayCheckout(checkout: RazorpayOrder, description:
     });
     instance.open();
   });
+}
+
+/**
+ * Opens Razorpay Checkout for an order. Resolves with what the server needs to verify the payment;
+ * rejects with CheckoutDismissedError when the user closes it without paying.
+ */
+export async function openRazorpayCheckout(checkout: RazorpayOrder, description: string): Promise<TopupConfirmation> {
+  const response = await openCheckout<RazorpaySuccess>({
+    key: checkout.keyId,
+    order_id: checkout.orderId,
+    amount: checkout.amountPaise,
+    currency: checkout.currency,
+    name: checkout.businessName,
+    description,
+    prefill: checkout.prefill,
+  });
+  return {
+    razorpayOrderId: response.razorpay_order_id,
+    razorpayPaymentId: response.razorpay_payment_id,
+    razorpaySignature: response.razorpay_signature,
+  };
+}
+
+/** Opens Razorpay Checkout to approve an autopay mandate (card, UPI Autopay or e-mandate). */
+export async function openRazorpaySubscriptionCheckout(checkout: SubscriptionCheckout): Promise<SubscriptionConfirmation> {
+  const response = await openCheckout<RazorpaySubscriptionSuccess>({
+    key: checkout.keyId,
+    subscription_id: checkout.subscriptionId,
+    name: checkout.businessName,
+    description: checkout.description,
+    prefill: checkout.prefill,
+  });
+  return {
+    razorpaySubscriptionId: response.razorpay_subscription_id,
+    razorpayPaymentId: response.razorpay_payment_id,
+    razorpaySignature: response.razorpay_signature,
+  };
 }

@@ -91,7 +91,11 @@ export default function HostingCheckoutModal({
   const price = selected && plan ? selected.prices[plan.cycle] : null;
   const period = plan ? hosting.nextPeriods[plan.cycle] : null;
   const connects = price === null ? 0 : connectsForPaise(price, options.connectsPerRupee);
-  const blocked = hosting.renewalOpensAt !== null;
+  const autopayRenews =
+    !isAdmin &&
+    hosting.subscription?.status === "ACTIVE" &&
+    (hosting.autopay?.status === "AUTHENTICATED" || hosting.autopay?.status === "ACTIVE");
+  const blocked = hosting.renewalOpensAt !== null || autopayRenews;
 
   const usesConnects = price !== null && price > 0 && (isAdmin ? adminMethod === "WALLET" : clientMethod === "WALLET");
   const shortBy = usesConnects ? Math.max(0, connects - options.balance) : 0;
@@ -189,11 +193,18 @@ export default function HostingCheckoutModal({
     >
       <div className="flex flex-col gap-4">
         {notice}
-        {blocked && (
+        {autopayRenews ? (
           <FormAlert status="warning">
-            Paid until {formatBillingDate(hosting.subscription!.currentPeriodEnd!)}. You can renew from{" "}
-            {formatBillingDate(hosting.renewalOpensAt!)}.
+            Autopay renews this plan on {formatBillingDate(hosting.subscription!.currentPeriodEnd!)}. Turn autopay off in the
+            Hosting tab to pay another way.
           </FormAlert>
+        ) : (
+          blocked && (
+            <FormAlert status="warning">
+              Paid until {formatBillingDate(hosting.subscription!.currentPeriodEnd!)}. You can renew from{" "}
+              {formatBillingDate(hosting.renewalOpensAt!)}.
+            </FormAlert>
+          )
         )}
 
         {hosting.packages.length === 0 ? (

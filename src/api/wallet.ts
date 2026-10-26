@@ -12,7 +12,48 @@ export type Wallet = {
   maxPurchase: number;
   /** Connects required before AI features. 0 means any balance above zero. */
   minAiBalance: number;
+  /** The monthly auto top-up, while it can still charge. */
+  autoTopup: AutoTopup | null;
 };
+
+/** A Razorpay subscription's state. AUTHENTICATED / ACTIVE charge on schedule; PENDING is retrying a failed charge. */
+export type AutopayStatus =
+  | "CREATED"
+  | "AUTHENTICATED"
+  | "ACTIVE"
+  | "PENDING"
+  | "HALTED"
+  | "PAUSED"
+  | "CANCELLED"
+  | "COMPLETED"
+  | "EXPIRED";
+
+/** Razorpay will charge on schedule, or is retrying. HALTED and PAUSED have stopped charging. */
+export function isAutopayLive(status: AutopayStatus): boolean {
+  return status === "AUTHENTICATED" || status === "ACTIVE" || status === "PENDING";
+}
+
+export type AutoTopup = {
+  status: AutopayStatus;
+  connects: number;
+  amountPaise: number;
+  nextChargeAt: string | null;
+};
+
+/** What Razorpay Checkout needs to approve an autopay mandate. */
+export type SubscriptionCheckout = {
+  subscriptionId: string;
+  keyId: string;
+  amountPaise: number;
+  currency: string;
+  businessName: string;
+  description: string;
+  prefill: { name: string; email?: string; contact?: string };
+  /** First charge; null = charged as soon as the mandate is approved. */
+  startsAt: string | null;
+};
+
+export type SubscriptionConfirmation = { razorpaySubscriptionId: string; razorpayPaymentId: string; razorpaySignature: string };
 
 export type WalletTransaction = {
   id: string;
@@ -75,6 +116,14 @@ export const walletApi = {
     request<{ checkout: TopupCheckout }>(`${BASE}/topups`, { method: "POST", body: { connects } }).then((data) => data.checkout),
   confirmTopup: (input: TopupConfirmation) =>
     request<{ wallet: Wallet; transaction: WalletTransaction | null }>(`${BASE}/topups/verify`, { method: "POST", body: input }),
+  /** Starts a monthly auto top-up; the first pack is bought when the mandate is approved. */
+  setupAutoTopup: (connects: number) =>
+    request<{ checkout: SubscriptionCheckout }>(`${BASE}/auto-topup`, { method: "POST", body: { connects } }).then(
+      (data) => data.checkout,
+    ),
+  confirmAutoTopup: (input: SubscriptionConfirmation) =>
+    request<{ wallet: Wallet }>(`${BASE}/auto-topup/verify`, { method: "POST", body: input }).then((data) => data.wallet),
+  cancelAutoTopup: () => request<{ wallet: Wallet }>(`${BASE}/auto-topup`, { method: "DELETE" }).then((data) => data.wallet),
 };
 
 export const adminPaymentsApi = {
