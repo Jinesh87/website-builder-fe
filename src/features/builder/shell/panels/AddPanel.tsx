@@ -22,6 +22,7 @@ import {
   Layers,
   LayoutGrid,
   LogIn,
+  UserCircle,
   Mail,
   Megaphone,
   MessageSquareQuote,
@@ -196,6 +197,13 @@ const CATEGORIES: CategoryItem[] = [
     label: "Login & Sign up",
     shortLabel: "Auth",
     icon: LogIn,
+  },
+  {
+    id: "account",
+    category: "Account",
+    label: "Customer account",
+    shortLabel: "Account",
+    icon: UserCircle,
   },
   {
     id: "blog",
@@ -511,6 +519,11 @@ export default function AddPanel() {
     (state) => state.appState.ui.itemSelector?.index ?? null,
   );
   const count = useBuilderPuck((state) => state.appState.data.content.length);
+  // "End of page" means above the footer, so a new section never lands below it.
+  const endsWithFooter = useBuilderPuck((state) => {
+    const last = state.appState.data.content.at(-1);
+    return Boolean(last) && getSectionType(last!.type) === "footer";
+  });
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
   const [selectedCategoryId, setSelectedCategoryId] = useState("hero");
@@ -533,7 +546,7 @@ export default function AddPanel() {
   }, [deferredQuery, selectedCategory]);
 
   const full = count >= LIMITS.sectionsPerPage;
-  const insertAt = selectedIndex === null ? count : selectedIndex + 1;
+  const insertAt = selectedIndex === null ? (endsWithFooter ? count - 1 : count) : selectedIndex + 1;
 
   const insertAtRef = useRef(insertAt);
   insertAtRef.current = insertAt;
