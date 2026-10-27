@@ -36,6 +36,7 @@ import type {
   SectionSettings,
   SectionSpacing,
   ServiceItem,
+  AccountData,
   ProductDetailData,
   ProductsData,
   ServicesData,
@@ -3020,6 +3021,80 @@ function ProductDetailForm({ data, onChange }: DataFormProps<ProductDetailData>)
   );
 }
 
+function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
+  const set = (patch: Partial<AccountData>) => onChange({ ...data, ...patch });
+  return (
+    <>
+      <FormGroup title="Template">
+        <SelectField
+          label="Layout"
+          value={data.variant ?? "sidebar-tabs"}
+          onChange={(variant) => set({ variant: variant as AccountData["variant"] })}
+          options={[
+            { value: "sidebar-tabs", label: "Sidebar tabs" },
+            { value: "top-tabs", label: "Top tabs" },
+            { value: "overview-cards", label: "Overview dashboard" },
+            { value: "minimal-list", label: "Minimal list" },
+            { value: "dark-panel", label: "Dark panel" },
+          ]}
+        />
+        <SelectField
+          label="Design in the editor"
+          value={data.preview ?? "member"}
+          onChange={(preview) => set({ preview: preview as AccountData["preview"] })}
+          options={[
+            { value: "member", label: "Signed-in customer (sample data)" },
+            { value: "guest", label: "Visitor who isn't signed in" },
+          ]}
+          hint="Only changes what you see here. Visitors always get the state that matches their session."
+        />
+        <TextField label="Heading" value={data.heading ?? ""} onChange={(heading) => set({ heading })} maxLength={160} />
+        <TextAreaField label="Intro" value={data.subheading ?? ""} onChange={(subheading) => set({ subheading })} rows={2} maxLength={320} />
+      </FormGroup>
+      <FormGroup title="Panels">
+        <CheckboxField label="Orders" checked={data.showOrders !== false} onChange={(showOrders) => set({ showOrders })} />
+        <CheckboxField label="Cart" checked={data.showCart !== false} onChange={(showCart) => set({ showCart })} />
+        <CheckboxField label="Profile (name, phone)" checked={data.showProfile !== false} onChange={(showProfile) => set({ showProfile })} />
+        <CheckboxField label="Change password" checked={data.showPassword !== false} onChange={(showPassword) => set({ showPassword })} />
+        <TextField label="Orders label" value={data.ordersLabel ?? ""} onChange={(ordersLabel) => set({ ordersLabel })} maxLength={40} />
+        <TextField label="Cart label" value={data.cartLabel ?? ""} onChange={(cartLabel) => set({ cartLabel })} maxLength={40} />
+        <TextField label="Profile label" value={data.profileLabel ?? ""} onChange={(profileLabel) => set({ profileLabel })} maxLength={40} />
+        <TextField label="Password label" value={data.passwordLabel ?? ""} onChange={(passwordLabel) => set({ passwordLabel })} maxLength={40} />
+        <TextField label="Save button" value={data.saveLabel ?? ""} onChange={(saveLabel) => set({ saveLabel })} maxLength={40} />
+        <TextField label="Log out button" value={data.logoutLabel ?? ""} onChange={(logoutLabel) => set({ logoutLabel })} maxLength={40} />
+        <TextField label="No orders yet" value={data.emptyOrdersText ?? ""} onChange={(emptyOrdersText) => set({ emptyOrdersText })} maxLength={200} />
+        <TextField label="Empty cart" value={data.emptyCartText ?? ""} onChange={(emptyCartText) => set({ emptyCartText })} maxLength={200} />
+      </FormGroup>
+      <FormGroup title="Visitors who aren't signed in">
+        <CheckboxField
+          label="Send them straight to the login page"
+          checked={data.redirectWhenLoggedOut === true}
+          onChange={(redirectWhenLoggedOut) => set({ redirectWhenLoggedOut })}
+        />
+        <TextField label="Heading" value={data.guestHeading ?? ""} onChange={(guestHeading) => set({ guestHeading })} maxLength={160} />
+        <TextAreaField label="Text" value={data.guestText ?? ""} onChange={(guestText) => set({ guestText })} rows={2} maxLength={320} />
+        <TextField label="Button" value={data.guestButtonLabel ?? ""} onChange={(guestButtonLabel) => set({ guestButtonLabel })} maxLength={60} />
+      </FormGroup>
+      <FormGroup title="Links">
+        <TextField
+          label="Login page address"
+          value={data.loginHref ?? ""}
+          onChange={(loginHref) => set({ loginHref })}
+          maxLength={200}
+          hint="The page that has the login section, usually /login."
+        />
+        <TextField
+          label="Shop page address"
+          value={data.shopHref ?? ""}
+          onChange={(shopHref) => set({ shopHref })}
+          maxLength={200}
+          hint="Linked from the empty orders and cart states."
+        />
+      </FormGroup>
+    </>
+  );
+}
+
 function TextForm({ data, onChange }: DataFormProps<TextData>) {
   return (
     <FormGroup title="Content">
@@ -4571,6 +4646,13 @@ function DataForm({
     case "product_detail":
       return (
         <ProductDetailForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "account":
+      return (
+        <AccountForm
           data={section.data}
           onChange={(data) => onChange({ ...section, data })}
         />

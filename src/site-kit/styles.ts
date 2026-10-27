@@ -4,6 +4,7 @@
  * responsive rules use container queries so the editor's tablet/mobile preview
  * frames behave exactly like real devices on the published site.
  */
+import { ACCOUNT_CSS } from "./account-styles.ts";
 import { AUTH_CSS } from "./auth-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
 import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
@@ -8100,6 +8101,7 @@ ${CONTACT_BUILDER_CSS}
 ${HERO_CONTROLS_CSS}
 ${CARDS_CSS}
 ${SHOP_CSS}
+${ACCOUNT_CSS}
 .wb-device-scroll {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;

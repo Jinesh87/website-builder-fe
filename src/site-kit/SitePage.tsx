@@ -27,6 +27,7 @@ import BlogSection from "./sections/BlogSection.tsx";
 import BlogDetailSection from "./sections/BlogDetailSection.tsx";
 import ProductsSection from "./sections/ProductsSection.tsx";
 import ProductDetailSection from "./sections/ProductDetailSection.tsx";
+import AccountSection from "./sections/AccountSection.tsx";
 import { ShopCatalogProvider } from "./shop-catalog.tsx";
 import { SITE_CSS } from "./styles.ts";
 import { themeToCssVars } from "./theme.ts";
@@ -86,6 +87,8 @@ export const SectionView = memo(function SectionView({ section }: { section: Sec
       return <ProductsSection section={section} />;
     case "product_detail":
       return <ProductDetailSection section={section} />;
+    case "account":
+      return <AccountSection section={section} />;
   }
 }, (prev, next) => {
   if (prev.section === next.section) return true;

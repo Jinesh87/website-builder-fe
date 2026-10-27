@@ -26,6 +26,8 @@ import {
   HERO_BUTTON_SHAPES,
   HERO_VARIANTS,
   SECTION_DEFINITIONS,
+  type FooterData,
+  type HeaderData,
   type Section,
   type SectionSettings,
   type SectionType,
@@ -34,7 +36,7 @@ import { websitesApi, type AiLayoutSlot, type PageType } from "../../../api/webs
 import type { AiSuggestion } from "../schema/editor-document.ts";
 import { useEditor, type AiLock } from "../editor-context.ts";
 import { homePage, updatePageMeta } from "../../../pages/websites/editor/editor-state.ts";
-import { aiPlaceholderItem, itemAsSection, sectionToItem } from "../puck/adapter.ts";
+import { aiPlaceholderItem, itemAsSection, sectionToItem, type BuilderItem } from "../puck/adapter.ts";
 import { selectSection, useBuilderPuck } from "../puck/puck-api.ts";
 import { scrollCanvasToSection } from "./AiBuilderCanvasOverlay.tsx";
 import { ToolButton } from "./ui.tsx";
@@ -635,6 +637,40 @@ function normalizeSection(raw: Section): Section {
     settings: cleanSettings,
     data: mergedData,
   } as Section;
+}
+
+type NavPatch = NonNullable<AiSuggestion["navigationPatch"]>;
+type HeaderLike = Pick<Partial<HeaderData>, "menu" | "cta">;
+type FooterLike = Pick<Partial<FooterData>, "columns">;
+
+/**
+ * A navigation patch applied to header/footer data. Used for the draft's site-wide header and
+ * footer and for the header/footer shown on the canvas, so the canvas commit that follows an
+ * accepted suggestion carries the same menu instead of restoring the old one.
+ */
+function patchChrome<H extends HeaderLike, F extends FooterLike>(
+  header: H,
+  footer: F,
+  patch: NavPatch,
+  validRoutes: Set<string>,
+): { header: H; footer: F } {
+  const nextHeader = { ...header };
+  const nextFooter = { ...footer };
+  const rawMenu = patch.menu || patch.headerMenu;
+  if (rawMenu && rawMenu.length > 0) {
+    nextHeader.menu = reconcileHeaderMenu(rawMenu, validRoutes);
+  }
+  const cta = patch.cta ?? patch.headerCta;
+  if (cta !== undefined) {
+    nextHeader.cta = cta ? { label: cta.label, href: resolveInternalLink(cta.href, validRoutes) } : undefined;
+  }
+  if (patch.footerColumns && patch.footerColumns.length > 0) {
+    nextFooter.columns = patch.footerColumns.map((col) => ({
+      title: col.title,
+      links: col.links.map((link) => ({ label: link.label, href: resolveInternalLink(link.href, validRoutes) })),
+    }));
+  }
+  return { header: nextHeader, footer: nextFooter };
 }
 
 /** Sections the suggestion adds or modifies; unchanged ones (e.g. an SEO-only update) are left out. */
@@ -1419,25 +1455,7 @@ export default function AiDrawer() {
 
       // Handle navigation patch (the header is site-wide, so this reaches every page)
       if (suggestion?.navigationPatch) {
-        const rawMenu = suggestion.navigationPatch.menu || suggestion.navigationPatch.headerMenu;
-        if (rawMenu && rawMenu.length > 0) {
-          nextHeader.menu = reconcileHeaderMenu(rawMenu, validRoutes);
-        }
-        const cta = suggestion.navigationPatch.cta ?? suggestion.navigationPatch.headerCta;
-        if (cta !== undefined) {
-          nextHeader.cta = cta
-            ? { label: cta.label, href: resolveInternalLink(cta.href, validRoutes) }
-            : undefined;
-        }
-        if (suggestion.navigationPatch.footerColumns && suggestion.navigationPatch.footerColumns.length > 0) {
-          nextFooter.columns = suggestion.navigationPatch.footerColumns.map((col) => ({
-            title: col.title,
-            links: col.links.map((link) => ({
-              label: link.label,
-              href: resolveInternalLink(link.href, validRoutes),
-            })),
-          }));
-        }
+        ({ header: nextHeader, footer: nextFooter } = patchChrome(nextHeader, nextFooter, suggestion.navigationPatch, validRoutes));
       }
 
       // Handle theme patch
@@ -1466,6 +1484,31 @@ export default function AiDrawer() {
         theme: nextTheme,
       };
     });
+
+    // The canvas header/footer get the same menu: once editing unlocks, the canvas is committed
+    // to the draft, and a stale header there would put the old menu back.
+    if (suggestion?.navigationPatch) {
+      const patch = suggestion.navigationPatch;
+      const validRoutes = getKnownRoutes(draft.pages, suggestion.createdPages ?? []);
+      dispatch({
+        type: "setData",
+        data: (previous) => ({
+          ...previous,
+          content: ((previous.content ?? []) as BuilderItem[]).map((item) => {
+            const section = itemAsSection(item);
+            if (section.type === "header") {
+              const { header } = patchChrome(section.data as HeaderData, {}, patch, validRoutes);
+              return sectionToItem({ ...section, data: header } as Section);
+            }
+            if (section.type === "footer") {
+              const { footer } = patchChrome({}, section.data as FooterData, patch, validRoutes);
+              return sectionToItem({ ...section, data: footer } as Section);
+            }
+            return item;
+          }),
+        }),
+      });
+    }
 
     if (activeMessageId) {
       const rollback = {
@@ -2063,7 +2106,7 @@ export default function AiDrawer() {
                         <div className="flex items-center justify-between pt-0.5 text-[10.5px] text-ed-muted">
                           <button
                             type="button"
-                            onClick={() => handleGenerate(msg.content)}
+                            onClick={() => handleGenerate(msg.suggestion?.prompt || msg.content)}
                             disabled={loading}
                             className="flex items-center gap-1 hover:text-brand transition-colors cursor-pointer"
                           >
