@@ -980,7 +980,13 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
           label="Play video / Demo button (optional)"
           value={data.tertiaryCta}
           onChange={(tertiaryCta) => onChange({ ...data, tertiaryCta })}
-          fallback={{ label: "Watch 2-min demo", href: "#demo" }}
+          fallback={{
+            label: "Watch 2-min demo",
+            href: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            actionType: "video",
+            videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            icon: "play",
+          }}
         />
       </FormGroup>
 

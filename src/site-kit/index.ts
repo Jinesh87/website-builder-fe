@@ -20,6 +20,14 @@ export type {
   SectionPreset,
 } from "./registry.ts";
 export { safeHref, videoEmbedUrl } from "./links.ts";
+export {
+  VideoModal,
+  VideoModalProvider,
+  useVideoModal,
+  openVideoModal,
+  parseVideoUrl,
+} from "./VideoModal.tsx";
+export type { VideoModalData, VideoModalProps, ParsedVideo } from "./VideoModal.tsx";
 export { DEFAULT_THEME, sectionFontStyle, themeToCssVars } from "./theme.ts";
 export {
   DEFAULT_FONT,

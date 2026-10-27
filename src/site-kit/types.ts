@@ -15,8 +15,10 @@ export type ImageRef = {
 export type LinkRef = {
   label: string;
   href: string;
-  actionType?: "link" | "download";
+  actionType?: "link" | "download" | "video";
   downloadFileName?: string;
+  videoUrl?: string;
+  videoTitle?: string;
   icon?: string;
   iconImage?: ImageRef;
   iconPosition?: "left" | "right";

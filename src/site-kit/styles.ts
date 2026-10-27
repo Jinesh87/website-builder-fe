@@ -1132,11 +1132,15 @@ export const SITE_CSS = `
   border: 1px solid var(--wb-border); color: inherit; cursor: pointer; text-decoration: none; transition: all 0.2s ease;
 }
 .wb-btn-video-play:hover { background: color-mix(in srgb, var(--wb-text) 12%, transparent); transform: scale(1.02); }
-.wb-play-icon-pill {
-  width: 28px; height: 28px; border-radius: 50%; background: var(--wb-primary); color: var(--wb-on-primary, #ffffff);
-  display: inline-grid; place-items: center; flex-shrink: 0;
+.wb-play-icon-pill,
+.wb-btn-video-play .wb-btn-icon-wrapper {
+  width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important;
+  border-radius: 50% !important; background: var(--wb-primary); color: var(--wb-on-primary, #ffffff);
+  display: inline-grid !important; place-items: center !important; flex-shrink: 0 !important;
 }
-.wb-play-icon-pill svg { width: 12px; height: 12px; margin-left: 1px; }
+.wb-play-icon-pill svg,
+.wb-btn-video-play .wb-btn-icon-wrapper svg { width: 14px !important; height: 14px !important; margin: auto !important; }
+.wb-btn-video-play .wb-btn-icon-wrapper .wb-icon-custom-img { width: 16px !important; height: 16px !important; }
 
 /* Social Proof Rating & Avatars */
 .wb-hero-rating { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 13px; font-weight: 500; }
@@ -2159,6 +2163,235 @@ export const SITE_CSS = `
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* ==========================================================================
+   Universal Video Demo Modal Popup
+   ========================================================================== */
+.wb-video-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(6, 9, 20, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: wbVideoFadeIn 0.22s ease-out;
+}
+
+.wb-video-modal-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 1040px;
+  border-radius: 18px;
+  background: #0b0f1c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 90px -15px rgba(0, 0, 0, 0.85), 0 0 40px rgba(59, 130, 246, 0.12);
+  overflow: hidden;
+  animation: wbVideoScaleUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wb-video-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  background: rgba(18, 24, 43, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wb-video-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wb-video-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #60a5fa;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.wb-video-modal-badge-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.wb-video-modal-title {
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-video-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.wb-video-modal-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.wb-video-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: scale(1.02);
+}
+
+.wb-video-modal-close-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.wb-video-modal-esc-hint {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.wb-video-modal-player-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 75vh;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.wb-video-modal-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.wb-video-modal-video-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+}
+
+.wb-video-modal-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000000;
+}
+
+.wb-video-modal-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 5;
+}
+
+.wb-video-modal-spinner {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #3b82f6;
+  animation: wbVideoSpin 0.75s linear infinite;
+}
+
+.wb-video-modal-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: #f87171;
+  font-size: 14px;
+}
+
+.wb-video-modal-error-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.18s ease;
+}
+
+.wb-video-modal-error-btn:hover {
+  background: #1d4ed8;
+}
+
+@keyframes wbVideoFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wbVideoScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes wbVideoSpin {
+  to { transform: rotate(360deg); }
 }
 
 /* Full Image / Video Background Overlay & High Contrast Text */

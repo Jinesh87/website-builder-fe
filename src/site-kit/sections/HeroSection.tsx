@@ -26,7 +26,7 @@ import {
   heroButtonShapeProps,
   heroElementAlign,
 } from "../hero-layout.ts";
-import type { HeroAlign, HeroAlignElement, HeroData, SectionOf } from "../types.ts";
+import type { HeroAlign, HeroAlignElement, HeroData, LinkRef, SectionOf } from "../types.ts";
 import CurvedBannerCarousel, {
   DEFAULT_BANNER_ITEMS,
   type CurvedBannerItem,
@@ -414,14 +414,21 @@ export default function HeroSection({
           />
         ) : null,
       )}
-      {data.tertiaryCta && (
-        <SiteLink link={data.tertiaryCta} className="wb-btn-video-play">
-          <span className="wb-play-icon-pill">
-            <PlayIcon />
-          </span>
-          <span>{data.tertiaryCta.label}</span>
-        </SiteLink>
-      )}
+      {data.tertiaryCta && (() => {
+        const isExplicitLink = data.tertiaryCta.actionType === "link";
+        const isExplicitDownload = data.tertiaryCta.actionType === "download";
+        const defaultVideoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+        const resolvedLink: LinkRef = isExplicitLink || isExplicitDownload
+          ? data.tertiaryCta
+          : {
+              ...data.tertiaryCta,
+              actionType: "video",
+              videoUrl: data.tertiaryCta.videoUrl || (data.tertiaryCta.href && data.tertiaryCta.href !== "#demo" && data.tertiaryCta.href !== "#" ? data.tertiaryCta.href : defaultVideoUrl),
+            };
+        return (
+          <SiteLink link={resolvedLink} className="wb-btn-video-play" />
+        );
+      })()}
     </div>
   );
 

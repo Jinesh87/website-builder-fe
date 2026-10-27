@@ -4,6 +4,7 @@ import { sectionFontStyle } from "./theme.ts";
 import type { GridColumns, IconName, ImageRef, LinkRef, SectionAlign, SectionSettings } from "./types.ts";
 import { isLightColor, normalizeHexColor } from "../utils/colors.ts";
 import { getCuratedFallbackImage, normalizeImageUrl } from "./image-utils.ts";
+import { openVideoModal } from "./VideoModal.tsx";
 
 type SiteLinkProps = {
   link: LinkRef;
@@ -23,18 +24,24 @@ function formatDownloadHref(href: string, isDownload: boolean): string {
 }
 
 export function SiteLink({ link, className, children }: SiteLinkProps) {
+  const isVideo = link.actionType === "video" || Boolean(link.videoUrl);
+  const videoUrl = isVideo ? (link.videoUrl || link.href || "") : "";
   const isDownload = link.actionType === "download";
-  const rawHref = safeHref(link.href);
+  const rawHref = isVideo ? (videoUrl || "#video") : safeHref(link.href);
   const href = formatDownloadHref(rawHref, isDownload);
-  const external = isExternalHref(href) || Boolean(link.openInNewTab);
+  const external = !isVideo && (isExternalHref(href) || Boolean(link.openInNewTab));
   const downloadAttr = isDownload ? (link.downloadFileName?.trim() || true) : undefined;
 
-  const hasIcon = Boolean(link.icon || link.iconImage?.url);
+  const hasExplicitIcon = link.icon !== undefined;
+  const effectiveIcon = hasExplicitIcon
+    ? (link.icon ? link.icon : undefined)
+    : (isVideo && !link.iconImage?.url ? "play" : undefined);
+  const hasIcon = Boolean(effectiveIcon || link.iconImage?.url);
   const iconPos = link.iconPosition || "left";
   const iconNode = hasIcon ? (
     <span className="wb-btn-icon-wrapper" aria-hidden="true">
       <SiteIcon
-        name={link.icon}
+        name={effectiveIcon}
         image={link.iconImage}
         inline
         size={18}
@@ -43,10 +50,27 @@ export function SiteLink({ link, className, children }: SiteLinkProps) {
     </span>
   ) : null;
 
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isVideo && videoUrl) {
+      e.preventDefault();
+      e.stopPropagation();
+      openVideoModal(videoUrl, link.videoTitle || link.label);
+    }
+  };
+
   return (
     <a
       href={href}
       className={className}
+      onClick={handleClick}
+      {...(isVideo
+        ? {
+            "data-wb-video-modal": "true",
+            "data-wb-video-url": videoUrl,
+            "data-wb-video-title": link.videoTitle || link.label,
+            role: "button",
+          }
+        : {})}
       {...(isDownload ? { download: downloadAttr } : {})}
       {...(external || isDownload ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
