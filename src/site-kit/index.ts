@@ -39,6 +39,7 @@ export {
 } from "./fonts.ts";
 export type { FontCategory, FontDefinition } from "./fonts.ts";
 export { SITE_CSS } from "./styles.ts";
+export { usesVintageStyles, VINTAGE_FONTS } from "./vintage-styles.ts";
 export { SiteRenderModeProvider } from "./render-mode.tsx";
 export type { SiteRenderMode } from "./render-mode.tsx";
 export { SAMPLE_SITE } from "./sample-site.ts";

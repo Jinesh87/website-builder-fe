@@ -11,6 +11,7 @@ import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
 import { HERO_CONTROLS_CSS } from "./hero-controls-styles.ts";
 import { CARDS_CSS } from "./cards-styles.ts";
 import { SHOP_CSS } from "./shop-styles.ts";
+import { VINTAGE_CSS } from "./vintage-styles.ts";
 
 const NOT_CHROME = ":not(.wb-editor-chrome, .wb-editor-chrome *)";
 
@@ -1700,12 +1701,30 @@ em, i {
 @keyframes wbFloat { from { transform: translateY(0); } to { transform: translateY(-8px); } }
 
 /* Hero Layout Variants */
-.wb-hero-centered { text-align: center; }
-.wb-hero-centered .wb-hero-copy { max-width: 820px; margin: 0 auto; align-items: center; }
-.wb-hero-centered .wb-hero-actions { justify-content: center; }
-.wb-hero-centered .wb-hero-media { margin-top: 48px; max-width: 1000px; margin-left: auto; margin-right: auto; }
-.wb-hero-centered .wb-hero-rating { justify-content: center; }
-.wb-hero-centered .wb-trusted-logos { justify-content: center; }
+.wb-hero-centered,
+.wb-hero-gradient,
+.wb-hero-curved-bottom,
+.wb-hero-minimal-typography { text-align: center; }
+.wb-hero-centered .wb-hero-copy,
+.wb-hero-gradient .wb-hero-copy,
+.wb-hero-curved-bottom .wb-hero-copy,
+.wb-hero-minimal-typography .wb-hero-copy { max-width: 820px; margin: 0 auto; align-items: center; }
+.wb-hero-centered .wb-hero-actions,
+.wb-hero-gradient .wb-hero-actions,
+.wb-hero-curved-bottom .wb-hero-actions,
+.wb-hero-minimal-typography .wb-hero-actions { justify-content: center; }
+.wb-hero-centered .wb-hero-media,
+.wb-hero-gradient .wb-hero-media,
+.wb-hero-curved-bottom .wb-hero-media,
+.wb-hero-minimal-typography .wb-hero-media { margin-top: 48px; max-width: 1000px; margin-left: auto; margin-right: auto; }
+.wb-hero-centered .wb-hero-rating,
+.wb-hero-gradient .wb-hero-rating,
+.wb-hero-curved-bottom .wb-hero-rating,
+.wb-hero-minimal-typography .wb-hero-rating { justify-content: center; }
+.wb-hero-centered .wb-trusted-logos,
+.wb-hero-gradient .wb-trusted-logos,
+.wb-hero-curved-bottom .wb-trusted-logos,
+.wb-hero-minimal-typography .wb-trusted-logos { justify-content: center; }
 
 .wb-hero-split .wb-hero-grid, .wb-hero-split-left .wb-hero-grid {
   display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center;
@@ -6202,8 +6221,14 @@ details[open] > summary .wb-faq-plus {
 .wb-align-left .wb-actions,
 .wb-actions.wb-align-left,
 .wb-align-left .wb-logos-row,
-.wb-logos-row.wb-align-left {
+.wb-logos-row.wb-align-left,
+.wb-align-left .wb-hero-actions,
+.wb-align-left .wb-trusted-logos,
+.wb-align-left .wb-hero-rating {
   justify-content: flex-start;
+}
+.wb-align-left .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards) .wb-hero-copy {
+  align-items: flex-start;
 }
 .wb-align-left .wb-stat { text-align: left; }
 
@@ -6224,8 +6249,14 @@ details[open] > summary .wb-faq-plus {
 .wb-align-center .wb-actions,
 .wb-actions.wb-align-center,
 .wb-align-center .wb-logos-row,
-.wb-logos-row.wb-align-center {
+.wb-logos-row.wb-align-center,
+.wb-align-center .wb-hero-actions,
+.wb-align-center .wb-trusted-logos,
+.wb-align-center .wb-hero-rating {
   justify-content: center;
+}
+.wb-align-center .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards) .wb-hero-copy {
+  align-items: center;
 }
 .wb-align-center .wb-stat { text-align: center; }
 
@@ -6246,8 +6277,14 @@ details[open] > summary .wb-faq-plus {
 .wb-align-right .wb-actions,
 .wb-actions.wb-align-right,
 .wb-align-right .wb-logos-row,
-.wb-logos-row.wb-align-right {
+.wb-logos-row.wb-align-right,
+.wb-align-right .wb-hero-actions,
+.wb-align-right .wb-trusted-logos,
+.wb-align-right .wb-hero-rating {
   justify-content: flex-end;
+}
+.wb-align-right .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards) .wb-hero-copy {
+  align-items: flex-end;
 }
 .wb-align-right .wb-stat { text-align: right; }
 .wb-empty { padding: 32px; text-align: center; font-size: 14px; color: var(--wb-muted); border: 1px dashed var(--wb-border); border-radius: var(--wb-radius); }
@@ -8764,6 +8801,7 @@ ${CONTACT_BUILDER_CSS}
 ${HERO_CONTROLS_CSS}
 ${CARDS_CSS}
 ${SHOP_CSS}
+${VINTAGE_CSS}
 .wb-device-scroll {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;

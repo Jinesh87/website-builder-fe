@@ -1,4 +1,4 @@
-import { SectionShell, SiteButton } from "../primitives.tsx";
+import { parseRichText, SectionShell, SiteButton, SiteLink } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
 
 function CheckIcon() {
@@ -25,6 +25,56 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
   const variant = data.variant || "centered-card";
   const cardStyle = data.cardStyle || "default";
   const align = data.align || section.settings.align || "center";
+
+  if (variant === "vintage-story") {
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-cta-vintage-story"
+        label={data.heading}
+        fullWidth
+      >
+        <div className="wb-container">
+          <h2 className="wb-cta-story-heading">
+            {parseRichText(data.heading)}
+            {data.italicText && <em> {data.italicText}</em>}
+          </h2>
+          {data.button && (
+            <SiteLink link={data.button} className="wb-cta-story-btn">
+              {data.button.label}
+            </SiteLink>
+          )}
+        </div>
+      </SectionShell>
+    );
+  }
+
+  if (variant === "vintage-banner") {
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-cta-vintage-banner"
+        label={data.heading}
+        fullWidth
+      >
+        <div className="wb-container">
+          <div className="wb-cta-banner-card">
+            <h2 className="wb-cta-banner-heading">
+              {parseRichText(data.heading)}
+              {data.italicText && <em> {data.italicText}</em>}
+            </h2>
+            {data.button && (
+              <SiteLink link={data.button} className="wb-cta-banner-btn">
+                {data.button.label}
+              </SiteLink>
+            )}
+          </div>
+        </div>
+      </SectionShell>
+    );
+  }
 
   // 1. Split Visual Variant (Asymmetric Split + Live Metric Highlight)
   if (variant === "split-visual") {

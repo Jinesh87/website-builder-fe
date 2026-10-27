@@ -484,6 +484,70 @@ export default function CardsSection({ section }: { section: SectionOf<"cards"> 
   const mobileScroll = data.mobileLayout === "scroll";
   const items = data.items ?? [];
 
+  if (data.variant === "film-vault") {
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={settings}
+        className="wb-film-vault-wrap"
+        label={data.heading || "Recent Work"}
+        fullWidth
+      >
+        <div className="wb-container">
+          {data.eyebrow && <p className="wb-vr-eyebrow">{data.eyebrow}</p>}
+          {data.heading && <h2 className="wb-process-heading">{parseRichText(data.heading)}</h2>}
+          <div className="wb-film-vault-box">
+            <div className="wb-film-grid">
+              {items.map((item, index) => (
+                <figure key={index} className="wb-film-card">
+                  {item.image && <SiteImage image={item.image} />}
+                  <span className="wb-film-frame-no" aria-hidden="true">
+                    {index === 0 ? "1A" : `${index + 10}A`}
+                  </span>
+                  <figcaption className="wb-film-tape">{item.title}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </div>
+      </SectionShell>
+    );
+  }
+
+  if (data.variant === "polaroid-grid") {
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={settings}
+        className="wb-polaroids-section"
+        label={data.heading || "Why choose us"}
+        fullWidth
+      >
+        <div className="wb-scalloped-top" aria-hidden="true" />
+        <div className="wb-container">
+          {data.heading && (
+            <h2 className="wb-polaroids-heading">{parseRichText(data.heading)}</h2>
+          )}
+          <div className="wb-polaroids-grid">
+            {items.map((item, index) => (
+              <div key={index} className="wb-polaroid-grid-card">
+                {item.image && (
+                  <div className="wb-polaroid-grid-img-wrap">
+                    <SiteImage image={item.image} />
+                  </div>
+                )}
+                <h3 className="wb-polaroid-grid-title">{item.title}</h3>
+                {item.description && (
+                  <p className="wb-polaroid-grid-desc">{item.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </SectionShell>
+    );
+  }
+
   const icon = resolveCardsIcon(data);
 
   const ctx: CardContext = {

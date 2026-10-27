@@ -1533,6 +1533,218 @@ export const SECTION_PRESETS: SectionPreset[] = [
       }),
   },
   {
+    key: "hero-vintage-editorial",
+    type: "hero",
+    label: "Hero · Vintage editorial stories",
+    category: "Hero",
+    description:
+      "Vintage editorial hero with headline, italic rust accent, newspaper issue strip and polaroid photo stack.",
+    create: () =>
+      createSection("hero", {
+        data: {
+          variant: "vintage-editorial",
+          heading: "Old soul, *new* stories.",
+          highlightText: "new",
+          subheading:
+            "Vintage Reels Entertainment crafts high-quality entertainment videos that blend vintage charm with modern aesthetics.",
+          primaryCta: { label: "Start a project", href: "/contact" },
+          secondaryCta: { label: "Watch showreel", href: "/work" },
+          topStrip: {
+            left: "VOL. 01 — THE EDITORIAL ISSUE",
+            center: "VINTAGE FILMS & ADS COMPANY",
+            right: "MUSIC • FILMS • EVENTS • FILM",
+          },
+          image: {
+            url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
+            alt: "Photographer with vintage camera",
+          },
+          secondaryImage: {
+            url: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80",
+            alt: "Golden Hour Espresso Bar",
+          },
+        },
+      }),
+  },
+  {
+    key: "hero-vintage-sunburst",
+    type: "hero",
+    label: "Hero · Vintage sunburst nostalgia",
+    category: "Hero",
+    description:
+      "Golden sunburst ray hero banner with circular vintage portrait cutout and retro bold typography.",
+    create: () =>
+      createSection("hero", {
+        data: {
+          variant: "vintage-sunburst",
+          eyebrow: "ABOUT US",
+          heading: "Lights!\nCamera!",
+          sunburstTitleWhite: "Nostalgia!",
+          subheading:
+            "We are Vintage Reels Entertainment, a creative production company that makes modern films with a vintage heart.",
+          primaryCta: { label: "See our reels", href: "/work" },
+          circularPortrait: {
+            url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
+            alt: "Photographer portrait",
+          },
+        },
+      }),
+  },
+  {
+    key: "services-editorial-specs",
+    type: "services",
+    label: "Services · Vintage editorial specs list",
+    category: "Services",
+    description:
+      "Numbered editorial specs list with hairline rules, large serif titles and authentic chromatic misprint effect.",
+    create: () =>
+      createSection("services", {
+        data: {
+          variant: "editorial-specs",
+          eyebrow: "THE SPECS — WHAT WE MAKE",
+          heading: "The Specs",
+          items: [
+            {
+              title: "Music videos",
+              description: "A hit, lit world for every track",
+            },
+            {
+              title: "Brand films & ads",
+              description: "Commercials with a cinema spirit and pulse",
+              stampHighlight: true,
+            },
+            {
+              title: "Weddings & events",
+              description: "Celebrations filmed like cinema",
+            },
+            {
+              title: "Short films",
+              description: "Stories to scream, feel & relate",
+            },
+            {
+              title: "Documentaries",
+              description: "Real stories, told with warmth",
+            },
+            {
+              title: "Post-production",
+              description: "Edit, colour grade, sound and film looks",
+            },
+          ],
+        },
+      }),
+  },
+  {
+    key: "features-editorial-process",
+    type: "features",
+    label: "Features · Editorial process steps",
+    category: "Features",
+    description:
+      "Roman numeral step timeline with top divider rule and editorial typography.",
+    create: () =>
+      createSection("features", {
+        data: {
+          variant: "editorial-process",
+          eyebrow: "HOW WE WORK",
+          heading: "From first idea to *final cut*",
+          columns: 4,
+          mobileColumns: 1,
+          items: [
+            {
+              badge: "i.",
+              title: "Discover",
+              description: "We learn your story, audience, goals and budget.",
+            },
+            {
+              badge: "ii.",
+              title: "Pre-production",
+              description:
+                "Concept, script, mood board, locations and schedule.",
+            },
+            {
+              badge: "iii.",
+              title: "Production",
+              description:
+                "Our crew films with cinema cameras, light and sound.",
+            },
+            {
+              badge: "iv.",
+              title: "Post & delivery",
+              description:
+                "Edit, colour, sound and files for every platform.",
+            },
+          ],
+        },
+      }),
+  },
+  {
+    key: "features-colored-pillars",
+    type: "features",
+    label: "Features · Mission, vision & values colored pillars",
+    category: "Features",
+    description:
+      "Tri-colored rounded cards with tag badges, bold serif titles, and mission copy.",
+    create: () =>
+      createSection("features", {
+        data: {
+          variant: "colored-pillars",
+          heading: "What drives us",
+          columns: 3,
+          mobileColumns: 1,
+          items: [
+            {
+              badge: "MISSION",
+              title: "Bring stories to life",
+              description:
+                "Craft entertainment videos that blend vintage charm with modern aesthetics, so every story is captivating to watch.",
+            },
+            {
+              badge: "VISION",
+              title: "Timeless for years",
+              description:
+                "Be the studio artists, brands and families choose for films that still feel right years from now.",
+            },
+            {
+              badge: "VALUES",
+              title: "Craft, care, character",
+              description:
+                "Quality in every frame, friendly communication and bold, original ideas.",
+            },
+          ],
+        },
+      }),
+  },
+  {
+    key: "cta-vintage-story",
+    type: "cta",
+    label: "CTA · Vintage editorial story",
+    category: "CTA",
+    description:
+      "Centered dark background with italic accent and white pill button.",
+    create: () =>
+      createSection("cta", {
+        data: {
+          variant: "vintage-story",
+          heading: "Have a story *to tell?*",
+          button: { label: "Start a project", href: "/contact" },
+        },
+      }),
+  },
+  {
+    key: "cta-vintage-banner",
+    type: "cta",
+    label: "CTA · Vintage terracotta banner",
+    category: "CTA",
+    description:
+      "Terracotta rounded card with white bold serif and dark call button.",
+    create: () =>
+      createSection("cta", {
+        data: {
+          variant: "vintage-banner",
+          heading: "Let's make something timeless",
+          button: { label: "Book a free call", href: "/contact" },
+        },
+      }),
+  },
+  {
     key: "hero-curved-carousel",
     type: "hero",
     label: "Hero · 3D video reel carousel",

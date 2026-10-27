@@ -65,6 +65,7 @@ export const HEADER_DESIGNS = [
   "mega-menu-grid",
   "side-drawer",
   "headline-ticker",
+  "vintage-editorial",
 ] as const;
 
 export type HeaderDesign = (typeof HEADER_DESIGNS)[number];
@@ -132,6 +133,10 @@ export type HeaderData = {
   contactEmail?: string;
   /** Highlight card shown inside mega-menu dropdowns. */
   featured?: HeaderFeatured;
+  /** Subhead / issue banner for vintage-editorial header */
+  editorialIssue?: string;
+  editorialCompany?: string;
+  editorialTags?: string;
 };
 
 export const HEADER_STATUS_COLORS = ["green", "blue", "orange", "purple", "red"] as const;
@@ -326,6 +331,8 @@ export const HERO_VARIANTS = [
   "asymmetric",
   "curved-carousel",
   "campaign-banner",
+  "vintage-editorial",
+  "vintage-sunburst",
 ] as const;
 
 export type HeroVariant = (typeof HERO_VARIANTS)[number];
@@ -460,6 +467,19 @@ export type HeroData = {
     primaryButton?: LinkRef;
     secondaryButton?: LinkRef;
   };
+  // Vintage layout fields
+  vintagePolaroids?: {
+    image: ImageRef;
+    caption?: string;
+    rotation?: number;
+  }[];
+  topStrip?: {
+    left?: string;
+    center?: string;
+    right?: string;
+  };
+  sunburstTitleWhite?: string;
+  circularPortrait?: ImageRef;
 };
 
 export type GridColumns = 1 | 2 | 3 | 4;
@@ -495,7 +515,15 @@ export type FeaturesData = {
   heading?: string;
   eyebrow?: string;
   intro?: string;
-  variant?: "grid" | "split" | "minimal" | "cards" | "pastel-icons";
+  variant?:
+    | "grid"
+    | "split"
+    | "minimal"
+    | "cards"
+    | "pastel-icons"
+    | "editorial-process"
+    | "colored-pillars"
+    | "polaroid-grid";
   iconStyle?:
     | "pastel-circle"
     | "square-badge"
@@ -526,6 +554,7 @@ export const SERVICES_VARIANTS = [
   "interactive-list",
   "horizontal-cards",
   "minimal-numbered",
+  "editorial-specs",
 ] as const;
 
 export type ServicesVariant = (typeof SERVICES_VARIANTS)[number];
@@ -546,6 +575,7 @@ export type ServiceItem = {
   secondaryLink?: LinkRef;
   backgroundColor?: string;
   featured?: boolean;
+  stampHighlight?: boolean;
 };
 
 export type ServicesData = {
@@ -687,6 +717,8 @@ export const CTA_VARIANTS = [
   "split-visual",
   "floating-card",
   "minimal-editorial",
+  "vintage-story",
+  "vintage-banner",
 ] as const;
 export type CtaVariant = (typeof CTA_VARIANTS)[number];
 
@@ -710,6 +742,7 @@ export type CtaData = {
   variant?: CtaVariant;
   eyebrow?: string;
   heading: string;
+  italicText?: string;
   text?: string;
   button: LinkRef;
   secondaryButton?: LinkRef;
@@ -858,6 +891,7 @@ export type ContactLayout = {
 };
 
 export type TextData = {
+  variant?: "default" | "pull-quote";
   heading?: string;
   /** Plain text; blank lines separate paragraphs. Never rendered as HTML. */
   body: string;
@@ -887,6 +921,8 @@ export type SplitData = {
   bullets: string[];
   image?: ImageRef;
   imagePosition: "left" | "right";
+  imageStyle?: "plain" | "polaroid";
+  imageTapeLabel?: string;
   cta?: LinkRef;
 };
 
@@ -1314,6 +1350,7 @@ export type BlogPostItem = {
 };
 
 export type BlogData = {
+  variant?: "default" | "vintage-journal";
   eyebrow?: string;
   title: string;
   subtitle?: string;
@@ -1368,6 +1405,8 @@ export const CARDS_VARIANTS = [
   "floating-panel",
   "floating-icon",
   "dos-donts",
+  "film-vault",
+  "polaroid-grid",
 ] as const;
 export type CardsVariant = (typeof CARDS_VARIANTS)[number];
 

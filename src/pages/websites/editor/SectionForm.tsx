@@ -502,6 +502,16 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
               value: "video-bg",
               label: "Video background & demo (Cinematic video player)",
             },
+            {
+              value: "vintage-editorial",
+              label:
+                "Vintage Editorial (Old soul, new stories, newspaper strip & polaroid stack)",
+            },
+            {
+              value: "vintage-sunburst",
+              label:
+                "Vintage Sunburst Nostalgia (Radiating ray banner, white shadow title & circular portrait)",
+            },
           ]}
           onChange={(variant) =>
             onChange({ ...data, variant: variant as HeroData["variant"] })
@@ -1447,6 +1457,21 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
               label:
                 "Elevated modern cards (Surface cards with hover lift & subtle shadow)",
             },
+            {
+              value: "editorial-process",
+              label:
+                "Editorial process steps (Roman numerals timeline & top dividing rule)",
+            },
+            {
+              value: "colored-pillars",
+              label:
+                "Colored pillars (Mission, Vision, Values colored rounded cards)",
+            },
+            {
+              value: "polaroid-grid",
+              label:
+                "Polaroid photo grid (Vintage photo paper cards with captions)",
+            },
           ]}
           onChange={(variant) =>
             onChange({
@@ -1862,6 +1887,10 @@ const SERVICES_VARIANT_OPTIONS: { value: ServicesVariant; label: string }[] = [
   {
     value: "minimal-numbered",
     label: "Minimal numbered (Editorial / Consulting)",
+  },
+  {
+    value: "editorial-specs",
+    label: "Editorial specs list (Vintage Reels 01-06 with chromatic stamp)",
   },
 ];
 
@@ -2675,6 +2704,14 @@ const CTA_VARIANT_OPTIONS: { value: CtaVariant; label: string }[] = [
   {
     value: "minimal-editorial",
     label: "Minimal editorial (Swiss architectural)",
+  },
+  {
+    value: "vintage-story",
+    label: "Vintage editorial story CTA (Dark centered with italic accent)",
+  },
+  {
+    value: "vintage-banner",
+    label: "Vintage terracotta banner (Terracotta rounded container with call button)",
   },
 ];
 

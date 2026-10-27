@@ -18,9 +18,12 @@ export const HERO_CONTROLS_CSS = `
 .wb-hero [data-wb-align="right"] { align-self: flex-end; text-align: right; margin-left: auto; margin-right: 0; }
 
 /* Copy block position in single-column layouts */
-.wb-container > .wb-hero-copy[data-wb-content-align="left"] { margin-left: 0; margin-right: auto; }
-.wb-container > .wb-hero-copy[data-wb-content-align="center"] { margin-left: auto; margin-right: auto; }
-.wb-container > .wb-hero-copy[data-wb-content-align="right"] { margin-left: auto; margin-right: 0; }
+.wb-container > .wb-hero-copy[data-wb-content-align="left"],
+.wb-hero-copy[data-wb-content-align="left"] { margin-left: 0; margin-right: auto; align-items: flex-start; text-align: left; }
+.wb-container > .wb-hero-copy[data-wb-content-align="center"],
+.wb-hero-copy[data-wb-content-align="center"] { margin-left: auto; margin-right: auto; align-items: center; text-align: center; }
+.wb-container > .wb-hero-copy[data-wb-content-align="right"],
+.wb-hero-copy[data-wb-content-align="right"] { margin-left: auto; margin-right: 0; align-items: flex-end; text-align: right; }
 
 /* Button rows */
 .wb-hero :is(.wb-hero-actions, .wb-hero-curved-actions, .wb-campaign-actions)[data-wb-align="left"] { justify-content: flex-start; }
@@ -32,6 +35,9 @@ export const HERO_CONTROLS_CSS = `
 .wb-hero .wb-hero-trusted-by[data-wb-align="left"] .wb-trusted-logos { justify-content: flex-start; }
 .wb-hero .wb-hero-trusted-by[data-wb-align="center"] .wb-trusted-logos { justify-content: center; }
 .wb-hero .wb-hero-trusted-by[data-wb-align="right"] .wb-trusted-logos { justify-content: flex-end; }
+.wb-hero .wb-hero-trusted-by[data-wb-align="left"] .wb-trusted-label { text-align: left; }
+.wb-hero .wb-hero-trusted-by[data-wb-align="center"] .wb-trusted-label { text-align: center; }
+.wb-hero .wb-hero-trusted-by[data-wb-align="right"] .wb-trusted-label { text-align: right; }
 
 /* 3D carousel: buttons sit outside the copy column, so keep them on the same column width */
 .wb-hero .wb-hero-curved-actions[data-wb-align] { align-self: center; max-width: 860px; margin-left: auto; margin-right: auto; box-sizing: border-box; }

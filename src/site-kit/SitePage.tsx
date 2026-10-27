@@ -1,5 +1,6 @@
 import { Fragment, memo, type ReactNode } from "react";
 import { VideoModalProvider } from "./VideoModal.tsx";
+import { CurrentPageContext } from "./current-page.ts";
 import SiteFooter from "./layout/SiteFooter.tsx";
 import SiteHeader from "./layout/SiteHeader.tsx";
 import AuthSection from "./sections/AuthSection.tsx";
@@ -188,18 +189,20 @@ function SitePageBody({ site, page, editor }: SitePageProps) {
   );
 
   return (
-    <SiteFrame
-      theme={site.theme}
-      header={editor && effectiveHeader ? editor.renderHeader(effectiveHeader) : effectiveHeader}
-      footer={editor && effectiveFooter ? editor.renderFooter(effectiveFooter) : effectiveFooter}
-    >
-      {editor
-        ? bodySections.length === 0
-          ? editor.emptyState
-          : bodySections.map((section) => (
-              <Fragment key={section.id}>{editor.renderSection(section, <SectionView section={section} />)}</Fragment>
-            ))
-        : bodySections.map((section) => <SectionView key={section.id} section={section} />)}
-    </SiteFrame>
+    <CurrentPageContext.Provider value={page.slug}>
+      <SiteFrame
+        theme={site.theme}
+        header={editor && effectiveHeader ? editor.renderHeader(effectiveHeader) : effectiveHeader}
+        footer={editor && effectiveFooter ? editor.renderFooter(effectiveFooter) : effectiveFooter}
+      >
+        {editor
+          ? bodySections.length === 0
+            ? editor.emptyState
+            : bodySections.map((section) => (
+                <Fragment key={section.id}>{editor.renderSection(section, <SectionView section={section} />)}</Fragment>
+              ))
+          : bodySections.map((section) => <SectionView key={section.id} section={section} />)}
+      </SiteFrame>
+    </CurrentPageContext.Provider>
   );
 }
