@@ -141,7 +141,7 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
       <footer className={`wb-footer wb-footer-simple ${themeClass}`} style={chrome.style}>
         <div className="wb-container wb-footer-bottom">
           <div className="wb-footer-bottom-left">
-            <span>{footer.copyright}</span>
+            <span className="wb-footer-copyright">{footer.copyright}</span>
             <LegalLinksList legalLinks={legalLinks} />
           </div>
           <SocialCircleLinks social={footer.social} />
@@ -171,7 +171,7 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
           </div>
           <div className="wb-footer-bottom">
             <div className="wb-footer-bottom-left">
-              <span>{footer.copyright}</span>
+              <span className="wb-footer-copyright">{footer.copyright}</span>
               <LegalLinksList legalLinks={legalLinks} />
             </div>
             {showPayments && <PaymentIconsBar methods={paymentList} />}
@@ -209,7 +209,7 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
             )}
           </div>
           <div className="wb-footer-bottom justify-center flex-col sm:flex-row gap-4 text-center">
-            <span>{footer.copyright}</span>
+            <span className="wb-footer-copyright">{footer.copyright}</span>
             <LegalLinksList legalLinks={legalLinks} />
             {showPayments && <PaymentIconsBar methods={paymentList} />}
           </div>
@@ -253,7 +253,7 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
 
           <div className="wb-footer-bottom">
             <div className="wb-footer-bottom-left">
-              <span>{footer.copyright}</span>
+              <span className="wb-footer-copyright">{footer.copyright}</span>
               <LegalLinksList legalLinks={legalLinks} />
             </div>
             <SocialCircleLinks social={footer.social} />
@@ -274,7 +274,7 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
               <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} />
               {footer.tagline && <span className="wb-footer-tagline">{footer.tagline}</span>}
               <SocialCircleLinks social={footer.social} />
-              <span className="wb-muted text-xs mt-2">{footer.copyright}</span>
+              <span className="wb-footer-copyright wb-muted text-xs mt-2">{footer.copyright}</span>
             </div>
 
             <div>
@@ -373,7 +373,7 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
         {/* Bottom Bar with Copyright & Payment Badges */}
         <div className="wb-footer-bottom">
           <div className="wb-footer-bottom-left">
-            <span>{footer.copyright}</span>
+            <span className="wb-footer-copyright">{footer.copyright}</span>
             <LegalLinksList legalLinks={legalLinks} />
           </div>
           {showPayments && <PaymentIconsBar methods={paymentList} />}

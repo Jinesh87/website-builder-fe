@@ -631,7 +631,61 @@ export default function ServicesSection({
     );
   }
 
-  // 6. Standard Modern Cards Grid Variant (Default)
+  // 6. Editorial Specs Variant (Vintage Reels "THE SPECS — WHAT WE MAKE")
+  if (variant === "editorial-specs") {
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-services-editorial-specs"
+        label={data.heading || "The Specs"}
+        fullWidth
+      >
+        <div className="wb-container">
+          {data.eyebrow && <p className="wb-vr-eyebrow">{data.eyebrow}</p>}
+          {data.heading &&
+            data.heading !== "The Specs" &&
+            data.heading !== "THE SPECS — WHAT WE MAKE" && (
+              <SectionHead
+                heading={data.heading}
+                intro={data.intro}
+                align={align}
+              />
+            )}
+
+          <div className="wb-specs-list">
+            {data.items.map((item, index) => {
+              const num = String(index + 1).padStart(2, "0");
+              const isStamp = item.stampHighlight ?? index === 1;
+              return (
+                <div key={index} className="wb-specs-row">
+                  <span className="wb-specs-num">{num}</span>
+                  <h3
+                    className={`wb-specs-title ${isStamp ? "wb-specs-stamp" : ""}`}
+                    data-text={item.title}
+                  >
+                    {item.title}
+                  </h3>
+                  <p className="wb-specs-desc">{item.description}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {data.bottomCta && (
+            <div
+              className={`wb-services-bottom-cta wb-align-${align}`}
+              style={{ marginTop: "32px" }}
+            >
+              <SiteButton link={data.bottomCta} tone="primary" />
+            </div>
+          )}
+        </div>
+      </SectionShell>
+    );
+  }
+
+  // 7. Standard Modern Cards Grid Variant (Default)
   return (
     <SectionShell
       sectionId={section.id}

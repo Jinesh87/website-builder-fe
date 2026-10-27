@@ -60,6 +60,9 @@ const TEMPLATE_SITES: Readonly<Record<string, TemplateSite>> = {
 
 function find(templateIdOrKey: string): TemplateSite | null {
   if (Object.hasOwn(TEMPLATE_SITES, templateIdOrKey)) return TEMPLATE_SITES[templateIdOrKey];
+  if (templateIdOrKey === "vintage-reels" || templateIdOrKey === "vintage-reels-entertainment") {
+    return TEMPLATE_SITES["2143"];
+  }
   return Object.values(TEMPLATE_SITES).find((candidate) => candidate.key === templateIdOrKey) ?? null;
 }
 

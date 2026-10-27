@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import {
   gridStyle,
+  parseRichText,
   SectionHead,
   SectionShell,
   SiteButton,
@@ -304,6 +305,106 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
       </div>
     );
   };
+
+  if (data.variant === "editorial-process") {
+    const romanNumerals = ["i.", "ii.", "iii.", "iv.", "v.", "vi."];
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-editorial-process"
+        label={data.heading || "How we work"}
+        fullWidth
+      >
+        <div className="wb-container">
+          {data.eyebrow && <p className="wb-vr-eyebrow">{data.eyebrow}</p>}
+          {data.heading && (
+            <h2 className="wb-process-heading">{parseRichText(data.heading)}</h2>
+          )}
+          <div className="wb-process-grid">
+            {data.items.map((item, index) => (
+              <div key={index} className="wb-process-col">
+                <span className="wb-process-num">
+                  {item.badge || romanNumerals[index % romanNumerals.length]}
+                </span>
+                <h3 className="wb-process-title">{item.title}</h3>
+                <p className="wb-process-desc">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </SectionShell>
+    );
+  }
+
+  if (data.variant === "colored-pillars") {
+    const pillarClasses = ["pillar-mission", "pillar-vision", "pillar-values"];
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-colored-pillars-wrap"
+        label={data.heading || "What drives us"}
+        fullWidth
+      >
+        <div className="wb-container">
+          {data.heading && (
+            <h2 className="wb-colored-pillars-title">
+              {parseRichText(data.heading)}
+            </h2>
+          )}
+          <div className="wb-pillars-grid">
+            {data.items.map((item, index) => (
+              <div
+                key={index}
+                className={`wb-pillar-card ${pillarClasses[index % pillarClasses.length]}`}
+              >
+                {item.badge && <span className="wb-pillar-badge">{item.badge}</span>}
+                <h3 className="wb-pillar-heading">{item.title}</h3>
+                <p className="wb-pillar-text">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </SectionShell>
+    );
+  }
+
+  if (data.variant === "polaroid-grid") {
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-polaroids-section"
+        label={data.heading || "Why choose us"}
+        fullWidth
+      >
+        <div className="wb-scalloped-top" aria-hidden="true" />
+        <div className="wb-container">
+          {data.heading && (
+            <h2 className="wb-polaroids-heading">
+              {parseRichText(data.heading)}
+            </h2>
+          )}
+          <div className="wb-polaroids-grid">
+            {data.items.map((item, index) => (
+              <div key={index} className="wb-polaroid-grid-card">
+                {item.image && (
+                  <div className="wb-polaroid-grid-img-wrap">
+                    <SiteImage image={item.image} />
+                  </div>
+                )}
+                <h3 className="wb-polaroid-grid-title">{item.title}</h3>
+                {item.description && (
+                  <p className="wb-polaroid-grid-desc">{item.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </SectionShell>
+    );
+  }
 
   // Split Showcase Mode (matching Image 2)
   if (isSplit) {

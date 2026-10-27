@@ -6,6 +6,10 @@ export type FontDefinition = {
   label: string;
   category: FontCategory;
   stack: string;
+  /** Google Fonts axis spec; defaults to static weights 400–700. */
+  googleAxes?: string;
+  /** Fontsource stylesheets to import instead of the package default. */
+  fontsourceCss?: readonly string[];
 };
 
 const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
@@ -154,6 +158,7 @@ export const FONTS = {
     label: "Playfair Display",
     category: "serif",
     stack: family("Playfair Display Variable", SERIF),
+    googleAxes: "ital,wght@0,400..900;1,400..900",
   },
   lora: {
     label: "Lora",
@@ -164,6 +169,8 @@ export const FONTS = {
     label: "Fraunces",
     category: "serif",
     stack: family("Fraunces Variable", SERIF),
+    googleAxes: "ital,opsz,wght@0,9..144,100..900;1,9..144,100..900",
+    fontsourceCss: ["opsz.css", "opsz-italic.css"],
   },
   merriweather: {
     label: "Merriweather",
