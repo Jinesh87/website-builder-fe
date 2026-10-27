@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { Monitor, Smartphone, Tablet, type LucideIcon } from "lucide-react";
-import { SiteStyles, themeToCssVars, type ThemeSettings } from "../../site-kit/index.ts";
+import { openVideoModal, SiteStyles, themeToCssVars, type ThemeSettings } from "../../site-kit/index.ts";
 import { isExternalHref, isOffsiteHref, linkHash } from "../../site-kit/links.ts";
 
 export type Device = "desktop" | "tablet" | "mobile";
@@ -183,6 +183,19 @@ export function PreviewFrame({
   function handleClickCapture(event: MouseEvent<HTMLDivElement>) {
     const anchor = event.target instanceof Element ? event.target.closest("a") : null;
     if (!anchor) return;
+
+    // Handle video modal trigger links
+    const isVideoModal = anchor.hasAttribute("data-wb-video-modal") || anchor.hasAttribute("data-wb-video-url");
+    if (isVideoModal) {
+      event.preventDefault();
+      const videoUrl = anchor.getAttribute("data-wb-video-url") || anchor.getAttribute("href") || "";
+      const title = anchor.getAttribute("data-wb-video-title") || undefined;
+      if (videoUrl && videoUrl !== "#video") {
+        openVideoModal(videoUrl, title);
+      }
+      return;
+    }
+
     const href = anchor.getAttribute("href") ?? "";
     if (allowOffsiteLinks && isOffsiteHref(href)) {
       if (isExternalHref(href) && anchor.target !== "_blank") {

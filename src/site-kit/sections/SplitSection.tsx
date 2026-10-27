@@ -4,11 +4,12 @@ import type { SectionOf } from "../types.ts";
 
 export default function SplitSection({ section }: { section: SectionOf<"split"> }) {
   const { data } = section;
+  const polaroid = data.imageStyle === "polaroid";
   return (
     <SectionShell
       sectionId={section.id}
       settings={section.settings}
-      className={`wb-split wb-split-${data.imagePosition}`}
+      className={`wb-split wb-split-${data.imagePosition}${polaroid ? " wb-split-vintage" : ""}`}
       label={data.heading}
     >
       <div className="wb-split-grid">
@@ -37,7 +38,20 @@ export default function SplitSection({ section }: { section: SectionOf<"split"> 
           )}
         </div>
         <div className="wb-split-media">
-          {data.image ? <SiteImage image={data.image} /> : <div className="wb-media-placeholder" aria-hidden="true" />}
+          {data.image ? (
+            polaroid ? (
+              <div className="wb-split-polaroid">
+                <SiteImage image={data.image} />
+                {data.imageTapeLabel && (
+                  <div className="wb-polaroid-tape-label">{data.imageTapeLabel}</div>
+                )}
+              </div>
+            ) : (
+              <SiteImage image={data.image} />
+            )
+          ) : (
+            <div className="wb-media-placeholder" aria-hidden="true" />
+          )}
         </div>
       </div>
     </SectionShell>

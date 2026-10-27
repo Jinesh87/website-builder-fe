@@ -58,9 +58,71 @@
     menu.hidden = !open;
   }
 
+  function closeVideoModal() {
+    const existing = document.querySelector(".wb-video-modal-backdrop");
+    if (existing) {
+      existing.remove();
+      document.body.style.overflow = "";
+    }
+  }
+
+  function openVideoModal(url, title) {
+    if (!url) return;
+    closeVideoModal();
+
+    let embedHtml = "";
+    const ytMatch =
+      url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|live|shorts)\/|.*[?&]v=)|youtu\.be\/)([\w-]{11})/i);
+    const vimeoMatch = url.match(/(?:vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|video\/|))(\d+)/i);
+
+    if (ytMatch && ytMatch[1]) {
+      const embedUrl = "https://www.youtube-nocookie.com/embed/" + ytMatch[1] + "?autoplay=1&rel=0&modestbranding=1&enablejsapi=1";
+      embedHtml = '<iframe src="' + embedUrl + '" class="wb-video-modal-iframe" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+    } else if (vimeoMatch && vimeoMatch[3]) {
+      const embedUrl = "https://player.vimeo.com/video/" + vimeoMatch[3] + "?autoplay=1&title=0&byline=0&portrait=0";
+      embedHtml = '<iframe src="' + embedUrl + '" class="wb-video-modal-iframe" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+    } else {
+      embedHtml = '<div class="wb-video-modal-video-wrap"><video src="' + url + '" controls autoplay playsinline preload="auto" class="wb-video-modal-video"></video></div>';
+    }
+
+    const modal = document.createElement("div");
+    modal.className = "wb-video-modal-backdrop";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.innerHTML =
+      '<div class="wb-video-modal-dialog">' +
+        '<div class="wb-video-modal-header">' +
+          '<div class="wb-video-modal-title-group">' +
+            '<span class="wb-video-modal-badge">' +
+              '<svg viewBox="0 0 24 24" fill="currentColor" class="wb-video-modal-badge-icon"><path d="M8 5v14l11-7z"/></svg>' +
+              '<span>Demo</span>' +
+            '</span>' +
+            '<span class="wb-video-modal-title">' + (title || "Video Demo") + '</span>' +
+          '</div>' +
+          '<div class="wb-video-modal-actions">' +
+            '<button type="button" class="wb-video-modal-close-btn" title="Close (Esc)">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+              '<span class="wb-video-modal-esc-hint">ESC</span>' +
+            '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="wb-video-modal-player-container">' + embedHtml + '</div>' +
+      '</div>';
+
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal || e.target.closest(".wb-video-modal-close-btn")) {
+        closeVideoModal();
+      }
+    });
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = "hidden";
+  }
+
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     document.querySelectorAll("[data-wb-menu]").forEach((menu) => setMenu(menu, false));
+    closeVideoModal();
   });
 
   /* ---------- Clicks ---------- */
@@ -91,6 +153,15 @@
   document.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
+
+    const videoTrigger = target.closest("[data-wb-video-modal]");
+    if (videoTrigger) {
+      event.preventDefault();
+      const url = videoTrigger.getAttribute("data-wb-video-url") || videoTrigger.getAttribute("href");
+      const title = videoTrigger.getAttribute("data-wb-video-title");
+      if (url && url !== "#video") openVideoModal(url, title);
+      return;
+    }
 
     const opener = target.closest("[data-wb-menu-open]");
     if (opener) {

@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useIsCurrentPage } from "../current-page.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import {
   ChevronDownIcon,
@@ -65,6 +66,7 @@ export function SiteBrand({
 }
 
 function NavItem({ item }: { item: HeaderMenuItem }) {
+  const isCurrent = useIsCurrentPage(item.href);
   if (item.children && item.children.length > 0) {
     return (
       <div className="wb-dropdown">
@@ -89,7 +91,7 @@ function NavItem({ item }: { item: HeaderMenuItem }) {
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap shrink-0">
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap shrink-0" data-wb-current={isCurrent || undefined}>
       <SiteLink link={item} />
       {item.badge && <span className="wb-badge">{item.badge}</span>}
     </span>
@@ -726,7 +728,44 @@ export default function SiteHeader({ header, settings }: { header: HeaderData; s
     );
   }
 
-
+  // =========================================================================
+  // 12. VINTAGE EDITORIAL (Dark Cinema Navbar + Newspaper Editorial Sub-Bar)
+  // =========================================================================
+  if (header.design === "vintage-editorial") {
+    const vol = header.editorialIssue;
+    const comp = header.editorialCompany;
+    const tags = header.editorialTags;
+    return (
+      <>
+        <header className={`${classes} wb-header-vintage-editorial`} style={chrome.style}>
+          <div className="wb-container wb-header-inner">
+            {brand}
+            {header.menu.length > 0 && (
+              <nav className="wb-nav" aria-label="Main">
+                {header.menu.map((item) => (
+                  <NavItem key={`${item.label}-${item.href}`} item={item} />
+                ))}
+              </nav>
+            )}
+            <div className="wb-header-actions">
+              <ActionButtons header={header} />
+              {mobileToggle}
+            </div>
+          </div>
+        </header>
+        {(vol || comp || tags) && (
+          <div className="wb-container">
+            <div className="wb-editorial-subbar">
+              <span>{vol}</span>
+              <span className="wb-editorial-subbar-center">{comp}</span>
+              <span>{tags}</span>
+            </div>
+          </div>
+        )}
+        <MobileDrawer isOpen={mobileOpen} onClose={() => setMobileOpen(false)} header={header} />
+      </>
+    );
+  }
 
   // =========================================================================
   // 14. STANDARD & TRANSPARENT (logo-left, centered, transparent)

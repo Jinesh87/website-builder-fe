@@ -29,10 +29,21 @@ export const isHeroButtonShape = isButtonShape;
 export function heroBaseAlign(data: HeroData, settings: SectionSettings): HeroAlign | undefined {
   const all = data.alignment?.all;
   if (isHeroAlign(all)) return all;
-  if (data.variant === "campaign-banner") {
-    return isHeroAlign(data.contentAlign) ? data.contentAlign : undefined;
+  if (isHeroAlign(data.contentAlign)) return data.contentAlign;
+  if (isHeroAlign(settings.align)) return settings.align;
+
+  // Layout default when no explicit alignment was set
+  if (
+    data.variant === "centered" ||
+    data.variant === "gradient" ||
+    data.variant === "curved-bottom" ||
+    data.variant === "curved-carousel" ||
+    data.variant === "minimal-typography"
+  ) {
+    return "center";
   }
-  return isHeroAlign(settings.align) ? settings.align : undefined;
+
+  return undefined;
 }
 
 export function heroElementAlign(

@@ -42,6 +42,8 @@ export const CARDS_VARIANT_DEFAULTS: Record<CardsVariant, VariantDefaults> = {
   "floating-panel": { button: "soft", fullWidth: false, showArrow: true, aspect: "4:3", hover: "lift", descriptionLines: 3 },
   "floating-icon": { button: "filled", fullWidth: false, showArrow: false, aspect: "4:3", hover: "lift", descriptionLines: 3 },
   "dos-donts": { button: "filled", fullWidth: false, showArrow: false, aspect: "auto", hover: "lift", descriptionLines: 0 },
+  "film-vault": { button: "outline", fullWidth: false, showArrow: false, aspect: "4:3", hover: "lift", descriptionLines: 0 },
+  "polaroid-grid": { button: "outline", fullWidth: false, showArrow: false, aspect: "4:3", hover: "lift", descriptionLines: 2 },
 };
 
 export function isCardsVariant(value: unknown): value is CardsVariant {

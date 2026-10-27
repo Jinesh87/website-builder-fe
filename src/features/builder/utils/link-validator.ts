@@ -33,7 +33,7 @@ export function isExternalOrAnchor(href: string): boolean {
     trimmed.startsWith("/uploads/") ||
     trimmed.startsWith("blob:") ||
     trimmed.startsWith("data:") ||
-    /\.(pdf|doc|docx|zip|csv|xlsx|png|jpe?g|webp|svg)($|\?)/i.test(trimmed)
+    /\.(pdf|doc|docx|zip|csv|xlsx|png|jpe?g|webp|svg|mp4|webm|mov|m4v|ogg)($|\?)/i.test(trimmed)
   );
 }
 

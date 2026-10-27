@@ -1,16 +1,29 @@
-import { FONTS, isFontKey, type FontKey, type ThemeSettings } from "../../site-kit/index.ts";
+import {
+  FONTS,
+  isFontKey,
+  usesVintageStyles,
+  VINTAGE_FONTS,
+  type FontDefinition,
+  type FontKey,
+  type ThemeSettings,
+} from "../../site-kit/index.ts";
 import type { WebsitePage } from "../../api/websites.ts";
 
-/** Theme fonts plus any per-section overrides. */
+/** Theme fonts, per-section overrides and fonts that section styles set directly. */
 export function usedFonts(theme: ThemeSettings, pages: WebsitePage[]): FontKey[] {
   const keys = new Set<FontKey>();
   for (const key of [theme.fonts.heading, theme.fonts.body]) if (isFontKey(key)) keys.add(key);
   for (const page of pages) {
     for (const section of page.sections) {
       if (isFontKey(section.settings?.font)) keys.add(section.settings.font);
+      if (usesVintageStyles(section)) for (const key of VINTAGE_FONTS) keys.add(key);
     }
   }
   return [...keys];
+}
+
+function definition(key: FontKey): FontDefinition {
+  return FONTS[key];
 }
 
 /** System stacks have no web font to load. */
@@ -26,7 +39,8 @@ function isVariableBuild(key: FontKey): boolean {
 export function googleFontLinks(keys: FontKey[]): string[] {
   return keys.filter(hasWebFont).map((key) => {
     const family = encodeURIComponent(FONTS[key].label).replace(/%20/g, "+");
-    return `https://fonts.googleapis.com/css2?family=${family}:wght@400;500;600;700&display=swap`;
+    const axes = definition(key).googleAxes ?? "wght@400;500;600;700";
+    return `https://fonts.googleapis.com/css2?family=${family}:${axes}&display=swap`;
   });
 }
 
@@ -47,8 +61,9 @@ export function fontsourcePackages(keys: FontKey[]): { packages: string[]; impor
   const imports: string[] = [];
   for (const key of keys.filter(hasWebFont)) {
     if (isVariableBuild(key)) {
+      const css = definition(key).fontsourceCss;
       packages.push(`@fontsource-variable/${key}`);
-      imports.push(`@fontsource-variable/${key}`);
+      imports.push(...(css ? css.map((file) => `@fontsource-variable/${key}/${file}`) : [`@fontsource-variable/${key}`]));
       continue;
     }
     const name = key === "plex-sans" ? "ibm-plex-sans" : key === "mono" ? "ibm-plex-mono" : key;
