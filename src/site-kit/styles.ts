@@ -86,7 +86,7 @@ export const SITE_CSS = `
 .wb-site h2 { font-size: 34px; }
 .wb-site h3 { font-size: 19px; font-weight: 600; }
 
-.wb-container { width: 100%; max-width: var(--wb-container); margin: 0 auto; padding: 0 24px; }
+.wb-container { width: 100%; max-width: var(--wb-section-max-width, var(--wb-container)); margin: 0 auto; padding: 0 24px; }
 .wb-container-full { width: 100%; max-width: 100%; margin: 0; padding: 0; }
 .wb-section { padding: var(--wb-section-y) 0; }
 .wb-section[id] { scroll-margin-top: 88px; }
@@ -337,6 +337,187 @@ footer.wb-has-font-scale h3,
 footer.wb-has-font-scale h4,
 footer.wb-has-font-scale .wb-footer-col-title {
   font-size: calc(13px * var(--wb-font-scale, 1)) !important;
+}
+
+/* Dynamic container width overrides */
+.wb-section.wb-width-narrow > .wb-container,
+header.wb-width-narrow .wb-container,
+footer.wb-width-narrow .wb-container {
+  max-width: min(768px, 100%) !important;
+}
+.wb-section.wb-width-medium > .wb-container,
+header.wb-width-medium .wb-container,
+footer.wb-width-medium .wb-container {
+  max-width: min(1024px, 100%) !important;
+}
+.wb-section.wb-width-wide > .wb-container,
+header.wb-width-wide .wb-container,
+footer.wb-width-wide .wb-container {
+  max-width: min(1400px, 100%) !important;
+}
+.wb-section.wb-width-full > .wb-container,
+.wb-section.wb-width-full > .wb-container-full,
+header.wb-width-full .wb-container,
+footer.wb-width-full .wb-container {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+.wb-section[style*="--wb-section-max-width"] > .wb-container,
+header[style*="--wb-section-max-width"] .wb-container,
+footer[style*="--wb-section-max-width"] .wb-container {
+  max-width: var(--wb-section-max-width) !important;
+}
+
+/* Dynamic heading font-weight */
+[style*="--wb-heading-weight"] h1,
+[style*="--wb-heading-weight"] h2,
+[style*="--wb-heading-weight"] h3,
+[style*="--wb-heading-weight"] h4,
+[style*="--wb-heading-weight"] h5,
+[style*="--wb-heading-weight"] h6,
+[style*="--wb-heading-weight"] .wb-hero h1,
+[style*="--wb-heading-weight"] .wb-hero-curved-title,
+[style*="--wb-heading-weight"] .wb-section-head h2,
+[style*="--wb-heading-weight"] .wb-cardset-title,
+[style*="--wb-heading-weight"] .wb-feature-title,
+[style*="--wb-heading-weight"] .wb-service-title,
+[style*="--wb-heading-weight"] .wb-pricing-title,
+[style*="--wb-heading-weight"] .wb-faq-question,
+[style*="--wb-heading-weight"] .wb-footer-col-title,
+[style*="--wb-heading-weight"] .wb-footer-cta-card h3,
+[style*="--wb-heading-weight"] .wb-testimonial-name,
+header[style*="--wb-heading-weight"] h1,
+header[style*="--wb-heading-weight"] h2,
+header[style*="--wb-heading-weight"] h3,
+footer[style*="--wb-heading-weight"] h2,
+footer[style*="--wb-heading-weight"] h3,
+footer[style*="--wb-heading-weight"] h4,
+footer[style*="--wb-heading-weight"] .wb-footer-col-title {
+  font-weight: var(--wb-heading-weight) !important;
+}
+
+/* Dynamic body font-weight */
+[style*="--wb-body-weight"] p,
+[style*="--wb-body-weight"] span:not(.wb-badge):not(.wb-btn-icon),
+[style*="--wb-body-weight"] a:not(.wb-btn),
+[style*="--wb-body-weight"] li,
+[style*="--wb-body-weight"] .wb-section-head p,
+[style*="--wb-body-weight"] .wb-hero-sub,
+[style*="--wb-body-weight"] .wb-hero-desc,
+[style*="--wb-body-weight"] .wb-hero-curved-sub,
+[style*="--wb-body-weight"] .wb-cardset-desc,
+[style*="--wb-body-weight"] .wb-cardset-intro,
+[style*="--wb-body-weight"] .wb-testimonial-quote,
+[style*="--wb-body-weight"] .wb-testimonial-role,
+[style*="--wb-body-weight"] .wb-faq-answer,
+header[style*="--wb-body-weight"] nav a,
+header[style*="--wb-body-weight"] span,
+footer[style*="--wb-body-weight"],
+footer[style*="--wb-body-weight"] p,
+footer[style*="--wb-body-weight"] span,
+footer[style*="--wb-body-weight"] a,
+footer[style*="--wb-body-weight"] li,
+footer[style*="--wb-body-weight"] .wb-footer-copyright,
+footer[style*="--wb-body-weight"] .wb-legal-links a {
+  font-weight: var(--wb-body-weight) !important;
+}
+
+/* Dynamic heading italic */
+[style*="--wb-heading-font-style"] h1,
+[style*="--wb-heading-font-style"] h2,
+[style*="--wb-heading-font-style"] h3,
+[style*="--wb-heading-font-style"] h4,
+[style*="--wb-heading-font-style"] h5,
+[style*="--wb-heading-font-style"] h6,
+[style*="--wb-heading-font-style"] .wb-hero h1,
+[style*="--wb-heading-font-style"] .wb-hero-curved-title,
+[style*="--wb-heading-font-style"] .wb-hero-curved-title h1,
+[style*="--wb-heading-font-style"] .wb-section-head h2,
+[style*="--wb-heading-font-style"] .wb-cardset-title,
+[style*="--wb-heading-font-style"] .wb-feature-title,
+[style*="--wb-heading-font-style"] .wb-service-title,
+[style*="--wb-heading-font-style"] .wb-pricing-title,
+[style*="--wb-heading-font-style"] .wb-faq-question,
+[style*="--wb-heading-font-style"] .wb-footer-col-title,
+[style*="--wb-heading-font-style"] .wb-footer-cta-card h3,
+[style*="--wb-heading-font-style"] .wb-testimonial-name,
+header[style*="--wb-heading-font-style"] h1,
+header[style*="--wb-heading-font-style"] h2,
+header[style*="--wb-heading-font-style"] h3,
+footer[style*="--wb-heading-font-style"] h2,
+footer[style*="--wb-heading-font-style"] h3,
+footer[style*="--wb-heading-font-style"] h4,
+footer[style*="--wb-heading-font-style"] .wb-footer-col-title,
+.wb-heading-italic h1,
+.wb-heading-italic h2,
+.wb-heading-italic h3,
+.wb-heading-italic h4,
+.wb-heading-italic .wb-hero h1,
+.wb-heading-italic .wb-hero-curved-title h1,
+.wb-heading-italic .wb-section-head h2,
+.wb-heading-italic .wb-cardset-title,
+.wb-heading-italic .wb-feature-title,
+.wb-heading-italic .wb-service-title,
+.wb-heading-italic .wb-pricing-title {
+  font-style: italic !important;
+  overflow: visible !important;
+}
+
+/* Ensure highlight / gradient spans inside italic headings inherit italic without clipping */
+[style*="--wb-heading-font-style"] :is(h1, h2, h3, h4, h5, h6) span,
+.wb-heading-italic :is(h1, h2, h3, h4, h5, h6) span {
+  font-style: italic !important;
+  overflow: visible !important;
+}
+
+/* Dynamic body italic: targets body copy, paragraphs, descriptions, and lists (excluding headings and heading spans) */
+[style*="--wb-body-font-style"] p,
+[style*="--wb-body-font-style"] p span:not(.wb-badge):not(.wb-btn-icon),
+[style*="--wb-body-font-style"] a:not(.wb-btn):not(:is(h1, h2, h3, h4, h5, h6) *),
+[style*="--wb-body-font-style"] li,
+[style*="--wb-body-font-style"] li span,
+[style*="--wb-body-font-style"] .wb-section-head p,
+[style*="--wb-body-font-style"] .wb-hero-sub,
+[style*="--wb-body-font-style"] .wb-hero-sub span,
+[style*="--wb-body-font-style"] .wb-hero-desc,
+[style*="--wb-body-font-style"] .wb-hero-desc span,
+[style*="--wb-body-font-style"] .wb-hero-curved-sub,
+[style*="--wb-body-font-style"] .wb-cardset-desc,
+[style*="--wb-body-font-style"] .wb-cardset-intro,
+[style*="--wb-body-font-style"] .wb-testimonial-quote,
+[style*="--wb-body-font-style"] .wb-testimonial-role,
+[style*="--wb-body-font-style"] .wb-faq-answer,
+header[style*="--wb-body-font-style"] nav a,
+header[style*="--wb-body-font-style"] nav span,
+footer[style*="--wb-body-font-style"],
+footer[style*="--wb-body-font-style"] p,
+footer[style*="--wb-body-font-style"] span:not(:is(h1, h2, h3, h4) *),
+footer[style*="--wb-body-font-style"] a:not(:is(h1, h2, h3, h4) *),
+footer[style*="--wb-body-font-style"] li,
+footer[style*="--wb-body-font-style"] .wb-footer-copyright,
+footer[style*="--wb-body-font-style"] .wb-legal-links a,
+.wb-body-italic p,
+.wb-body-italic p span:not(.wb-badge):not(.wb-btn-icon),
+.wb-body-italic a:not(.wb-btn):not(:is(h1, h2, h3, h4, h5, h6) *),
+.wb-body-italic li,
+.wb-body-italic li span {
+  font-style: italic !important;
+  overflow: visible !important;
+}
+
+/* Universal anti-clipping: give italic letters room on the right/left so slanted glyphs are never cut */
+[style*="italic"],
+.wb-heading-italic,
+.wb-body-italic,
+em, i {
+  overflow: visible !important;
+}
+:is(h1, h2, h3, h4, h5, h6):has(.wb-text-gradient),
+.wb-hero-curved-title,
+.wb-hero-curved-title h1,
+.wb-hero-copy,
+.wb-hero-copy h1 {
+  overflow: visible !important;
 }
 
 .wb-btn {
@@ -1360,8 +1541,17 @@ footer.wb-has-font-scale .wb-footer-col-title {
 }
 .wb-text-gradient {
   background: var(--wb-gradient, linear-gradient(135deg, var(--wb-primary), #ec4899, #8b5cf6));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-shadow: none;
+  display: inline-block;
+  padding: 0.08em 0.32em 0.16em 0.1em;
+  margin: -0.08em -0.28em -0.16em -0.1em;
+  vertical-align: baseline;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  overflow: visible;
 }
 
 /* Hero Action Buttons */

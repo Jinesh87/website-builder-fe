@@ -119,6 +119,13 @@ function parsePx(val: string | undefined): string | undefined {
   return undefined;
 }
 
+function parseWidth(val: string | undefined): string | undefined {
+  if (!val || val === "default") return undefined;
+  if (/^\d+(\.\d+)?(px|rem|em|vw|%|ch)$/i.test(val)) return val;
+  if (/^\d+$/.test(val)) return `${val}px`;
+  return undefined;
+}
+
 export function sectionTypographyStyle(settings: Partial<SectionSettings> | undefined): CSSProperties {
   if (!settings) return {};
   const style: Record<string, string> = {};
@@ -127,6 +134,21 @@ export function sectionTypographyStyle(settings: Partial<SectionSettings> | unde
     style["--wb-font-heading"] = stack;
     style["--wb-font-body"] = stack;
     style["fontFamily"] = stack;
+  }
+
+  // Section container max-width:
+  if (settings.containerWidth && settings.containerWidth !== "default") {
+    const widthPresets: Record<string, string> = {
+      narrow: "768px",
+      medium: "1024px",
+      wide: "1400px",
+      full: "100%",
+    };
+    const resolvedWidth = widthPresets[settings.containerWidth] || parseWidth(settings.containerWidth);
+    if (resolvedWidth) {
+      style["--wb-section-max-width"] = resolvedWidth;
+      style["--wb-container"] = resolvedWidth;
+    }
   }
 
   // Overall section font scale / size:
@@ -168,6 +190,42 @@ export function sectionTypographyStyle(settings: Partial<SectionSettings> | unde
     }
   }
 
+  // Heading font weight:
+  if (settings.headingWeight && settings.headingWeight !== "default") {
+    const weightPresets: Record<string, string> = {
+      light: "300",
+      normal: "400",
+      medium: "500",
+      semibold: "600",
+      bold: "700",
+      extrabold: "800",
+      black: "900",
+    };
+    style["--wb-heading-weight"] = weightPresets[settings.headingWeight] || settings.headingWeight;
+  }
+
+  // Heading italic:
+  if (settings.headingItalic) {
+    style["--wb-heading-font-style"] = "italic";
+  }
+
+  // Body font weight:
+  if (settings.bodyWeight && settings.bodyWeight !== "default") {
+    const weightPresets: Record<string, string> = {
+      light: "300",
+      normal: "400",
+      medium: "500",
+      semibold: "600",
+      bold: "700",
+    };
+    style["--wb-body-weight"] = weightPresets[settings.bodyWeight] || settings.bodyWeight;
+  }
+
+  // Body italic:
+  if (settings.bodyItalic) {
+    style["--wb-body-font-style"] = "italic";
+  }
+
   return style as CSSProperties;
 }
 
@@ -191,6 +249,21 @@ export function sectionTypographyClasses(settings: Partial<SectionSettings> | un
     if (SECTION_BODY_SIZE[settings.bodySize]) {
       classes.push(`wb-body-size-${settings.bodySize}`);
     }
+  }
+  if (settings.containerWidth && settings.containerWidth !== "default") {
+    classes.push(`wb-width-${settings.containerWidth}`);
+  }
+  if (settings.headingWeight && settings.headingWeight !== "default") {
+    classes.push(`wb-heading-weight-${settings.headingWeight}`);
+  }
+  if (settings.headingItalic) {
+    classes.push("wb-heading-italic");
+  }
+  if (settings.bodyWeight && settings.bodyWeight !== "default") {
+    classes.push(`wb-body-weight-${settings.bodyWeight}`);
+  }
+  if (settings.bodyItalic) {
+    classes.push("wb-body-italic");
   }
   return classes.join(" ");
 }

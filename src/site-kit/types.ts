@@ -253,6 +253,8 @@ export const SECTION_BODY_SIZES = [
   "huge",
 ] as const;
 export type SectionBodySize = string;
+export type SectionContainerWidth = string;
+export type SectionFontWeight = string;
 
 export type SectionSettings = {
   background: SectionBackground;
@@ -261,6 +263,8 @@ export type SectionSettings = {
   /** Vertical padding; "default" (or unset) follows the theme's section spacing. */
   spacing?: SectionSpacing;
   align?: SectionAlign;
+  /** Section container / content width override (e.g. default, narrow, medium, wide, full, or custom px/%) */
+  containerWidth?: SectionContainerWidth;
   /** In-page anchor id, so links like `#pricing` can jump to the section. */
   anchor?: string;
   customColors?: SectionCustomColors;
@@ -272,6 +276,14 @@ export type SectionSettings = {
   headingSize?: SectionHeadingSize;
   /** Section body / paragraph text font size override */
   bodySize?: SectionBodySize;
+  /** Section heading font weight override (e.g. 300, 400, 500, 600, 700, 800, 900) */
+  headingWeight?: SectionFontWeight;
+  /** Section heading italic font style */
+  headingItalic?: boolean;
+  /** Section body / content font weight override (e.g. 300, 400, 500, 600, 700) */
+  bodyWeight?: SectionFontWeight;
+  /** Section body / content italic font style */
+  bodyItalic?: boolean;
 };
 
 export type IconName =

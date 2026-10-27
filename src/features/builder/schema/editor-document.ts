@@ -35,6 +35,11 @@ export const sectionSettingsSchema = z.object({
   fontSize: z.string().max(30).optional(),
   headingSize: z.string().max(30).optional(),
   bodySize: z.string().max(30).optional(),
+  containerWidth: z.string().max(30).optional(),
+  headingWeight: z.string().max(30).optional(),
+  headingItalic: z.boolean().optional(),
+  bodyWeight: z.string().max(30).optional(),
+  bodyItalic: z.boolean().optional(),
 });
 
 /**

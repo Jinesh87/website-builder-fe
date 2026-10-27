@@ -78,6 +78,7 @@ import AuthSectionForm from "./AuthSectionForm.tsx";
 import CardsSectionForm from "./CardsSectionForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
+import { Bold, Italic } from "lucide-react";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
 
@@ -190,6 +191,35 @@ const ALIGN_OPTIONS: { value: SectionAlign; label: string }[] = [
   { value: "left", label: "Left aligned" },
   { value: "center", label: "Centered" },
   { value: "right", label: "Right aligned" },
+];
+
+const CONTAINER_WIDTH_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Default (Theme container ~1200px)" },
+  { value: "narrow", label: "Narrow / Compact (768px)" },
+  { value: "medium", label: "Medium (1024px)" },
+  { value: "wide", label: "Wide (1400px)" },
+  { value: "full", label: "Full Width (100% fluid)" },
+  { value: "custom", label: "Custom width (px or %)..." },
+];
+
+const HEADING_WEIGHT_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Theme default (Bold 700)" },
+  { value: "300", label: "Light (300)" },
+  { value: "400", label: "Regular / Normal (400)" },
+  { value: "500", label: "Medium (500)" },
+  { value: "600", label: "Semi-Bold (600)" },
+  { value: "700", label: "Bold (700)" },
+  { value: "800", label: "Extra Bold (800)" },
+  { value: "900", label: "Black / Heavy (900)" },
+];
+
+const BODY_WEIGHT_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Theme default (Regular 400)" },
+  { value: "300", label: "Light (300)" },
+  { value: "400", label: "Regular / Normal (400)" },
+  { value: "500", label: "Medium (500)" },
+  { value: "600", label: "Semi-Bold (600)" },
+  { value: "700", label: "Bold (700)" },
 ];
 
 const FONT_SIZE_OPTIONS: { value: string; label: string }[] = [
@@ -4315,9 +4345,15 @@ export function SectionStyleForm({
     customColors.gradientTo,
   );
 
+  const isCustomWidth = Boolean(
+    settings.containerWidth &&
+    settings.containerWidth !== "default" &&
+    !CONTAINER_WIDTH_OPTIONS.some((opt) => opt.value === settings.containerWidth)
+  );
+
   return (
     <>
-      <FormGroup title="Section layout & theme">
+      <FormGroup title="Section layout & container width">
         <SelectField
           label="Theme preset background"
           value={settings.background}
@@ -4330,6 +4366,37 @@ export function SectionStyleForm({
           options={SPACING_OPTIONS}
           onChange={(spacing) => onChange({ ...settings, spacing })}
         />
+        <SelectField
+          label="Content container width"
+          value={isCustomWidth ? "custom" : (settings.containerWidth ?? "default")}
+          options={CONTAINER_WIDTH_OPTIONS}
+          onChange={(containerWidth) => {
+            if (containerWidth === "custom") {
+              onChange({ ...settings, containerWidth: "1140px" });
+            } else if (containerWidth === "default") {
+              const { containerWidth: _, ...rest } = settings;
+              onChange(rest);
+            } else {
+              onChange({ ...settings, containerWidth });
+            }
+          }}
+        />
+        {isCustomWidth && (
+          <TextField
+            label="Custom container width (px, %, or vw)"
+            value={settings.containerWidth ?? ""}
+            placeholder="e.g. 1100px or 92%"
+            onChange={(val) => {
+              const cleaned = val.trim();
+              if (!cleaned) {
+                const { containerWidth: _, ...rest } = settings;
+                onChange(rest);
+              } else {
+                onChange({ ...settings, containerWidth: cleaned });
+              }
+            }}
+          />
+        )}
         <SelectField
           label="Heading alignment"
           value={settings.align ?? "center"}
@@ -4355,8 +4422,19 @@ export function SectionStyleForm({
           !BODY_SIZE_OPTIONS.some((opt) => opt.value === settings.bodySize)
         );
 
+        const isHeadingBold =
+          settings.headingWeight === "700" ||
+          settings.headingWeight === "800" ||
+          settings.headingWeight === "900" ||
+          settings.headingWeight === "bold";
+
+        const isBodyBold =
+          settings.bodyWeight === "600" ||
+          settings.bodyWeight === "700" ||
+          settings.bodyWeight === "bold";
+
         return (
-          <FormGroup title="Section typography & font size">
+          <FormGroup title="Section typography & styling">
             <FontPicker
               label="Font family"
               value={settings.font}
@@ -4377,7 +4455,7 @@ export function SectionStyleForm({
                   const { fontSize: _, ...rest } = settings;
                   onChange(rest);
                 } else {
-                  onChange({ ...settings, fontSize: fontSize as SectionSettings["fontSize"] });
+                  onChange({ ...settings, fontSize });
                 }
               }}
             />
@@ -4397,68 +4475,168 @@ export function SectionStyleForm({
                 }}
               />
             )}
-            <SelectField
-              label="Heading font size"
-              value={isCustomHeading ? "custom" : (settings.headingSize ?? "default")}
-              options={HEADING_SIZE_OPTIONS}
-              onChange={(headingSize) => {
-                if (headingSize === "custom") {
-                  onChange({ ...settings, headingSize: "36px" });
-                } else if (headingSize === "default") {
-                  const { headingSize: _, ...rest } = settings;
-                  onChange(rest);
-                } else {
-                  onChange({ ...settings, headingSize: headingSize as SectionSettings["headingSize"] });
-                }
-              }}
-            />
-            {isCustomHeading && (
-              <TextField
-                label="Custom heading pixel size (px)"
-                value={settings.headingSize ?? ""}
-                placeholder="e.g. 38px or 42"
-                onChange={(val) => {
-                  const cleaned = val.trim();
-                  if (!cleaned) {
+
+            <div className="pt-2 border-t border-ed-border/40 flex flex-col gap-2">
+              <span className="text-ed-xs font-semibold text-ed-text">Heading Typography</span>
+              <SelectField
+                label="Heading font size"
+                value={isCustomHeading ? "custom" : (settings.headingSize ?? "default")}
+                options={HEADING_SIZE_OPTIONS}
+                onChange={(headingSize) => {
+                  if (headingSize === "custom") {
+                    onChange({ ...settings, headingSize: "36px" });
+                  } else if (headingSize === "default") {
                     const { headingSize: _, ...rest } = settings;
                     onChange(rest);
                   } else {
-                    onChange({ ...settings, headingSize: cleaned });
+                    onChange({ ...settings, headingSize });
                   }
                 }}
               />
-            )}
-            <SelectField
-              label="Body / Content font size"
-              value={isCustomBody ? "custom" : (settings.bodySize ?? "default")}
-              options={BODY_SIZE_OPTIONS}
-              onChange={(bodySize) => {
-                if (bodySize === "custom") {
-                  onChange({ ...settings, bodySize: "16px" });
-                } else if (bodySize === "default") {
-                  const { bodySize: _, ...rest } = settings;
-                  onChange(rest);
-                } else {
-                  onChange({ ...settings, bodySize: bodySize as SectionSettings["bodySize"] });
-                }
-              }}
-            />
-            {isCustomBody && (
-              <TextField
-                label="Custom body pixel size (px)"
-                value={settings.bodySize ?? ""}
-                placeholder="e.g. 15.5px or 17"
-                onChange={(val) => {
-                  const cleaned = val.trim();
-                  if (!cleaned) {
+              {isCustomHeading && (
+                <TextField
+                  label="Custom heading pixel size (px)"
+                  value={settings.headingSize ?? ""}
+                  placeholder="e.g. 38px or 42"
+                  onChange={(val) => {
+                    const cleaned = val.trim();
+                    if (!cleaned) {
+                      const { headingSize: _, ...rest } = settings;
+                      onChange(rest);
+                    } else {
+                      onChange({ ...settings, headingSize: cleaned });
+                    }
+                  }}
+                />
+              )}
+              <SelectField
+                label="Heading font weight"
+                value={settings.headingWeight ?? "default"}
+                options={HEADING_WEIGHT_OPTIONS}
+                onChange={(headingWeight) => {
+                  if (headingWeight === "default") {
+                    const { headingWeight: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, headingWeight });
+                  }
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-ed-xs text-ed-muted">Quick style:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...settings, headingWeight: isHeadingBold ? "400" : "700" });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-ed-xs font-semibold rounded-ed border transition-colors ${
+                    isHeadingBold
+                      ? "bg-ed-accent text-white border-ed-accent"
+                      : "bg-ed-panel text-ed-text border-ed-border hover:bg-ed-hover"
+                  }`}
+                  title="Toggle heading bold"
+                >
+                  <Bold className="size-3.5" />
+                  Bold
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...settings, headingItalic: !settings.headingItalic });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-ed-xs italic rounded-ed border transition-colors ${
+                    settings.headingItalic
+                      ? "bg-ed-accent text-white border-ed-accent font-semibold"
+                      : "bg-ed-panel text-ed-text border-ed-border hover:bg-ed-hover"
+                  }`}
+                  title="Toggle heading italic"
+                >
+                  <Italic className="size-3.5" />
+                  Italic
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-ed-border/40 flex flex-col gap-2">
+              <span className="text-ed-xs font-semibold text-ed-text">Body / Content Typography</span>
+              <SelectField
+                label="Body / Content font size"
+                value={isCustomBody ? "custom" : (settings.bodySize ?? "default")}
+                options={BODY_SIZE_OPTIONS}
+                onChange={(bodySize) => {
+                  if (bodySize === "custom") {
+                    onChange({ ...settings, bodySize: "16px" });
+                  } else if (bodySize === "default") {
                     const { bodySize: _, ...rest } = settings;
                     onChange(rest);
                   } else {
-                    onChange({ ...settings, bodySize: cleaned });
+                    onChange({ ...settings, bodySize });
                   }
                 }}
               />
-            )}
+              {isCustomBody && (
+                <TextField
+                  label="Custom body pixel size (px)"
+                  value={settings.bodySize ?? ""}
+                  placeholder="e.g. 15.5px or 17"
+                  onChange={(val) => {
+                    const cleaned = val.trim();
+                    if (!cleaned) {
+                      const { bodySize: _, ...rest } = settings;
+                      onChange(rest);
+                    } else {
+                      onChange({ ...settings, bodySize: cleaned });
+                    }
+                  }}
+                />
+              )}
+              <SelectField
+                label="Body font weight"
+                value={settings.bodyWeight ?? "default"}
+                options={BODY_WEIGHT_OPTIONS}
+                onChange={(bodyWeight) => {
+                  if (bodyWeight === "default") {
+                    const { bodyWeight: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, bodyWeight });
+                  }
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-ed-xs text-ed-muted">Quick style:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...settings, bodyWeight: isBodyBold ? "400" : "700" });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-ed-xs font-semibold rounded-ed border transition-colors ${
+                    isBodyBold
+                      ? "bg-ed-accent text-white border-ed-accent"
+                      : "bg-ed-panel text-ed-text border-ed-border hover:bg-ed-hover"
+                  }`}
+                  title="Toggle body bold"
+                >
+                  <Bold className="size-3.5" />
+                  Bold
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...settings, bodyItalic: !settings.bodyItalic });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-ed-xs italic rounded-ed border transition-colors ${
+                    settings.bodyItalic
+                      ? "bg-ed-accent text-white border-ed-accent font-semibold"
+                      : "bg-ed-panel text-ed-text border-ed-border hover:bg-ed-hover"
+                  }`}
+                  title="Toggle body italic"
+                >
+                  <Italic className="size-3.5" />
+                  Italic
+                </button>
+              </div>
+            </div>
           </FormGroup>
         );
       })()}

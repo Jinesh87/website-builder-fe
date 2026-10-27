@@ -666,7 +666,7 @@ export function SectionShell({ sectionId, settings, className, label, children, 
       aria-label={label}
       style={Object.keys(customStyle).length > 0 ? customStyle : undefined}
     >
-      <div className={fullWidth ? "wb-container-full" : "wb-container"}>{children}</div>
+      <div className={fullWidth || settings.containerWidth === "full" ? "wb-container-full" : "wb-container"}>{children}</div>
     </section>
   );
 }
