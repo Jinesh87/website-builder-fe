@@ -1,4 +1,4 @@
-name: webbuilder-frontend
+name: webbuilder-frontend-prod
 
 x-build-args: &build-args
   VITE_APP_NAME: ${VITE_APP_NAME:-WebBuilder}
