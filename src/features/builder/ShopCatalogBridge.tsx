@@ -85,10 +85,17 @@ export default function ShopCatalogBridge({
       return;
     }
     let cancel = false;
+    const pageSize = 50;
     shopApi
-      .products(website.id)
-      .then((list) => {
-        if (!cancel) setProducts(list.map(toCatalogProduct));
+      .products(website.id, { page: 1, pageSize })
+      .then(async (first) => {
+        const loaded = [...first.products];
+        const pages = Math.ceil(first.total / pageSize);
+        for (let page = 2; page <= pages; page += 1) {
+          const next = await shopApi.products(website.id, { page, pageSize });
+          loaded.push(...next.products);
+        }
+        if (!cancel) setProducts(loaded.map(toCatalogProduct));
       })
       .catch(() => {
         if (!cancel) setProducts(null);
@@ -98,6 +105,8 @@ export default function ShopCatalogBridge({
     };
   }, [website.id, website.shopEnabled, website.shopFeatureEnabled]);
 
-  const catalog = products ? { products, productSlug, selection, live: true as const } : null;
+  const catalog = products
+    ? { websiteId: website.id, authHref: "/login", products, productSlug, selection, live: true as const }
+    : null;
   return <ShopCatalogProvider value={catalog}>{children}</ShopCatalogProvider>;
 }

@@ -111,15 +111,47 @@ export type InventoryLogPage = {
   total: number;
 };
 
+export type ShopCustomerStatus = "ACTIVE" | "PENDING_VERIFICATION" | "SUSPENDED";
+
+export type ShopCustomer = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  status: ShopCustomerStatus;
+  emailVerifiedAt: string | null;
+  lastSignedInAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ShopCustomerPage = {
+  customers: ShopCustomer[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 export type ShopProductQuery = {
   search?: string;
   categoryId?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type ShopProductPage = {
+  products: ShopProduct[];
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
 function productQuery(params: ShopProductQuery): string {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
   if (params.categoryId) query.set("categoryId", params.categoryId);
+  if (params.page) query.set("page", String(params.page));
+  if (params.pageSize) query.set("pageSize", String(params.pageSize));
   const text = query.toString();
   return text ? `?${text}` : "";
 }
@@ -147,7 +179,7 @@ export const shopApi = {
     request<void>(`${base(websiteId)}/categories/${categoryId}`, { method: "DELETE" }),
 
   products: (websiteId: string, params: ShopProductQuery = {}) =>
-    request<{ products: ShopProduct[] }>(`${base(websiteId)}/products${productQuery(params)}`).then((data) => data.products),
+    request<ShopProductPage>(`${base(websiteId)}/products${productQuery(params)}`),
 
   createProduct: (websiteId: string, input: ShopProductInput) =>
     request<{ product: ShopProduct }>(`${base(websiteId)}/products`, { method: "POST", body: input }).then((data) => data.product),
@@ -189,4 +221,15 @@ export const shopApi = {
     request<{ secrets: { razorpayKeySecret: string | null; razorpayWebhookSecret: string | null } }>(
       `${base(websiteId)}/payments/secrets`,
     ).then((data) => data.secrets),
+
+  customers: (websiteId: string, params: { search?: string; page?: number } = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.set("search", params.search);
+    if (params.page) query.set("page", String(params.page));
+    const text = query.toString();
+    return request<ShopCustomerPage>(`${base(websiteId)}/customers${text ? `?${text}` : ""}`);
+  },
+
+  customer: (websiteId: string, customerId: string) =>
+    request<{ customer: ShopCustomer }>(`${base(websiteId)}/customers/${customerId}`).then((data) => data.customer),
 };

@@ -12,20 +12,38 @@ export const SHOP_CSS = `
   letter-spacing: 0.07em; text-transform: uppercase; color: var(--wb-muted);
 }
 .wb-shop-search-wrap { display: block; }
+.wb-shop-search-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .wb-shop-search {
   width: min(100%, 420px); border: 1px solid var(--wb-border); background: var(--wb-bg); color: var(--wb-text);
   border-radius: 999px; padding: 0.7rem 1rem; font: inherit;
 }
+.wb-shop-search-go {
+  height: 42px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--wb-text); color: var(--wb-bg);
+  font: inherit; font-size: 0.9rem; cursor: pointer;
+}
 .wb-shop-sort-wrap { display: block; }
-.wb-shop-sort {
+.wb-shop-sort, .wb-shop-per {
   min-width: 190px; border: 1px solid var(--wb-border); background: var(--wb-bg); color: var(--wb-text);
   border-radius: 10px; padding: 0.65rem 2rem 0.65rem 0.8rem; font: inherit;
 }
+.wb-shop-per { min-width: 88px; }
+.wb-shop-per-wrap { display: flex; align-items: center; gap: 8px; }
+.wb-shop-per-wrap .wb-shop-tool-label { margin: 0; }
 .wb-shop-result-bar { display: flex; justify-content: flex-end; margin-bottom: 10px; font-size: 0.82rem; color: var(--wb-muted); }
+.wb-shop-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 22px; }
+.wb-shop-result-count { margin-right: auto; font-size: 0.82rem; color: var(--wb-muted); }
+.wb-shop-pages { display: flex; flex-wrap: wrap; gap: 6px; }
+.wb-shop-page {
+  min-width: 36px; height: 36px; padding: 0 12px; border: 1px solid var(--wb-border); border-radius: 8px;
+  background: var(--wb-bg); color: var(--wb-text); display: inline-flex; align-items: center; justify-content: center;
+  text-decoration: none; font: inherit; font-size: 0.88rem; cursor: pointer;
+}
+.wb-shop-page.is-active { background: var(--wb-text); color: var(--wb-bg); border-color: var(--wb-text); }
+.wb-shop-page[aria-disabled="true"], .wb-shop-page:disabled { opacity: 0.4; pointer-events: none; cursor: default; }
 .wb-shop-search:focus { outline: 2px solid color-mix(in srgb, var(--wb-primary) 40%, transparent); outline-offset: 1px; }
 .wb-shop-filters { display: flex; flex-wrap: wrap; gap: 8px; }
 .wb-shop-filter {
-  border: 1px solid var(--wb-border); background: transparent; color: var(--wb-text);
+  border: 1px solid var(--wb-border); background: transparent; color: var(--wb-text); text-decoration: none;
   border-radius: 999px; padding: 0.35rem 0.85rem; font: inherit; font-size: 0.875rem; cursor: pointer;
 }
 .wb-shop-filter.is-active { background: var(--wb-text); color: var(--wb-bg); border-color: var(--wb-text); }

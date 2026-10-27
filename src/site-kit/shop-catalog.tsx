@@ -219,6 +219,38 @@ export const SHOP_LIST_SCRIPT = `(function(){
   document.querySelectorAll("[data-wb-shop]").forEach(function(root){
     if(root.getAttribute("data-wb-shop-ready")) return;
     root.setAttribute("data-wb-shop-ready","1");
+    if(root.hasAttribute("data-wb-shop-paged")){
+      var form=root.querySelector("[data-wb-shop-form]");
+      var sortEl=root.querySelector("[data-wb-shop-sort]");
+      var perEl=root.querySelector("[data-wb-shop-per]");
+      function visit(){
+        if(!form) return;
+        var params=new URLSearchParams();
+        var q=form.querySelector("[name=q]");
+        var sort=form.querySelector("[name=sort]");
+        var per=root.querySelector("[data-wb-shop-per]");
+        var cat=form.querySelector("[name=cat]");
+        if(q&&q.value.trim()) params.set("q", q.value.trim());
+        if(cat&&cat.value) params.set("cat", cat.value);
+        if(sort&&sort.value&&sort.value!=="featured") params.set("sort", sort.value);
+        if(per&&per.value&&per.value!=="12") params.set("per", per.value);
+        var text=params.toString();
+        window.location.href=text?window.location.pathname+"?"+text:window.location.pathname;
+      }
+      if(form) form.addEventListener("submit", function(event){ event.preventDefault(); visit(); });
+      if(sortEl) sortEl.addEventListener("change", visit);
+      if(perEl) perEl.addEventListener("change", visit);
+      var moreBtn=root.querySelector("[data-wb-shop-more]");
+      var filterBox=root.querySelector(".wb-shop-filters");
+      if(moreBtn&&filterBox){
+        moreBtn.addEventListener("click", function(){
+          var open=filterBox.classList.toggle("is-expanded");
+          moreBtn.textContent=moreBtn.getAttribute(open?"data-less":"data-more")||(open?"Less":"More");
+          moreBtn.setAttribute("aria-expanded", open?"true":"false");
+        });
+      }
+      return;
+    }
     var input=root.querySelector("[data-wb-shop-search]");
     var sort=root.querySelector("[data-wb-shop-sort]");
     var count=root.querySelector("[data-wb-shop-count]");
