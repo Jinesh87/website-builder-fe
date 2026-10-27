@@ -1,0 +1,35 @@
+name: webbuilder-frontend-prod
+
+x-build-args: &build-args
+  VITE_APP_NAME: ${VITE_APP_NAME:-WebBuilder}
+  VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+  # Leave empty until *.domain points at the server; live links then use <api>/live/<subdomain>.
+  VITE_PUBLIC_SITE_DOMAIN: ${VITE_PUBLIC_SITE_DOMAIN:-}
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args: *build-args
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+
+  # Renders published websites for the API (SITE_RENDERER_URL). Only reachable from this machine.
+  site-renderer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: renderer
+      args: *build-args
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${SITE_RENDERER_PORT:-3100}:3100"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3100/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
