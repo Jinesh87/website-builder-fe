@@ -12,6 +12,8 @@ import {
 import { safeHref } from "../links.ts";
 import { SectionShell, SiteImage, SocialIcon } from "../primitives.tsx";
 import { StaticStates, useStaticRender } from "../render-mode.tsx";
+import { fullNameFromForm, SHOP_AUTH_SCRIPT, shopAuthApi, type ShopAuthError } from "../shop-auth.ts";
+import { useShopCatalog } from "../shop-catalog.tsx";
 import { contrastText } from "../theme.ts";
 import type {
   AuthData,
@@ -165,17 +167,24 @@ type AuthFlow = {
   view: AuthView;
   done: DoneState;
   error: string | null;
+  busy: boolean;
   goTo: (view: AuthView) => void;
   submit: (event: FormEvent<HTMLFormElement>) => void;
   restart: () => void;
+  resend?: () => void;
 };
 
 function isViewEnabled(data: AuthData, view: AuthView): boolean {
-  if (view === "login") return true;
+  if (view === "login" || view === "reset") return true;
+  if (view === "otp") return Boolean(data.otp?.enabled);
   return Boolean(data[view]?.enabled);
 }
 
-function initialView(data: AuthData): AuthView {
+function initialView(data: AuthData, websiteId?: string): AuthView {
+  if (websiteId && typeof window !== "undefined") {
+    const token = new URLSearchParams(window.location.search).get("reset");
+    if (token) return "reset";
+  }
   const wanted = data.defaultView ?? "login";
   return isViewEnabled(data, wanted) ? wanted : "login";
 }
@@ -195,14 +204,24 @@ function passwordsMismatch(form: HTMLFormElement): boolean {
   return Array.from(confirms).some((input) => input.value !== password.value);
 }
 
-function useAuthFlow(data: AuthData): AuthFlow {
-  const [view, setView] = useState<AuthView>(() => initialView(data));
+function authErrorMessage(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) return String((error as ShopAuthError).message);
+  return "Something went wrong. Please try again.";
+}
+
+function useAuthFlow(data: AuthData, websiteId?: string): AuthFlow {
+  const shopLive = Boolean(websiteId);
+  const [view, setView] = useState<AuthView>(() => initialView(data, websiteId));
   const [done, setDone] = useState<DoneState>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [otpFrom, setOtpFrom] = useState<AuthView | null>(null);
-  const start = initialView(data);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [resetToken, setResetToken] = useState(() =>
+    typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("reset") ?? "" : "",
+  );
+  const start = initialView(data, websiteId);
 
-  // Re-sync when the builder changes the previewed view or disables the open one.
   useEffect(() => {
     setView(start);
     setDone(null);
@@ -210,17 +229,82 @@ function useAuthFlow(data: AuthData): AuthFlow {
     setOtpFrom(null);
   }, [start]);
 
-  const activeView = isViewEnabled(data, view) ? view : "login";
+  const activeView = view === "reset" || view === "otp" || isViewEnabled(data, view) ? view : "login";
 
   function goTo(next: AuthView) {
-    setView(isViewEnabled(data, next) ? next : "login");
+    setView(next === "reset" || next === "otp" || isViewEnabled(data, next) ? next : "login");
     setDone(null);
     setError(null);
+  }
+
+  async function submitShop(form: HTMLFormElement) {
+    if (!websiteId) return;
+    const email =
+      form.querySelector<HTMLInputElement>('input[name="email"], input[type="email"]')?.value.trim().toLowerCase() ?? "";
+    const password =
+      form.querySelector<HTMLInputElement>('input[name="password"], input[data-auth-type="password"]')?.value ?? "";
+    const remember = form.querySelector<HTMLInputElement>('input[name="remember"]')?.checked ?? false;
+    const code = form.querySelector<HTMLInputElement>('input[name="code"]')?.value.trim() ?? "";
+
+    setBusy(true);
+    setError(null);
+    try {
+      if (activeView === "register") {
+        if (passwordsMismatch(form)) {
+          setError("Passwords don't match.");
+          return;
+        }
+        await shopAuthApi.signup(websiteId, { email, password, fullName: fullNameFromForm(form) });
+        setPendingEmail(email);
+        setOtpFrom("register");
+        setView("otp");
+        return;
+      }
+      if (activeView === "login") {
+        await shopAuthApi.login(websiteId, { email, password, remember });
+        setDone("complete");
+        return;
+      }
+      if (activeView === "forgot") {
+        await shopAuthApi.forgotPassword(websiteId, email);
+        setDone("forgot");
+        return;
+      }
+      if (activeView === "otp") {
+        await shopAuthApi.verifyEmail(websiteId, pendingEmail || email, code);
+        setDone("complete");
+        return;
+      }
+      if (activeView === "reset") {
+        if (passwordsMismatch(form)) {
+          setError("Passwords don't match.");
+          return;
+        }
+        await shopAuthApi.resetPassword(websiteId, resetToken, password);
+        setResetToken("");
+        setDone("complete");
+      }
+    } catch (err) {
+      const shopErr = err as ShopAuthError;
+      if (shopErr.code === "EMAIL_NOT_VERIFIED") {
+        setPendingEmail(email);
+        setOtpFrom("login");
+        setView("otp");
+        return;
+      }
+      setError(authErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
+    if (shopLive) {
+      void submitShop(form);
+      return;
+    }
     if (activeView === "register" && passwordsMismatch(form)) {
       setError("Passwords don't match.");
       return;
@@ -244,16 +328,25 @@ function useAuthFlow(data: AuthData): AuthFlow {
     goTo("login");
   }
 
-  return { view: activeView, done, error, goTo, submit, restart };
+  async function resend() {
+    if (!websiteId || !pendingEmail) return;
+    try {
+      await shopAuthApi.resendVerification(websiteId, pendingEmail);
+    } catch (err) {
+      setError(authErrorMessage(err));
+    }
+  }
+
+  return { view: activeView, done, error, busy, goTo, submit, restart, resend: shopLive ? resend : undefined };
 }
 
 /** A fixed view for the static export; the export runtime switches views instead of React state. */
 function staticFlow(view: AuthView): AuthFlow {
   const noop = () => {};
-  return { view, done: null, error: null, goTo: noop, submit: (event) => event.preventDefault(), restart: noop };
+  return { view, done: null, error: null, busy: false, goTo: noop, submit: (event) => event.preventDefault(), restart: noop };
 }
 
-const STATIC_VIEWS: AuthView[] = ["login", "register", "forgot"];
+const STATIC_VIEWS: AuthView[] = ["login", "register", "forgot", "otp", "reset"];
 
 /* ---------------------------------------------------------- form building */
 
@@ -390,7 +483,7 @@ function OtpInput({ length }: { length: number }) {
   );
 }
 
-function ResendTimer({ seconds, label }: { seconds: number; label: string }) {
+function ResendTimer({ seconds, label, onResend }: { seconds: number; label: string; onResend?: () => void }) {
   const [left, setLeft] = useState(seconds);
 
   useEffect(() => {
@@ -402,7 +495,16 @@ function ResendTimer({ seconds, label }: { seconds: number; label: string }) {
   return (
     <p className="wb-auth-resend">
       Didn't get it?{" "}
-      <button type="button" className="wb-auth-link" disabled={left > 0} onClick={() => setLeft(seconds)}>
+      <button
+        type="button"
+        className="wb-auth-link"
+        data-wb-shop-auth-resend=""
+        disabled={left > 0}
+        onClick={() => {
+          setLeft(seconds);
+          onResend?.();
+        }}
+      >
         {left > 0 ? `${label} in ${left}s` : label}
       </button>
     </p>
@@ -469,17 +571,38 @@ type AuthFormProps = {
   hideSwitch?: boolean;
 };
 
+const RESET_FIELDS: AuthField[] = [
+  { name: "password", label: "New password", type: "password", placeholder: "Enter a strong password", required: true, width: "full" },
+  {
+    name: "confirmPassword",
+    label: "Confirm password",
+    type: "confirm-password",
+    placeholder: "Re-enter your password",
+    required: true,
+    width: "full",
+  },
+];
+
 function viewContent(data: AuthData, view: AuthView) {
   if (view === "register") return data.register;
   if (view === "forgot") return data.forgot;
   if (view === "otp") return data.otp;
+  if (view === "reset") {
+    return {
+      heading: "Choose a new password",
+      subheading: "Enter a new password for your account.",
+      fields: RESET_FIELDS,
+      submitLabel: "Update password",
+    };
+  }
   return data.login;
 }
 
-function AuthForm({ data, flow, hideSwitch }: AuthFormProps) {
-  const { view, done, error, goTo, submit, restart } = flow;
+function AuthForm({ data, flow, hideSwitch, shopLive }: AuthFormProps & { shopLive?: boolean }) {
+  const { view, done, error, busy, goTo, submit, restart, resend } = flow;
   const content = viewContent(data, view);
   const socialEnabled =
+    !shopLive &&
     data.social.enabled &&
     data.social.providers.length > 0 &&
     (view === "login" || (view === "register" && data.social.showOnRegister !== false));
@@ -535,7 +658,7 @@ function AuthForm({ data, flow, hideSwitch }: AuthFormProps) {
                 key={`${view}-${field.name}-${index}`}
                 field={field}
                 data={data}
-                isNewAccount={view === "register"}
+                isNewAccount={view === "register" || view === "reset"}
               />
             ))}
           </div>
@@ -574,17 +697,17 @@ function AuthForm({ data, flow, hideSwitch }: AuthFormProps) {
         )}
 
         {error && (
-          <p className="wb-auth-error" role="alert">
+          <p className="wb-auth-error" role="alert" data-wb-shop-auth-error="">
             {error}
           </p>
         )}
 
-        <button type="submit" className="wb-auth-submit">
-          {content.submitLabel}
+        <button type="submit" className="wb-auth-submit" disabled={busy}>
+          {busy ? "Please wait…" : content.submitLabel}
         </button>
 
         {view === "otp" && data.otp.resendLabel && (
-          <ResendTimer seconds={data.otp.resendSeconds ?? 30} label={data.otp.resendLabel} />
+          <ResendTimer seconds={data.otp.resendSeconds ?? 30} label={data.otp.resendLabel} onResend={resend} />
         )}
       </form>
 
@@ -611,7 +734,7 @@ function AuthForm({ data, flow, hideSwitch }: AuthFormProps) {
           </button>
         </p>
       )}
-      {(view === "forgot" || view === "otp") && (
+      {(view === "forgot" || view === "otp" || view === "reset") && (
         <p className="wb-auth-switch">
           <button type="button" className="wb-auth-link wb-auth-back" onClick={() => goTo("login")} data-wb-go="login">
             <ArrowLeftIcon /> {data.forgot.backLabel || "Back to log in"}
@@ -852,7 +975,7 @@ function ProductShowcase({ data, form }: LayoutProps) {
   );
 }
 
-const EDITORIAL_STEP: Record<AuthView, string> = { login: "01", register: "02", forgot: "03", otp: "04" };
+const EDITORIAL_STEP: Record<AuthView, string> = { login: "01", register: "02", forgot: "03", otp: "04", reset: "05" };
 
 function MinimalEditorial({ data, flow, form }: LayoutProps) {
   const panel = data.panel ?? {};
@@ -980,11 +1103,17 @@ function colorVars(data: AuthData): CSSProperties {
 
 export default function AuthSection({ section }: { section: SectionOf<"auth"> }) {
   const { data } = section;
-  const flow = useAuthFlow(data);
+  const catalog = useShopCatalog();
+  const websiteId = catalog?.live ? catalog.websiteId : undefined;
+  const shopLive = Boolean(websiteId);
+  const flow = useAuthFlow(data, websiteId);
   const isStatic = useStaticRender();
   const variant: AuthVariant = data.variant in LAYOUTS ? data.variant : "diagonal-split";
   const Layout = LAYOUTS[variant];
   const tabbed = variant === "tabbed-compact" && data.register.enabled;
+  const staticViews = shopLive
+    ? STATIC_VIEWS.filter((view) => view === "reset" || isViewEnabled(data, view))
+    : STATIC_VIEWS.filter((view) => view !== "otp" && view !== "reset" && isViewEnabled(data, view));
 
   const classes = [
     "wb-auth-root",
@@ -1001,7 +1130,11 @@ export default function AuthSection({ section }: { section: SectionOf<"auth"> })
     .join(" ");
 
   const renderLayout = (layoutFlow: AuthFlow) => (
-    <Layout data={data} flow={layoutFlow} form={<AuthForm data={data} flow={layoutFlow} hideSwitch={tabbed} />} />
+    <Layout
+      data={data}
+      flow={layoutFlow}
+      form={<AuthForm data={data} flow={layoutFlow} hideSwitch={tabbed} shopLive={shopLive} />}
+    />
   );
 
   return (
@@ -1012,16 +1145,21 @@ export default function AuthSection({ section }: { section: SectionOf<"auth"> })
       className="wb-auth"
       label={viewContent(data, flow.view).heading || "Sign in"}
     >
-      <div className={classes} style={colorVars(data)}>
+      <div
+        className={classes}
+        style={colorVars(data)}
+        {...(websiteId ? { "data-wb-shop-auth": websiteId } : {})}
+      >
         {isStatic ? (
           <StaticStates
-            states={STATIC_VIEWS.filter((view) => isViewEnabled(data, view))}
-            initial={STATIC_VIEWS.includes(flow.view) ? flow.view : "login"}
+            states={staticViews}
+            initial={staticViews.includes(flow.view) ? flow.view : "login"}
             render={(view) => renderLayout(staticFlow(view))}
           />
         ) : (
           renderLayout(flow)
         )}
+        {isStatic && shopLive && <script dangerouslySetInnerHTML={{ __html: SHOP_AUTH_SCRIPT }} />}
       </div>
     </SectionShell>
   );

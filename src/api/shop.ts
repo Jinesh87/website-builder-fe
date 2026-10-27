@@ -111,6 +111,27 @@ export type InventoryLogPage = {
   total: number;
 };
 
+export type ShopCustomerStatus = "ACTIVE" | "PENDING_VERIFICATION" | "SUSPENDED";
+
+export type ShopCustomer = {
+  id: string;
+  email: string;
+  fullName: string;
+  phone: string | null;
+  status: ShopCustomerStatus;
+  emailVerifiedAt: string | null;
+  lastSignedInAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ShopCustomerPage = {
+  customers: ShopCustomer[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 export type ShopProductQuery = {
   search?: string;
   categoryId?: string;
@@ -200,4 +221,15 @@ export const shopApi = {
     request<{ secrets: { razorpayKeySecret: string | null; razorpayWebhookSecret: string | null } }>(
       `${base(websiteId)}/payments/secrets`,
     ).then((data) => data.secrets),
+
+  customers: (websiteId: string, params: { search?: string; page?: number } = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.set("search", params.search);
+    if (params.page) query.set("page", String(params.page));
+    const text = query.toString();
+    return request<ShopCustomerPage>(`${base(websiteId)}/customers${text ? `?${text}` : ""}`);
+  },
+
+  customer: (websiteId: string, customerId: string) =>
+    request<{ customer: ShopCustomer }>(`${base(websiteId)}/customers/${customerId}`).then((data) => data.customer),
 };

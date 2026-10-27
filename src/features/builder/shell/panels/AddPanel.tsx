@@ -220,12 +220,7 @@ const CATEGORIES: CategoryItem[] = [
   },
 ];
 
-// Auth stays out of the sidebar; its designs are still in the registry.
-const HIDDEN_CATEGORIES = new Set<string>(["Auth"]);
-
-export const VISIBLE_CATEGORIES = CATEGORIES.filter(
-  (c) => !HIDDEN_CATEGORIES.has(c.category),
-);
+export const VISIBLE_CATEGORIES = CATEGORIES;
 
 const PREVIEW_WIDTH = 1040;
 const PREVIEW_SCALE = 0.27;
@@ -526,16 +521,13 @@ export default function AddPanel() {
 
   const filteredPresets = useMemo(() => {
     const trimmed = deferredQuery.trim();
-    const availablePresets = SECTION_PRESETS.filter(
-      (preset) => !HIDDEN_CATEGORIES.has(preset.category),
-    );
     if (trimmed) {
-      return availablePresets.filter((preset) => matches(preset, trimmed));
+      return SECTION_PRESETS.filter((preset) => matches(preset, trimmed));
     }
     if (selectedCategory.category === "All") {
-      return availablePresets;
+      return SECTION_PRESETS;
     }
-    return availablePresets.filter(
+    return SECTION_PRESETS.filter(
       (preset) => preset.category === selectedCategory.category,
     );
   }, [deferredQuery, selectedCategory]);

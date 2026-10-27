@@ -10,6 +10,10 @@ dist-renderer
 .env
 !.env.example
 
+Dockerfile
+docker-compose.yml
+.dockerignore
+
 .vscode/*
 !.vscode/extensions.json
 .idea
