@@ -1,6 +1,6 @@
 import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
 import { isExternalHref, safeHref } from "./links.ts";
-import { sectionFontStyle } from "./theme.ts";
+import { sectionFontStyle, sectionTypographyStyle, sectionTypographyClasses } from "./theme.ts";
 import type { GridColumns, IconName, ImageRef, LinkRef, SectionAlign, SectionSettings } from "./types.ts";
 import { isLightColor, normalizeHexColor } from "../utils/colors.ts";
 import { getCuratedFallbackImage, normalizeImageUrl } from "./image-utils.ts";
@@ -625,6 +625,7 @@ export function SectionShell({ sectionId, settings, className, label, children, 
 
   const customStyle: CSSProperties = {
     ...sectionFontStyle(settings.font),
+    ...sectionTypographyStyle(settings),
     ...(bg ? { "--wb-bg": bg, backgroundColor: bg } : {}),
     ...(text ? { "--wb-text": text, color: text } : {}),
     ...(primary ? { "--wb-primary": primary } : {}),
@@ -640,6 +641,8 @@ export function SectionShell({ sectionId, settings, className, label, children, 
     ...style,
   };
 
+  const typographyClass = sectionTypographyClasses(settings);
+
   const classes = [
     "wb-section",
     settings.background !== "default" && !bg && `wb-bg-${settings.background}`,
@@ -647,6 +650,7 @@ export function SectionShell({ sectionId, settings, className, label, children, 
     muted && "wb-custom-muted",
     settings.spacing && settings.spacing !== "default" && `wb-space-${settings.spacing}`,
     `wb-align-${settings.align || "center"}`,
+    typographyClass,
     settings.hideOnMobile && "wb-hide-mobile",
     settings.hideOnDesktop && "wb-hide-desktop",
     className,

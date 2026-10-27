@@ -192,6 +192,73 @@ const ALIGN_OPTIONS: { value: SectionAlign; label: string }[] = [
   { value: "right", label: "Right aligned" },
 ];
 
+const FONT_SIZE_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Default (Theme size 100%)" },
+  { value: "small", label: "Compact / Small (88%)" },
+  { value: "medium", label: "Medium / Balanced (108%)" },
+  { value: "large", label: "Large / Prominent (122%)" },
+  { value: "huge", label: "Extra Large / Display (138%)" },
+  { value: "75%", label: "75% Scale (Very compact)" },
+  { value: "85%", label: "85% Scale" },
+  { value: "95%", label: "95% Scale" },
+  { value: "105%", label: "105% Scale" },
+  { value: "115%", label: "115% Scale" },
+  { value: "125%", label: "125% Scale" },
+  { value: "135%", label: "135% Scale" },
+  { value: "150%", label: "150% Scale (Dramatic display)" },
+  { value: "custom", label: "Custom pixel / scale…" },
+];
+
+const HEADING_SIZE_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Auto (Follow section size)" },
+  { value: "small", label: "Preset: Small / Compact" },
+  { value: "medium", label: "Preset: Medium / Balanced" },
+  { value: "large", label: "Preset: Large / Prominent" },
+  { value: "huge", label: "Preset: Huge / Display headline" },
+  { value: "18px", label: "18px (Compact subhead)" },
+  { value: "20px", label: "20px" },
+  { value: "22px", label: "22px" },
+  { value: "24px", label: "24px (Card / section title)" },
+  { value: "26px", label: "26px" },
+  { value: "28px", label: "28px" },
+  { value: "30px", label: "30px" },
+  { value: "32px", label: "32px (Medium h2)" },
+  { value: "34px", label: "34px" },
+  { value: "36px", label: "36px" },
+  { value: "40px", label: "40px (Impact title)" },
+  { value: "44px", label: "44px" },
+  { value: "48px", label: "48px (Hero h1 standard)" },
+  { value: "52px", label: "52px" },
+  { value: "56px", label: "56px (Hero h1 prominent)" },
+  { value: "60px", label: "60px" },
+  { value: "64px", label: "64px (Large hero)" },
+  { value: "72px", label: "72px (Huge headline)" },
+  { value: "80px", label: "80px" },
+  { value: "96px", label: "96px (Billboard display)" },
+  { value: "custom", label: "Custom pixel size…" },
+];
+
+const BODY_SIZE_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Auto (Follow section size)" },
+  { value: "small", label: "Preset: Small (13px - 14px)" },
+  { value: "medium", label: "Preset: Medium (15px - 16px)" },
+  { value: "large", label: "Preset: Large (17px - 18px)" },
+  { value: "huge", label: "Preset: Extra Large (19px - 20px)" },
+  { value: "11px", label: "11px (Tiny text / badge)" },
+  { value: "12px", label: "12px (Small caption)" },
+  { value: "13px", label: "13px (Compact body)" },
+  { value: "14px", label: "14px (Standard UI)" },
+  { value: "15px", label: "15px (Standard reading)" },
+  { value: "16px", label: "16px (Comfortable body)" },
+  { value: "17px", label: "17px (Editorial body)" },
+  { value: "18px", label: "18px (Prominent text)" },
+  { value: "19px", label: "19px" },
+  { value: "20px", label: "20px (Lead paragraph)" },
+  { value: "22px", label: "22px" },
+  { value: "24px", label: "24px (Large lead)" },
+  { value: "custom", label: "Custom pixel size…" },
+];
+
 const ANCHOR_PATTERN = /^[a-z][a-z0-9-]{0,39}$/;
 
 /** Short repeatable text lines such as bullets or plan features. */
@@ -4271,17 +4338,130 @@ export function SectionStyleForm({
         />
       </FormGroup>
 
-      <FormGroup title="Section font">
-        <FontPicker
-          label="Section font"
-          value={settings.font}
-          inheritFrom={siteFont}
-          onChange={(font) => {
-            const { font: _previous, ...rest } = settings;
-            onChange(font ? { ...rest, font } : rest);
-          }}
-        />
-      </FormGroup>
+      {(() => {
+        const isCustomScale = Boolean(
+          settings.fontSize &&
+          settings.fontSize !== "default" &&
+          !FONT_SIZE_OPTIONS.some((opt) => opt.value === settings.fontSize)
+        );
+        const isCustomHeading = Boolean(
+          settings.headingSize &&
+          settings.headingSize !== "default" &&
+          !HEADING_SIZE_OPTIONS.some((opt) => opt.value === settings.headingSize)
+        );
+        const isCustomBody = Boolean(
+          settings.bodySize &&
+          settings.bodySize !== "default" &&
+          !BODY_SIZE_OPTIONS.some((opt) => opt.value === settings.bodySize)
+        );
+
+        return (
+          <FormGroup title="Section typography & font size">
+            <FontPicker
+              label="Font family"
+              value={settings.font}
+              inheritFrom={siteFont}
+              onChange={(font) => {
+                const { font: _previous, ...rest } = settings;
+                onChange(font ? { ...rest, font } : rest);
+              }}
+            />
+            <SelectField
+              label="Overall font size scale"
+              value={isCustomScale ? "custom" : (settings.fontSize ?? "default")}
+              options={FONT_SIZE_OPTIONS}
+              onChange={(fontSize) => {
+                if (fontSize === "custom") {
+                  onChange({ ...settings, fontSize: "110%" });
+                } else if (fontSize === "default") {
+                  const { fontSize: _, ...rest } = settings;
+                  onChange(rest);
+                } else {
+                  onChange({ ...settings, fontSize: fontSize as SectionSettings["fontSize"] });
+                }
+              }}
+            />
+            {isCustomScale && (
+              <TextField
+                label="Custom scale or base pixel size"
+                value={settings.fontSize ?? ""}
+                placeholder="e.g. 110% or 16px"
+                onChange={(val) => {
+                  const cleaned = val.trim();
+                  if (!cleaned) {
+                    const { fontSize: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, fontSize: cleaned });
+                  }
+                }}
+              />
+            )}
+            <SelectField
+              label="Heading font size"
+              value={isCustomHeading ? "custom" : (settings.headingSize ?? "default")}
+              options={HEADING_SIZE_OPTIONS}
+              onChange={(headingSize) => {
+                if (headingSize === "custom") {
+                  onChange({ ...settings, headingSize: "36px" });
+                } else if (headingSize === "default") {
+                  const { headingSize: _, ...rest } = settings;
+                  onChange(rest);
+                } else {
+                  onChange({ ...settings, headingSize: headingSize as SectionSettings["headingSize"] });
+                }
+              }}
+            />
+            {isCustomHeading && (
+              <TextField
+                label="Custom heading pixel size (px)"
+                value={settings.headingSize ?? ""}
+                placeholder="e.g. 38px or 42"
+                onChange={(val) => {
+                  const cleaned = val.trim();
+                  if (!cleaned) {
+                    const { headingSize: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, headingSize: cleaned });
+                  }
+                }}
+              />
+            )}
+            <SelectField
+              label="Body / Content font size"
+              value={isCustomBody ? "custom" : (settings.bodySize ?? "default")}
+              options={BODY_SIZE_OPTIONS}
+              onChange={(bodySize) => {
+                if (bodySize === "custom") {
+                  onChange({ ...settings, bodySize: "16px" });
+                } else if (bodySize === "default") {
+                  const { bodySize: _, ...rest } = settings;
+                  onChange(rest);
+                } else {
+                  onChange({ ...settings, bodySize: bodySize as SectionSettings["bodySize"] });
+                }
+              }}
+            />
+            {isCustomBody && (
+              <TextField
+                label="Custom body pixel size (px)"
+                value={settings.bodySize ?? ""}
+                placeholder="e.g. 15.5px or 17"
+                onChange={(val) => {
+                  const cleaned = val.trim();
+                  if (!cleaned) {
+                    const { bodySize: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, bodySize: cleaned });
+                  }
+                }}
+              />
+            )}
+          </FormGroup>
+        );
+      })()}
 
       <FormGroup title="Custom dynamic colors (CellColorPicker)">
         <ColorField

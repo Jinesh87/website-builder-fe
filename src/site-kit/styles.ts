@@ -99,6 +99,246 @@ export const SITE_CSS = `
 .wb-section-head { max-width: 680px; margin: 0 auto 48px; text-align: center; }
 .wb-section-head p { margin-top: 12px; font-size: 18px; }
 
+/* Section-level font size customization (applies cleanly per section without breaking layouts) */
+.wb-section.wb-font-size-small,
+.wb-chrome-bg-default.wb-font-size-small,
+header.wb-font-size-small,
+footer.wb-font-size-small {
+  --wb-font-scale: 0.88;
+}
+.wb-section.wb-font-size-medium,
+.wb-chrome-bg-default.wb-font-size-medium,
+header.wb-font-size-medium,
+footer.wb-font-size-medium {
+  --wb-font-scale: 1.08;
+}
+.wb-section.wb-font-size-large,
+.wb-chrome-bg-default.wb-font-size-large,
+header.wb-font-size-large,
+footer.wb-font-size-large {
+  --wb-font-scale: 1.22;
+}
+.wb-section.wb-font-size-huge,
+.wb-chrome-bg-default.wb-font-size-huge,
+header.wb-font-size-huge,
+footer.wb-font-size-huge {
+  --wb-font-scale: 1.38;
+}
+
+/* Headings within section scaling */
+.wb-section[class*="wb-font-size-"] h1,
+.wb-section[class*="wb-font-size-"] .wb-hero h1,
+header[class*="wb-font-size-"] h1,
+footer[class*="wb-font-size-"] h1 {
+  font-size: calc(clamp(30px, 5vw, 48px) * var(--wb-font-scale, 1));
+  line-height: 1.15;
+}
+
+.wb-section[class*="wb-font-size-"] h2,
+.wb-section[class*="wb-font-size-"] .wb-section-head h2,
+header[class*="wb-font-size-"] h2,
+footer[class*="wb-font-size-"] h2 {
+  font-size: calc(clamp(22px, 3.8vw, 34px) * var(--wb-font-scale, 1));
+  line-height: 1.2;
+}
+
+.wb-section[class*="wb-font-size-"] h3,
+.wb-section[class*="wb-font-size-"] .wb-cardset-title,
+.wb-section[class*="wb-font-size-"] .wb-feature-title,
+.wb-section[class*="wb-font-size-"] .wb-service-title,
+.wb-section[class*="wb-font-size-"] .wb-pricing-title,
+header[class*="wb-font-size-"] h3,
+footer[class*="wb-font-size-"] h3 {
+  font-size: calc(clamp(16px, 2.2vw, 20px) * var(--wb-font-scale, 1));
+  line-height: 1.3;
+}
+
+.wb-section[class*="wb-font-size-"] p,
+.wb-section[class*="wb-font-size-"] .wb-section-head p,
+.wb-section[class*="wb-font-size-"] .wb-hero-sub,
+.wb-section[class*="wb-font-size-"] .wb-hero-desc,
+.wb-section[class*="wb-font-size-"] .wb-cardset-desc,
+.wb-section[class*="wb-font-size-"] .wb-cardset-intro,
+.wb-section[class*="wb-font-size-"] .wb-testimonial-quote,
+.wb-section[class*="wb-font-size-"] .wb-faq-answer,
+header[class*="wb-font-size-"] p,
+footer[class*="wb-font-size-"] p {
+  font-size: calc(clamp(14px, 1.6vw, 17px) * var(--wb-font-scale, 1));
+  line-height: 1.55;
+}
+
+.wb-section[class*="wb-font-size-"] .wb-eyebrow {
+  font-size: calc(13px * var(--wb-font-scale, 1));
+}
+
+.wb-section[class*="wb-font-size-"] .wb-btn {
+  font-size: calc(15px * var(--wb-font-scale, 1));
+}
+
+/* Specific Heading Size Overrides */
+.wb-section.wb-heading-size-small h1,
+.wb-section.wb-heading-size-small .wb-hero h1 { font-size: clamp(26px, 3.8vw, 36px) !important; }
+.wb-section.wb-heading-size-small h2,
+.wb-section.wb-heading-size-small .wb-section-head h2 { font-size: clamp(20px, 2.8vw, 26px) !important; }
+.wb-section.wb-heading-size-small h3,
+.wb-section.wb-heading-size-small .wb-cardset-title { font-size: 16px !important; }
+
+.wb-section.wb-heading-size-medium h1,
+.wb-section.wb-heading-size-medium .wb-hero h1 { font-size: clamp(34px, 4.8vw, 48px) !important; }
+.wb-section.wb-heading-size-medium h2,
+.wb-section.wb-heading-size-medium .wb-section-head h2 { font-size: clamp(24px, 3.5vw, 34px) !important; }
+.wb-section.wb-heading-size-medium h3,
+.wb-section.wb-heading-size-medium .wb-cardset-title { font-size: 19px !important; }
+
+.wb-section.wb-heading-size-large h1,
+.wb-section.wb-heading-size-large .wb-hero h1 { font-size: clamp(42px, 6vw, 58px) !important; }
+.wb-section.wb-heading-size-large h2,
+.wb-section.wb-heading-size-large .wb-section-head h2 { font-size: clamp(30px, 4.2vw, 42px) !important; }
+.wb-section.wb-heading-size-large h3,
+.wb-section.wb-heading-size-large .wb-cardset-title { font-size: 23px !important; }
+
+.wb-section.wb-heading-size-huge h1,
+.wb-section.wb-heading-size-huge .wb-hero h1 { font-size: clamp(50px, 7.5vw, 72px) !important; }
+.wb-section.wb-heading-size-huge h2,
+.wb-section.wb-heading-size-huge .wb-section-head h2 { font-size: clamp(36px, 5.2vw, 50px) !important; }
+.wb-section.wb-heading-size-huge h3,
+.wb-section.wb-heading-size-huge .wb-cardset-title { font-size: 27px !important; }
+
+/* Specific Body Size Overrides */
+.wb-section.wb-body-size-small p,
+.wb-section.wb-body-size-small .wb-section-head p,
+.wb-section.wb-body-size-small .wb-hero-sub,
+.wb-section.wb-body-size-small .wb-hero-desc,
+.wb-section.wb-body-size-small .wb-cardset-desc,
+.wb-section.wb-body-size-small .wb-cardset-intro,
+.wb-section.wb-body-size-small li,
+.wb-section.wb-body-size-small .wb-testimonial-quote {
+  font-size: 13.5px !important;
+  line-height: 1.5;
+}
+
+.wb-section.wb-body-size-medium p,
+.wb-section.wb-body-size-medium .wb-section-head p,
+.wb-section.wb-body-size-medium .wb-hero-sub,
+.wb-section.wb-body-size-medium .wb-hero-desc,
+.wb-section.wb-body-size-medium .wb-cardset-desc,
+.wb-section.wb-body-size-medium .wb-cardset-intro,
+.wb-section.wb-body-size-medium li,
+.wb-section.wb-body-size-medium .wb-testimonial-quote {
+  font-size: 15.5px !important;
+  line-height: 1.58;
+}
+
+.wb-section.wb-body-size-large p,
+.wb-section.wb-body-size-large .wb-section-head p,
+.wb-section.wb-body-size-large .wb-hero-sub,
+.wb-section.wb-body-size-large .wb-hero-desc,
+.wb-section.wb-body-size-large .wb-cardset-desc,
+.wb-section.wb-body-size-large .wb-cardset-intro,
+.wb-section.wb-body-size-large li,
+.wb-section.wb-body-size-large .wb-testimonial-quote {
+  font-size: 17.5px !important;
+  line-height: 1.62;
+}
+
+.wb-section.wb-body-size-huge p,
+.wb-section.wb-body-size-huge .wb-section-head p,
+.wb-section.wb-body-size-huge .wb-hero-sub,
+.wb-section.wb-body-size-huge .wb-hero-desc,
+.wb-section.wb-body-size-huge .wb-cardset-desc,
+.wb-section.wb-body-size-huge .wb-cardset-intro,
+.wb-section.wb-body-size-huge li,
+.wb-section.wb-body-size-huge .wb-testimonial-quote {
+  font-size: 20px !important;
+  line-height: 1.68;
+}
+
+.wb-testimonial-name { font-weight: 600; font-size: calc(16.5px * var(--wb-font-scale, 1)); color: var(--wb-text); }
+.wb-testimonial-role { font-size: calc(14px * var(--wb-font-scale, 1)); color: var(--wb-muted); }
+
+/* Exact pixel and scale size overrides when selected directly */
+[style*="--wb-heading-size"] h1,
+[style*="--wb-heading-size"] h2,
+[style*="--wb-heading-size"] h3,
+[style*="--wb-heading-size"] h4,
+[style*="--wb-heading-size"] .wb-hero h1,
+[style*="--wb-heading-size"] .wb-hero-curved-title,
+[style*="--wb-heading-size"] .wb-section-head h2,
+[style*="--wb-heading-size"] .wb-cardset-title,
+[style*="--wb-heading-size"] .wb-feature-title,
+[style*="--wb-heading-size"] .wb-service-title,
+[style*="--wb-heading-size"] .wb-pricing-title,
+[style*="--wb-heading-size"] .wb-faq-question,
+[style*="--wb-heading-size"] .wb-footer-col-title,
+[style*="--wb-heading-size"] .wb-footer-cta-card h3,
+footer[style*="--wb-heading-size"] h2,
+footer[style*="--wb-heading-size"] h3,
+footer[style*="--wb-heading-size"] h4,
+footer[style*="--wb-heading-size"] .wb-footer-col-title,
+header[style*="--wb-heading-size"] h1,
+header[style*="--wb-heading-size"] h2,
+header[style*="--wb-heading-size"] h3 {
+  font-size: var(--wb-heading-size) !important;
+}
+
+[style*="--wb-body-size"] p,
+[style*="--wb-body-size"] span:not(.wb-badge):not(.wb-btn-icon):not(.wb-hero-curved-badge),
+[style*="--wb-body-size"] a:not(.wb-btn),
+[style*="--wb-body-size"] li,
+[style*="--wb-body-size"] .wb-section-head p,
+[style*="--wb-body-size"] .wb-hero-sub,
+[style*="--wb-body-size"] .wb-hero-desc,
+[style*="--wb-body-size"] .wb-hero-curved-sub,
+[style*="--wb-body-size"] .wb-cardset-desc,
+[style*="--wb-body-size"] .wb-cardset-intro,
+[style*="--wb-body-size"] .wb-testimonial-quote,
+[style*="--wb-body-size"] .wb-testimonial-name,
+[style*="--wb-body-size"] .wb-testimonial-role,
+[style*="--wb-body-size"] .wb-faq-answer,
+footer[style*="--wb-body-size"],
+footer[style*="--wb-body-size"] p,
+footer[style*="--wb-body-size"] span,
+footer[style*="--wb-body-size"] a,
+footer[style*="--wb-body-size"] li,
+footer[style*="--wb-body-size"] .wb-footer-bottom,
+footer[style*="--wb-body-size"] .wb-footer-bottom span,
+footer[style*="--wb-body-size"] .wb-footer-copyright,
+footer[style*="--wb-body-size"] .wb-legal-links a,
+header[style*="--wb-body-size"] p,
+header[style*="--wb-body-size"] span:not(.wb-badge),
+header[style*="--wb-body-size"] a {
+  font-size: var(--wb-body-size) !important;
+}
+
+/* Scaling overrides for footer and header when --wb-font-scale is active */
+footer[style*="--wb-font-scale"],
+footer[style*="--wb-font-scale"] .wb-footer-bottom,
+footer[style*="--wb-font-scale"] .wb-footer-bottom span,
+footer[style*="--wb-font-scale"] .wb-footer-copyright,
+footer[style*="--wb-font-scale"] .wb-legal-links a,
+footer[style*="--wb-font-scale"] a,
+footer[style*="--wb-font-scale"] li,
+footer[style*="--wb-font-scale"] p,
+footer.wb-has-font-scale,
+footer.wb-has-font-scale .wb-footer-bottom,
+footer.wb-has-font-scale .wb-footer-bottom span,
+footer.wb-has-font-scale .wb-footer-copyright,
+footer.wb-has-font-scale .wb-legal-links a,
+footer.wb-has-font-scale a,
+footer.wb-has-font-scale li,
+footer.wb-has-font-scale p {
+  font-size: calc(13px * var(--wb-font-scale, 1)) !important;
+}
+
+footer[style*="--wb-font-scale"] h3,
+footer[style*="--wb-font-scale"] h4,
+footer[style*="--wb-font-scale"] .wb-footer-col-title,
+footer.wb-has-font-scale h3,
+footer.wb-has-font-scale h4,
+footer.wb-has-font-scale .wb-footer-col-title {
+  font-size: calc(13px * var(--wb-font-scale, 1)) !important;
+}
+
 .wb-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 44px; padding: 10px 22px;
@@ -5615,7 +5855,7 @@ details[open] > summary .wb-faq-plus {
 .wb-gallery-head { margin-bottom: 32px; text-align: center; }
 
 /* Footer Builder Styles */
-.wb-footer { background: var(--wb-surface); border-top: 1px solid var(--wb-border); padding: 56px 0 32px; font-size: 14px; position: relative; }
+.wb-footer { background: var(--wb-surface); border-top: 1px solid var(--wb-border); padding: 56px 0 32px; font-size: var(--wb-body-size, calc(14px * var(--wb-font-scale, 1))); position: relative; }
 .wb-footer-dark { background: #0c0d12 !important; color: #f1f5f9 !important; border-top: 1px solid rgba(255, 255, 255, 0.08) !important; }
 .wb-footer-dark .wb-muted, .wb-footer-dark p, .wb-footer-dark .wb-footer-contact-block { color: #94a3b8 !important; }
 .wb-footer-dark a { color: #cbd5e1; }
@@ -5637,7 +5877,7 @@ details[open] > summary .wb-faq-plus {
 .wb-footer-newsletter-grid { display: grid; grid-template-columns: 1.1fr 1.4fr 1.3fr; gap: 40px; align-items: start; }
 
 .wb-footer h3, .wb-footer h4, .wb-footer-col-title {
-  font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;
+  font-size: var(--wb-heading-size, calc(13px * var(--wb-heading-scale, var(--wb-font-scale, 1)))); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;
 }
 .wb-footer ul { list-style: none; padding: 0; margin: 0; }
 .wb-footer li + li { margin-top: 10px; }
@@ -5647,7 +5887,7 @@ details[open] > summary .wb-faq-plus {
 
 .wb-footer-about { display: flex; flex-direction: column; gap: 14px; }
 .wb-footer-about .wb-brand { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; display: inline-flex; align-items: center; gap: 8px; }
-.wb-footer-about p { margin: 0; font-size: 14px; line-height: 1.6; max-width: 320px; }
+.wb-footer-about p { margin: 0; font-size: var(--wb-body-size, calc(14px * var(--wb-font-scale, 1))); line-height: 1.6; max-width: 320px; }
 .wb-footer-tagline { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.75; }
 
 /* Social Icons */
@@ -5734,11 +5974,12 @@ details[open] > summary .wb-faq-plus {
 /* Bottom Bar */
 .wb-footer-bottom {
   margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--wb-border);
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: 13px;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: var(--wb-body-size, calc(13px * var(--wb-font-scale, 1)));
 }
 .wb-footer-bottom-left { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.wb-footer-copyright { font-size: var(--wb-body-size, calc(13px * var(--wb-font-scale, 1))); }
 .wb-legal-links { display: flex; flex-wrap: wrap; gap: 14px; list-style: none; padding: 0; margin: 0; }
-.wb-legal-links a { font-size: 12px; text-decoration: none; opacity: 0.8; }
+.wb-legal-links a { font-size: var(--wb-body-size, calc(12px * var(--wb-font-scale, 1))); text-decoration: none; opacity: 0.8; }
 .wb-legal-links a:hover { opacity: 1; }
 
 .wb-footer-simple { padding: 28px 0; }

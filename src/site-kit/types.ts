@@ -224,6 +224,36 @@ export type SectionCustomColors = {
   gradientTo?: string;
 };
 
+export const SECTION_FONT_SIZES = [
+  "small",
+  "default",
+  "normal",
+  "medium",
+  "large",
+  "huge",
+] as const;
+export type SectionFontSize = string;
+
+export const SECTION_HEADING_SIZES = [
+  "small",
+  "default",
+  "normal",
+  "medium",
+  "large",
+  "huge",
+] as const;
+export type SectionHeadingSize = string;
+
+export const SECTION_BODY_SIZES = [
+  "small",
+  "default",
+  "normal",
+  "medium",
+  "large",
+  "huge",
+] as const;
+export type SectionBodySize = string;
+
 export type SectionSettings = {
   background: SectionBackground;
   hideOnMobile: boolean;
@@ -236,6 +266,12 @@ export type SectionSettings = {
   customColors?: SectionCustomColors;
   /** Overrides the theme font for this section only; unset follows the theme. */
   font?: FontKey;
+  /** Section-level font size scale override */
+  fontSize?: SectionFontSize;
+  /** Section heading font size override */
+  headingSize?: SectionHeadingSize;
+  /** Section body / paragraph text font size override */
+  bodySize?: SectionBodySize;
 };
 
 export type IconName =
