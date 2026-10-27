@@ -245,11 +245,13 @@ export function MarketingFooter() {
             <span>
               Powered by{" "}
               <a
-                href="mailto:Support@bytezoracoders.com"
+                href="https://bytezoracoders.com/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="brand-link"
-                title="Support: Support@bytezoracoders.com"
+                title="Visit bytezoracoders.com"
               >
-                Bytezora
+                bytezoracoders.com
               </a>
             </span>
           </div>
