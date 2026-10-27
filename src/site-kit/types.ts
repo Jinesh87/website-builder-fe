@@ -1055,7 +1055,7 @@ export const AUTH_VARIANTS = [
 ] as const;
 export type AuthVariant = (typeof AUTH_VARIANTS)[number];
 
-export const AUTH_VIEWS = ["login", "register", "forgot", "otp"] as const;
+export const AUTH_VIEWS = ["login", "register", "forgot", "otp", "reset"] as const;
 export type AuthView = (typeof AUTH_VIEWS)[number];
 
 export const AUTH_FIELD_TYPES = [
@@ -1538,6 +1538,10 @@ export type ShopCatalogProduct = {
 
 /** Real shop catalogue. `live` means empty is "no products", not "show samples". */
 export type ShopCatalog = {
+  /** Present when the live shop (or editor bridge) can call shopper auth APIs. */
+  websiteId?: string;
+  /** Page that holds the auth section, such as "/login". */
+  authHref?: string;
   products: ShopCatalogProduct[];
   productSlug?: string;
   /** Option values to preselect, from the shop-card link. */

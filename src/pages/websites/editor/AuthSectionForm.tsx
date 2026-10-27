@@ -310,7 +310,11 @@ export default function AuthSectionForm({ data, onChange }: Props) {
         <SelectField
           label="Page shown first"
           value={data.defaultView ?? "login"}
-          options={VIEW_OPTIONS.filter((option) => option.value === "login" || data[option.value].enabled)}
+          options={VIEW_OPTIONS.filter((option) => {
+            if (option.value === "login") return true;
+            if (option.value === "reset") return false;
+            return data[option.value].enabled;
+          })}
           onChange={(defaultView) => set({ defaultView })}
           hint="Also switches the canvas preview, so you can edit each page."
         />
