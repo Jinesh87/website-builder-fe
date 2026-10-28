@@ -49,6 +49,7 @@ import {
 } from "./fields.tsx";
 import { cardImageSize } from "./media-dimensions.ts";
 import { IconPickerField } from "./IconPicker.tsx";
+import FilmVaultFields from "./FilmVaultFields.tsx";
 
 type Props = { data: CardsData; onChange: (data: CardsData) => void };
 
@@ -442,6 +443,9 @@ function ItemColorField({
 
 export default function CardsSectionForm({ data, onChange }: Props) {
   const variant = resolveCardsVariant(data.variant);
+  if (variant === "film-vault") {
+    return <FilmVaultFields data={data} onChange={onChange} />;
+  }
   const defaults = CARDS_VARIANT_DEFAULTS[variant];
   const usesImages = variant !== "minimal-accent";
   const corners = data.cardCorners ?? "";

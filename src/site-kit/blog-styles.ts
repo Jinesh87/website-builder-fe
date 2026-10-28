@@ -1308,4 +1308,41 @@ export const BLOG_CSS = `
     border-radius: 18px;
   }
 }
+
+/* ==========================================================================
+   LAYOUT DESIGN: VINTAGE REELS JOURNAL (RETRO EDITORIAL)
+   ========================================================================== */
+.wb-section.wb-blog-vintage-journal { padding: 87px 0 80px; background: transparent; }
+.wb-vr-journal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 25px; margin-top: 22px; }
+.wb-vr-journal-card { display: block; color: inherit; text-decoration: none; }
+.wb-vr-journal-media { position: relative; overflow: hidden; aspect-ratio: 3 / 2; background: #1D1A15; }
+.wb-vr-journal-media img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: transform 0.4s ease; }
+.wb-vr-journal-card:hover .wb-vr-journal-media img { transform: scale(1.04); }
+.wb-vr-journal-card:first-child .wb-vr-journal-media::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  height: 3px;
+  z-index: 1;
+  background: repeating-linear-gradient(90deg, rgba(242, 238, 227, 0.8) 0 4px, transparent 4px 10px);
+}
+.wb-vr-journal-meta { display: block; margin-top: 9px; font-family: var(--vr-mono, "JetBrains Mono", monospace); font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--vr-red, #C4472D); }
+.wb-site .wb-vr-journal-title {
+  margin: 12px 0 0;
+  font-family: var(--vr-serif, Georgia, serif);
+  font-size: 21px;
+  line-height: 24.5px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--vr-text, #1D1910);
+}
+.wb-vr-journal-card:hover .wb-vr-journal-title { color: var(--vr-red, #C4472D); }
+@container wb-site (max-width: 860px) {
+  .wb-vr-journal-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .wb-vr-journal-grid { grid-template-columns: 1fr; }
+}
 `;

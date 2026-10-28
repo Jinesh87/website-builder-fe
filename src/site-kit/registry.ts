@@ -3457,6 +3457,22 @@ export const SECTION_PRESETS: SectionPreset[] = [
     create: () => createSection("text"),
   },
   {
+    key: "text-pull-quote",
+    type: "text",
+    label: "Pull quote · Vintage editorial",
+    category: "Content",
+    description: "Centered large italic editorial quote on paper background.",
+    create: () =>
+      createSection("text", {
+        data: {
+          variant: "pull-quote",
+          heading: "",
+          body: "“Every frame should feel like a memory you haven't had yet.”",
+        },
+        settings: { align: "center" },
+      }),
+  },
+  {
     key: "gallery-3",
     type: "gallery",
     label: "Gallery · 3 columns",

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import FilmVaultReel from "./FilmVaultReel.tsx";
 import {
   CARDS_VARIANT_DEFAULTS,
   cardColorVars,
@@ -485,33 +486,7 @@ export default function CardsSection({ section }: { section: SectionOf<"cards"> 
   const items = data.items ?? [];
 
   if (data.variant === "film-vault") {
-    return (
-      <SectionShell
-        sectionId={section.id}
-        settings={settings}
-        className="wb-film-vault-wrap"
-        label={data.heading || "Recent Work"}
-        fullWidth
-      >
-        <div className="wb-container">
-          {data.eyebrow && <p className="wb-vr-eyebrow">{data.eyebrow}</p>}
-          {data.heading && <h2 className="wb-process-heading">{parseRichText(data.heading)}</h2>}
-          <div className="wb-film-vault-box">
-            <div className="wb-film-grid">
-              {items.map((item, index) => (
-                <figure key={index} className="wb-film-card">
-                  {item.image && <SiteImage image={item.image} />}
-                  <span className="wb-film-frame-no" aria-hidden="true">
-                    {index === 0 ? "1A" : `${index + 10}A`}
-                  </span>
-                  <figcaption className="wb-film-tape">{item.title}</figcaption>
-                </figure>
-              ))}
-            </div>
-          </div>
-        </div>
-      </SectionShell>
-    );
+    return <FilmVaultReel sectionId={section.id} settings={settings} data={data} />;
   }
 
   if (data.variant === "polaroid-grid") {

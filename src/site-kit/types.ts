@@ -758,6 +758,7 @@ export const CONTACT_VARIANTS = [
   "minimal-editorial",
   "floating-glass",
   "custom",
+  "clapper-slate",
 ] as const;
 export type ContactVariant = (typeof CONTACT_VARIANTS)[number];
 
@@ -801,6 +802,15 @@ export type ContactData = {
   layout?: ContactLayout;
   /** "custom" variant: shows eyebrow, heading and text above the columns. Defaults to true. */
   showHeader?: boolean;
+  /** Film production clapper slate options */
+  solidHeading?: string;
+  outlineHeading?: string;
+  recText?: string;
+  timecode?: string;
+  timecodeMode?: "live" | "static";
+  budgetOptions?: string[];
+  sceneTakeLabel?: string;
+  socialLinksText?: string;
 };
 
 /** Mirrors the backend content schema; stored in site data, so values are only ever appended. */
@@ -891,11 +901,15 @@ export type ContactLayout = {
 };
 
 export type TextData = {
-  variant?: "default" | "pull-quote";
+  variant?: "default" | "standard" | "pull-quote" | "columns-2" | "lead";
+  eyebrow?: string;
   heading?: string;
   /** Plain text; blank lines separate paragraphs. Never rendered as HTML. */
   body: string;
   align?: SectionAlign;
+  quoteAuthor?: string;
+  cta?: LinkRef;
+  maxWidth?: "narrow" | "standard" | "wide" | "full";
 };
 
 export type GalleryData = {
@@ -1489,6 +1503,9 @@ export type CardItem = {
   iconColor?: string;
   featured?: boolean;
   checklist?: Array<CardChecklistItem | string>;
+  /** Optional video URL (YouTube, Vimeo, MP4) played in the reel preview modal */
+  videoUrl?: string;
+  category?: string;
 };
 
 export type CardsData = {
@@ -1549,6 +1566,22 @@ export type CardsData = {
   /** Fine-tune vertical float offset in px (-50 to 50). */
   iconOffsetY?: number;
   button?: CardsButtonSettings;
+  /** Film Vault customization options */
+  solidHeading?: string;
+  outlineHeading?: string;
+  showRecBadge?: boolean;
+  recText?: string;
+  recColor?: string;
+  timecode?: string;
+  timecodeMode?: "live" | "static";
+  timecodeColor?: string;
+  categories?: string[];
+  showCategories?: boolean;
+  showSprockets?: boolean;
+  filmCounterText?: string;
+  showFilmArrows?: boolean;
+  filmCardWidth?: number;
+  filmCardHeight?: number;
   items: CardItem[];
 };
 

@@ -383,4 +383,63 @@ export const PREMIUM_HEADER_CSS = `
   .wb-curtain-link { gap: 12px; padding: 16px 0; }
   .wb-curtain-link-text { font-size: 22px; }
 }
+
+/* ---------------- Vintage Editorial Header (Vintage Reels) ---------------- */
+.wb-header.wb-header-vintage-editorial {
+  background: var(--vr-ink, #131210);
+  color: #EDE7DA;
+  border-bottom: 0;
+}
+.wb-header-vintage-editorial .wb-header-inner {
+  position: relative;
+  min-height: 60px;
+  gap: 24px;
+}
+.wb-header-vintage-editorial .wb-brand img { max-height: 46px; }
+.wb-header-vintage-editorial .wb-nav {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 26px;
+  font-family: var(--wb-font-body);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.wb-header-vintage-editorial .wb-nav > span { position: relative; }
+.wb-header-vintage-editorial .wb-nav a { color: #EDE7DA; padding: 21px 0; }
+.wb-header-vintage-editorial .wb-nav a:hover { color: var(--vr-gold, #E6AD4A); }
+.wb-header-vintage-editorial .wb-nav [data-wb-current] a { color: #FFFFFF; font-weight: 600; }
+.wb-header-vintage-editorial .wb-nav [data-wb-current]::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  bottom: 14px;
+  height: 2px;
+  background: var(--vr-gold, #E6AD4A);
+}
+.wb-header-vintage-editorial .wb-header-cta .wb-btn {
+  min-height: 36px;
+  height: 36px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--vr-gold, #E6AD4A);
+  color: var(--vr-text, #1D1910);
+  box-shadow: none;
+  font-family: var(--wb-font-body);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.wb-header-vintage-editorial .wb-header-cta .wb-btn:hover { background: #F0BC5F; color: var(--vr-text, #1D1910); transform: none; }
+@container wb-site (max-width: 960px) {
+  .wb-header-vintage-editorial .wb-nav { position: static; transform: none; }
+}
+@media (max-width: 960px) {
+  .wb-header-vintage-editorial .wb-nav { position: static; transform: none; }
+}
 `;

@@ -3,6 +3,7 @@ import { SectionHead, SectionShell, SiteIcon } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
 import ContactForm from "./ContactFormBackup.tsx";
 import ContactLayoutView from "./ContactLayoutView.tsx";
+import ClapperContactSection from "./ClapperContactSection.tsx";
 
 function MailIcon() {
   return (
@@ -57,6 +58,10 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
 
   if (variant === "custom") {
     return <ContactLayoutView section={section} />;
+  }
+
+  if (variant === "clapper-slate") {
+    return <ClapperContactSection section={section} />;
   }
 
   // 1. Cards Hub Variant (Multi-Channel Grid + Direct Access)

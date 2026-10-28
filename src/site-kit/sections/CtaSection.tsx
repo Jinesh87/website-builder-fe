@@ -51,16 +51,18 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
   }
 
   if (variant === "vintage-banner") {
+    const isDark = section.settings.background === "dark";
     return (
       <SectionShell
         sectionId={section.id}
         settings={section.settings}
-        className="wb-cta-vintage-banner"
+        className={`wb-cta-vintage-banner ${isDark ? "wb-cta-roll-camera" : ""}`}
         label={data.heading}
         fullWidth
       >
         <div className="wb-container">
           <div className="wb-cta-banner-card">
+            {isDark && <div className="wb-cta-frame-guide left" aria-hidden="true" />}
             <h2 className="wb-cta-banner-heading">
               {parseRichText(data.heading)}
               {data.italicText && <em> {data.italicText}</em>}
@@ -70,6 +72,7 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
                 {data.button.label}
               </SiteLink>
             )}
+            {isDark && <div className="wb-cta-frame-guide right" aria-hidden="true" />}
           </div>
         </div>
       </SectionShell>

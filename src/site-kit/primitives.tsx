@@ -643,13 +643,15 @@ export function SectionShell({ sectionId, settings, className, label, children, 
 
   const typographyClass = sectionTypographyClasses(settings);
 
+  const hasExplicitAlign = className && /\bwb-align-(left|center|right)\b/.test(className);
+
   const classes = [
     "wb-section",
     settings.background !== "default" && !bg && `wb-bg-${settings.background}`,
     text && "wb-custom-text",
     muted && "wb-custom-muted",
     settings.spacing && settings.spacing !== "default" && `wb-space-${settings.spacing}`,
-    `wb-align-${settings.align || "center"}`,
+    !hasExplicitAlign && `wb-align-${settings.align || "center"}`,
     typographyClass,
     settings.hideOnMobile && "wb-hide-mobile",
     settings.hideOnDesktop && "wb-hide-desktop",

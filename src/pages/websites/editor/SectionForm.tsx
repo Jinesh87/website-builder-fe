@@ -35,6 +35,7 @@ import type {
   SectionBackground,
   SectionSettings,
   SectionSpacing,
+  SectionType,
   ServiceItem,
   ProductDetailData,
   ProductsData,
@@ -79,6 +80,8 @@ import CardsSectionForm from "./CardsSectionForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
 import { Bold, Italic } from "lucide-react";
+import { isVintageHero, VintageHeroFields } from "./VintageHeroFields.tsx";
+import ClapperContactFields from "./ClapperContactFields.tsx";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
 
@@ -429,6 +432,10 @@ const DEFAULT_CAMPAIGN_STATS: HeroCampaignStat[] = [
 ];
 
 function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
+  if (isVintageHero(data)) {
+    return <VintageHeroFields data={data} onChange={onChange} />;
+  }
+
   const mediaPosition =
     data.imagePosition ??
     (data.variant === "split"
@@ -2855,6 +2862,7 @@ function CtaForm({ data, onChange }: DataFormProps<CtaData>) {
 }
 
 const CONTACT_VARIANT_OPTIONS: { value: ContactVariant; label: string }[] = [
+  { value: "clapper-slate", label: "Clapperboard Slate · 35mm film slate & details" },
   { value: "split-form", label: "Split Screen Form & Direct Links (Default)" },
   { value: "cards-hub", label: "Multi-Channel Direct Hub Cards" },
   { value: "minimal-editorial", label: "Minimal Architectural Editorial" },
@@ -2874,6 +2882,9 @@ const CONTACT_CARD_STYLE_OPTIONS: { value: ContactCardStyle; label: string }[] =
 
 function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
   const currentVariant = data.variant || "split-form";
+  if (currentVariant === "clapper-slate") {
+    return <ClapperContactFields data={data} onChange={onChange} />;
+  }
   const isCustom = currentVariant === "custom";
   const hasForm = isCustom ? layoutHasForm(resolveContactLayout(data)) : data.showForm;
 
@@ -3161,27 +3172,81 @@ function ProductDetailForm({ data, onChange }: DataFormProps<ProductDetailData>)
 }
 
 function TextForm({ data, onChange }: DataFormProps<TextData>) {
+  const isPullQuote = data.variant === "pull-quote";
+
   return (
     <FormGroup title="Content">
+      <SelectField
+        label="Design style"
+        value={data.variant || "standard"}
+        options={[
+          { value: "standard", label: "Standard (Heading & paragraphs)" },
+          { value: "pull-quote", label: "Pull quote (Large editorial quote)" },
+          { value: "columns-2", label: "Two columns (Editorial magazine split)" },
+          { value: "lead", label: "Lead paragraph (Feature story)" },
+        ]}
+        onChange={(variant) =>
+          onChange({
+            ...data,
+            variant: variant as TextData["variant"],
+          })
+        }
+      />
       <SelectField
         label="Text alignment"
         value={data.align || "center"}
         options={ALIGN_OPTIONS}
         onChange={(align) => onChange({ ...data, align: align as SectionAlign })}
       />
+      <SelectField
+        label="Content width"
+        value={data.maxWidth || (isPullQuote ? "narrow" : "standard")}
+        options={[
+          { value: "standard", label: "Standard (760px)" },
+          { value: "narrow", label: "Narrow / Focused (620px)" },
+          { value: "wide", label: "Wide (980px)" },
+          { value: "full", label: "Full width" },
+        ]}
+        onChange={(maxWidth) =>
+          onChange({ ...data, maxWidth: maxWidth as TextData["maxWidth"] })
+        }
+      />
       <TextField
-        label="Heading"
-        value={data.heading}
+        label="Small text above heading (optional)"
+        value={data.eyebrow ?? ""}
+        onChange={(eyebrow) => onChange({ ...data, eyebrow })}
+        maxLength={120}
+        placeholder="e.g. About us / Director's statement"
+      />
+      <TextField
+        label={isPullQuote ? "Heading (optional)" : "Heading"}
+        value={data.heading ?? ""}
         onChange={(heading) => onChange({ ...data, heading })}
         maxLength={200}
+        placeholder={isPullQuote ? "Optional title above quote" : "About us"}
       />
       <TextAreaField
-        label="Text"
+        label={isPullQuote ? "Quote text" : "Text"}
         value={data.body}
         onChange={(body) => onChange({ ...data, body })}
-        rows={10}
+        rows={isPullQuote ? 4 : 10}
         maxLength={20000}
-        hint="Leave a blank line between paragraphs."
+        hint={isPullQuote ? undefined : "Leave a blank line between paragraphs."}
+      />
+      {isPullQuote && (
+        <TextField
+          label="Quote author / citation (optional)"
+          value={data.quoteAuthor ?? ""}
+          onChange={(quoteAuthor) => onChange({ ...data, quoteAuthor })}
+          maxLength={120}
+          placeholder="e.g. — Jane Doe, Director"
+        />
+      )}
+      <OptionalLinkField
+        label="Button (optional)"
+        value={data.cta}
+        onChange={(cta) => onChange({ ...data, cta })}
+        fallback={{ label: "Learn more", href: "/about" }}
       />
     </FormGroup>
   );
@@ -3311,6 +3376,26 @@ function SplitForm({ data, onChange }: DataFormProps<SplitData>) {
           ]}
           onChange={(imagePosition) => onChange({ ...data, imagePosition })}
         />
+        <SelectField
+          label="Image style"
+          value={data.imageStyle || "plain"}
+          options={[
+            { value: "plain", label: "Standard image" },
+            { value: "polaroid", label: "Polaroid with tape (Vintage)" },
+          ]}
+          onChange={(imageStyle) =>
+            onChange({ ...data, imageStyle: imageStyle as "plain" | "polaroid" })
+          }
+        />
+        {data.imageStyle === "polaroid" && (
+          <TextField
+            label="Tape label"
+            value={data.imageTapeLabel ?? ""}
+            onChange={(imageTapeLabel) => onChange({ ...data, imageTapeLabel })}
+            placeholder="e.g. Our studio, 2024"
+            maxLength={60}
+          />
+        )}
         <ImageField
           label="Image"
           value={data.image}
@@ -4355,8 +4440,9 @@ type SettingsFormProps = {
 export function SectionStyleForm({
   settings,
   siteFont,
+  sectionType,
   onChange,
-}: SettingsFormProps & { siteFont: FontKey }) {
+}: SettingsFormProps & { siteFont: FontKey; sectionType?: SectionType }) {
   const customColors = settings.customColors ?? {};
   const updateCustomColor = (
     patch: Partial<NonNullable<SectionSettings["customColors"]>>,
@@ -4434,12 +4520,17 @@ export function SectionStyleForm({
             }}
           />
         )}
-        <SelectField
-          label="Heading alignment"
-          value={settings.align ?? "center"}
-          options={ALIGN_OPTIONS}
-          onChange={(align) => onChange({ ...settings, align })}
-        />
+        {(!sectionType ||
+          !["hero", "marquee", "auth", "product_detail"].includes(
+            sectionType,
+          )) && (
+          <SelectField
+            label="Heading alignment"
+            value={settings.align ?? "center"}
+            options={ALIGN_OPTIONS}
+            onChange={(align) => onChange({ ...settings, align })}
+          />
+        )}
       </FormGroup>
 
       {(() => {
@@ -5010,6 +5101,7 @@ export default function SectionForm({
       <SectionStyleForm
         settings={section.settings}
         siteFont={siteFont}
+        sectionType={section.type}
         onChange={changeSettings}
       />
       <SectionResponsiveForm

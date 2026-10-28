@@ -553,4 +553,497 @@ export const CARDS_CSS = `
   .wb-cardset.wb-cardset-mobile-scroll .wb-cardset-cell { flex: 0 0 min(82%, 340px); scroll-snap-align: start; }
   .wb-cardset.wb-cardset-mobile-scroll .wb-cardset-grid:focus-visible { outline: 2px solid var(--wb-primary); outline-offset: -2px; }
 }
+
+/* ---------------- Film Vault (Vintage Reels Recent Work / Portfolio Showcase) ---------------- */
+.wb-section.wb-film-vault-wrap {
+  padding: 40px 0 20px;
+  background: #0A0A0A;
+  color: #EDE7DA;
+}
+.wb-film-vault-container {
+  display: flex;
+  flex-direction: column;
+}
+.wb-vr-work-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.wb-vr-work-meta-left {
+  font-family: var(--vr-mono, monospace);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #8E8A82;
+  text-transform: uppercase;
+}
+.wb-vr-work-rec {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.wb-vr-rec-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #FF3333;
+  box-shadow: 0 0 10px #FF3333;
+  animation: wbRecPulse 1.5s infinite ease-in-out;
+}
+@keyframes wbRecPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+.wb-vr-rec-text {
+  font-family: var(--vr-mono, monospace);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #FF3333;
+  text-transform: uppercase;
+}
+.wb-vr-work-title {
+  display: flex;
+  flex-direction: column;
+  line-height: 0.81;
+  margin: 0 0 20px;
+}
+.wb-vr-work-solid {
+  font-family: var(--vr-condensed, "Anton", "Bebas Neue", "Impact", sans-serif);
+  font-size: clamp(68px, 12.5vw, 146px);
+  font-weight: 900;
+  color: #F3F1EA;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.wb-vr-work-outline {
+  font-family: var(--vr-condensed, "Anton", "Bebas Neue", "Impact", sans-serif);
+  font-size: clamp(68px, 12.5vw, 146px);
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin-top: 0;
+}
+.wb-vr-work-subrow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.wb-vr-work-desc {
+  max-width: 400px;
+  font-family: var(--vr-mono, monospace);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #A8A29E;
+  margin: 0;
+}
+.wb-vr-timecode {
+  font-family: var(--vr-mono, monospace);
+  font-size: clamp(30px, 4.2vw, 42px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #FF3333;
+  text-shadow: 0 0 16px rgba(255, 51, 51, 0.45);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.wb-vr-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.wb-vr-filter-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #D9D3C7;
+  font-family: var(--vr-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.wb-vr-filter-btn:hover {
+  border-color: #FFFFFF;
+  color: #FFFFFF;
+}
+.wb-vr-filter-btn.wb-vr-filter-active {
+  background: #FFFFFF;
+  color: #0A0A0A;
+  border-color: #FFFFFF;
+  font-weight: 700;
+}
+.wb-filmstrip-outer {
+  position: relative;
+  background: #000000;
+  padding: 18px 0;
+  margin: 0 0 20px;
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.wb-sprockets-strip {
+  display: flex;
+  gap: 16px;
+  padding: 0 16px;
+  overflow: hidden;
+  user-select: none;
+  pointer-events: none;
+}
+.wb-sprockets-top {
+  margin-bottom: 12px;
+}
+.wb-sprockets-bottom {
+  margin-top: 12px;
+}
+.wb-sprocket-hole {
+  width: 14px;
+  height: 16px;
+  border-radius: 3px;
+  background: #222222;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+}
+.wb-film-reel-track {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 0 20px;
+}
+.wb-film-reel-track::-webkit-scrollbar {
+  display: none;
+}
+.wb-film-strip-card {
+  position: relative;
+  width: 380px;
+  height: 240px;
+  flex-shrink: 0;
+  background: #000000;
+  overflow: hidden;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.wb-film-strip-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85);
+}
+.wb-film-card-image-wrap {
+  position: absolute;
+  inset: 0;
+}
+.wb-film-strip-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: sepia(0.18) contrast(1.05) saturate(0.95);
+  transition: transform 0.5s ease;
+}
+.wb-film-strip-card:hover .wb-film-strip-img {
+  transform: scale(1.05);
+}
+.wb-film-vignette {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, transparent 45%, rgba(0, 0, 0, 0.8) 100%);
+}
+.wb-film-tag-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #EDE7DA;
+  font-family: var(--vr-mono, monospace);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 2px;
+}
+.wb-film-play-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  border: 1.5px solid rgba(255, 255, 255, 0.65);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.wb-film-play-btn svg {
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
+}
+.wb-film-strip-card:hover .wb-film-play-btn {
+  background: #E6392F;
+  border-color: #E6392F;
+  transform: translate(-50%, -50%) scale(1.12);
+  box-shadow: 0 0 20px rgba(230, 57, 47, 0.7);
+}
+.wb-film-title-label {
+  position: absolute;
+  bottom: 14px;
+  left: 16px;
+  z-index: 2;
+  font-family: var(--vr-condensed, "Anton", "Bebas Neue", "Impact", sans-serif);
+  font-size: 24px;
+  font-weight: 900;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85);
+}
+.wb-film-controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 36px;
+}
+.wb-film-counter {
+  font-family: var(--vr-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  color: #8E8A82;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.wb-film-arrows {
+  display: flex;
+  gap: 8px;
+}
+.wb-film-arrow-btn {
+  width: 40px;
+  height: 40px;
+  background: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+.wb-film-arrow-btn:hover {
+  background: #242424;
+  border-color: #FFFFFF;
+}
+
+/* Modal preview */
+.wb-film-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.wb-film-modal-content {
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  max-width: 720px;
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+}
+.wb-film-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.wb-film-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.wb-film-modal-badge {
+  font-family: var(--vr-mono, monospace);
+  font-size: 10px;
+  background: #E6392F;
+  color: #FFFFFF;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.wb-film-modal-title {
+  margin: 0;
+  font-family: var(--vr-condensed, "Anton", "Bebas Neue", sans-serif);
+  font-size: 22px;
+  color: #FFFFFF;
+  letter-spacing: 0.02em;
+}
+.wb-film-modal-close {
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.wb-film-modal-player {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+}
+.wb-film-modal-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: contrast(1.1) brightness(0.9);
+}
+.wb-film-scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0px, rgba(0, 0, 0, 0.18) 1px, transparent 1px, transparent 3px);
+}
+.wb-film-player-hud {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--vr-mono, monospace);
+  font-size: 12px;
+  color: #FF3333;
+  text-shadow: 0 0 6px rgba(255, 51, 51, 0.8);
+  font-weight: 700;
+}
+.wb-film-modal-desc {
+  padding: 0;
+  margin: 0;
+  font-family: var(--vr-mono, monospace);
+  font-size: 13px;
+  line-height: 1.6;
+  color: #C5BFB5;
+  flex: 1 1 240px;
+}
+.wb-film-modal-video-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000;
+}
+.wb-film-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.wb-film-modal-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #E6392F;
+  color: #FFFFFF !important;
+  font-family: var(--vr-condensed, "Anton", "Bebas Neue", sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+.wb-film-modal-cta:hover {
+  background: #FF4D3D;
+  transform: translateY(-1px);
+}
+
+/* ---------------- Polaroid Grid (Vintage Reels Why Choose Us / Featured Frames) ---------------- */
+.wb-section.wb-polaroids-section { padding: 80px 0 86px; background: #151310; color: #FAF5EE; }
+.wb-scalloped-top {
+  display: block;
+  height: 14px;
+  margin-top: -80px;
+  margin-bottom: 66px;
+  background-image: radial-gradient(circle at 10px 0, transparent 9px, #151310 9.5px);
+  background-size: 20px 14px;
+  background-repeat: repeat-x;
+}
+.wb-site .wb-polaroids-heading {
+  margin: 0;
+  font-family: var(--vr-serif, Georgia, serif);
+  font-size: 52px;
+  line-height: 1.1;
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  color: #FAF5EE;
+  text-align: center;
+}
+.wb-polaroids-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 32px; }
+.wb-polaroid-grid-card {
+  margin: 0;
+  padding: 10px 10px 18px;
+  background: #FFFFFF;
+  color: #1D1910;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+  transition: transform 0.25s ease;
+}
+.wb-polaroid-grid-card:hover { transform: translateY(-4px); }
+.wb-polaroid-grid-img-wrap { overflow: hidden; aspect-ratio: 1 / 1; background: #231C18; }
+.wb-polaroid-grid-img-wrap img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.wb-site .wb-polaroid-grid-title {
+  margin: 10px 0 0;
+  font-family: var(--vr-serif, Georgia, serif);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #1D1910;
+}
+.wb-polaroid-grid-desc { margin: 6px 0 0; font-family: var(--wb-font-body); font-size: 11px; line-height: 16px; color: #554D42; }
+@container wb-site (max-width: 900px) {
+  .wb-polaroids-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .wb-polaroids-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container wb-site (max-width: 500px) {
+  .wb-polaroids-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 500px) {
+  .wb-polaroids-grid { grid-template-columns: 1fr; }
+}
 `;

@@ -198,7 +198,7 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
             </div>
           </div>
         )}
-        {tab === "style" && <SectionStyleForm settings={localSection.settings} siteFont={siteFont} onChange={changeSettings} />}
+        {tab === "style" && <SectionStyleForm settings={localSection.settings} siteFont={siteFont} sectionType={localSection.type} onChange={changeSettings} />}
         {tab === "responsive" && <SectionResponsiveForm settings={localSection.settings} onChange={changeSettings} />}
         {tab === "advanced" && <SectionAdvancedForm settings={localSection.settings} onChange={changeSettings} />}
       </div>

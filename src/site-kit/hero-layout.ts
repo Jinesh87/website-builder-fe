@@ -14,6 +14,32 @@ import {
   type SectionSettings,
 } from "./types.ts";
 
+export type VintagePolaroid = NonNullable<HeroData["vintagePolaroids"]>[number];
+
+/** The vintage editorial hero always shows two photos; heroes without both fall back to `image` and `secondaryImage`. */
+export function vintageHeroPolaroids(data: HeroData): [VintagePolaroid, VintagePolaroid] {
+  const saved = data.vintagePolaroids;
+  if (saved && saved.length >= 2) return [saved[0]!, saved[1]!];
+  return [
+    {
+      image: data.image ?? {
+        url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
+        alt: "Photographer with vintage camera",
+      },
+      caption: "Up for views, press 12",
+      rotation: -3,
+    },
+    {
+      image: data.secondaryImage ?? {
+        url: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80",
+        alt: "Golden Hour Espresso Bar",
+      },
+      caption: "Golden Hour Espresso Bar",
+      rotation: 4,
+    },
+  ];
+}
+
 export { clampButtonRadius };
 
 export function isHeroAlign(value: unknown): value is HeroAlign {

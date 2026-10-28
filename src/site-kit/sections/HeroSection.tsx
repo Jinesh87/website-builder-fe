@@ -25,6 +25,7 @@ import {
   heroBaseAlign,
   heroButtonShapeProps,
   heroElementAlign,
+  vintageHeroPolaroids,
 } from "../hero-layout.ts";
 import type { HeroAlign, HeroAlignElement, HeroData, LinkRef, SectionOf } from "../types.ts";
 import CurvedBannerCarousel, {
@@ -1018,27 +1019,7 @@ export default function HeroSection({
 
   if (data.variant === "vintage-editorial") {
     const topStrip = data.topStrip;
-    const polaroids =
-      data.vintagePolaroids && data.vintagePolaroids.length >= 2
-        ? data.vintagePolaroids
-        : [
-            {
-              image: data.image ?? {
-                url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
-                alt: "Photographer with vintage camera",
-              },
-              caption: "Up for views, press 12",
-              rotation: -3,
-            },
-            {
-              image: data.secondaryImage ?? {
-                url: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80",
-                alt: "Golden Hour Espresso Bar",
-              },
-              caption: "Golden Hour Espresso Bar",
-              rotation: 4,
-            },
-          ];
+    const polaroids = vintageHeroPolaroids(data);
 
     return (
       <SectionShell
@@ -1056,7 +1037,11 @@ export default function HeroSection({
               <span>{topStrip.right}</span>
             </div>
           )}
-          <div className="wb-hero-vintage-grid">
+          <div
+            className={`wb-hero-vintage-grid${
+              data.imagePosition === "left" ? " wb-media-left" : ""
+            }`}
+          >
             <div className="wb-vintage-hero-copy">
               <h1 className="wb-vintage-hero-heading">
                 {parseRichText(data.heading)}
@@ -1089,7 +1074,7 @@ export default function HeroSection({
             </div>
 
             <div className="wb-polaroid-stack">
-              {polaroids.slice(0, 2).map((pol, pIdx) => (
+              {polaroids.map((pol, pIdx) => (
                 <figure
                   key={pIdx}
                   className={`wb-polaroid-card ${pIdx === 0 ? "card-top" : "card-bottom"}`}

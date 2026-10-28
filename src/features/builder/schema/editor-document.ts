@@ -28,7 +28,7 @@ export const sectionSettingsSchema = z.object({
   hideOnMobile: z.boolean(),
   hideOnDesktop: z.boolean().optional(),
   spacing: z.enum(["none", "compact", "default", "relaxed"]).optional(),
-  align: z.enum(["center", "left"]).optional(),
+  align: z.enum(["center", "left", "right"]).optional(),
   anchor: z.string().max(40).optional(),
   customColors: sectionCustomColorsSchema,
   font: z.enum(FONT_KEYS).optional(),

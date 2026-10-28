@@ -17,6 +17,10 @@ export const MEDIA_SIZE = {
   heroBelowCta: sizeForAspect("16:9", 2000),
   heroSplit: sizeForAspect("4:3", 1200),
   heroFloatingCard: sizeForAspect("4:5", 1000),
+  /** Vintage editorial hero polaroids (278 px and 250 px wide) and the 317 px sunburst portrait. */
+  vintagePolaroidTop: sizeForAspect("1:1", 600),
+  vintagePolaroidBottom: sizeForAspect("7:5", 560),
+  vintagePortrait: sizeForAspect("1:1", 700),
   /** Portrait cards of the 3D curved carousels (rendered at 240 × 350). */
   reelCard: "720 × 1050 px (portrait)",
   /** Shown up to 480 px wide at its natural height. */
