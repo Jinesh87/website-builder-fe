@@ -217,6 +217,7 @@ export type CreateWebsiteInput = {
   description?: string;
   contactEmail?: string;
   contactPhone?: string;
+  address?: string;
 };
 
 export type UpdateWebsiteInput = {
