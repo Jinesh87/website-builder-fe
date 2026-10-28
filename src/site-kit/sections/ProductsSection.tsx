@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
+import ShopCartActions from "../ShopCartActions.tsx";
 import { formatInr, listingSelection, productHref, shopListings, SHOP_LIST_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
+import { SHOP_CART_SCRIPT } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ProductsData, SectionOf, ShopCatalogProduct } from "../types.ts";
 
@@ -91,6 +93,11 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
   const catalog = useShopCatalog();
   const stat = useStaticRender();
   const live = catalog?.live === true;
+  const websiteId = live ? catalog?.websiteId : undefined;
+  const authHref = catalog?.authHref || "/login";
+  const accountHref = catalog?.accountHref || "/account";
+  const loginPromptVariant = data.cartLoginPromptVariant || "soft-card";
+  const interactive = !stat && !!websiteId;
   const serverList = live ? catalog?.list : undefined;
   const products = live ? catalog.products : SAMPLES;
   const [query, setQuery] = useState("");
@@ -247,6 +254,20 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
             const image = listingImage(listing.product, listing.variants);
             const href = productHref(data.detailBase, listing.product.slug, listingSelection(listing));
             const price = listingPrice(listing);
+            const variant = listing.variants.find((item) => item.quantity > 0) ?? listing.variants[0];
+            const cart = (
+              <ShopCartActions
+                variantId={variant?.id}
+                websiteId={websiteId}
+                authHref={authHref}
+                accountHref={accountHref}
+                outOfStock={!variant || variant.quantity <= 0}
+                stockMax={variant?.quantity ?? 0}
+                interactive={interactive}
+                compact
+                loginPromptVariant={loginPromptVariant}
+              />
+            );
             const attrs = {
               "data-wb-product": "",
               "data-category": listing.product.categoryName,
@@ -258,22 +279,44 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
 
             if (data.design === "editorial") {
               return (
-                <a key={listing.key} className="wb-shop-card wb-shop-card-editorial" href={href} {...attrs}>
-                  <div className="wb-shop-media">
-                    {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
-                  </div>
-                  <div className="wb-shop-body">
-                    <h3 className="wb-shop-name">{listing.product.name}</h3>
-                    <p className="wb-shop-variant">{listing.label || listing.product.categoryName}</p>
-                    <span className="wb-shop-price">{formatInr(price)}</span>
-                  </div>
-                </a>
+                <article key={listing.key} className="wb-shop-card wb-shop-card-editorial" {...attrs}>
+                  <a className="wb-shop-card-link" href={href}>
+                    <div className="wb-shop-media">
+                      {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
+                    </div>
+                    <div className="wb-shop-body">
+                      <h3 className="wb-shop-name">{listing.product.name}</h3>
+                      <p className="wb-shop-variant">{listing.label || listing.product.categoryName}</p>
+                      <span className="wb-shop-price">{formatInr(price)}</span>
+                    </div>
+                  </a>
+                  {cart}
+                </article>
               );
             }
 
             if (data.design === "showcase") {
               return (
-                <a key={listing.key} className="wb-shop-card wb-shop-card-showcase" href={href} {...attrs}>
+                <article key={listing.key} className="wb-shop-card wb-shop-card-showcase" {...attrs}>
+                  <a className="wb-shop-card-link" href={href}>
+                    <div className="wb-shop-media">
+                      {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
+                    </div>
+                    <div className="wb-shop-body">
+                      <span className="wb-shop-category">{listing.product.categoryName}</span>
+                      <h3 className="wb-shop-name">{listing.product.name}</h3>
+                      {listing.label && <p className="wb-shop-variant">{listing.label}</p>}
+                      <span className="wb-shop-price">{formatInr(price)}</span>
+                    </div>
+                  </a>
+                  {cart}
+                </article>
+              );
+            }
+
+            return (
+              <article key={listing.key} className="wb-shop-card" {...attrs}>
+                <a className="wb-shop-card-link" href={href}>
                   <div className="wb-shop-media">
                     {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
                   </div>
@@ -281,24 +324,11 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
                     <span className="wb-shop-category">{listing.product.categoryName}</span>
                     <h3 className="wb-shop-name">{listing.product.name}</h3>
                     {listing.label && <p className="wb-shop-variant">{listing.label}</p>}
-                    <span className="wb-shop-price">{formatInr(price)}</span>
+                    <span className="wb-shop-price">{listing.variants[0] ? formatInr(price) : ""}</span>
                   </div>
                 </a>
-              );
-            }
-
-            return (
-              <a key={listing.key} className="wb-shop-card" href={href} {...attrs}>
-                <div className="wb-shop-media">
-                  {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
-                </div>
-                <div className="wb-shop-body">
-                  <span className="wb-shop-category">{listing.product.categoryName}</span>
-                  <h3 className="wb-shop-name">{listing.product.name}</h3>
-                  {listing.label && <p className="wb-shop-variant">{listing.label}</p>}
-                  <span className="wb-shop-price">{listing.variants[0] ? formatInr(price) : ""}</span>
-                </div>
-              </a>
+                {cart}
+              </article>
             );
           })}
         </div>
@@ -351,7 +381,15 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
       fullWidth
       className={data.design === "editorial" ? "wb-shop-bleed" : undefined}
     >
-      <div className={`wb-shop wb-shop-list is-${data.design || "classic-grid"}`} data-wb-shop="" data-wb-shop-paged={serverList ? "" : undefined}>
+      <div
+        className={`wb-shop wb-shop-list is-${data.design || "classic-grid"}`}
+        data-wb-shop=""
+        data-wb-shop-paged={serverList ? "" : undefined}
+        data-wb-shop-website={websiteId || undefined}
+        data-wb-shop-auth-href={authHref}
+        data-wb-shop-account-href={accountHref}
+        data-wb-cart-login-variant={loginPromptVariant}
+      >
         {data.design === "editorial" ? (
           <div className="wb-shop-catalog-shell">
             <aside className="wb-shop-sidebar">{heading}{tools}</aside>
@@ -363,6 +401,7 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
         <p className="wb-shop-empty" data-wb-shop-none="" hidden>No products match that search.</p>
         {!live && !stat && <p className="wb-shop-note">Sample products. The published page lists this website’s shop.</p>}
         {stat && <script dangerouslySetInnerHTML={{ __html: SHOP_LIST_SCRIPT }} />}
+        {stat && websiteId && <script dangerouslySetInnerHTML={{ __html: SHOP_CART_SCRIPT }} />}
       </div>
     </SectionShell>
   );

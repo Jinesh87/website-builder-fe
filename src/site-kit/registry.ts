@@ -730,6 +730,7 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
       description: "Lists this website’s shop products, with search and category filters.",
       createData: () => ({
         design: "classic-grid",
+        cartLoginPromptVariant: "soft-card",
         eyebrow: "Shop",
         title: "Our products",
         subtitle: "Browse the catalogue. Each card opens the product page.",
@@ -4678,7 +4679,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     label: "Product list · Classic grid",
     category: "Shop",
     description: "Balanced cards with rounded images, search, and category filters.",
-    create: () => createSection("products"),
+    create: () => createSection("products", { data: { cartLoginPromptVariant: "soft-card" } }),
   },
   {
     key: "shop-product-list-editorial",
@@ -4686,7 +4687,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     label: "Product list · Filter sidebar",
     category: "Shop",
     description: "A catalogue with search, categories, and sorting in a dedicated sidebar.",
-    create: () => createSection("products", { data: { design: "editorial", layout: "grid-2" } }),
+    create: () => createSection("products", { data: { design: "editorial", layout: "grid-2", cartLoginPromptVariant: "minimal" } }),
   },
   {
     key: "shop-product-list-compact",
@@ -4694,7 +4695,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     label: "Product list · Compact",
     category: "Shop",
     description: "A denser catalogue that fits more products on screen.",
-    create: () => createSection("products", { data: { design: "compact", layout: "grid-3" } }),
+    create: () => createSection("products", { data: { design: "compact", layout: "grid-3", cartLoginPromptVariant: "glass" } }),
   },
   {
     key: "shop-product-list-showcase",
@@ -4702,7 +4703,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     label: "Product list · Marketplace",
     category: "Shop",
     description: "A storefront toolbar above modern image-led product cards.",
-    create: () => createSection("products", { data: { design: "showcase", layout: "grid-3" } }),
+    create: () => createSection("products", { data: { design: "showcase", layout: "grid-3", cartLoginPromptVariant: "split" } }),
   },
   {
     key: "shop-product-detail",

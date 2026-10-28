@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { safeHref } from "../links.ts";
 import { SectionShell } from "../primitives.tsx";
 import { useStaticRender } from "../render-mode.tsx";
@@ -7,6 +8,7 @@ import {
   shopAuthApi,
   siteHref,
   type ShopAuthError,
+  type ShopCartItemSummary,
   type ShopCustomerAccount,
 } from "../shop-auth.ts";
 import { formatInr, useShopCatalog } from "../shop-catalog.tsx";
@@ -46,8 +48,8 @@ const SAMPLE: ShopCustomerAccount = {
     { id: "o3", number: "1021", status: "cancelled", totalPaise: 159900, currency: "INR", createdAt: "2026-09-12T08:05:00.000Z" },
   ],
   cartItems: [
-    { id: "c1", productId: "p1", productName: "Everyday tee", variantName: "M / Blue", quantity: 2, pricePaise: 99900 },
-    { id: "c2", productId: "p2", productName: "Canvas tote", variantName: "Natural", quantity: 1, pricePaise: 59900 },
+    { id: "c1", productId: "p1", variantId: "v1", productName: "Everyday tee", variantName: "M / Blue", quantity: 2, pricePaise: 99900 },
+    { id: "c2", productId: "p2", variantId: "v2", productName: "Canvas tote", variantName: "Natural", quantity: 1, pricePaise: 59900 },
   ],
 };
 
@@ -161,14 +163,155 @@ function OrdersPanel({ data, account, shopHref }: { data: AccountData; account: 
   );
 }
 
-function CartPanel({ data, account, shopHref }: { data: AccountData; account: ShopCustomerAccount; shopHref: string }) {
+function CartPanel({
+  data,
+  account,
+  shopHref,
+  websiteId,
+  interactive,
+  onCartChange,
+}: {
+  data: AccountData;
+  account: ShopCustomerAccount;
+  shopHref: string;
+  websiteId?: string;
+  interactive: boolean;
+  onCartChange?: (items: ShopCustomerAccount["cartItems"]) => void;
+}) {
   const empty = data.emptyCartText?.trim() || LABELS.emptyCart;
-  const total = account.cartItems.reduce((sum, item) => sum + item.pricePaise * item.quantity, 0);
+  const [items, setItems] = useState(account.cartItems);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<ShopCartItemSummary | null>(null);
+  const [removeQty, setRemoveQty] = useState(1);
+
+  useEffect(() => {
+    setItems(account.cartItems);
+  }, [account.cartItems]);
+
+  useEffect(() => {
+    if (!pendingRemove) return;
+    const onEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPendingRemove(null);
+    };
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
+  }, [pendingRemove]);
+
+  const total = items.reduce((sum, item) => sum + item.pricePaise * item.quantity, 0);
+  const maxRemove = pendingRemove?.quantity ?? 1;
+
+  async function applyRemoval(itemId: string, currentQty: number, qtyToRemove: number) {
+    if (!interactive || !websiteId || busyId) return;
+    const removeCount = Math.max(1, Math.min(currentQty, Math.floor(qtyToRemove)));
+    setBusyId(itemId);
+    setError(null);
+    setPendingRemove(null);
+    try {
+      const next =
+        removeCount >= currentQty
+          ? await shopAuthApi.removeCartItem(websiteId, itemId)
+          : await shopAuthApi.updateCartItem(websiteId, itemId, currentQty - removeCount);
+      setItems(next);
+      onCartChange?.(next);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function requestRemove(item: ShopCartItemSummary) {
+    if (!interactive || busyId) return;
+    if (item.quantity <= 1) {
+      void applyRemoval(item.id, item.quantity, 1);
+      return;
+    }
+    setRemoveQty(1);
+    setPendingRemove(item);
+  }
+
+  const removeModal =
+    pendingRemove && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            ref={(node) => {
+              const theme = document.querySelector(".wb-site")?.getAttribute("style");
+              if (node && theme) node.setAttribute("style", theme);
+            }}
+            className="wb-cart-qty-modal is-open"
+            data-wb-cart-qty-modal=""
+          >
+            <button type="button" className="wb-cart-login-backdrop" aria-label="Close remove prompt" onClick={() => setPendingRemove(null)} />
+            <div className="wb-cart-login-dialog is-qty" role="dialog" aria-modal="true" aria-label="Remove from cart">
+              <button type="button" className="wb-cart-login-close" aria-label="Close remove prompt" onClick={() => setPendingRemove(null)}>
+                ×
+              </button>
+              <p className="wb-cart-login-kicker">Remove from cart</p>
+              <p className="wb-cart-login-title">{pendingRemove.productName}</p>
+              <p className="wb-cart-login-text">
+                {pendingRemove.variantName ? `${pendingRemove.variantName}. ` : ""}
+                How many should we remove?
+              </p>
+              <div className="wb-cart-qty-panel">
+                <div className="wb-cart-qty-row">
+                  <button
+                    type="button"
+                    className="wb-cart-qty-step"
+                    aria-label="Decrease quantity"
+                    disabled={removeQty <= 1}
+                    onClick={() => setRemoveQty((value) => Math.max(1, value - 1))}
+                  >
+                    −
+                  </button>
+                  <input
+                    className="wb-cart-qty-input"
+                    type="number"
+                    min={1}
+                    max={maxRemove}
+                    value={removeQty}
+                    aria-label="Quantity to remove"
+                    onChange={(event) => {
+                      const next = Number(event.target.value);
+                      if (!Number.isFinite(next)) return;
+                      setRemoveQty(Math.max(1, Math.min(maxRemove, Math.floor(next))));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="wb-cart-qty-step"
+                    aria-label="Increase quantity"
+                    disabled={removeQty >= maxRemove}
+                    onClick={() => setRemoveQty((value) => Math.min(maxRemove, value + 1))}
+                  >
+                    +
+                  </button>
+                </div>
+                <span className="wb-cart-qty-stock">{maxRemove} in cart</span>
+              </div>
+              <div className="wb-cart-login-actions is-stacked">
+                <button
+                  type="button"
+                  className="wb-shop-btn is-buy"
+                  onClick={() => void applyRemoval(pendingRemove.id, pendingRemove.quantity, removeQty)}
+                >
+                  {removeQty >= maxRemove ? "Remove all" : `Remove ${removeQty}`}
+                </button>
+                <button type="button" className="wb-shop-btn is-cart" onClick={() => setPendingRemove(null)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
     <>
-      <ul className="wb-acct-list" data-wb-account-list="cart" hidden={account.cartItems.length === 0}>
-        {account.cartItems.map((item) => (
-          <li key={item.id} className="wb-acct-row">
+      <ul className="wb-acct-list" data-wb-account-list="cart" hidden={items.length === 0}>
+        {items.map((item) => (
+          <li key={item.id} className="wb-acct-row" data-wb-cart-item={item.id}>
             {item.imageUrl ? <img className="wb-acct-thumb" src={item.imageUrl} alt="" /> : <span className="wb-acct-thumb is-blank" aria-hidden="true" />}
             <div className="wb-acct-row-main">
               <strong>{item.productName}</strong>
@@ -177,19 +320,31 @@ function CartPanel({ data, account, shopHref }: { data: AccountData; account: Sh
               </span>
             </div>
             <strong className="wb-acct-row-amount">{formatInr(item.pricePaise * item.quantity)}</strong>
+            <button
+              type="button"
+              className="wb-acct-cart-remove"
+              data-wb-cart-remove={item.id}
+              data-wb-cart-qty={item.quantity}
+              disabled={busyId === item.id}
+              onClick={interactive ? () => requestRemove(item) : undefined}
+            >
+              {busyId === item.id ? "Removing…" : "Remove"}
+            </button>
           </li>
         ))}
       </ul>
-      <div className="wb-acct-cart-total" data-wb-account-cart-total hidden={account.cartItems.length === 0}>
+      {error && <p className="wb-acct-message is-error">{error}</p>}
+      <div className="wb-acct-cart-total" data-wb-account-cart-total hidden={items.length === 0}>
         <span>Subtotal</span>
         <strong data-wb-account-field="cartTotal">{formatInr(total)}</strong>
       </div>
-      <div className="wb-acct-empty" data-wb-account-empty="cart" hidden={account.cartItems.length > 0}>
+      <div className="wb-acct-empty" data-wb-account-empty="cart" hidden={items.length > 0}>
         <p>{empty}</p>
         <a className="wb-acct-link" href={safeHref(shopHref)}>
           Browse the shop
         </a>
       </div>
+      {removeModal}
     </>
   );
 }
@@ -354,9 +509,15 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
   const panels = panelsOf(data);
   const tabbed = TABBED[variant];
   const [active, setActive] = useState<Panel>(panels[0] ?? "profile");
+  const [cartItems, setCartItems] = useState(account.cartItems);
   const current = panels.includes(active) ? active : (panels[0] ?? "profile");
   const heading = data.heading?.trim();
   const subheading = data.subheading?.trim();
+  const liveAccount = { ...account, cartItems };
+
+  useEffect(() => {
+    setCartItems(account.cartItems);
+  }, [account.cartItems]);
 
   async function logout() {
     if (!interactive || !websiteId) return;
@@ -391,11 +552,20 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
   const panelBody = (panel: Panel): ReactNode => {
     switch (panel) {
       case "orders":
-        return <OrdersPanel data={data} account={account} shopHref={shopHref} />;
+        return <OrdersPanel data={data} account={liveAccount} shopHref={shopHref} />;
       case "cart":
-        return <CartPanel data={data} account={account} shopHref={shopHref} />;
+        return (
+          <CartPanel
+            data={data}
+            account={liveAccount}
+            shopHref={shopHref}
+            websiteId={websiteId}
+            interactive={interactive}
+            onCartChange={setCartItems}
+          />
+        );
       case "profile":
-        return <ProfilePanel data={data} account={account} websiteId={websiteId} interactive={interactive} />;
+        return <ProfilePanel data={data} account={liveAccount} websiteId={websiteId} interactive={interactive} />;
       case "password":
         return <PasswordPanel websiteId={websiteId} interactive={interactive} />;
     }
@@ -461,7 +631,7 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
           </div>
           {logoutButton}
         </header>
-        <Stats account={account} />
+        <Stats account={liveAccount} />
         <div className="wb-acct-main wb-acct-grid">{sections}</div>
       </div>
     );

@@ -82,6 +82,14 @@ export const ACCOUNT_CSS = `
   display: flex; justify-content: space-between; align-items: center; padding: 10px 14px 0;
   border-top: 1px solid var(--wb-border); font-size: 0.95rem;
 }
+.wb-acct-cart-remove {
+  flex: none; margin: 0; padding: 0.4rem 0.7rem; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, #b91c1c 35%, var(--wb-border));
+  background: transparent; color: #b91c1c; font: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+.wb-acct-cart-remove:hover:not(:disabled) { background: color-mix(in srgb, #dc2626 8%, transparent); }
+.wb-acct-cart-remove:disabled { opacity: 0.55; cursor: not-allowed; }
+.wb-acct-row:has(.wb-acct-cart-remove) { align-items: center; gap: 10px; }
 .wb-acct-empty {
   display: grid; gap: 10px; justify-items: start; padding: 22px; border: 1px dashed var(--wb-border);
   border-radius: var(--wb-acct-field-r); color: var(--wb-muted);

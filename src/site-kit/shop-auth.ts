@@ -20,6 +20,7 @@ export type ShopOrderSummary = {
 export type ShopCartItemSummary = {
   id: string;
   productId: string;
+  variantId: string;
   productName: string;
   variantName: string;
   quantity: number;
@@ -152,6 +153,36 @@ export const shopAuthApi = {
     });
     if (!result.ok) throw asError(result.status, result.body);
     return (result.body as { customer: ShopCustomer }).customer;
+  },
+
+  listCart: async (websiteId: string) => {
+    const result = await shopAuthFetch(websiteId, "/cart");
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  addToCart: async (websiteId: string, input: { variantId: string; quantity?: number }) => {
+    const result = await shopAuthFetch(websiteId, "/cart", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  updateCartItem: async (websiteId: string, itemId: string, quantity: number) => {
+    const result = await shopAuthFetch(websiteId, `/cart/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ quantity }),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  removeCartItem: async (websiteId: string, itemId: string) => {
+    const result = await shopAuthFetch(websiteId, `/cart/${itemId}`, { method: "DELETE" });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
   },
 };
 
@@ -287,11 +318,19 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         } else {
           row.appendChild(el("span","wb-acct-thumb is-blank"));
         }
+        row.setAttribute("data-wb-cart-item", String(item.id||""));
         var main=el("div","wb-acct-row-main");
         main.appendChild(el("strong","",String(item.productName||"Item")));
         main.appendChild(el("span","wb-acct-row-sub",(item.variantName?String(item.variantName)+" · ":"")+"Qty "+qty));
         row.appendChild(main);
         row.appendChild(el("strong","wb-acct-row-amount",money(line)));
+        var remove=el("button","wb-acct-cart-remove","Remove");
+        remove.type="button";
+        remove.setAttribute("data-wb-cart-remove", String(item.id||""));
+        remove.setAttribute("data-wb-cart-qty", String(qty));
+        remove.setAttribute("data-wb-cart-name", String(item.productName||"Item"));
+        remove.setAttribute("data-wb-cart-variant", String(item.variantName||""));
+        row.appendChild(remove);
         cartList.appendChild(row);
       });
       cartList.hidden=cart.length===0;
@@ -321,6 +360,117 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       button.addEventListener("click", function(){
         request(base, "/logout", "POST").catch(function(){}).then(function(){ window.location.href=siteHref(loginHref); });
       });
+    });
+    function refreshAccount(){
+      return request(base, "/account", "GET").then(function(refresh){
+        if(refresh.ok) fill(root, refresh.json||{});
+      });
+    }
+    function removeQtyModal(){
+      var modal=document.querySelector("body > [data-wb-cart-remove-modal]");
+      if(modal) return modal;
+      modal=document.createElement("div");
+      var site=root.closest(".wb-site");
+      if(site&&site.getAttribute("style")) modal.setAttribute("style", site.getAttribute("style"));
+      modal.className="wb-cart-qty-modal";
+      modal.setAttribute("data-wb-cart-remove-modal","");
+      modal.hidden=true;
+      modal.innerHTML=
+        '<button type="button" class="wb-cart-login-backdrop" aria-label="Close remove prompt"></button>'+
+        '<div class="wb-cart-login-dialog is-qty" role="dialog" aria-modal="true" aria-label="Remove from cart">'+
+          '<button type="button" class="wb-cart-login-close" aria-label="Close remove prompt">×</button>'+
+          '<p class="wb-cart-login-kicker">Remove from cart</p>'+
+          '<p class="wb-cart-login-title" data-wb-remove-title>Item</p>'+
+          '<p class="wb-cart-login-text" data-wb-remove-text>How many should we remove?</p>'+
+          '<div class="wb-cart-qty-panel">'+
+            '<div class="wb-cart-qty-row">'+
+              '<button type="button" class="wb-cart-qty-step" data-wb-qty-dec aria-label="Decrease quantity">−</button>'+
+              '<input class="wb-cart-qty-input" type="number" min="1" value="1" data-wb-qty-input aria-label="Quantity to remove" />'+
+              '<button type="button" class="wb-cart-qty-step" data-wb-qty-inc aria-label="Increase quantity">+</button>'+
+            "</div>"+
+            '<span class="wb-cart-qty-stock" data-wb-remove-stock></span>'+
+          "</div>"+
+          '<div class="wb-cart-login-actions is-stacked">'+
+            '<button type="button" class="wb-shop-btn is-buy" data-wb-qty-confirm>Remove</button>'+
+            '<button type="button" class="wb-shop-btn is-cart" data-wb-qty-cancel>Cancel</button>'+
+          "</div>"+
+        "</div>";
+      modal.querySelectorAll(".wb-cart-login-backdrop,.wb-cart-login-close,[data-wb-qty-cancel]").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          modal.classList.remove("is-open");
+          modal.hidden=true;
+        });
+      });
+      document.body.appendChild(modal);
+      return modal;
+    }
+    function applyCartRemoval(itemId, currentQty, removeCount, button){
+      var qty=Math.max(1, Math.min(currentQty, Math.floor(removeCount)||1));
+      button.disabled=true;
+      button.textContent="Removing…";
+      var action=qty>=currentQty
+        ? request(base, "/cart/"+itemId, "DELETE")
+        : request(base, "/cart/"+itemId, "PATCH", { quantity: currentQty-qty });
+      action.then(function(result){
+        if(!result.ok){
+          button.disabled=false;
+          button.textContent="Remove";
+          return;
+        }
+        return refreshAccount().catch(function(){
+          button.disabled=false;
+          button.textContent="Remove";
+        });
+      }).catch(function(){
+        button.disabled=false;
+        button.textContent="Remove";
+      });
+    }
+    root.addEventListener("click", function(event){
+      var button=event.target&&event.target.closest&&event.target.closest("[data-wb-cart-remove]");
+      if(!button || !root.contains(button)) return;
+      event.preventDefault();
+      var itemId=button.getAttribute("data-wb-cart-remove")||"";
+      var currentQty=Math.max(1, Math.floor(Number(button.getAttribute("data-wb-cart-qty")||1)));
+      if(!itemId || button.disabled) return;
+      if(currentQty<=1){
+        applyCartRemoval(itemId, currentQty, 1, button);
+        return;
+      }
+      var modal=removeQtyModal();
+      var input=modal.querySelector("[data-wb-qty-input]");
+      var title=modal.querySelector("[data-wb-remove-title]");
+      var text=modal.querySelector("[data-wb-remove-text]");
+      var stock=modal.querySelector("[data-wb-remove-stock]");
+      var confirm=modal.querySelector("[data-wb-qty-confirm]");
+      var dec=modal.querySelector("[data-wb-qty-dec]");
+      var inc=modal.querySelector("[data-wb-qty-inc]");
+      var variant=button.getAttribute("data-wb-cart-variant")||"";
+      if(title) title.textContent=button.getAttribute("data-wb-cart-name")||"Item";
+      if(text) text.textContent=(variant?variant+". ":"")+"How many should we remove?";
+      if(stock) stock.textContent=currentQty+" in cart";
+      if(input){ input.min="1"; input.max=String(currentQty); input.value="1"; }
+      function clamp(){
+        if(!input) return 1;
+        var value=Math.max(1, Math.min(currentQty, Math.floor(Number(input.value)||1)));
+        input.value=String(value);
+        if(dec) dec.disabled=value<=1;
+        if(inc) inc.disabled=value>=currentQty;
+        if(confirm) confirm.textContent=value>=currentQty?"Remove all":("Remove "+value);
+        return value;
+      }
+      clamp();
+      if(dec) dec.onclick=function(){ if(input) input.value=String(Math.max(1, Number(input.value)-1)); clamp(); };
+      if(inc) inc.onclick=function(){ if(input) input.value=String(Math.min(currentQty, Number(input.value)+1)); clamp(); };
+      if(input) input.oninput=clamp;
+      if(confirm) confirm.onclick=function(){
+        var qty=clamp();
+        modal.classList.remove("is-open");
+        modal.hidden=true;
+        applyCartRemoval(itemId, currentQty, qty, button);
+      };
+      modal.hidden=false;
+      modal.classList.add("is-open");
     });
     var profile=root.querySelector("[data-wb-account-profile]");
     if(profile){
@@ -539,5 +689,256 @@ export const SHOP_AUTH_SCRIPT = `(function(){
         fetch(base+"/resend-verification", { method:"POST", headers:{ "Content-Type":"application/json" }, credentials:"include", body:JSON.stringify({ email:email }) }).catch(function(){});
       });
     });
+  });
+})();`;
+
+/**
+ * Plain script for Cart / Buy on published product list and detail pages.
+ * Guests are asked to log in; signed-in shoppers add the variant to their cart.
+ */
+export const SHOP_CART_SCRIPT = `(function(){
+  if(window.__wbShopCartReady) return;
+  window.__wbShopCartReady=1;
+  function apiBase(){
+    var meta=document.querySelector('meta[name="wb-api"]');
+    var content=meta&&meta.getAttribute("content");
+    return content?String(content).replace(/\\/$/,""):"/api";
+  }
+  function siteHref(href){
+    var raw=(href||"/").trim();
+    if(/^(https?:\\/\\/|mailto:|tel:|#)/i.test(raw)) return raw;
+    var path=raw.charAt(0)==="/"?raw:"/"+raw;
+    if(path.indexOf("/live/")===0) return path;
+    var match=(window.location.pathname||"/").match(/^\\/live\\/([^/]+)/);
+    return match?"/live/"+match[1]+(path==="/"?"":path):path;
+  }
+  function shopRoot(node){
+    return node.closest("[data-wb-shop-website],[data-wb-detail],[data-wb-shop]")||document.body;
+  }
+  function websiteId(node){
+    var root=shopRoot(node);
+    return root.getAttribute("data-wb-shop-website")||"";
+  }
+  function authHref(node){
+    var root=shopRoot(node);
+    return root.getAttribute("data-wb-shop-auth-href")||"/login";
+  }
+  function accountHref(node){
+    var root=shopRoot(node);
+    return root.getAttribute("data-wb-shop-account-href")||"/account";
+  }
+  function loginVariant(node){
+    var root=shopRoot(node);
+    return root.getAttribute("data-wb-cart-login-variant")||"soft-card";
+  }
+  function messageBox(node){
+    var scope=node.closest("[data-wb-product],[data-wb-detail],.wb-shop-actions")||node.parentElement;
+    return scope&&scope.querySelector("[data-wb-cart-msg]");
+  }
+  function showMessage(node, text, kind){
+    var box=messageBox(node);
+    if(!box) return;
+    box.hidden=!text;
+    box.textContent=text||"";
+    box.classList.toggle("is-error", kind==="error");
+    box.classList.toggle("is-ok", kind==="ok");
+  }
+  function closeModal(modal){
+    if(!modal) return;
+    modal.classList.remove("is-open");
+    modal.hidden=true;
+  }
+  function openModal(modal){
+    if(!modal) return;
+    modal.hidden=false;
+    modal.classList.add("is-open");
+  }
+  function loginModal(node){
+    document.querySelectorAll(".wb-shop-actions [data-wb-cart-login-modal]").forEach(function(stale){ stale.remove(); });
+    var modal=document.querySelector("body > [data-wb-cart-login-modal]");
+    if(modal) return modal;
+    modal=document.createElement("div");
+    var site=node.closest(".wb-site");
+    if(site&&site.getAttribute("style")) modal.setAttribute("style", site.getAttribute("style"));
+    modal.className="wb-cart-login-modal";
+    modal.setAttribute("data-wb-cart-login-modal","");
+    modal.setAttribute("data-variant", loginVariant(node));
+    modal.hidden=true;
+    modal.innerHTML=
+      '<button type="button" class="wb-cart-login-backdrop" aria-label="Close login prompt"></button>'+
+      '<div class="wb-cart-login-dialog" role="dialog" aria-modal="true" aria-label="Login required">'+
+        '<button type="button" class="wb-cart-login-close" aria-label="Close login prompt">×</button>'+
+        '<p class="wb-cart-login-title">Login required</p>'+
+        '<p class="wb-cart-login-text">Please log in to add products to your cart.</p>'+
+        '<div class="wb-cart-login-actions">'+
+          '<button type="button" class="wb-shop-btn is-cart">Not now</button>'+
+          '<a class="wb-shop-btn is-buy">Login</a>'+
+        "</div>"+
+      "</div>";
+    var loginLink=modal.querySelector(".wb-cart-login-actions .wb-shop-btn.is-buy");
+    if(loginLink) loginLink.setAttribute("href", siteHref(authHref(node)));
+    modal.querySelectorAll(".wb-cart-login-backdrop,.wb-cart-login-close,.wb-cart-login-actions .wb-shop-btn.is-cart").forEach(function(btn){
+      btn.addEventListener("click", function(){ closeModal(modal); });
+    });
+    document.body.appendChild(modal);
+    if(!window.__wbCartLoginEscBound){
+      window.__wbCartLoginEscBound=true;
+      window.addEventListener("keydown", function(event){
+        if(event.key!=="Escape") return;
+        document.querySelectorAll("[data-wb-cart-login-modal].is-open").forEach(function(open){ closeModal(open); });
+      });
+    }
+    return modal;
+  }
+  function setBusy(button, busy){
+    button.disabled=!!busy;
+    button.classList.toggle("is-busy", !!busy);
+  }
+  function stockOf(button){
+    var stock=Number(button.getAttribute("data-wb-stock")||0);
+    return Number.isFinite(stock)?Math.max(0, Math.floor(stock)):0;
+  }
+  function qtyModal(node){
+    document.querySelectorAll(".wb-shop-actions [data-wb-cart-qty-modal]").forEach(function(stale){ stale.remove(); });
+    var modal=document.querySelector("body > [data-wb-cart-qty-modal]");
+    if(modal) return modal;
+    modal=document.createElement("div");
+    var site=node.closest(".wb-site");
+    if(site&&site.getAttribute("style")) modal.setAttribute("style", site.getAttribute("style"));
+    modal.className="wb-cart-qty-modal";
+    modal.setAttribute("data-wb-cart-qty-modal","");
+    modal.hidden=true;
+    modal.innerHTML=
+      '<button type="button" class="wb-cart-login-backdrop" aria-label="Close quantity prompt"></button>'+
+      '<div class="wb-cart-login-dialog is-qty" role="dialog" aria-modal="true" aria-label="Choose quantity">'+
+        '<button type="button" class="wb-cart-login-close" aria-label="Close quantity prompt">×</button>'+
+        '<p class="wb-cart-login-kicker" data-wb-qty-title>Add to cart</p>'+
+        '<p class="wb-cart-login-title">Choose quantity</p>'+
+        '<p class="wb-cart-login-text" data-wb-qty-text>Select how many units to add.</p>'+
+        '<div class="wb-cart-qty-panel">'+
+          '<div class="wb-cart-qty-row">'+
+            '<button type="button" class="wb-cart-qty-step" data-wb-qty-dec aria-label="Decrease quantity">−</button>'+
+            '<input class="wb-cart-qty-input" type="number" min="1" value="1" data-wb-qty-input aria-label="Quantity" />'+
+            '<button type="button" class="wb-cart-qty-step" data-wb-qty-inc aria-label="Increase quantity">+</button>'+
+          "</div>"+
+          '<span class="wb-cart-qty-stock" data-wb-qty-stock></span>'+
+        "</div>"+
+        '<div class="wb-cart-login-actions is-stacked">'+
+          '<button type="button" class="wb-shop-btn is-buy" data-wb-qty-confirm>Add to cart</button>'+
+          '<button type="button" class="wb-shop-btn is-cart" data-wb-qty-cancel>Cancel</button>'+
+        "</div>"+
+      "</div>";
+    modal.querySelectorAll(".wb-cart-login-backdrop,.wb-cart-login-close,[data-wb-qty-cancel]").forEach(function(btn){
+      btn.addEventListener("click", function(){ closeModal(modal); });
+    });
+    document.body.appendChild(modal);
+    if(!window.__wbCartQtyEscBound){
+      window.__wbCartQtyEscBound=true;
+      window.addEventListener("keydown", function(event){
+        if(event.key!=="Escape") return;
+        document.querySelectorAll("[data-wb-cart-qty-modal].is-open").forEach(function(open){ closeModal(open); });
+      });
+    }
+    return modal;
+  }
+  function askQuantity(button, buy){
+    var max=stockOf(button);
+    if(max<=0 || button.disabled || button.getAttribute("aria-disabled")==="true"){
+      showMessage(button, "This item is out of stock.", "error");
+      return;
+    }
+    var modal=qtyModal(button);
+    if(!modal) return;
+    var input=modal.querySelector("[data-wb-qty-input]");
+    var title=modal.querySelector("[data-wb-qty-title]");
+    var text=modal.querySelector("[data-wb-qty-text]");
+    var confirm=modal.querySelector("[data-wb-qty-confirm]");
+    var dec=modal.querySelector("[data-wb-qty-dec]");
+    var inc=modal.querySelector("[data-wb-qty-inc]");
+    var stockLabel=modal.querySelector("[data-wb-qty-stock]");
+    if(title) title.textContent=buy?"Buy now":"Add to cart";
+    if(text) text.textContent=buy?"Select how many units to buy.":"Select how many units to add.";
+    if(stockLabel) stockLabel.textContent=max+" in stock";
+    if(confirm) confirm.textContent=buy?"Buy 1":"Add 1 to cart";
+    if(input){
+      input.min="1";
+      input.max=String(max);
+      input.value="1";
+    }
+    function clamp(){
+      if(!input) return 1;
+      var value=Math.floor(Number(input.value)||1);
+      value=Math.max(1, Math.min(max, value));
+      input.value=String(value);
+      if(dec) dec.disabled=value<=1;
+      if(inc) inc.disabled=value>=max;
+      if(confirm) confirm.textContent=buy?("Buy "+value):("Add "+value+" to cart");
+      return value;
+    }
+    clamp();
+    if(dec) dec.onclick=function(){ if(input) input.value=String(Math.max(1, Number(input.value)-1)); clamp(); };
+    if(inc) inc.onclick=function(){ if(input) input.value=String(Math.min(max, Number(input.value)+1)); clamp(); };
+    if(input) input.oninput=clamp;
+    if(confirm) confirm.onclick=function(){
+      var qty=clamp();
+      closeModal(modal);
+      addToCart(button, buy, qty);
+    };
+    openModal(modal);
+  }
+  async function addToCart(button, buy, quantity){
+    var id=websiteId(button);
+    var variantId=button.getAttribute("data-wb-variant-id")||"";
+    var max=stockOf(button);
+    var qty=Math.max(1, Math.min(max||1, Math.floor(Number(quantity)||1)));
+    if(!id||!variantId){
+      showMessage(button, "Shop is not connected yet.", "error");
+      return;
+    }
+    if(max<=0 || button.disabled || button.getAttribute("aria-disabled")==="true"){
+      showMessage(button, "This item is out of stock.", "error");
+      return;
+    }
+    setBusy(button, true);
+    showMessage(button, "", "");
+    try{
+      var response=await fetch(apiBase()+"/shop/"+id+"/auth/cart", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        credentials:"include",
+        cache:"no-store",
+        body:JSON.stringify({ variantId:variantId, quantity:qty })
+      });
+      var json=await response.json().catch(function(){ return {}; });
+      if(response.status===401){
+        var modal=loginModal(button);
+        if(modal) modal.setAttribute("data-variant", loginVariant(button));
+        openModal(modal);
+        return;
+      }
+      if(!response.ok){
+        showMessage(button, (json.error&&json.error.message)||"Could not add to cart.", "error");
+        return;
+      }
+      if(buy){
+        window.location.href=siteHref(accountHref(button));
+        return;
+      }
+      showMessage(button, qty===1?"Added to cart.":("Added "+qty+" to cart."), "ok");
+    }catch(_e){
+      showMessage(button, "Can't reach the server. Try again.", "error");
+    }finally{
+      setBusy(button, false);
+    }
+  }
+  document.addEventListener("click", function(event){
+    var button=event.target&&event.target.closest&&event.target.closest("[data-wb-cart-action]");
+    if(!button) return;
+    event.preventDefault();
+    if(button.disabled || button.getAttribute("aria-disabled")==="true" || stockOf(button)<=0){
+      showMessage(button, "This item is out of stock.", "error");
+      return;
+    }
+    askQuantity(button, button.getAttribute("data-wb-cart-action")==="buy");
   });
 })();`;
