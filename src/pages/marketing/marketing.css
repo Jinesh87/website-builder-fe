@@ -55,6 +55,12 @@
 .mk .link {font-weight:600;text-decoration:none}
 .mk .link:hover {text-decoration:underline}
 .mk .top {position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+/* Header stays light even when the rest of the marketing site follows system dark mode. */
+.mk .top {
+  --bg:#FFFFFF; --bg-2:#F4F5F7; --surface:#FFFFFF; --fg:#1A1D23; --muted:#4A5160; --faint:#6B7280;
+  --line:#E3E6EB; --line-2:#C9CED6; --accent:#2448C8; --accent-ink:#1A3599; --accent-soft:#E8EDFB; --on-accent:#FFFFFF;
+  color-scheme:light;
+}
 .mk .top .wrap {display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:72px}
 .mk .brand {display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;color:var(--fg);text-decoration:none;letter-spacing:-0.02em}
 .mk .brand:hover {opacity:0.92}
