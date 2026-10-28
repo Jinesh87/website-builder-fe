@@ -195,6 +195,16 @@ export const SHOP_DETAIL_SCRIPT = `(function(){
         btn.classList.toggle("is-active", on);
         btn.setAttribute("aria-pressed", on?"true":"false");
       });
+      root.querySelectorAll("[data-wb-cart-action]").forEach(function(btn){
+        if(variant.id) btn.setAttribute("data-wb-variant-id", variant.id);
+        var stock=Number(variant.stockQty||0);
+        btn.setAttribute("data-wb-stock", String(Math.max(0, stock)));
+        btn.disabled=!!variant.out || stock<=0;
+        if(variant.out || stock<=0) btn.setAttribute("aria-disabled","true");
+        else btn.removeAttribute("aria-disabled");
+      });
+      var msg=root.querySelector("[data-wb-cart-msg]");
+      if(msg){ msg.hidden=true; msg.textContent=""; msg.classList.remove("is-ok","is-error","is-login"); }
     }
     root.querySelectorAll("[data-wb-option]").forEach(function(btn){
       btn.addEventListener("click", function(){

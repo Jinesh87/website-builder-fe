@@ -681,6 +681,8 @@ em, i {
 .wb-nav a:hover { color: var(--wb-primary); }
 .wb-header-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; flex-shrink: 0; }
 .wb-header-cta { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+/* Shop customer session: hide marked Login CTAs in the header/nav. */
+.wb-site.is-shop-authed [data-wb-hide-when-authed] { display: none !important; }
 .wb-header-classical .wb-nav { margin: 0 auto; }
 .wb-header-minimalist .wb-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .wb-header-minimalist .wb-nav-left { display: flex; align-items: center; gap: 24px; white-space: nowrap; }

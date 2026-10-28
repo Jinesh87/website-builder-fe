@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
+import ShopCartActions from "../ShopCartActions.tsx";
 import { coverImage, formatInr, SHOP_DETAIL_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
+import { SHOP_CART_SCRIPT } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ProductDetailData, SectionOf, ShopCatalogProduct, ShopCatalogVariant } from "../types.ts";
 
@@ -96,6 +98,10 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
   const catalog = useShopCatalog();
   const stat = useStaticRender();
   const live = catalog?.live === true;
+  const websiteId = live ? catalog?.websiteId : undefined;
+  const authHref = catalog?.authHref || "/login";
+  const accountHref = catalog?.accountHref || "/account";
+  const interactive = !stat && !!websiteId;
   const product = live
     ? catalog.products.find((item) => item.slug === catalog.productSlug) ?? (catalog.productSlug ? undefined : catalog.products[0])
     : SAMPLE;
@@ -119,8 +125,10 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
     ? product.variants.map((variant) => {
         const gallery = variant.images.length > 0 ? variant.images : product.images;
         return {
+          id: variant.id,
           price: formatInr(variant.pricePaise),
           stock: variant.quantity > 0 ? `${variant.quantity} in stock` : "Out of stock",
+          stockQty: variant.quantity,
           out: variant.quantity <= 0,
           image: gallery[0]?.url ?? "",
           alt: gallery[0]?.alt || product.name,
@@ -191,12 +199,24 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
     );
     const buy = (
       <div className="wb-product-buy">
-        <p className="wb-product-price" data-wb-price="">{formatInr(selected.pricePaise)}</p>
-        {showStock && (
-          <p className={`wb-product-stock${selected.quantity > 0 ? "" : " is-out"}`} data-wb-stock="">
-            {selected.quantity > 0 ? `${selected.quantity} in stock` : "Out of stock"}
-          </p>
-        )}
+        <div className="wb-product-buy-meta">
+          <p className="wb-product-price" data-wb-price="">{formatInr(selected.pricePaise)}</p>
+          {showStock && (
+            <p className={`wb-product-stock${selected.quantity > 0 ? "" : " is-out"}`} data-wb-stock="">
+              {selected.quantity > 0 ? `${selected.quantity} in stock` : "Out of stock"}
+            </p>
+          )}
+        </div>
+        <ShopCartActions
+          variantId={selected.id}
+          websiteId={websiteId}
+          authHref={authHref}
+          accountHref={accountHref}
+          outOfStock={selected.quantity <= 0}
+          stockMax={selected.quantity}
+          interactive={interactive}
+          loginPromptVariant={design === "editorial" ? "minimal" : design === "compact" ? "glass" : design === "gallery-focus" ? "split" : "soft-card"}
+        />
       </div>
     );
     const options =
@@ -299,10 +319,18 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
     }
 
     return (
-      <article className="wb-product" data-wb-detail="">
+      <article
+        className="wb-product"
+        data-wb-detail=""
+        data-wb-shop-website={websiteId || undefined}
+        data-wb-shop-auth-href={authHref}
+        data-wb-shop-account-href={accountHref}
+        data-wb-cart-login-variant={design === "editorial" ? "minimal" : design === "compact" ? "glass" : design === "gallery-focus" ? "split" : "soft-card"}
+      >
         {layout}
         {stat && <script type="application/json" data-wb-variants="" dangerouslySetInnerHTML={{ __html: JSON.stringify(payload).replace(/</g, "\\u003c") }} />}
         {stat && <script dangerouslySetInnerHTML={{ __html: SHOP_DETAIL_SCRIPT }} />}
+        {stat && websiteId && <script dangerouslySetInnerHTML={{ __html: SHOP_CART_SCRIPT }} />}
       </article>
     );
   };

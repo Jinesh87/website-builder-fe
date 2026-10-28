@@ -451,7 +451,7 @@ function ClientSidebar({
           </SummaryRow>
           <SummaryRow label="Source">{SOURCE_LABELS[client.source]}</SummaryRow>
           <SummaryRow label="Joined">{formatDate(client.createdAt)}</SummaryRow>
-          {owner?.username && <SummaryRow label="Username">@{owner.username}</SummaryRow>}
+          {owner?.username && <SummaryRow label="Username">{owner.username}</SummaryRow>}
           <SummaryRow label="Email verified">
             {owner?.username ? "Not required" : owner?.emailVerified ? "Yes" : "No"}
           </SummaryRow>
@@ -571,7 +571,7 @@ function ResetPasswordSection({
         isOpen={open}
         onClose={close}
         title="Reset password"
-        subtitle={`For @${client.owner?.username}`}
+        subtitle={client.owner?.username ? `For ${client.owner.username}` : undefined}
         primaryAction={{ label: "Save password", onPress: save, isPending: saving }}
         secondaryAction={{ label: "Cancel", onPress: close }}
       >

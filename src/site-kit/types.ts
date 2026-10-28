@@ -1653,6 +1653,8 @@ export type ShopCatalog = {
 
 export type ProductsData = {
   design?: "classic-grid" | "editorial" | "compact" | "showcase";
+  /** Style of the guest login popup shown when Cart/Buy is clicked while signed out. */
+  cartLoginPromptVariant?: "soft-card" | "minimal" | "glass" | "split";
   eyebrow?: string;
   title: string;
   subtitle?: string;

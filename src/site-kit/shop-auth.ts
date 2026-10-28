@@ -20,6 +20,7 @@ export type ShopOrderSummary = {
 export type ShopCartItemSummary = {
   id: string;
   productId: string;
+  variantId: string;
   productName: string;
   variantName: string;
   quantity: number;
@@ -49,6 +50,41 @@ function apiBase(): string {
   return "/api";
 }
 
+/** Auth endpoints that must never trigger a refresh-and-retry loop. */
+const SKIP_SHOP_REFRESH = new Set([
+  "/login",
+  "/signup",
+  "/verify-email",
+  "/resend-verification",
+  "/refresh",
+  "/logout",
+  "/forgot-password",
+  "/reset-password",
+]);
+
+const shopRefreshInFlight = new Map<string, Promise<boolean>>();
+let shopLastRefreshAt = 0;
+
+async function refreshShopSession(websiteId: string): Promise<boolean> {
+  const existing = shopRefreshInFlight.get(websiteId);
+  if (existing) return existing;
+  const pending = fetch(`${apiBase()}/shop/${websiteId}/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+  })
+    .then((response) => {
+      if (response.ok) shopLastRefreshAt = Date.now();
+      return response.ok;
+    })
+    .catch(() => false)
+    .finally(() => {
+      shopRefreshInFlight.delete(websiteId);
+    });
+  shopRefreshInFlight.set(websiteId, pending);
+  return pending;
+}
+
 async function shopAuthFetch(
   websiteId: string,
   path: string,
@@ -58,12 +94,24 @@ async function shopAuthFetch(
   if (init.body !== undefined && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const response = await fetch(`${apiBase()}/shop/${websiteId}/auth${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-    cache: "no-store",
-  });
+  const send = () =>
+    fetch(`${apiBase()}/shop/${websiteId}/auth${path}`, {
+      ...init,
+      headers,
+      credentials: "include",
+      cache: "no-store",
+    });
+
+  const startedAt = Date.now();
+  let response = await send();
+  if (response.status === 401 && !SKIP_SHOP_REFRESH.has(path.split("?")[0] ?? path)) {
+    if (shopLastRefreshAt < startedAt) {
+      const refreshed = await refreshShopSession(websiteId);
+      if (refreshed) response = await send();
+    } else {
+      response = await send();
+    }
+  }
   if (response.status === 204) return { ok: response.ok, status: response.status, body: null };
   const body = await response.json().catch(() => ({}));
   return { ok: response.ok, status: response.status, body };
@@ -153,6 +201,36 @@ export const shopAuthApi = {
     if (!result.ok) throw asError(result.status, result.body);
     return (result.body as { customer: ShopCustomer }).customer;
   },
+
+  listCart: async (websiteId: string) => {
+    const result = await shopAuthFetch(websiteId, "/cart");
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  addToCart: async (websiteId: string, input: { variantId: string; quantity?: number }) => {
+    const result = await shopAuthFetch(websiteId, "/cart", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  updateCartItem: async (websiteId: string, itemId: string, quantity: number) => {
+    const result = await shopAuthFetch(websiteId, `/cart/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ quantity }),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  removeCartItem: async (websiteId: string, itemId: string) => {
+    const result = await shopAuthFetch(websiteId, `/cart/${itemId}`, { method: "DELETE" });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
 };
 
 /** A site path as the browser should open it: on the local preview sites live under /live/<subdomain>. */
@@ -163,6 +241,28 @@ export function siteHref(href: string): string {
   if (typeof window === "undefined" || path.startsWith("/live/")) return path;
   const match = (window.location.pathname || "/").match(/^\/live\/([^/]+)/);
   return match ? `/live/${match[1]}${path === "/" ? "" : path}` : path;
+}
+
+/** Account page URL that opens a specific panel (e.g. cart). */
+export function accountPanelHref(accountHref: string, panel: "orders" | "cart" | "profile" | "password"): string {
+  const raw = (accountHref || "/account").trim() || "/account";
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(raw)) {
+    try {
+      const url = new URL(raw);
+      url.searchParams.set("panel", panel);
+      return url.toString();
+    } catch {
+      /* fall through */
+    }
+  }
+  const [pathAndQuery, hash = ""] = raw.split("#");
+  const qIndex = pathAndQuery.indexOf("?");
+  const path = qIndex >= 0 ? pathAndQuery.slice(0, qIndex) : pathAndQuery;
+  const query = qIndex >= 0 ? pathAndQuery.slice(qIndex + 1) : "";
+  const params = new URLSearchParams(query);
+  params.set("panel", panel);
+  const text = params.toString();
+  return `${path || "/account"}?${text}${hash ? `#${hash}` : ""}`;
 }
 
 export function fullNameFromForm(form: HTMLFormElement): string {
@@ -229,12 +329,31 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     node.classList.toggle("is-ok", !!ok);
     node.classList.toggle("is-error", !!text&&!ok);
   }
+  var refreshInFlight=null;
+  var lastRefreshAt=0;
+  var skipRefresh={ "/login":1, "/signup":1, "/verify-email":1, "/resend-verification":1, "/refresh":1, "/logout":1, "/forgot-password":1, "/reset-password":1 };
+  function refreshSession(base){
+    if(refreshInFlight) return refreshInFlight;
+    refreshInFlight=fetch(base+"/refresh", { method:"POST", credentials:"include", cache:"no-store" })
+      .then(function(response){ if(response.ok) lastRefreshAt=Date.now(); return response.ok; })
+      .catch(function(){ return false; })
+      .finally(function(){ refreshInFlight=null; });
+    return refreshInFlight;
+  }
+  function parseResponse(response){
+    if(response.status===204) return { ok:true, status:204, json:{} };
+    return response.json().catch(function(){ return {}; }).then(function(json){ return { ok:response.ok, status:response.status, json:json }; });
+  }
   function request(base, path, method, body){
-    return fetch(base+path, { method:method, headers:body?{ "Content-Type":"application/json" }:{}, credentials:"include", cache:"no-store", body:body?JSON.stringify(body):undefined })
-      .then(function(response){
-        if(response.status===204) return { ok:true, status:204, json:{} };
-        return response.json().catch(function(){ return {}; }).then(function(json){ return { ok:response.ok, status:response.status, json:json }; });
-      });
+    var startedAt=Date.now();
+    function once(){
+      return fetch(base+path, { method:method, headers:body?{ "Content-Type":"application/json" }:{}, credentials:"include", cache:"no-store", body:body?JSON.stringify(body):undefined }).then(parseResponse);
+    }
+    return once().then(function(result){
+      if(result.status!==401 || skipRefresh[path]) return result;
+      if(lastRefreshAt>=startedAt) return once();
+      return refreshSession(base).then(function(ok){ return ok?once():result; });
+    });
   }
   function fill(root, account){
     var customer=account.customer||{};
@@ -287,11 +406,19 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         } else {
           row.appendChild(el("span","wb-acct-thumb is-blank"));
         }
+        row.setAttribute("data-wb-cart-item", String(item.id||""));
         var main=el("div","wb-acct-row-main");
         main.appendChild(el("strong","",String(item.productName||"Item")));
         main.appendChild(el("span","wb-acct-row-sub",(item.variantName?String(item.variantName)+" · ":"")+"Qty "+qty));
         row.appendChild(main);
         row.appendChild(el("strong","wb-acct-row-amount",money(line)));
+        var remove=el("button","wb-acct-cart-remove","Remove");
+        remove.type="button";
+        remove.setAttribute("data-wb-cart-remove", String(item.id||""));
+        remove.setAttribute("data-wb-cart-qty", String(qty));
+        remove.setAttribute("data-wb-cart-name", String(item.productName||"Item"));
+        remove.setAttribute("data-wb-cart-variant", String(item.variantName||""));
+        row.appendChild(remove);
         cartList.appendChild(row);
       });
       cartList.hidden=cart.length===0;
@@ -300,6 +427,31 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     setText(root, "cartTotal", money(total));
     if(cartEmpty) cartEmpty.hidden=cart.length>0;
   }
+  function preferredPanel(root){
+    try{
+      var params=new URLSearchParams(window.location.search||"");
+      var name=(params.get("panel")||(window.location.hash||"").replace(/^#/,"")||"").trim();
+      if(!name) return null;
+      var tab=root.querySelector('[data-wb-account-tab="'+name+'"]');
+      return tab?name:null;
+    }catch(_e){ return null; }
+  }
+  function activatePanel(root, tabs, name){
+    if(!name) return;
+    tabs.forEach(function(other){
+      var on=other.getAttribute("data-wb-account-tab")===name;
+      other.classList.toggle("is-active", on);
+      other.setAttribute("aria-selected", on?"true":"false");
+    });
+    root.querySelectorAll("[data-wb-account-stat]").forEach(function(stat){
+      var on=stat.getAttribute("data-wb-account-stat")===name;
+      stat.classList.toggle("is-active", on);
+      if(stat.hasAttribute("aria-pressed")) stat.setAttribute("aria-pressed", on?"true":"false");
+    });
+    root.querySelectorAll("[data-wb-account-panel]").forEach(function(panel){
+      panel.hidden=panel.getAttribute("data-wb-account-panel")!==name;
+    });
+  }
   function bind(root, base, loginHref){
     if(root.getAttribute("data-wb-account-bound")) return;
     root.setAttribute("data-wb-account-bound","1");
@@ -307,20 +459,134 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     tabs.forEach(function(tab){
       tab.addEventListener("click", function(){
         var name=tab.getAttribute("data-wb-account-tab");
-        tabs.forEach(function(other){
-          var on=other===tab;
-          other.classList.toggle("is-active", on);
-          other.setAttribute("aria-selected", on?"true":"false");
-        });
-        root.querySelectorAll("[data-wb-account-panel]").forEach(function(panel){
-          panel.hidden=panel.getAttribute("data-wb-account-panel")!==name;
-        });
+        activatePanel(root, tabs, name);
       });
     });
+    root.querySelectorAll("[data-wb-account-stat]").forEach(function(stat){
+      stat.addEventListener("click", function(){
+        var name=stat.getAttribute("data-wb-account-stat");
+        if(!name) return;
+        if(root.querySelector('[data-wb-account-tab="'+name+'"], [data-wb-account-panel="'+name+'"]')){
+          activatePanel(root, tabs, name);
+        }
+      });
+    });
+    activatePanel(root, tabs, preferredPanel(root));
     root.querySelectorAll("[data-wb-account-logout]").forEach(function(button){
       button.addEventListener("click", function(){
         request(base, "/logout", "POST").catch(function(){}).then(function(){ window.location.href=siteHref(loginHref); });
       });
+    });
+    function refreshAccount(){
+      return request(base, "/account", "GET").then(function(refresh){
+        if(refresh.ok) fill(root, refresh.json||{});
+      });
+    }
+    function removeQtyModal(){
+      var modal=document.querySelector("body > [data-wb-cart-remove-modal]");
+      if(modal) return modal;
+      modal=document.createElement("div");
+      var site=root.closest(".wb-site");
+      if(site&&site.getAttribute("style")) modal.setAttribute("style", site.getAttribute("style"));
+      modal.className="wb-cart-qty-modal";
+      modal.setAttribute("data-wb-cart-remove-modal","");
+      modal.hidden=true;
+      modal.innerHTML=
+        '<button type="button" class="wb-cart-login-backdrop" aria-label="Close remove prompt"></button>'+
+        '<div class="wb-cart-login-dialog is-qty" role="dialog" aria-modal="true" aria-label="Remove from cart">'+
+          '<button type="button" class="wb-cart-login-close" aria-label="Close remove prompt">×</button>'+
+          '<p class="wb-cart-login-kicker">Remove from cart</p>'+
+          '<p class="wb-cart-login-title" data-wb-remove-title>Item</p>'+
+          '<p class="wb-cart-login-text" data-wb-remove-text>How many should we remove?</p>'+
+          '<div class="wb-cart-qty-panel">'+
+            '<div class="wb-cart-qty-row">'+
+              '<button type="button" class="wb-cart-qty-step" data-wb-qty-dec aria-label="Decrease quantity">−</button>'+
+              '<input class="wb-cart-qty-input" type="number" min="1" value="1" data-wb-qty-input aria-label="Quantity to remove" />'+
+              '<button type="button" class="wb-cart-qty-step" data-wb-qty-inc aria-label="Increase quantity">+</button>'+
+            "</div>"+
+            '<span class="wb-cart-qty-stock" data-wb-remove-stock></span>'+
+          "</div>"+
+          '<div class="wb-cart-login-actions is-stacked">'+
+            '<button type="button" class="wb-shop-btn is-buy" data-wb-qty-confirm>Remove</button>'+
+            '<button type="button" class="wb-shop-btn is-cart" data-wb-qty-cancel>Cancel</button>'+
+          "</div>"+
+        "</div>";
+      modal.querySelectorAll(".wb-cart-login-backdrop,.wb-cart-login-close,[data-wb-qty-cancel]").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          modal.classList.remove("is-open");
+          modal.hidden=true;
+        });
+      });
+      document.body.appendChild(modal);
+      return modal;
+    }
+    function applyCartRemoval(itemId, currentQty, removeCount, button){
+      var qty=Math.max(1, Math.min(currentQty, Math.floor(removeCount)||1));
+      button.disabled=true;
+      button.textContent="Removing…";
+      var action=qty>=currentQty
+        ? request(base, "/cart/"+itemId, "DELETE")
+        : request(base, "/cart/"+itemId, "PATCH", { quantity: currentQty-qty });
+      action.then(function(result){
+        if(!result.ok){
+          button.disabled=false;
+          button.textContent="Remove";
+          return;
+        }
+        return refreshAccount().catch(function(){
+          button.disabled=false;
+          button.textContent="Remove";
+        });
+      }).catch(function(){
+        button.disabled=false;
+        button.textContent="Remove";
+      });
+    }
+    root.addEventListener("click", function(event){
+      var button=event.target&&event.target.closest&&event.target.closest("[data-wb-cart-remove]");
+      if(!button || !root.contains(button)) return;
+      event.preventDefault();
+      var itemId=button.getAttribute("data-wb-cart-remove")||"";
+      var currentQty=Math.max(1, Math.floor(Number(button.getAttribute("data-wb-cart-qty")||1)));
+      if(!itemId || button.disabled) return;
+      if(currentQty<=1){
+        applyCartRemoval(itemId, currentQty, 1, button);
+        return;
+      }
+      var modal=removeQtyModal();
+      var input=modal.querySelector("[data-wb-qty-input]");
+      var title=modal.querySelector("[data-wb-remove-title]");
+      var text=modal.querySelector("[data-wb-remove-text]");
+      var stock=modal.querySelector("[data-wb-remove-stock]");
+      var confirm=modal.querySelector("[data-wb-qty-confirm]");
+      var dec=modal.querySelector("[data-wb-qty-dec]");
+      var inc=modal.querySelector("[data-wb-qty-inc]");
+      var variant=button.getAttribute("data-wb-cart-variant")||"";
+      if(title) title.textContent=button.getAttribute("data-wb-cart-name")||"Item";
+      if(text) text.textContent=(variant?variant+". ":"")+"How many should we remove?";
+      if(stock) stock.textContent=currentQty+" in cart";
+      if(input){ input.min="1"; input.max=String(currentQty); input.value="1"; }
+      function clamp(){
+        if(!input) return 1;
+        var value=Math.max(1, Math.min(currentQty, Math.floor(Number(input.value)||1)));
+        input.value=String(value);
+        if(dec) dec.disabled=value<=1;
+        if(inc) inc.disabled=value>=currentQty;
+        if(confirm) confirm.textContent=value>=currentQty?"Remove all":("Remove "+value);
+        return value;
+      }
+      clamp();
+      if(dec) dec.onclick=function(){ if(input) input.value=String(Math.max(1, Number(input.value)-1)); clamp(); };
+      if(inc) inc.onclick=function(){ if(input) input.value=String(Math.min(currentQty, Number(input.value)+1)); clamp(); };
+      if(input) input.oninput=clamp;
+      if(confirm) confirm.onclick=function(){
+        var qty=clamp();
+        modal.classList.remove("is-open");
+        modal.hidden=true;
+        applyCartRemoval(itemId, currentQty, qty, button);
+      };
+      modal.hidden=false;
+      modal.classList.add("is-open");
     });
     var profile=root.querySelector("[data-wb-account-profile]");
     if(profile){
@@ -458,7 +724,13 @@ export const SHOP_AUTH_SCRIPT = `(function(){
     var there=successHref(root).replace(/\\/+$/,"")||"/";
     if(!resetToken && here!==there){
       fetch(base+"/me", { credentials:"include", cache:"no-store" })
-        .then(function(response){ if(response.ok) window.location.replace(successHref(root)); })
+        .then(function(response){
+          if(response.ok){ window.location.replace(successHref(root)); return null; }
+          if(response.status!==401) return null;
+          return fetch(base+"/refresh", { method:"POST", credentials:"include", cache:"no-store" })
+            .then(function(refresh){ if(refresh.ok) return fetch(base+"/me", { credentials:"include", cache:"no-store" }); })
+            .then(function(retry){ if(retry&&retry.ok) window.location.replace(successHref(root)); });
+        })
         .catch(function(){});
     }
     root.addEventListener("submit", function(event){
@@ -482,7 +754,7 @@ export const SHOP_AUTH_SCRIPT = `(function(){
         pendingEmail(root, body.email);
       } else if(view==="login"){
         path="/login";
-        body={ email:(emailInput&&emailInput.value||"").trim().toLowerCase(), password:passwordInput&&passwordInput.value||"", remember:!!(remember&&remember.checked) };
+        body={ email:(emailInput&&emailInput.value||"").trim().toLowerCase(), password:passwordInput&&passwordInput.value||"", remember:!remember||remember.checked };
       } else if(view==="forgot"){
         path="/forgot-password";
         body={ email:(emailInput&&emailInput.value||"").trim().toLowerCase() };
@@ -540,4 +812,364 @@ export const SHOP_AUTH_SCRIPT = `(function(){
       });
     });
   });
+})();`;
+
+/**
+ * Plain script for Cart / Buy on published product list and detail pages.
+ * Guests are asked to log in; signed-in shoppers add the variant to their cart.
+ */
+export const SHOP_CART_SCRIPT = `(function(){
+  if(window.__wbShopCartReady) return;
+  window.__wbShopCartReady=1;
+  function apiBase(){
+    var meta=document.querySelector('meta[name="wb-api"]');
+    var content=meta&&meta.getAttribute("content");
+    return content?String(content).replace(/\\/$/,""):"/api";
+  }
+  function siteHref(href){
+    var raw=(href||"/").trim();
+    if(/^(https?:\\/\\/|mailto:|tel:|#)/i.test(raw)) return raw;
+    var path=raw.charAt(0)==="/"?raw:"/"+raw;
+    if(path.indexOf("/live/")===0) return path;
+    var match=(window.location.pathname||"/").match(/^\\/live\\/([^/]+)/);
+    return match?"/live/"+match[1]+(path==="/"?"":path):path;
+  }
+  function shopRoot(node){
+    return node.closest("[data-wb-shop-website],[data-wb-detail],[data-wb-shop]")||document.body;
+  }
+  function websiteId(node){
+    var root=shopRoot(node);
+    return root.getAttribute("data-wb-shop-website")||"";
+  }
+  function authHref(node){
+    var root=shopRoot(node);
+    return root.getAttribute("data-wb-shop-auth-href")||"/login";
+  }
+  function accountHref(node){
+    var root=shopRoot(node);
+    return root.getAttribute("data-wb-shop-account-href")||"/account";
+  }
+  function accountPanelHref(href, panel){
+    var raw=(href||"/account").trim()||"/account";
+    if(/^(https?:\\/\\/|mailto:|tel:)/i.test(raw)){
+      try{ var url=new URL(raw); url.searchParams.set("panel", panel); return url.toString(); }catch(_e){}
+    }
+    var parts=raw.split("#");
+    var pathAndQuery=parts[0]||"/account";
+    var hash=parts[1]||"";
+    var q=pathAndQuery.indexOf("?");
+    var path=q>=0?pathAndQuery.slice(0,q):pathAndQuery;
+    var query=q>=0?pathAndQuery.slice(q+1):"";
+    var params=new URLSearchParams(query);
+    params.set("panel", panel);
+    return (path||"/account")+"?"+params.toString()+(hash?"#"+hash:"");
+  }
+  function setCartLink(root, count){
+    var link=root.querySelector("[data-wb-shop-cart-link]");
+    if(!link) return;
+    link.hidden=false;
+    var badge=link.querySelector("[data-wb-shop-cart-count]");
+    if(!badge) return;
+    var total=Math.max(0, Math.floor(Number(count)||0));
+    badge.textContent=String(total);
+    badge.hidden=total<=0;
+  }
+  var refreshInFlight={};
+  var lastRefreshAt={};
+  function refreshSession(id){
+    if(refreshInFlight[id]) return refreshInFlight[id];
+    refreshInFlight[id]=fetch(apiBase()+"/shop/"+id+"/auth/refresh", { method:"POST", credentials:"include", cache:"no-store" })
+      .then(function(response){ if(response.ok) lastRefreshAt[id]=Date.now(); return response.ok; })
+      .catch(function(){ return false; })
+      .finally(function(){ delete refreshInFlight[id]; });
+    return refreshInFlight[id];
+  }
+  function shopFetch(id, path, init){
+    var startedAt=Date.now();
+    var url=apiBase()+"/shop/"+id+"/auth"+path;
+    function once(){ return fetch(url, Object.assign({ credentials:"include", cache:"no-store" }, init||{})); }
+    return once().then(function(response){
+      if(response.status!==401 || path==="/refresh" || path==="/login") return response;
+      if((lastRefreshAt[id]||0)>=startedAt) return once();
+      return refreshSession(id).then(function(ok){ return ok?once():response; });
+    });
+  }
+  function refreshCartLinks(){
+    document.querySelectorAll("[data-wb-shop][data-wb-shop-website]").forEach(function(root){
+      var id=root.getAttribute("data-wb-shop-website");
+      var link=root.querySelector("[data-wb-shop-cart-link]");
+      if(!id||!link) return;
+      shopFetch(id, "/cart", { method:"GET" })
+        .then(function(response){
+          if(!response.ok){ link.hidden=true; return null; }
+          return response.json().catch(function(){ return {}; });
+        })
+        .then(function(json){
+          if(!json) return;
+          var total=0;
+          (json.cartItems||[]).forEach(function(item){ total+=Number(item.quantity||1); });
+          setCartLink(root, total);
+        })
+        .catch(function(){ link.hidden=true; });
+    });
+  }
+  function loginVariant(node){
+    var root=shopRoot(node);
+    return root.getAttribute("data-wb-cart-login-variant")||"soft-card";
+  }
+  function messageBox(node){
+    var scope=node.closest("[data-wb-product],[data-wb-detail],.wb-shop-actions")||node.parentElement;
+    return scope&&scope.querySelector("[data-wb-cart-msg]");
+  }
+  function showMessage(node, text, kind){
+    var box=messageBox(node);
+    if(!box) return;
+    box.hidden=!text;
+    box.textContent=text||"";
+    box.classList.toggle("is-error", kind==="error");
+    box.classList.toggle("is-ok", kind==="ok");
+  }
+  function closeModal(modal){
+    if(!modal) return;
+    modal.classList.remove("is-open");
+    modal.hidden=true;
+  }
+  function openModal(modal){
+    if(!modal) return;
+    modal.hidden=false;
+    modal.classList.add("is-open");
+  }
+  function loginModal(node){
+    document.querySelectorAll(".wb-shop-actions [data-wb-cart-login-modal]").forEach(function(stale){ stale.remove(); });
+    var modal=document.querySelector("body > [data-wb-cart-login-modal]");
+    if(modal) return modal;
+    modal=document.createElement("div");
+    var site=node.closest(".wb-site");
+    if(site&&site.getAttribute("style")) modal.setAttribute("style", site.getAttribute("style"));
+    modal.className="wb-cart-login-modal";
+    modal.setAttribute("data-wb-cart-login-modal","");
+    modal.setAttribute("data-variant", loginVariant(node));
+    modal.hidden=true;
+    modal.innerHTML=
+      '<button type="button" class="wb-cart-login-backdrop" aria-label="Close login prompt"></button>'+
+      '<div class="wb-cart-login-dialog" role="dialog" aria-modal="true" aria-label="Login required">'+
+        '<button type="button" class="wb-cart-login-close" aria-label="Close login prompt">×</button>'+
+        '<p class="wb-cart-login-title">Login required</p>'+
+        '<p class="wb-cart-login-text">Please log in to add products to your cart.</p>'+
+        '<div class="wb-cart-login-actions">'+
+          '<button type="button" class="wb-shop-btn is-cart">Not now</button>'+
+          '<a class="wb-shop-btn is-buy">Login</a>'+
+        "</div>"+
+      "</div>";
+    var loginLink=modal.querySelector(".wb-cart-login-actions .wb-shop-btn.is-buy");
+    if(loginLink) loginLink.setAttribute("href", siteHref(authHref(node)));
+    modal.querySelectorAll(".wb-cart-login-backdrop,.wb-cart-login-close,.wb-cart-login-actions .wb-shop-btn.is-cart").forEach(function(btn){
+      btn.addEventListener("click", function(){ closeModal(modal); });
+    });
+    document.body.appendChild(modal);
+    if(!window.__wbCartLoginEscBound){
+      window.__wbCartLoginEscBound=true;
+      window.addEventListener("keydown", function(event){
+        if(event.key!=="Escape") return;
+        document.querySelectorAll("[data-wb-cart-login-modal].is-open").forEach(function(open){ closeModal(open); });
+      });
+    }
+    return modal;
+  }
+  function setBusy(button, busy){
+    button.disabled=!!busy;
+    button.classList.toggle("is-busy", !!busy);
+  }
+  function stockOf(button){
+    var stock=Number(button.getAttribute("data-wb-stock")||0);
+    return Number.isFinite(stock)?Math.max(0, Math.floor(stock)):0;
+  }
+  function qtyModal(node){
+    document.querySelectorAll(".wb-shop-actions [data-wb-cart-qty-modal]").forEach(function(stale){ stale.remove(); });
+    var modal=document.querySelector("body > [data-wb-cart-qty-modal]");
+    if(modal) return modal;
+    modal=document.createElement("div");
+    var site=node.closest(".wb-site");
+    if(site&&site.getAttribute("style")) modal.setAttribute("style", site.getAttribute("style"));
+    modal.className="wb-cart-qty-modal";
+    modal.setAttribute("data-wb-cart-qty-modal","");
+    modal.hidden=true;
+    modal.innerHTML=
+      '<button type="button" class="wb-cart-login-backdrop" aria-label="Close quantity prompt"></button>'+
+      '<div class="wb-cart-login-dialog is-qty" role="dialog" aria-modal="true" aria-label="Choose quantity">'+
+        '<button type="button" class="wb-cart-login-close" aria-label="Close quantity prompt">×</button>'+
+        '<p class="wb-cart-login-kicker" data-wb-qty-title>Add to cart</p>'+
+        '<p class="wb-cart-login-title">Choose quantity</p>'+
+        '<p class="wb-cart-login-text" data-wb-qty-text>Select how many units to add.</p>'+
+        '<div class="wb-cart-qty-panel">'+
+          '<div class="wb-cart-qty-row">'+
+            '<button type="button" class="wb-cart-qty-step" data-wb-qty-dec aria-label="Decrease quantity">−</button>'+
+            '<input class="wb-cart-qty-input" type="number" min="1" value="1" data-wb-qty-input aria-label="Quantity" />'+
+            '<button type="button" class="wb-cart-qty-step" data-wb-qty-inc aria-label="Increase quantity">+</button>'+
+          "</div>"+
+          '<span class="wb-cart-qty-stock" data-wb-qty-stock></span>'+
+        "</div>"+
+        '<div class="wb-cart-login-actions is-stacked">'+
+          '<button type="button" class="wb-shop-btn is-buy" data-wb-qty-confirm>Add to cart</button>'+
+          '<button type="button" class="wb-shop-btn is-cart" data-wb-qty-cancel>Cancel</button>'+
+        "</div>"+
+      "</div>";
+    modal.querySelectorAll(".wb-cart-login-backdrop,.wb-cart-login-close,[data-wb-qty-cancel]").forEach(function(btn){
+      btn.addEventListener("click", function(){ closeModal(modal); });
+    });
+    document.body.appendChild(modal);
+    if(!window.__wbCartQtyEscBound){
+      window.__wbCartQtyEscBound=true;
+      window.addEventListener("keydown", function(event){
+        if(event.key!=="Escape") return;
+        document.querySelectorAll("[data-wb-cart-qty-modal].is-open").forEach(function(open){ closeModal(open); });
+      });
+    }
+    return modal;
+  }
+  function askQuantity(button, buy){
+    var max=stockOf(button);
+    if(max<=0 || button.disabled || button.getAttribute("aria-disabled")==="true"){
+      showMessage(button, "This item is out of stock.", "error");
+      return;
+    }
+    var modal=qtyModal(button);
+    if(!modal) return;
+    var input=modal.querySelector("[data-wb-qty-input]");
+    var title=modal.querySelector("[data-wb-qty-title]");
+    var text=modal.querySelector("[data-wb-qty-text]");
+    var confirm=modal.querySelector("[data-wb-qty-confirm]");
+    var dec=modal.querySelector("[data-wb-qty-dec]");
+    var inc=modal.querySelector("[data-wb-qty-inc]");
+    var stockLabel=modal.querySelector("[data-wb-qty-stock]");
+    if(title) title.textContent=buy?"Buy now":"Add to cart";
+    if(text) text.textContent=buy?"Select how many units to buy.":"Select how many units to add.";
+    if(stockLabel) stockLabel.textContent=max+" in stock";
+    if(confirm) confirm.textContent=buy?"Buy 1":"Add 1 to cart";
+    if(input){
+      input.min="1";
+      input.max=String(max);
+      input.value="1";
+    }
+    function clamp(){
+      if(!input) return 1;
+      var value=Math.floor(Number(input.value)||1);
+      value=Math.max(1, Math.min(max, value));
+      input.value=String(value);
+      if(dec) dec.disabled=value<=1;
+      if(inc) inc.disabled=value>=max;
+      if(confirm) confirm.textContent=buy?("Buy "+value):("Add "+value+" to cart");
+      return value;
+    }
+    clamp();
+    if(dec) dec.onclick=function(){ if(input) input.value=String(Math.max(1, Number(input.value)-1)); clamp(); };
+    if(inc) inc.onclick=function(){ if(input) input.value=String(Math.min(max, Number(input.value)+1)); clamp(); };
+    if(input) input.oninput=clamp;
+    if(confirm) confirm.onclick=function(){
+      var qty=clamp();
+      closeModal(modal);
+      addToCart(button, buy, qty);
+    };
+    openModal(modal);
+  }
+  async function addToCart(button, buy, quantity){
+    var id=websiteId(button);
+    var variantId=button.getAttribute("data-wb-variant-id")||"";
+    var max=stockOf(button);
+    var qty=Math.max(1, Math.min(max||1, Math.floor(Number(quantity)||1)));
+    if(!id||!variantId){
+      showMessage(button, "Shop is not connected yet.", "error");
+      return;
+    }
+    if(max<=0 || button.disabled || button.getAttribute("aria-disabled")==="true"){
+      showMessage(button, "This item is out of stock.", "error");
+      return;
+    }
+    setBusy(button, true);
+    showMessage(button, "", "");
+    try{
+      var response=await shopFetch(id, "/cart", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ variantId:variantId, quantity:qty })
+      });
+      var json=await response.json().catch(function(){ return {}; });
+      if(response.status===401){
+        var modal=loginModal(button);
+        if(modal) modal.setAttribute("data-variant", loginVariant(button));
+        openModal(modal);
+        return;
+      }
+      if(!response.ok){
+        showMessage(button, (json.error&&json.error.message)||"Could not add to cart.", "error");
+        return;
+      }
+      if(buy){
+        window.location.href=siteHref(accountPanelHref(accountHref(button), "cart"));
+        return;
+      }
+      showMessage(button, qty===1?"Added to cart.":("Added "+qty+" to cart."), "ok");
+      var root=shopRoot(button);
+      var link=root.querySelector("[data-wb-shop-cart-link]");
+      if(link){
+        var badge=link.querySelector("[data-wb-shop-cart-count]");
+        var current=badge&&!badge.hidden?Number(badge.textContent||0):0;
+        setCartLink(root, current+qty);
+      } else {
+        refreshCartLinks();
+      }
+    }catch(_e){
+      showMessage(button, "Can't reach the server. Try again.", "error");
+    }finally{
+      setBusy(button, false);
+    }
+  }
+  document.addEventListener("click", function(event){
+    var button=event.target&&event.target.closest&&event.target.closest("[data-wb-cart-action]");
+    if(!button) return;
+    event.preventDefault();
+    if(button.disabled || button.getAttribute("aria-disabled")==="true" || stockOf(button)<=0){
+      showMessage(button, "This item is out of stock.", "error");
+      return;
+    }
+    askQuantity(button, button.getAttribute("data-wb-cart-action")==="buy");
+  });
+  refreshCartLinks();
+})();`;
+
+/** Hides header Login CTAs on published pages once a shop customer session is active. */
+export const SHOP_NAV_AUTH_SCRIPT = `(function(){
+  if(window.__wbShopNavAuthReady) return;
+  window.__wbShopNavAuthReady=1;
+  function apiBase(){
+    var meta=document.querySelector('meta[name="wb-api"]');
+    var content=meta&&meta.getAttribute("content");
+    return content?String(content).replace(/\\/$/,""):"/api";
+  }
+  function siteRoot(){ return document.querySelector(".wb-site"); }
+  function websiteId(){
+    var root=siteRoot();
+    return (root&&root.getAttribute("data-wb-shop-website"))||"";
+  }
+  function apply(authed){
+    var root=siteRoot();
+    if(root) root.classList.toggle("is-shop-authed", !!authed);
+  }
+  var id=websiteId();
+  if(!id || !document.querySelector("[data-wb-hide-when-authed]")) return;
+  var base=apiBase()+"/shop/"+id+"/auth";
+  function check(){
+    return fetch(base+"/me", { credentials:"include", cache:"no-store" }).then(function(response){
+      if(response.ok){ apply(true); return true; }
+      if(response.status!==401){ apply(false); return false; }
+      return fetch(base+"/refresh", { method:"POST", credentials:"include", cache:"no-store" })
+        .then(function(refresh){
+          if(!refresh.ok){ apply(false); return false; }
+          return fetch(base+"/me", { credentials:"include", cache:"no-store" })
+            .then(function(retry){ apply(!!retry.ok); return retry.ok; });
+        })
+        .catch(function(){ apply(false); return false; });
+    }).catch(function(){ apply(false); return false; });
+  }
+  check();
 })();`;
