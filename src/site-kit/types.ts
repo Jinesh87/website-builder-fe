@@ -15,8 +15,10 @@ export type ImageRef = {
 export type LinkRef = {
   label: string;
   href: string;
-  actionType?: "link" | "download";
+  actionType?: "link" | "download" | "video";
   downloadFileName?: string;
+  videoUrl?: string;
+  videoTitle?: string;
   icon?: string;
   iconImage?: ImageRef;
   iconPosition?: "left" | "right";
@@ -63,6 +65,7 @@ export const HEADER_DESIGNS = [
   "mega-menu-grid",
   "side-drawer",
   "headline-ticker",
+  "vintage-editorial",
 ] as const;
 
 export type HeaderDesign = (typeof HEADER_DESIGNS)[number];
@@ -130,6 +133,10 @@ export type HeaderData = {
   contactEmail?: string;
   /** Highlight card shown inside mega-menu dropdowns. */
   featured?: HeaderFeatured;
+  /** Subhead / issue banner for vintage-editorial header */
+  editorialIssue?: string;
+  editorialCompany?: string;
+  editorialTags?: string;
 };
 
 export const HEADER_STATUS_COLORS = ["green", "blue", "orange", "purple", "red"] as const;
@@ -222,6 +229,38 @@ export type SectionCustomColors = {
   gradientTo?: string;
 };
 
+export const SECTION_FONT_SIZES = [
+  "small",
+  "default",
+  "normal",
+  "medium",
+  "large",
+  "huge",
+] as const;
+export type SectionFontSize = string;
+
+export const SECTION_HEADING_SIZES = [
+  "small",
+  "default",
+  "normal",
+  "medium",
+  "large",
+  "huge",
+] as const;
+export type SectionHeadingSize = string;
+
+export const SECTION_BODY_SIZES = [
+  "small",
+  "default",
+  "normal",
+  "medium",
+  "large",
+  "huge",
+] as const;
+export type SectionBodySize = string;
+export type SectionContainerWidth = string;
+export type SectionFontWeight = string;
+
 export type SectionSettings = {
   background: SectionBackground;
   hideOnMobile: boolean;
@@ -229,11 +268,27 @@ export type SectionSettings = {
   /** Vertical padding; "default" (or unset) follows the theme's section spacing. */
   spacing?: SectionSpacing;
   align?: SectionAlign;
+  /** Section container / content width override (e.g. default, narrow, medium, wide, full, or custom px/%) */
+  containerWidth?: SectionContainerWidth;
   /** In-page anchor id, so links like `#pricing` can jump to the section. */
   anchor?: string;
   customColors?: SectionCustomColors;
   /** Overrides the theme font for this section only; unset follows the theme. */
   font?: FontKey;
+  /** Section-level font size scale override */
+  fontSize?: SectionFontSize;
+  /** Section heading font size override */
+  headingSize?: SectionHeadingSize;
+  /** Section body / paragraph text font size override */
+  bodySize?: SectionBodySize;
+  /** Section heading font weight override (e.g. 300, 400, 500, 600, 700, 800, 900) */
+  headingWeight?: SectionFontWeight;
+  /** Section heading italic font style */
+  headingItalic?: boolean;
+  /** Section body / content font weight override (e.g. 300, 400, 500, 600, 700) */
+  bodyWeight?: SectionFontWeight;
+  /** Section body / content italic font style */
+  bodyItalic?: boolean;
 };
 
 export type IconName =
@@ -276,6 +331,8 @@ export const HERO_VARIANTS = [
   "asymmetric",
   "curved-carousel",
   "campaign-banner",
+  "vintage-editorial",
+  "vintage-sunburst",
 ] as const;
 
 export type HeroVariant = (typeof HERO_VARIANTS)[number];
@@ -410,6 +467,19 @@ export type HeroData = {
     primaryButton?: LinkRef;
     secondaryButton?: LinkRef;
   };
+  // Vintage layout fields
+  vintagePolaroids?: {
+    image: ImageRef;
+    caption?: string;
+    rotation?: number;
+  }[];
+  topStrip?: {
+    left?: string;
+    center?: string;
+    right?: string;
+  };
+  sunburstTitleWhite?: string;
+  circularPortrait?: ImageRef;
 };
 
 export type GridColumns = 1 | 2 | 3 | 4;
@@ -445,7 +515,15 @@ export type FeaturesData = {
   heading?: string;
   eyebrow?: string;
   intro?: string;
-  variant?: "grid" | "split" | "minimal" | "cards" | "pastel-icons";
+  variant?:
+    | "grid"
+    | "split"
+    | "minimal"
+    | "cards"
+    | "pastel-icons"
+    | "editorial-process"
+    | "colored-pillars"
+    | "polaroid-grid";
   iconStyle?:
     | "pastel-circle"
     | "square-badge"
@@ -476,6 +554,7 @@ export const SERVICES_VARIANTS = [
   "interactive-list",
   "horizontal-cards",
   "minimal-numbered",
+  "editorial-specs",
 ] as const;
 
 export type ServicesVariant = (typeof SERVICES_VARIANTS)[number];
@@ -496,6 +575,7 @@ export type ServiceItem = {
   secondaryLink?: LinkRef;
   backgroundColor?: string;
   featured?: boolean;
+  stampHighlight?: boolean;
 };
 
 export type ServicesData = {
@@ -637,6 +717,8 @@ export const CTA_VARIANTS = [
   "split-visual",
   "floating-card",
   "minimal-editorial",
+  "vintage-story",
+  "vintage-banner",
 ] as const;
 export type CtaVariant = (typeof CTA_VARIANTS)[number];
 
@@ -660,6 +742,7 @@ export type CtaData = {
   variant?: CtaVariant;
   eyebrow?: string;
   heading: string;
+  italicText?: string;
   text?: string;
   button: LinkRef;
   secondaryButton?: LinkRef;
@@ -808,6 +891,7 @@ export type ContactLayout = {
 };
 
 export type TextData = {
+  variant?: "default" | "pull-quote";
   heading?: string;
   /** Plain text; blank lines separate paragraphs. Never rendered as HTML. */
   body: string;
@@ -837,6 +921,8 @@ export type SplitData = {
   bullets: string[];
   image?: ImageRef;
   imagePosition: "left" | "right";
+  imageStyle?: "plain" | "polaroid";
+  imageTapeLabel?: string;
   cta?: LinkRef;
 };
 
@@ -1264,6 +1350,7 @@ export type BlogPostItem = {
 };
 
 export type BlogData = {
+  variant?: "default" | "vintage-journal";
   eyebrow?: string;
   title: string;
   subtitle?: string;
@@ -1318,6 +1405,8 @@ export const CARDS_VARIANTS = [
   "floating-panel",
   "floating-icon",
   "dos-donts",
+  "film-vault",
+  "polaroid-grid",
 ] as const;
 export type CardsVariant = (typeof CARDS_VARIANTS)[number];
 
@@ -1490,6 +1579,7 @@ export type SectionDataMap = {
   blog_detail: BlogDetailData;
   products: ProductsData;
   product_detail: ProductDetailData;
+  account: AccountData;
 };
 
 export type SectionType = keyof SectionDataMap;
@@ -1542,6 +1632,8 @@ export type ShopCatalog = {
   websiteId?: string;
   /** Page that holds the auth section, such as "/login". */
   authHref?: string;
+  /** Page that holds the account section, such as "/account". */
+  accountHref?: string;
   products: ShopCatalogProduct[];
   productSlug?: string;
   /** Option values to preselect, from the shop-card link. */
@@ -1579,6 +1671,40 @@ export type ProductDetailData = {
   backHref?: string;
   showDescription?: boolean;
   showStock?: boolean;
+};
+
+/** Mirrors backend ACCOUNT_VARIANTS. Stored in site data, so values are only ever appended. */
+export const ACCOUNT_VARIANTS = ["sidebar-tabs", "top-tabs", "overview-cards", "minimal-list", "dark-panel"] as const;
+export type AccountVariant = (typeof ACCOUNT_VARIANTS)[number];
+
+/** The signed-in customer's page: orders, cart and profile. Visitors who aren't signed in get a prompt. */
+export type AccountData = {
+  variant: AccountVariant;
+  /** Which state the editor canvas shows; visitors always get the real one. */
+  preview?: "member" | "guest";
+  heading?: string;
+  subheading?: string;
+  showOrders?: boolean;
+  showCart?: boolean;
+  showProfile?: boolean;
+  showPassword?: boolean;
+  ordersLabel?: string;
+  cartLabel?: string;
+  profileLabel?: string;
+  passwordLabel?: string;
+  logoutLabel?: string;
+  saveLabel?: string;
+  emptyOrdersText?: string;
+  emptyCartText?: string;
+  /** Page that holds the login section, such as "/login". */
+  loginHref?: string;
+  /** Page that lists the products, linked from empty states. */
+  shopHref?: string;
+  /** Sends logged-out visitors straight to the login page instead of showing the prompt. */
+  redirectWhenLoggedOut?: boolean;
+  guestHeading?: string;
+  guestText?: string;
+  guestButtonLabel?: string;
 };
 
 export type SiteData = {

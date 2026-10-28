@@ -186,7 +186,6 @@ select.wb-auth-input { appearance: none; -webkit-appearance: none; padding-right
   padding: 10px 14px; border-radius: var(--wb-auth-field-r); font-size: 13.5px; font-weight: 600;
   color: #dc2626; background: color-mix(in srgb, #dc2626 9%, transparent);
 }
-
 .wb-auth-otp { display: flex; justify-content: center; gap: 10px; }
 .wb-auth-otp-cell {
   width: 52px; height: 60px; text-align: center; font-size: 24px; font-weight: 700;

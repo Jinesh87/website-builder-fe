@@ -41,6 +41,33 @@ export default function BlogSection({ section }: { section: SectionOf<"blog"> })
 
   const align = data.align || section.settings.align || "center";
 
+  if (data.variant === "vintage-journal") {
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-blog-vintage-journal"
+        label={data.title || data.eyebrow}
+        fullWidth
+      >
+        <div className="wb-container">
+          {data.eyebrow && <p className="wb-vr-eyebrow">{parseRichText(data.eyebrow)}</p>}
+          <div className="wb-vr-journal-grid">
+            {posts.map((post) => (
+              <a key={post.id} href={formatBlogHref(post.slug)} className="wb-vr-journal-card">
+                <div className="wb-vr-journal-media">
+                  {post.coverImage?.url && <SiteImage image={post.coverImage} />}
+                </div>
+                {post.category && <span className="wb-vr-journal-meta">{post.category}</span>}
+                <h3 className="wb-vr-journal-title">{parseRichText(post.title)}</h3>
+              </a>
+            ))}
+          </div>
+        </div>
+      </SectionShell>
+    );
+  }
+
   return (
     <SectionShell sectionId={section.id} settings={section.settings} className={`wb-align-${align}`}>
       <div className="wb-blog-section">

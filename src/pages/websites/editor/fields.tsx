@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { Button, Checkbox, Dropdown, Label } from "@heroui/react";
-import { Check, ChevronDown, ChevronUp, Download, Eye, FileText, Film, Globe, GripVertical, Images, Plus, Trash2, Upload } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Download, Eye, FileText, Film, Globe, GripVertical, Images, Play, Plus, Trash2, Upload } from "lucide-react";
 import { errorMessage } from "../../../api/http.ts";
 import { ACCEPT_BY_KIND, formatBytes, mediaApi, uploadProblem, type MediaFile } from "../../../api/media.ts";
 import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
@@ -24,7 +24,7 @@ const IconPickerField = lazyWithRetry(
 import { CellColorPicker } from "../../../components/ui/CellColorPicker.tsx";
 import { Lightbox } from "../../../components/ui/Lightbox.tsx";
 import { optimizeImageToWebP } from "../../../utils/image-optimizer.ts";
-import type { ImageRef, LinkRef } from "../../../site-kit/index.ts";
+import { openVideoModal, type ImageRef, type LinkRef } from "../../../site-kit/index.ts";
 
 const SAFE_HREF =
   /^(https?:\/\/\S+|mailto:\S+|tel:[+0-9() -]+|\/(?!\/)\S*|#\S*)$/i;
@@ -423,16 +423,25 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
   const media = useContext(MediaTargetContext);
   const listId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoFileInputRef = useRef<HTMLInputElement>(null);
   const [pickingDoc, setPickingDoc] = useState(false);
+  const [pickingVideo, setPickingVideo] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState<{
+    percent: number;
+    statusText: string;
+  } | null>(null);
+  const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
 
-  const isDownload = value.actionType
-    ? value.actionType === "download"
-    : Boolean(value.href && /\.pdf($|\?)/i.test(value.href));
+  const isVideo = value.actionType === "video";
+  const isDownload = !isVideo && (value.actionType === "download"
+    ? true
+    : Boolean(value.href && /\.pdf($|\?)/i.test(value.href)));
 
   const hrefError =
-    !isDownload && value.href && !SAFE_HREF.test(value.href.trim())
+    !isDownload && !isVideo && value.href && !SAFE_HREF.test(value.href.trim())
       ? "Use a page like /contact, https://…, mailto: or tel:"
       : undefined;
 
@@ -460,22 +469,68 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
     }
   }
 
-  const setActionType = (type: "link" | "download") => {
-    if (type === "download") {
+  async function handleVideoFileUpload(file: File) {
+    if (!media) return;
+    const problem = uploadProblem(file, "VIDEO");
+    setVideoUploadError(problem);
+    if (problem) return;
+
+    setVideoUploading(true);
+    setVideoUploadProgress({ percent: 30, statusText: "Preparing video upload…" });
+    try {
+      setVideoUploadProgress({ percent: 70, statusText: "Uploading to storage…" });
+      const uploaded = await mediaApi.upload({
+        file,
+        clientId: media.clientId,
+        websiteId: media.websiteId,
+      });
+      onChange({
+        ...value,
+        actionType: "video",
+        videoUrl: uploaded.url,
+        href: uploaded.url,
+        videoTitle: value.videoTitle || file.name.replace(/\.[^/.]+$/, ""),
+        icon: value.icon || "play",
+      });
+      setVideoUploadProgress({
+        percent: 100,
+        statusText: `Saved ${file.name} (${formatBytes(file.size)})`,
+      });
+      setTimeout(() => setVideoUploadProgress(null), 3000);
+    } catch (err) {
+      setVideoUploadError(errorMessage(err));
+      setVideoUploadProgress(null);
+    } finally {
+      setVideoUploading(false);
+    }
+  }
+
+  const setActionType = (type: "link" | "download" | "video") => {
+    if (type === "video") {
+      const existingVideo = value.videoUrl || (value.href.startsWith("http") || value.href.endsWith(".mp4") ? value.href : "");
+      onChange({
+        ...value,
+        actionType: "video",
+        icon: value.icon || "play",
+        label: value.label === "Contact us" || value.label === "Download Brochure" || value.label === "Link" ? "Watch demo" : value.label,
+        videoUrl: existingVideo || undefined,
+        href: existingVideo || (value.href && value.href !== "/" && value.href !== "/contact" ? value.href : "#demo"),
+      });
+    } else if (type === "download") {
       onChange({
         ...value,
         actionType: "download",
-        icon: value.icon || "download",
-        label: value.label === "Contact us" || value.label === "Link" ? "Download Brochure" : value.label,
-        href: value.href === "/contact" || value.href === "/" ? "" : value.href,
+        icon: value.icon === "play" ? "download" : (value.icon || "download"),
+        label: value.label === "Contact us" || value.label === "Watch demo" || value.label === "Link" ? "Download Brochure" : value.label,
+        href: value.href === "/contact" || value.href === "/" || value.href === "#demo" ? "" : value.href,
       });
     } else {
       onChange({
         ...value,
         actionType: "link",
-        icon: value.icon === "download" ? undefined : value.icon,
-        label: value.label === "Download Brochure" ? "Contact us" : value.label,
-        href: value.href === "" ? "/contact" : value.href,
+        icon: value.icon === "download" || value.icon === "play" ? undefined : value.icon,
+        label: value.label === "Download Brochure" || value.label === "Watch demo" ? "Contact us" : value.label,
+        href: value.href === "" || value.href === "#demo" ? "/contact" : value.href,
       });
     }
   };
@@ -483,37 +538,52 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
   return (
     <div className="flex flex-col gap-3 rounded-ed-lg border border-ed-border/90 bg-ed-subtle/40 p-3 shadow-2xs">
       {/* Header and Action Type Segmented Control */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5">
-          <span className="size-1.5 rounded-full bg-ed-accent" />
-          <span className="text-ed-xs font-semibold text-ed-text">{label}</span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="size-1.5 rounded-full bg-ed-accent shrink-0" />
+            <span className="text-ed-xs font-semibold text-ed-text truncate">{label}</span>
+          </div>
+          <span className="text-[10px] text-ed-muted font-medium uppercase tracking-wider">Action</span>
         </div>
 
-        {/* Action Type Switcher */}
-        <div className="inline-flex rounded-ed border border-ed-border bg-ed-panel p-0.5 text-[11px] font-medium shadow-2xs">
+        {/* Compact, Single-Row Segmented Switcher */}
+        <div className="grid grid-cols-3 gap-1 rounded-ed border border-ed-border bg-ed-panel p-1 shadow-2xs">
           <button
             type="button"
             onClick={() => setActionType("link")}
-            className={`flex items-center gap-1 px-2 py-0.5 rounded cursor-pointer transition ${
-              !isDownload
-                ? "bg-ed-accent text-white shadow-xs font-semibold"
-                : "text-ed-muted hover:text-ed-text"
+            className={`flex items-center justify-center gap-1.5 py-1 px-1 rounded text-[10.5px] font-semibold whitespace-nowrap cursor-pointer transition ${
+              !isDownload && !isVideo
+                ? "bg-ed-accent text-white shadow-xs"
+                : "text-ed-muted hover:text-ed-text hover:bg-ed-subtle/60"
             }`}
           >
-            <Globe className="size-3" />
-            <span>Link / Page</span>
+            <Globe className="size-3 shrink-0" />
+            <span>Link</span>
           </button>
           <button
             type="button"
             onClick={() => setActionType("download")}
-            className={`flex items-center gap-1 px-2 py-0.5 rounded cursor-pointer transition ${
+            className={`flex items-center justify-center gap-1.5 py-1 px-1 rounded text-[10.5px] font-semibold whitespace-nowrap cursor-pointer transition ${
               isDownload
-                ? "bg-ed-accent text-white shadow-xs font-semibold"
-                : "text-ed-muted hover:text-ed-text"
+                ? "bg-ed-accent text-white shadow-xs"
+                : "text-ed-muted hover:text-ed-text hover:bg-ed-subtle/60"
             }`}
           >
-            <Download className="size-3" />
+            <Download className="size-3 shrink-0" />
             <span>Download</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActionType("video")}
+            className={`flex items-center justify-center gap-1.5 py-1 px-1 rounded text-[10.5px] font-semibold whitespace-nowrap cursor-pointer transition ${
+              isVideo
+                ? "bg-ed-accent text-white shadow-xs"
+                : "text-ed-muted hover:text-ed-text hover:bg-ed-subtle/60"
+            }`}
+          >
+            <Play className="size-3 shrink-0 fill-current" />
+            <span>Video</span>
           </button>
         </div>
       </div>
@@ -523,13 +593,13 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
         label="Button / Link text"
         value={value.label}
         onChange={(text) => onChange({ ...value, label: text })}
-        placeholder={isDownload ? "e.g. Download Brochure" : "e.g. Contact Us"}
+        placeholder={isVideo ? "e.g. Watch 2-min demo" : isDownload ? "e.g. Download Brochure" : "e.g. Contact Us"}
         maxLength={80}
         required
       />
 
       {/* Normal Page / URL Mode */}
-      {!isDownload ? (
+      {!isDownload && !isVideo && (
         <div className="flex flex-col gap-2">
           <TextField
             label="Destination page or URL"
@@ -559,8 +629,132 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
             <span>Open in new tab</span>
           </label>
         </div>
-      ) : (
-        /* Download File Mode */
+      )}
+
+      {/* Video Popup Player Mode */}
+      {isVideo && (
+        <div className="flex flex-col gap-2.5 rounded-ed border border-dashed border-ed-accent/40 bg-ed-accent-soft/20 p-2.5">
+          <div className="flex items-center justify-between gap-1 flex-wrap">
+            <span className="text-[11px] font-semibold text-ed-accent flex items-center gap-1">
+              <Play className="size-3 fill-ed-accent" />
+              <span>Demo Video (Popup Modal)</span>
+            </span>
+            <div className="flex items-center gap-1.5">
+              {media && (
+                <>
+                  <input
+                    ref={videoFileInputRef}
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime,video/*,.mp4,.webm,.mov,.m4v"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void handleVideoFileUpload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={videoUploading}
+                    onClick={() => videoFileInputRef.current?.click()}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer disabled:opacity-50"
+                  >
+                    <Upload className="size-3" />
+                    <span>{videoUploading ? "Uploading…" : "Upload Video"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPickingVideo(true)}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer"
+                  >
+                    <Film className="size-3" />
+                    <span>Media Library</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {videoUploadProgress && (
+            <div className="rounded bg-brand/10 p-2 text-[11px] text-brand flex flex-col gap-1">
+              <div className="flex items-center justify-between font-medium">
+                <span>{videoUploadProgress.statusText}</span>
+                <span>{videoUploadProgress.percent}%</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-brand/20">
+                <div
+                  className="h-full bg-brand transition-all duration-300"
+                  style={{ width: `${videoUploadProgress.percent}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {videoUploadError && (
+            <p className="text-[11px] text-ed-danger font-medium">{videoUploadError}</p>
+          )}
+
+          <TextField
+            label="Video URL (YouTube, Vimeo, MP4, WebM)"
+            value={value.videoUrl ?? (value.href.startsWith("http") || value.href.endsWith(".mp4") ? value.href : "")}
+            onChange={(url) => {
+              const trimmed = url.trim();
+              onChange({
+                ...value,
+                videoUrl: trimmed || undefined,
+                href: trimmed || "#demo",
+                actionType: "video",
+              });
+            }}
+            placeholder="https://www.youtube.com/watch?v=... or upload video"
+            maxLength={2048}
+            required
+            hint="Paste YouTube, Vimeo, MP4 direct link, or upload an MP4/WebM video above."
+          />
+
+          <TextField
+            label="Video modal title (optional)"
+            value={value.videoTitle || ""}
+            onChange={(title) => onChange({ ...value, videoTitle: title || undefined })}
+            placeholder="e.g. 2-Min Product Demo"
+            maxLength={120}
+            hint="Shown at the top of the video player modal"
+          />
+
+          {/* Video Preview and Test Popup Button */}
+          {Boolean(value.videoUrl || (value.href && (value.href.startsWith("http") || value.href.endsWith(".mp4")))) && (
+            <div className="flex items-center justify-between rounded bg-ed-panel border border-ed-border p-2 mt-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="size-6 rounded-full bg-ed-accent/15 text-ed-accent flex items-center justify-center shrink-0">
+                  <Play className="size-3 fill-current" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-ed-text truncate">
+                    {value.videoTitle || value.label || "Video Demo"}
+                  </p>
+                  <p className="text-[10px] text-ed-muted truncate">
+                    {value.videoUrl || value.href}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const targetUrl = value.videoUrl || value.href;
+                  if (targetUrl) openVideoModal(targetUrl, value.videoTitle || value.label);
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded bg-ed-accent text-white hover:bg-ed-accent/90 cursor-pointer shrink-0 shadow-xs"
+              >
+                <Play className="size-3 fill-current" />
+                <span>Test Popup</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Download File Mode */}
+      {isDownload && (
         <div className="flex flex-col gap-2.5 rounded-ed border border-dashed border-ed-accent/30 bg-ed-accent-soft/20 p-2.5">
           <div className="flex items-center justify-between gap-1 flex-wrap">
             <span className="text-[11px] font-semibold text-ed-accent flex items-center gap-1">
@@ -632,10 +826,10 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
       <div className="flex flex-col gap-2 pt-1 border-t border-ed-border/60">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-medium text-ed-muted">Button Icon (Optional)</span>
-          {value.icon && (
+          {Boolean(value.icon || value.iconImage?.url) && (
             <button
               type="button"
-              onClick={() => onChange({ ...value, icon: undefined, iconImage: undefined })}
+              onClick={() => onChange({ ...value, icon: "", iconImage: undefined })}
               className="text-[10px] text-ed-danger hover:underline cursor-pointer"
             >
               Remove icon
@@ -659,14 +853,14 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
             />
           </Suspense>
 
-          {Boolean(value.icon || value.iconImage?.url) && (
-            <div className="inline-flex rounded-ed border border-ed-border bg-ed-panel p-0.5 text-[11px] font-medium h-8 items-center">
+          {Boolean(value.icon || value.iconImage?.url || isVideo) && (
+            <div className="inline-flex rounded-ed border border-ed-border bg-ed-panel p-0.5 text-[11px] font-medium h-8 items-center shadow-2xs">
               <button
                 type="button"
                 onClick={() => onChange({ ...value, iconPosition: "left" })}
                 className={`px-2 py-0.5 rounded cursor-pointer transition ${
                   (value.iconPosition || "left") === "left"
-                    ? "bg-ed-accent text-white font-semibold"
+                    ? "bg-ed-accent text-white font-semibold shadow-xs"
                     : "text-ed-muted hover:text-ed-text"
                 }`}
                 title="Icon on left"
@@ -678,7 +872,7 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
                 onClick={() => onChange({ ...value, iconPosition: "right" })}
                 className={`px-2 py-0.5 rounded cursor-pointer transition ${
                   value.iconPosition === "right"
-                    ? "bg-ed-accent text-white font-semibold"
+                    ? "bg-ed-accent text-white font-semibold shadow-xs"
                     : "text-ed-muted hover:text-ed-text"
                 }`}
                 title="Icon on right"
@@ -708,6 +902,29 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
               setPickingDoc(false);
             }}
             onClose={() => setPickingDoc(false)}
+          />
+        </Suspense>
+      )}
+
+      {/* Video Picker Modal */}
+      {pickingVideo && media && (
+        <Suspense fallback={null}>
+          <MediaPickerDialog
+            clientId={media.clientId}
+            websiteId={media.websiteId}
+            kind="VIDEO"
+            onPick={(file) => {
+              onChange({
+                ...value,
+                actionType: "video",
+                href: file.url,
+                videoUrl: file.url,
+                videoTitle: value.videoTitle || file.fileName.replace(/\.[^/.]+$/, ""),
+                icon: value.icon || "play",
+              });
+              setPickingVideo(false);
+            }}
+            onClose={() => setPickingVideo(false)}
           />
         </Suspense>
       )}

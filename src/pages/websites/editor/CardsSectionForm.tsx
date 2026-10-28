@@ -60,6 +60,8 @@ const VARIANT_OPTIONS: { value: CardsVariant; label: string }[] = [
   { value: "horizontal-split", label: "Horizontal split · Image beside content" },
   { value: "minimal-accent", label: "Minimal accent · Icon, accent bar, text-first" },
   { value: "floating-panel", label: "Floating panel · Raised panel over image" },
+  { value: "film-vault", label: "Film reel vault · 35mm film strip with frame labels" },
+  { value: "polaroid-grid", label: "Polaroid grid · Classic vintage photo paper cards" },
 ];
 
 const CARD_STYLE_OPTIONS: { value: CardsCardStyle | ""; label: string }[] = [

@@ -20,6 +20,14 @@ export type {
   SectionPreset,
 } from "./registry.ts";
 export { safeHref, videoEmbedUrl } from "./links.ts";
+export {
+  VideoModal,
+  VideoModalProvider,
+  useVideoModal,
+  openVideoModal,
+  parseVideoUrl,
+} from "./VideoModal.tsx";
+export type { VideoModalData, VideoModalProps, ParsedVideo } from "./VideoModal.tsx";
 export { DEFAULT_THEME, sectionFontStyle, themeToCssVars } from "./theme.ts";
 export {
   DEFAULT_FONT,
@@ -31,6 +39,7 @@ export {
 } from "./fonts.ts";
 export type { FontCategory, FontDefinition } from "./fonts.ts";
 export { SITE_CSS } from "./styles.ts";
+export { usesVintageStyles, VINTAGE_FONTS } from "./vintage-styles.ts";
 export { SiteRenderModeProvider } from "./render-mode.tsx";
 export type { SiteRenderMode } from "./render-mode.tsx";
 export { SAMPLE_SITE } from "./sample-site.ts";

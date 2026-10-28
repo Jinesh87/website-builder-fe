@@ -26,7 +26,7 @@ import {
   heroButtonShapeProps,
   heroElementAlign,
 } from "../hero-layout.ts";
-import type { HeroAlign, HeroAlignElement, HeroData, SectionOf } from "../types.ts";
+import type { HeroAlign, HeroAlignElement, HeroData, LinkRef, SectionOf } from "../types.ts";
 import CurvedBannerCarousel, {
   DEFAULT_BANNER_ITEMS,
   type CurvedBannerItem,
@@ -414,14 +414,21 @@ export default function HeroSection({
           />
         ) : null,
       )}
-      {data.tertiaryCta && (
-        <SiteLink link={data.tertiaryCta} className="wb-btn-video-play">
-          <span className="wb-play-icon-pill">
-            <PlayIcon />
-          </span>
-          <span>{data.tertiaryCta.label}</span>
-        </SiteLink>
-      )}
+      {data.tertiaryCta && (() => {
+        const isExplicitLink = data.tertiaryCta.actionType === "link";
+        const isExplicitDownload = data.tertiaryCta.actionType === "download";
+        const defaultVideoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+        const resolvedLink: LinkRef = isExplicitLink || isExplicitDownload
+          ? data.tertiaryCta
+          : {
+              ...data.tertiaryCta,
+              actionType: "video",
+              videoUrl: data.tertiaryCta.videoUrl || (data.tertiaryCta.href && data.tertiaryCta.href !== "#demo" && data.tertiaryCta.href !== "#" ? data.tertiaryCta.href : defaultVideoUrl),
+            };
+        return (
+          <SiteLink link={resolvedLink} className="wb-btn-video-play" />
+        );
+      })()}
     </div>
   );
 
@@ -1004,6 +1011,155 @@ export default function HeroSection({
               )}
             </div>
           )}
+        </div>
+      </SectionShell>
+    );
+  }
+
+  if (data.variant === "vintage-editorial") {
+    const topStrip = data.topStrip;
+    const polaroids =
+      data.vintagePolaroids && data.vintagePolaroids.length >= 2
+        ? data.vintagePolaroids
+        : [
+            {
+              image: data.image ?? {
+                url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
+                alt: "Photographer with vintage camera",
+              },
+              caption: "Up for views, press 12",
+              rotation: -3,
+            },
+            {
+              image: data.secondaryImage ?? {
+                url: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1200&q=80",
+                alt: "Golden Hour Espresso Bar",
+              },
+              caption: "Golden Hour Espresso Bar",
+              rotation: 4,
+            },
+          ];
+
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-hero-vintage-editorial"
+        label="Vintage Editorial Hero"
+        fullWidth
+      >
+        <div className="wb-container">
+          {topStrip && (topStrip.left || topStrip.center || topStrip.right) && (
+            <div className="wb-editorial-subbar">
+              <span>{topStrip.left}</span>
+              <span className="wb-editorial-subbar-center">{topStrip.center}</span>
+              <span>{topStrip.right}</span>
+            </div>
+          )}
+          <div className="wb-hero-vintage-grid">
+            <div className="wb-vintage-hero-copy">
+              <h1 className="wb-vintage-hero-heading">
+                {parseRichText(data.heading)}
+              </h1>
+              {(data.subheading || data.description) && (
+                <p className="wb-vintage-hero-desc">
+                  {parseRichText(data.subheading || data.description || "")}
+                </p>
+              )}
+              <div className="wb-vintage-hero-actions">
+                {data.primaryCta && (
+                  <SiteLink
+                    link={data.primaryCta}
+                    className="wb-vintage-btn-primary"
+                  >
+                    <span>{data.primaryCta.label || "Start a project"}</span>
+                    <span>&rarr;</span>
+                  </SiteLink>
+                )}
+                {data.secondaryCta && (
+                  <SiteLink
+                    link={data.secondaryCta}
+                    className="wb-vintage-btn-secondary"
+                  >
+                    <PlayIcon />
+                    <span>{data.secondaryCta.label || "Watch showreel"}</span>
+                  </SiteLink>
+                )}
+              </div>
+            </div>
+
+            <div className="wb-polaroid-stack">
+              {polaroids.slice(0, 2).map((pol, pIdx) => (
+                <figure
+                  key={pIdx}
+                  className={`wb-polaroid-card ${pIdx === 0 ? "card-top" : "card-bottom"}`}
+                  style={pol.rotation ? { transform: `rotate(${pol.rotation}deg)` } : undefined}
+                >
+                  <div className="wb-polaroid-img-wrap">
+                    <SiteImage image={pol.image} />
+                  </div>
+                  {pol.caption && <figcaption className="wb-polaroid-caption">{pol.caption}</figcaption>}
+                </figure>
+              ))}
+            </div>
+          </div>
+        </div>
+      </SectionShell>
+    );
+  }
+
+  if (data.variant === "vintage-sunburst") {
+    const portraitImage = data.circularPortrait || data.image || {
+      url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1200&q=80",
+      alt: "Vintage Studio Portrait",
+    };
+
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-hero-sunburst-wrap"
+        label="Vintage Sunburst Hero"
+        fullWidth
+      >
+        <div className="wb-container">
+          <div className="wb-hero-sunburst-card">
+            <div className="wb-sunburst-rays" aria-hidden="true" />
+            <div className="wb-sunburst-content">
+              {data.eyebrow && (
+                <span className="wb-sunburst-badge">{data.eyebrow}</span>
+              )}
+              <h1 className="wb-sunburst-heading">
+                {parseRichText(data.heading)}
+                {data.sunburstTitleWhite && (
+                  <span className="wb-sunburst-title-white">
+                    {data.sunburstTitleWhite}
+                  </span>
+                )}
+              </h1>
+              {(data.subheading || data.description) && (
+                <p className="wb-sunburst-desc">
+                  {parseRichText(data.subheading || data.description || "")}
+                </p>
+              )}
+              {data.primaryCta && (
+                <div className="wb-vintage-hero-actions">
+                  <SiteLink
+                    link={data.primaryCta}
+                    className="wb-vintage-btn-primary"
+                  >
+                    <span>{data.primaryCta.label || "See our reels"}</span>
+                  </SiteLink>
+                </div>
+              )}
+            </div>
+
+            <div className="wb-sunburst-portrait-wrap">
+              <div className="wb-sunburst-circle-frame">
+                <SiteImage image={portraitImage} />
+              </div>
+            </div>
+          </div>
         </div>
       </SectionShell>
     );

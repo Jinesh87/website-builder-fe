@@ -9,7 +9,7 @@ export default function TextSection({ section }: { section: SectionOf<"text"> })
     <SectionShell
       sectionId={section.id}
       settings={section.settings}
-      className={`wb-align-${align}`}
+      className={`wb-align-${align}${data.variant === "pull-quote" ? " wb-text-pull-quote" : ""}`}
       label={data.heading}
     >
       <div className={`wb-text wb-align-${align}`}>

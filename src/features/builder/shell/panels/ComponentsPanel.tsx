@@ -26,6 +26,7 @@ import {
   SearchX,
   ShoppingBag,
   SlidersHorizontal,
+  UserCircle,
   Users,
   type LucideProps,
 } from "lucide-react";
@@ -59,6 +60,7 @@ const SECTION_ICONS: Record<SectionType, ComponentType<LucideProps>> = {
   blog_detail: FileText,
   products: ShoppingBag,
   product_detail: ShoppingBag,
+  account: UserCircle,
 };
 
 /** Drag-to-insert list backed by Puck's drawer, rendered with the builder's own styling and icons. */

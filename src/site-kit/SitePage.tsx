@@ -1,4 +1,6 @@
 import { Fragment, memo, type ReactNode } from "react";
+import { VideoModalProvider } from "./VideoModal.tsx";
+import { CurrentPageContext } from "./current-page.ts";
 import SiteFooter from "./layout/SiteFooter.tsx";
 import SiteHeader from "./layout/SiteHeader.tsx";
 import AuthSection from "./sections/AuthSection.tsx";
@@ -27,6 +29,7 @@ import BlogSection from "./sections/BlogSection.tsx";
 import BlogDetailSection from "./sections/BlogDetailSection.tsx";
 import ProductsSection from "./sections/ProductsSection.tsx";
 import ProductDetailSection from "./sections/ProductDetailSection.tsx";
+import AccountSection from "./sections/AccountSection.tsx";
 import { ShopCatalogProvider } from "./shop-catalog.tsx";
 import { SITE_CSS } from "./styles.ts";
 import { themeToCssVars } from "./theme.ts";
@@ -86,6 +89,8 @@ export const SectionView = memo(function SectionView({ section }: { section: Sec
       return <ProductsSection section={section} />;
     case "product_detail":
       return <ProductDetailSection section={section} />;
+    case "account":
+      return <AccountSection section={section} />;
   }
 }, (prev, next) => {
   if (prev.section === next.section) return true;
@@ -112,11 +117,13 @@ type SiteFrameProps = {
 export function SiteFrame({ theme, header, footer, children }: SiteFrameProps) {
   const classes = ["wb-site", `wb-buttons-${theme.buttonStyle}`, `wb-cards-${theme.cardStyle}`].join(" ");
   return (
-    <div className={classes} style={themeToCssVars(theme)}>
-      {header}
-      <main>{children}</main>
-      {footer}
-    </div>
+    <VideoModalProvider>
+      <div className={classes} style={themeToCssVars(theme)}>
+        {header}
+        <main>{children}</main>
+        {footer}
+      </div>
+    </VideoModalProvider>
   );
 }
 
@@ -185,18 +192,20 @@ function SitePageBody({ site, page, editor }: SitePageProps) {
   );
 
   return (
-    <SiteFrame
-      theme={site.theme}
-      header={editor && effectiveHeader ? editor.renderHeader(effectiveHeader) : effectiveHeader}
-      footer={editor && effectiveFooter ? editor.renderFooter(effectiveFooter) : effectiveFooter}
-    >
-      {editor
-        ? bodySections.length === 0
-          ? editor.emptyState
-          : bodySections.map((section) => (
-              <Fragment key={section.id}>{editor.renderSection(section, <SectionView section={section} />)}</Fragment>
-            ))
-        : bodySections.map((section) => <SectionView key={section.id} section={section} />)}
-    </SiteFrame>
+    <CurrentPageContext.Provider value={page.slug}>
+      <SiteFrame
+        theme={site.theme}
+        header={editor && effectiveHeader ? editor.renderHeader(effectiveHeader) : effectiveHeader}
+        footer={editor && effectiveFooter ? editor.renderFooter(effectiveFooter) : effectiveFooter}
+      >
+        {editor
+          ? bodySections.length === 0
+            ? editor.emptyState
+            : bodySections.map((section) => (
+                <Fragment key={section.id}>{editor.renderSection(section, <SectionView section={section} />)}</Fragment>
+              ))
+          : bodySections.map((section) => <SectionView key={section.id} section={section} />)}
+      </SiteFrame>
+    </CurrentPageContext.Provider>
   );
 }

@@ -229,7 +229,7 @@ export default function TestimonialsSection({
               {showAvatars && <AuthorAvatar avatar={current.avatar} name={current.name} size="lg" />}
               <div className="wb-testimonial-author-info">
                 <div className="wb-testimonial-name-row">
-                  <span className="wb-testimonial-name" style={{ fontSize: 17 }}>
+                  <span className="wb-testimonial-name">
                     {current.name}
                   </span>
                   {showBadges && current.verified !== false && (
@@ -237,7 +237,7 @@ export default function TestimonialsSection({
                   )}
                 </div>
                 {(current.role || current.company) && (
-                  <span className="wb-testimonial-role" style={{ fontSize: 14 }}>
+                  <span className="wb-testimonial-role">
                     {[current.role, current.company].filter(Boolean).join(" · ")}
                   </span>
                 )}
@@ -372,7 +372,7 @@ export default function TestimonialsSection({
                 {showAvatars && <AuthorAvatar avatar={featured.avatar} name={featured.name} size="lg" />}
                 <div className="wb-testimonial-author-info">
                   <div className="wb-testimonial-name-row">
-                    <span className="wb-testimonial-name" style={{ fontSize: 16 }}>
+                    <span className="wb-testimonial-name">
                       {featured.name}
                     </span>
                     {showBadges && featured.verified !== false && (
@@ -380,7 +380,7 @@ export default function TestimonialsSection({
                     )}
                   </div>
                   {(featured.role || featured.company) && (
-                    <span className="wb-testimonial-role" style={{ fontSize: 13.5 }}>
+                    <span className="wb-testimonial-role">
                       {[featured.role, featured.company].filter(Boolean).join(" · ")}
                     </span>
                   )}

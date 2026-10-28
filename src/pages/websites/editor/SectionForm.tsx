@@ -36,6 +36,7 @@ import type {
   SectionSettings,
   SectionSpacing,
   ServiceItem,
+  AccountData,
   ProductDetailData,
   ProductsData,
   ServicesData,
@@ -78,6 +79,7 @@ import AuthSectionForm from "./AuthSectionForm.tsx";
 import CardsSectionForm from "./CardsSectionForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
+import { Bold, Italic } from "lucide-react";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
 
@@ -190,6 +192,102 @@ const ALIGN_OPTIONS: { value: SectionAlign; label: string }[] = [
   { value: "left", label: "Left aligned" },
   { value: "center", label: "Centered" },
   { value: "right", label: "Right aligned" },
+];
+
+const CONTAINER_WIDTH_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Default (Theme container ~1200px)" },
+  { value: "narrow", label: "Narrow / Compact (768px)" },
+  { value: "medium", label: "Medium (1024px)" },
+  { value: "wide", label: "Wide (1400px)" },
+  { value: "full", label: "Full Width (100% fluid)" },
+  { value: "custom", label: "Custom width (px or %)..." },
+];
+
+const HEADING_WEIGHT_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Theme default (Bold 700)" },
+  { value: "300", label: "Light (300)" },
+  { value: "400", label: "Regular / Normal (400)" },
+  { value: "500", label: "Medium (500)" },
+  { value: "600", label: "Semi-Bold (600)" },
+  { value: "700", label: "Bold (700)" },
+  { value: "800", label: "Extra Bold (800)" },
+  { value: "900", label: "Black / Heavy (900)" },
+];
+
+const BODY_WEIGHT_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Theme default (Regular 400)" },
+  { value: "300", label: "Light (300)" },
+  { value: "400", label: "Regular / Normal (400)" },
+  { value: "500", label: "Medium (500)" },
+  { value: "600", label: "Semi-Bold (600)" },
+  { value: "700", label: "Bold (700)" },
+];
+
+const FONT_SIZE_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Default (Theme size 100%)" },
+  { value: "small", label: "Compact / Small (88%)" },
+  { value: "medium", label: "Medium / Balanced (108%)" },
+  { value: "large", label: "Large / Prominent (122%)" },
+  { value: "huge", label: "Extra Large / Display (138%)" },
+  { value: "75%", label: "75% Scale (Very compact)" },
+  { value: "85%", label: "85% Scale" },
+  { value: "95%", label: "95% Scale" },
+  { value: "105%", label: "105% Scale" },
+  { value: "115%", label: "115% Scale" },
+  { value: "125%", label: "125% Scale" },
+  { value: "135%", label: "135% Scale" },
+  { value: "150%", label: "150% Scale (Dramatic display)" },
+  { value: "custom", label: "Custom pixel / scale…" },
+];
+
+const HEADING_SIZE_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Auto (Follow section size)" },
+  { value: "small", label: "Preset: Small / Compact" },
+  { value: "medium", label: "Preset: Medium / Balanced" },
+  { value: "large", label: "Preset: Large / Prominent" },
+  { value: "huge", label: "Preset: Huge / Display headline" },
+  { value: "18px", label: "18px (Compact subhead)" },
+  { value: "20px", label: "20px" },
+  { value: "22px", label: "22px" },
+  { value: "24px", label: "24px (Card / section title)" },
+  { value: "26px", label: "26px" },
+  { value: "28px", label: "28px" },
+  { value: "30px", label: "30px" },
+  { value: "32px", label: "32px (Medium h2)" },
+  { value: "34px", label: "34px" },
+  { value: "36px", label: "36px" },
+  { value: "40px", label: "40px (Impact title)" },
+  { value: "44px", label: "44px" },
+  { value: "48px", label: "48px (Hero h1 standard)" },
+  { value: "52px", label: "52px" },
+  { value: "56px", label: "56px (Hero h1 prominent)" },
+  { value: "60px", label: "60px" },
+  { value: "64px", label: "64px (Large hero)" },
+  { value: "72px", label: "72px (Huge headline)" },
+  { value: "80px", label: "80px" },
+  { value: "96px", label: "96px (Billboard display)" },
+  { value: "custom", label: "Custom pixel size…" },
+];
+
+const BODY_SIZE_OPTIONS: { value: string; label: string }[] = [
+  { value: "default", label: "Auto (Follow section size)" },
+  { value: "small", label: "Preset: Small (13px - 14px)" },
+  { value: "medium", label: "Preset: Medium (15px - 16px)" },
+  { value: "large", label: "Preset: Large (17px - 18px)" },
+  { value: "huge", label: "Preset: Extra Large (19px - 20px)" },
+  { value: "11px", label: "11px (Tiny text / badge)" },
+  { value: "12px", label: "12px (Small caption)" },
+  { value: "13px", label: "13px (Compact body)" },
+  { value: "14px", label: "14px (Standard UI)" },
+  { value: "15px", label: "15px (Standard reading)" },
+  { value: "16px", label: "16px (Comfortable body)" },
+  { value: "17px", label: "17px (Editorial body)" },
+  { value: "18px", label: "18px (Prominent text)" },
+  { value: "19px", label: "19px" },
+  { value: "20px", label: "20px (Lead paragraph)" },
+  { value: "22px", label: "22px" },
+  { value: "24px", label: "24px (Large lead)" },
+  { value: "custom", label: "Custom pixel size…" },
 ];
 
 const ANCHOR_PATTERN = /^[a-z][a-z0-9-]{0,39}$/;
@@ -404,6 +502,16 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             {
               value: "video-bg",
               label: "Video background & demo (Cinematic video player)",
+            },
+            {
+              value: "vintage-editorial",
+              label:
+                "Vintage Editorial (Old soul, new stories, newspaper strip & polaroid stack)",
+            },
+            {
+              value: "vintage-sunburst",
+              label:
+                "Vintage Sunburst Nostalgia (Radiating ray banner, white shadow title & circular portrait)",
             },
           ]}
           onChange={(variant) =>
@@ -980,7 +1088,13 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
           label="Play video / Demo button (optional)"
           value={data.tertiaryCta}
           onChange={(tertiaryCta) => onChange({ ...data, tertiaryCta })}
-          fallback={{ label: "Watch 2-min demo", href: "#demo" }}
+          fallback={{
+            label: "Watch 2-min demo",
+            href: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            actionType: "video",
+            videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            icon: "play",
+          }}
         />
       </FormGroup>
 
@@ -1343,6 +1457,21 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
               value: "cards",
               label:
                 "Elevated modern cards (Surface cards with hover lift & subtle shadow)",
+            },
+            {
+              value: "editorial-process",
+              label:
+                "Editorial process steps (Roman numerals timeline & top dividing rule)",
+            },
+            {
+              value: "colored-pillars",
+              label:
+                "Colored pillars (Mission, Vision, Values colored rounded cards)",
+            },
+            {
+              value: "polaroid-grid",
+              label:
+                "Polaroid photo grid (Vintage photo paper cards with captions)",
             },
           ]}
           onChange={(variant) =>
@@ -1759,6 +1888,10 @@ const SERVICES_VARIANT_OPTIONS: { value: ServicesVariant; label: string }[] = [
   {
     value: "minimal-numbered",
     label: "Minimal numbered (Editorial / Consulting)",
+  },
+  {
+    value: "editorial-specs",
+    label: "Editorial specs list (Vintage Reels 01-06 with chromatic stamp)",
   },
 ];
 
@@ -2573,6 +2706,14 @@ const CTA_VARIANT_OPTIONS: { value: CtaVariant; label: string }[] = [
     value: "minimal-editorial",
     label: "Minimal editorial (Swiss architectural)",
   },
+  {
+    value: "vintage-story",
+    label: "Vintage editorial story CTA (Dark centered with italic accent)",
+  },
+  {
+    value: "vintage-banner",
+    label: "Vintage terracotta banner (Terracotta rounded container with call button)",
+  },
 ];
 
 const CTA_CARD_STYLE_OPTIONS: { value: CtaCardStyle; label: string }[] = [
@@ -3017,6 +3158,80 @@ function ProductDetailForm({ data, onChange }: DataFormProps<ProductDetailData>)
       <CheckboxField label="Show description" checked={data.showDescription !== false} onChange={(showDescription) => onChange({ ...data, showDescription })} />
       <CheckboxField label="Show stock" checked={data.showStock !== false} onChange={(showStock) => onChange({ ...data, showStock })} />
     </FormGroup>
+  );
+}
+
+function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
+  const set = (patch: Partial<AccountData>) => onChange({ ...data, ...patch });
+  return (
+    <>
+      <FormGroup title="Template">
+        <SelectField
+          label="Layout"
+          value={data.variant ?? "sidebar-tabs"}
+          onChange={(variant) => set({ variant: variant as AccountData["variant"] })}
+          options={[
+            { value: "sidebar-tabs", label: "Sidebar tabs" },
+            { value: "top-tabs", label: "Top tabs" },
+            { value: "overview-cards", label: "Overview dashboard" },
+            { value: "minimal-list", label: "Minimal list" },
+            { value: "dark-panel", label: "Dark panel" },
+          ]}
+        />
+        <SelectField
+          label="Design in the editor"
+          value={data.preview ?? "member"}
+          onChange={(preview) => set({ preview: preview as AccountData["preview"] })}
+          options={[
+            { value: "member", label: "Signed-in customer (sample data)" },
+            { value: "guest", label: "Visitor who isn't signed in" },
+          ]}
+          hint="Only changes what you see here. Visitors always get the state that matches their session."
+        />
+        <TextField label="Heading" value={data.heading ?? ""} onChange={(heading) => set({ heading })} maxLength={160} />
+        <TextAreaField label="Intro" value={data.subheading ?? ""} onChange={(subheading) => set({ subheading })} rows={2} maxLength={320} />
+      </FormGroup>
+      <FormGroup title="Panels">
+        <CheckboxField label="Orders" checked={data.showOrders !== false} onChange={(showOrders) => set({ showOrders })} />
+        <CheckboxField label="Cart" checked={data.showCart !== false} onChange={(showCart) => set({ showCart })} />
+        <CheckboxField label="Profile (name, phone)" checked={data.showProfile !== false} onChange={(showProfile) => set({ showProfile })} />
+        <CheckboxField label="Change password" checked={data.showPassword !== false} onChange={(showPassword) => set({ showPassword })} />
+        <TextField label="Orders label" value={data.ordersLabel ?? ""} onChange={(ordersLabel) => set({ ordersLabel })} maxLength={40} />
+        <TextField label="Cart label" value={data.cartLabel ?? ""} onChange={(cartLabel) => set({ cartLabel })} maxLength={40} />
+        <TextField label="Profile label" value={data.profileLabel ?? ""} onChange={(profileLabel) => set({ profileLabel })} maxLength={40} />
+        <TextField label="Password label" value={data.passwordLabel ?? ""} onChange={(passwordLabel) => set({ passwordLabel })} maxLength={40} />
+        <TextField label="Save button" value={data.saveLabel ?? ""} onChange={(saveLabel) => set({ saveLabel })} maxLength={40} />
+        <TextField label="Log out button" value={data.logoutLabel ?? ""} onChange={(logoutLabel) => set({ logoutLabel })} maxLength={40} />
+        <TextField label="No orders yet" value={data.emptyOrdersText ?? ""} onChange={(emptyOrdersText) => set({ emptyOrdersText })} maxLength={200} />
+        <TextField label="Empty cart" value={data.emptyCartText ?? ""} onChange={(emptyCartText) => set({ emptyCartText })} maxLength={200} />
+      </FormGroup>
+      <FormGroup title="Visitors who aren't signed in">
+        <CheckboxField
+          label="Send them straight to the login page"
+          checked={data.redirectWhenLoggedOut === true}
+          onChange={(redirectWhenLoggedOut) => set({ redirectWhenLoggedOut })}
+        />
+        <TextField label="Heading" value={data.guestHeading ?? ""} onChange={(guestHeading) => set({ guestHeading })} maxLength={160} />
+        <TextAreaField label="Text" value={data.guestText ?? ""} onChange={(guestText) => set({ guestText })} rows={2} maxLength={320} />
+        <TextField label="Button" value={data.guestButtonLabel ?? ""} onChange={(guestButtonLabel) => set({ guestButtonLabel })} maxLength={60} />
+      </FormGroup>
+      <FormGroup title="Links">
+        <TextField
+          label="Login page address"
+          value={data.loginHref ?? ""}
+          onChange={(loginHref) => set({ loginHref })}
+          maxLength={200}
+          hint="The page that has the login section, usually /login."
+        />
+        <TextField
+          label="Shop page address"
+          value={data.shopHref ?? ""}
+          onChange={(shopHref) => set({ shopHref })}
+          maxLength={200}
+          hint="Linked from the empty orders and cart states."
+        />
+      </FormGroup>
+    </>
   );
 }
 
@@ -4242,9 +4457,15 @@ export function SectionStyleForm({
     customColors.gradientTo,
   );
 
+  const isCustomWidth = Boolean(
+    settings.containerWidth &&
+    settings.containerWidth !== "default" &&
+    !CONTAINER_WIDTH_OPTIONS.some((opt) => opt.value === settings.containerWidth)
+  );
+
   return (
     <>
-      <FormGroup title="Section layout & theme">
+      <FormGroup title="Section layout & container width">
         <SelectField
           label="Theme preset background"
           value={settings.background}
@@ -4258,6 +4479,37 @@ export function SectionStyleForm({
           onChange={(spacing) => onChange({ ...settings, spacing })}
         />
         <SelectField
+          label="Content container width"
+          value={isCustomWidth ? "custom" : (settings.containerWidth ?? "default")}
+          options={CONTAINER_WIDTH_OPTIONS}
+          onChange={(containerWidth) => {
+            if (containerWidth === "custom") {
+              onChange({ ...settings, containerWidth: "1140px" });
+            } else if (containerWidth === "default") {
+              const { containerWidth: _, ...rest } = settings;
+              onChange(rest);
+            } else {
+              onChange({ ...settings, containerWidth });
+            }
+          }}
+        />
+        {isCustomWidth && (
+          <TextField
+            label="Custom container width (px, %, or vw)"
+            value={settings.containerWidth ?? ""}
+            placeholder="e.g. 1100px or 92%"
+            onChange={(val) => {
+              const cleaned = val.trim();
+              if (!cleaned) {
+                const { containerWidth: _, ...rest } = settings;
+                onChange(rest);
+              } else {
+                onChange({ ...settings, containerWidth: cleaned });
+              }
+            }}
+          />
+        )}
+        <SelectField
           label="Heading alignment"
           value={settings.align ?? "center"}
           options={ALIGN_OPTIONS}
@@ -4265,17 +4517,241 @@ export function SectionStyleForm({
         />
       </FormGroup>
 
-      <FormGroup title="Section font">
-        <FontPicker
-          label="Section font"
-          value={settings.font}
-          inheritFrom={siteFont}
-          onChange={(font) => {
-            const { font: _previous, ...rest } = settings;
-            onChange(font ? { ...rest, font } : rest);
-          }}
-        />
-      </FormGroup>
+      {(() => {
+        const isCustomScale = Boolean(
+          settings.fontSize &&
+          settings.fontSize !== "default" &&
+          !FONT_SIZE_OPTIONS.some((opt) => opt.value === settings.fontSize)
+        );
+        const isCustomHeading = Boolean(
+          settings.headingSize &&
+          settings.headingSize !== "default" &&
+          !HEADING_SIZE_OPTIONS.some((opt) => opt.value === settings.headingSize)
+        );
+        const isCustomBody = Boolean(
+          settings.bodySize &&
+          settings.bodySize !== "default" &&
+          !BODY_SIZE_OPTIONS.some((opt) => opt.value === settings.bodySize)
+        );
+
+        const isHeadingBold =
+          settings.headingWeight === "700" ||
+          settings.headingWeight === "800" ||
+          settings.headingWeight === "900" ||
+          settings.headingWeight === "bold";
+
+        const isBodyBold =
+          settings.bodyWeight === "600" ||
+          settings.bodyWeight === "700" ||
+          settings.bodyWeight === "bold";
+
+        return (
+          <FormGroup title="Section typography & styling">
+            <FontPicker
+              label="Font family"
+              value={settings.font}
+              inheritFrom={siteFont}
+              onChange={(font) => {
+                const { font: _previous, ...rest } = settings;
+                onChange(font ? { ...rest, font } : rest);
+              }}
+            />
+            <SelectField
+              label="Overall font size scale"
+              value={isCustomScale ? "custom" : (settings.fontSize ?? "default")}
+              options={FONT_SIZE_OPTIONS}
+              onChange={(fontSize) => {
+                if (fontSize === "custom") {
+                  onChange({ ...settings, fontSize: "110%" });
+                } else if (fontSize === "default") {
+                  const { fontSize: _, ...rest } = settings;
+                  onChange(rest);
+                } else {
+                  onChange({ ...settings, fontSize });
+                }
+              }}
+            />
+            {isCustomScale && (
+              <TextField
+                label="Custom scale or base pixel size"
+                value={settings.fontSize ?? ""}
+                placeholder="e.g. 110% or 16px"
+                onChange={(val) => {
+                  const cleaned = val.trim();
+                  if (!cleaned) {
+                    const { fontSize: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, fontSize: cleaned });
+                  }
+                }}
+              />
+            )}
+
+            <div className="pt-2 border-t border-ed-border/40 flex flex-col gap-2">
+              <span className="text-ed-xs font-semibold text-ed-text">Heading Typography</span>
+              <SelectField
+                label="Heading font size"
+                value={isCustomHeading ? "custom" : (settings.headingSize ?? "default")}
+                options={HEADING_SIZE_OPTIONS}
+                onChange={(headingSize) => {
+                  if (headingSize === "custom") {
+                    onChange({ ...settings, headingSize: "36px" });
+                  } else if (headingSize === "default") {
+                    const { headingSize: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, headingSize });
+                  }
+                }}
+              />
+              {isCustomHeading && (
+                <TextField
+                  label="Custom heading pixel size (px)"
+                  value={settings.headingSize ?? ""}
+                  placeholder="e.g. 38px or 42"
+                  onChange={(val) => {
+                    const cleaned = val.trim();
+                    if (!cleaned) {
+                      const { headingSize: _, ...rest } = settings;
+                      onChange(rest);
+                    } else {
+                      onChange({ ...settings, headingSize: cleaned });
+                    }
+                  }}
+                />
+              )}
+              <SelectField
+                label="Heading font weight"
+                value={settings.headingWeight ?? "default"}
+                options={HEADING_WEIGHT_OPTIONS}
+                onChange={(headingWeight) => {
+                  if (headingWeight === "default") {
+                    const { headingWeight: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, headingWeight });
+                  }
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-ed-xs text-ed-muted">Quick style:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...settings, headingWeight: isHeadingBold ? "400" : "700" });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-ed-xs font-semibold rounded-ed border transition-colors ${
+                    isHeadingBold
+                      ? "bg-ed-accent text-white border-ed-accent"
+                      : "bg-ed-panel text-ed-text border-ed-border hover:bg-ed-hover"
+                  }`}
+                  title="Toggle heading bold"
+                >
+                  <Bold className="size-3.5" />
+                  Bold
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...settings, headingItalic: !settings.headingItalic });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-ed-xs italic rounded-ed border transition-colors ${
+                    settings.headingItalic
+                      ? "bg-ed-accent text-white border-ed-accent font-semibold"
+                      : "bg-ed-panel text-ed-text border-ed-border hover:bg-ed-hover"
+                  }`}
+                  title="Toggle heading italic"
+                >
+                  <Italic className="size-3.5" />
+                  Italic
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-ed-border/40 flex flex-col gap-2">
+              <span className="text-ed-xs font-semibold text-ed-text">Body / Content Typography</span>
+              <SelectField
+                label="Body / Content font size"
+                value={isCustomBody ? "custom" : (settings.bodySize ?? "default")}
+                options={BODY_SIZE_OPTIONS}
+                onChange={(bodySize) => {
+                  if (bodySize === "custom") {
+                    onChange({ ...settings, bodySize: "16px" });
+                  } else if (bodySize === "default") {
+                    const { bodySize: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, bodySize });
+                  }
+                }}
+              />
+              {isCustomBody && (
+                <TextField
+                  label="Custom body pixel size (px)"
+                  value={settings.bodySize ?? ""}
+                  placeholder="e.g. 15.5px or 17"
+                  onChange={(val) => {
+                    const cleaned = val.trim();
+                    if (!cleaned) {
+                      const { bodySize: _, ...rest } = settings;
+                      onChange(rest);
+                    } else {
+                      onChange({ ...settings, bodySize: cleaned });
+                    }
+                  }}
+                />
+              )}
+              <SelectField
+                label="Body font weight"
+                value={settings.bodyWeight ?? "default"}
+                options={BODY_WEIGHT_OPTIONS}
+                onChange={(bodyWeight) => {
+                  if (bodyWeight === "default") {
+                    const { bodyWeight: _, ...rest } = settings;
+                    onChange(rest);
+                  } else {
+                    onChange({ ...settings, bodyWeight });
+                  }
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <span className="text-ed-xs text-ed-muted">Quick style:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...settings, bodyWeight: isBodyBold ? "400" : "700" });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-ed-xs font-semibold rounded-ed border transition-colors ${
+                    isBodyBold
+                      ? "bg-ed-accent text-white border-ed-accent"
+                      : "bg-ed-panel text-ed-text border-ed-border hover:bg-ed-hover"
+                  }`}
+                  title="Toggle body bold"
+                >
+                  <Bold className="size-3.5" />
+                  Bold
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...settings, bodyItalic: !settings.bodyItalic });
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-ed-xs italic rounded-ed border transition-colors ${
+                    settings.bodyItalic
+                      ? "bg-ed-accent text-white border-ed-accent font-semibold"
+                      : "bg-ed-panel text-ed-text border-ed-border hover:bg-ed-hover"
+                  }`}
+                  title="Toggle body italic"
+                >
+                  <Italic className="size-3.5" />
+                  Italic
+                </button>
+              </div>
+            </div>
+          </FormGroup>
+        );
+      })()}
 
       <FormGroup title="Custom dynamic colors (CellColorPicker)">
         <ColorField
@@ -4571,6 +5047,13 @@ function DataForm({
     case "product_detail":
       return (
         <ProductDetailForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "account":
+      return (
+        <AccountForm
           data={section.data}
           onChange={(data) => onChange({ ...section, data })}
         />

@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { fontStack, isFontKey } from "./fonts.ts";
-import type { RadiusSize, SpacingSize, ThemeSettings } from "./types.ts";
+import type { RadiusSize, SectionSettings, SpacingSize, ThemeSettings } from "./types.ts";
 
 const RADIUS: Record<RadiusSize, string> = {
   none: "0px",
@@ -87,3 +87,184 @@ export function sectionFontStyle(font: string | undefined): CSSProperties {
   const stack = fontStack(font);
   return { "--wb-font-heading": stack, "--wb-font-body": stack, fontFamily: stack } as CSSProperties;
 }
+
+export const SECTION_FONT_SCALE: Record<string, string> = {
+  small: "0.88",
+  normal: "1",
+  medium: "1.08",
+  large: "1.22",
+  huge: "1.38",
+};
+
+export const SECTION_HEADING_SCALE: Record<string, string> = {
+  small: "0.82",
+  normal: "1",
+  medium: "1.12",
+  large: "1.25",
+  huge: "1.45",
+};
+
+export const SECTION_BODY_SIZE: Record<string, string> = {
+  small: "13.5px",
+  normal: "15px",
+  medium: "16px",
+  large: "18px",
+  huge: "20px",
+};
+
+function parsePx(val: string | undefined): string | undefined {
+  if (!val || val === "default") return undefined;
+  if (/^\d+(\.\d+)?(px|rem|em|pt)$/i.test(val)) return val;
+  if (/^\d+$/.test(val)) return `${val}px`;
+  return undefined;
+}
+
+function parseWidth(val: string | undefined): string | undefined {
+  if (!val || val === "default") return undefined;
+  if (/^\d+(\.\d+)?(px|rem|em|vw|%|ch)$/i.test(val)) return val;
+  if (/^\d+$/.test(val)) return `${val}px`;
+  return undefined;
+}
+
+export function sectionTypographyStyle(settings: Partial<SectionSettings> | undefined): CSSProperties {
+  if (!settings) return {};
+  const style: Record<string, string> = {};
+  if (settings.font && isFontKey(settings.font)) {
+    const stack = fontStack(settings.font);
+    style["--wb-font-heading"] = stack;
+    style["--wb-font-body"] = stack;
+    style["fontFamily"] = stack;
+  }
+
+  // Section container max-width:
+  if (settings.containerWidth && settings.containerWidth !== "default") {
+    const widthPresets: Record<string, string> = {
+      narrow: "768px",
+      medium: "1024px",
+      wide: "1400px",
+      full: "100%",
+    };
+    const resolvedWidth = widthPresets[settings.containerWidth] || parseWidth(settings.containerWidth);
+    if (resolvedWidth) {
+      style["--wb-section-max-width"] = resolvedWidth;
+      style["--wb-container"] = resolvedWidth;
+    }
+  }
+
+  // Overall section font scale / size:
+  if (settings.fontSize && settings.fontSize !== "default") {
+    if (SECTION_FONT_SCALE[settings.fontSize]) {
+      style["--wb-font-scale"] = SECTION_FONT_SCALE[settings.fontSize];
+    } else {
+      const px = parsePx(settings.fontSize);
+      if (px) {
+        style["--wb-section-font-size"] = px;
+        style["fontSize"] = px;
+      } else if (/^\d+(\.\d+)?%$/.test(settings.fontSize)) {
+        style["--wb-font-scale"] = `${parseFloat(settings.fontSize) / 100}`;
+      }
+    }
+  }
+
+  // Heading font size override:
+  if (settings.headingSize && settings.headingSize !== "default") {
+    if (SECTION_HEADING_SCALE[settings.headingSize]) {
+      style["--wb-heading-scale"] = SECTION_HEADING_SCALE[settings.headingSize];
+    } else {
+      const px = parsePx(settings.headingSize);
+      if (px) {
+        style["--wb-heading-size"] = px;
+      }
+    }
+  }
+
+  // Body font size override:
+  if (settings.bodySize && settings.bodySize !== "default") {
+    if (SECTION_BODY_SIZE[settings.bodySize]) {
+      style["--wb-body-size"] = SECTION_BODY_SIZE[settings.bodySize];
+    } else {
+      const px = parsePx(settings.bodySize);
+      if (px) {
+        style["--wb-body-size"] = px;
+      }
+    }
+  }
+
+  // Heading font weight:
+  if (settings.headingWeight && settings.headingWeight !== "default") {
+    const weightPresets: Record<string, string> = {
+      light: "300",
+      normal: "400",
+      medium: "500",
+      semibold: "600",
+      bold: "700",
+      extrabold: "800",
+      black: "900",
+    };
+    style["--wb-heading-weight"] = weightPresets[settings.headingWeight] || settings.headingWeight;
+  }
+
+  // Heading italic:
+  if (settings.headingItalic) {
+    style["--wb-heading-font-style"] = "italic";
+  }
+
+  // Body font weight:
+  if (settings.bodyWeight && settings.bodyWeight !== "default") {
+    const weightPresets: Record<string, string> = {
+      light: "300",
+      normal: "400",
+      medium: "500",
+      semibold: "600",
+      bold: "700",
+    };
+    style["--wb-body-weight"] = weightPresets[settings.bodyWeight] || settings.bodyWeight;
+  }
+
+  // Body italic:
+  if (settings.bodyItalic) {
+    style["--wb-body-font-style"] = "italic";
+  }
+
+  return style as CSSProperties;
+}
+
+export function sectionTypographyClasses(settings: Partial<SectionSettings> | undefined): string {
+  if (!settings) return "";
+  const classes: string[] = [];
+  if (settings.fontSize && settings.fontSize !== "default") {
+    classes.push("wb-has-font-scale");
+    if (SECTION_FONT_SCALE[settings.fontSize]) {
+      classes.push(`wb-font-size-${settings.fontSize}`);
+    }
+  }
+  if (settings.headingSize && settings.headingSize !== "default") {
+    classes.push("wb-has-heading-size");
+    if (SECTION_HEADING_SCALE[settings.headingSize]) {
+      classes.push(`wb-heading-size-${settings.headingSize}`);
+    }
+  }
+  if (settings.bodySize && settings.bodySize !== "default") {
+    classes.push("wb-has-body-size");
+    if (SECTION_BODY_SIZE[settings.bodySize]) {
+      classes.push(`wb-body-size-${settings.bodySize}`);
+    }
+  }
+  if (settings.containerWidth && settings.containerWidth !== "default") {
+    classes.push(`wb-width-${settings.containerWidth}`);
+  }
+  if (settings.headingWeight && settings.headingWeight !== "default") {
+    classes.push(`wb-heading-weight-${settings.headingWeight}`);
+  }
+  if (settings.headingItalic) {
+    classes.push("wb-heading-italic");
+  }
+  if (settings.bodyWeight && settings.bodyWeight !== "default") {
+    classes.push(`wb-body-weight-${settings.bodyWeight}`);
+  }
+  if (settings.bodyItalic) {
+    classes.push("wb-body-italic");
+  }
+  return classes.join(" ");
+}
+

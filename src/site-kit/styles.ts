@@ -4,6 +4,7 @@
  * responsive rules use container queries so the editor's tablet/mobile preview
  * frames behave exactly like real devices on the published site.
  */
+import { ACCOUNT_CSS } from "./account-styles.ts";
 import { AUTH_CSS } from "./auth-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
 import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
@@ -11,6 +12,7 @@ import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
 import { HERO_CONTROLS_CSS } from "./hero-controls-styles.ts";
 import { CARDS_CSS } from "./cards-styles.ts";
 import { SHOP_CSS } from "./shop-styles.ts";
+import { VINTAGE_CSS } from "./vintage-styles.ts";
 
 const NOT_CHROME = ":not(.wb-editor-chrome, .wb-editor-chrome *)";
 
@@ -86,7 +88,7 @@ export const SITE_CSS = `
 .wb-site h2 { font-size: 34px; }
 .wb-site h3 { font-size: 19px; font-weight: 600; }
 
-.wb-container { width: 100%; max-width: var(--wb-container); margin: 0 auto; padding: 0 24px; }
+.wb-container { width: 100%; max-width: var(--wb-section-max-width, var(--wb-container)); margin: 0 auto; padding: 0 24px; }
 .wb-container-full { width: 100%; max-width: 100%; margin: 0; padding: 0; }
 .wb-section { padding: var(--wb-section-y) 0; }
 .wb-section[id] { scroll-margin-top: 88px; }
@@ -98,6 +100,427 @@ export const SITE_CSS = `
 .wb-bg-primary .wb-eyebrow { color: inherit; }
 .wb-section-head { max-width: 680px; margin: 0 auto 48px; text-align: center; }
 .wb-section-head p { margin-top: 12px; font-size: 18px; }
+
+/* Section-level font size customization (applies cleanly per section without breaking layouts) */
+.wb-section.wb-font-size-small,
+.wb-chrome-bg-default.wb-font-size-small,
+header.wb-font-size-small,
+footer.wb-font-size-small {
+  --wb-font-scale: 0.88;
+}
+.wb-section.wb-font-size-medium,
+.wb-chrome-bg-default.wb-font-size-medium,
+header.wb-font-size-medium,
+footer.wb-font-size-medium {
+  --wb-font-scale: 1.08;
+}
+.wb-section.wb-font-size-large,
+.wb-chrome-bg-default.wb-font-size-large,
+header.wb-font-size-large,
+footer.wb-font-size-large {
+  --wb-font-scale: 1.22;
+}
+.wb-section.wb-font-size-huge,
+.wb-chrome-bg-default.wb-font-size-huge,
+header.wb-font-size-huge,
+footer.wb-font-size-huge {
+  --wb-font-scale: 1.38;
+}
+
+/* Headings within section scaling */
+.wb-section[class*="wb-font-size-"] h1,
+.wb-section[class*="wb-font-size-"] .wb-hero h1,
+header[class*="wb-font-size-"] h1,
+footer[class*="wb-font-size-"] h1 {
+  font-size: calc(clamp(30px, 5vw, 48px) * var(--wb-font-scale, 1));
+  line-height: 1.15;
+}
+
+.wb-section[class*="wb-font-size-"] h2,
+.wb-section[class*="wb-font-size-"] .wb-section-head h2,
+header[class*="wb-font-size-"] h2,
+footer[class*="wb-font-size-"] h2 {
+  font-size: calc(clamp(22px, 3.8vw, 34px) * var(--wb-font-scale, 1));
+  line-height: 1.2;
+}
+
+.wb-section[class*="wb-font-size-"] h3,
+.wb-section[class*="wb-font-size-"] .wb-cardset-title,
+.wb-section[class*="wb-font-size-"] .wb-feature-title,
+.wb-section[class*="wb-font-size-"] .wb-service-title,
+.wb-section[class*="wb-font-size-"] .wb-pricing-title,
+header[class*="wb-font-size-"] h3,
+footer[class*="wb-font-size-"] h3 {
+  font-size: calc(clamp(16px, 2.2vw, 20px) * var(--wb-font-scale, 1));
+  line-height: 1.3;
+}
+
+.wb-section[class*="wb-font-size-"] p,
+.wb-section[class*="wb-font-size-"] .wb-section-head p,
+.wb-section[class*="wb-font-size-"] .wb-hero-sub,
+.wb-section[class*="wb-font-size-"] .wb-hero-desc,
+.wb-section[class*="wb-font-size-"] .wb-cardset-desc,
+.wb-section[class*="wb-font-size-"] .wb-cardset-intro,
+.wb-section[class*="wb-font-size-"] .wb-testimonial-quote,
+.wb-section[class*="wb-font-size-"] .wb-faq-answer,
+header[class*="wb-font-size-"] p,
+footer[class*="wb-font-size-"] p {
+  font-size: calc(clamp(14px, 1.6vw, 17px) * var(--wb-font-scale, 1));
+  line-height: 1.55;
+}
+
+.wb-section[class*="wb-font-size-"] .wb-eyebrow {
+  font-size: calc(13px * var(--wb-font-scale, 1));
+}
+
+.wb-section[class*="wb-font-size-"] .wb-btn {
+  font-size: calc(15px * var(--wb-font-scale, 1));
+}
+
+/* Specific Heading Size Overrides */
+.wb-section.wb-heading-size-small h1,
+.wb-section.wb-heading-size-small .wb-hero h1 { font-size: clamp(26px, 3.8vw, 36px) !important; }
+.wb-section.wb-heading-size-small h2,
+.wb-section.wb-heading-size-small .wb-section-head h2 { font-size: clamp(20px, 2.8vw, 26px) !important; }
+.wb-section.wb-heading-size-small h3,
+.wb-section.wb-heading-size-small .wb-cardset-title { font-size: 16px !important; }
+
+.wb-section.wb-heading-size-medium h1,
+.wb-section.wb-heading-size-medium .wb-hero h1 { font-size: clamp(34px, 4.8vw, 48px) !important; }
+.wb-section.wb-heading-size-medium h2,
+.wb-section.wb-heading-size-medium .wb-section-head h2 { font-size: clamp(24px, 3.5vw, 34px) !important; }
+.wb-section.wb-heading-size-medium h3,
+.wb-section.wb-heading-size-medium .wb-cardset-title { font-size: 19px !important; }
+
+.wb-section.wb-heading-size-large h1,
+.wb-section.wb-heading-size-large .wb-hero h1 { font-size: clamp(42px, 6vw, 58px) !important; }
+.wb-section.wb-heading-size-large h2,
+.wb-section.wb-heading-size-large .wb-section-head h2 { font-size: clamp(30px, 4.2vw, 42px) !important; }
+.wb-section.wb-heading-size-large h3,
+.wb-section.wb-heading-size-large .wb-cardset-title { font-size: 23px !important; }
+
+.wb-section.wb-heading-size-huge h1,
+.wb-section.wb-heading-size-huge .wb-hero h1 { font-size: clamp(50px, 7.5vw, 72px) !important; }
+.wb-section.wb-heading-size-huge h2,
+.wb-section.wb-heading-size-huge .wb-section-head h2 { font-size: clamp(36px, 5.2vw, 50px) !important; }
+.wb-section.wb-heading-size-huge h3,
+.wb-section.wb-heading-size-huge .wb-cardset-title { font-size: 27px !important; }
+
+/* Specific Body Size Overrides */
+.wb-section.wb-body-size-small p,
+.wb-section.wb-body-size-small .wb-section-head p,
+.wb-section.wb-body-size-small .wb-hero-sub,
+.wb-section.wb-body-size-small .wb-hero-desc,
+.wb-section.wb-body-size-small .wb-cardset-desc,
+.wb-section.wb-body-size-small .wb-cardset-intro,
+.wb-section.wb-body-size-small li,
+.wb-section.wb-body-size-small .wb-testimonial-quote {
+  font-size: 13.5px !important;
+  line-height: 1.5;
+}
+
+.wb-section.wb-body-size-medium p,
+.wb-section.wb-body-size-medium .wb-section-head p,
+.wb-section.wb-body-size-medium .wb-hero-sub,
+.wb-section.wb-body-size-medium .wb-hero-desc,
+.wb-section.wb-body-size-medium .wb-cardset-desc,
+.wb-section.wb-body-size-medium .wb-cardset-intro,
+.wb-section.wb-body-size-medium li,
+.wb-section.wb-body-size-medium .wb-testimonial-quote {
+  font-size: 15.5px !important;
+  line-height: 1.58;
+}
+
+.wb-section.wb-body-size-large p,
+.wb-section.wb-body-size-large .wb-section-head p,
+.wb-section.wb-body-size-large .wb-hero-sub,
+.wb-section.wb-body-size-large .wb-hero-desc,
+.wb-section.wb-body-size-large .wb-cardset-desc,
+.wb-section.wb-body-size-large .wb-cardset-intro,
+.wb-section.wb-body-size-large li,
+.wb-section.wb-body-size-large .wb-testimonial-quote {
+  font-size: 17.5px !important;
+  line-height: 1.62;
+}
+
+.wb-section.wb-body-size-huge p,
+.wb-section.wb-body-size-huge .wb-section-head p,
+.wb-section.wb-body-size-huge .wb-hero-sub,
+.wb-section.wb-body-size-huge .wb-hero-desc,
+.wb-section.wb-body-size-huge .wb-cardset-desc,
+.wb-section.wb-body-size-huge .wb-cardset-intro,
+.wb-section.wb-body-size-huge li,
+.wb-section.wb-body-size-huge .wb-testimonial-quote {
+  font-size: 20px !important;
+  line-height: 1.68;
+}
+
+.wb-testimonial-name { font-weight: 600; font-size: calc(16.5px * var(--wb-font-scale, 1)); color: var(--wb-text); }
+.wb-testimonial-role { font-size: calc(14px * var(--wb-font-scale, 1)); color: var(--wb-muted); }
+
+/* Exact pixel and scale size overrides when selected directly */
+[style*="--wb-heading-size"] h1,
+[style*="--wb-heading-size"] h2,
+[style*="--wb-heading-size"] h3,
+[style*="--wb-heading-size"] h4,
+[style*="--wb-heading-size"] .wb-hero h1,
+[style*="--wb-heading-size"] .wb-hero-curved-title,
+[style*="--wb-heading-size"] .wb-section-head h2,
+[style*="--wb-heading-size"] .wb-cardset-title,
+[style*="--wb-heading-size"] .wb-feature-title,
+[style*="--wb-heading-size"] .wb-service-title,
+[style*="--wb-heading-size"] .wb-pricing-title,
+[style*="--wb-heading-size"] .wb-faq-question,
+[style*="--wb-heading-size"] .wb-footer-col-title,
+[style*="--wb-heading-size"] .wb-footer-cta-card h3,
+footer[style*="--wb-heading-size"] h2,
+footer[style*="--wb-heading-size"] h3,
+footer[style*="--wb-heading-size"] h4,
+footer[style*="--wb-heading-size"] .wb-footer-col-title,
+header[style*="--wb-heading-size"] h1,
+header[style*="--wb-heading-size"] h2,
+header[style*="--wb-heading-size"] h3 {
+  font-size: var(--wb-heading-size) !important;
+}
+
+[style*="--wb-body-size"] p,
+[style*="--wb-body-size"] span:not(.wb-badge):not(.wb-btn-icon):not(.wb-hero-curved-badge),
+[style*="--wb-body-size"] a:not(.wb-btn),
+[style*="--wb-body-size"] li,
+[style*="--wb-body-size"] .wb-section-head p,
+[style*="--wb-body-size"] .wb-hero-sub,
+[style*="--wb-body-size"] .wb-hero-desc,
+[style*="--wb-body-size"] .wb-hero-curved-sub,
+[style*="--wb-body-size"] .wb-cardset-desc,
+[style*="--wb-body-size"] .wb-cardset-intro,
+[style*="--wb-body-size"] .wb-testimonial-quote,
+[style*="--wb-body-size"] .wb-testimonial-name,
+[style*="--wb-body-size"] .wb-testimonial-role,
+[style*="--wb-body-size"] .wb-faq-answer,
+footer[style*="--wb-body-size"],
+footer[style*="--wb-body-size"] p,
+footer[style*="--wb-body-size"] span,
+footer[style*="--wb-body-size"] a,
+footer[style*="--wb-body-size"] li,
+footer[style*="--wb-body-size"] .wb-footer-bottom,
+footer[style*="--wb-body-size"] .wb-footer-bottom span,
+footer[style*="--wb-body-size"] .wb-footer-copyright,
+footer[style*="--wb-body-size"] .wb-legal-links a,
+header[style*="--wb-body-size"] p,
+header[style*="--wb-body-size"] span:not(.wb-badge),
+header[style*="--wb-body-size"] a {
+  font-size: var(--wb-body-size) !important;
+}
+
+/* Scaling overrides for footer and header when --wb-font-scale is active */
+footer[style*="--wb-font-scale"],
+footer[style*="--wb-font-scale"] .wb-footer-bottom,
+footer[style*="--wb-font-scale"] .wb-footer-bottom span,
+footer[style*="--wb-font-scale"] .wb-footer-copyright,
+footer[style*="--wb-font-scale"] .wb-legal-links a,
+footer[style*="--wb-font-scale"] a,
+footer[style*="--wb-font-scale"] li,
+footer[style*="--wb-font-scale"] p,
+footer.wb-has-font-scale,
+footer.wb-has-font-scale .wb-footer-bottom,
+footer.wb-has-font-scale .wb-footer-bottom span,
+footer.wb-has-font-scale .wb-footer-copyright,
+footer.wb-has-font-scale .wb-legal-links a,
+footer.wb-has-font-scale a,
+footer.wb-has-font-scale li,
+footer.wb-has-font-scale p {
+  font-size: calc(13px * var(--wb-font-scale, 1)) !important;
+}
+
+footer[style*="--wb-font-scale"] h3,
+footer[style*="--wb-font-scale"] h4,
+footer[style*="--wb-font-scale"] .wb-footer-col-title,
+footer.wb-has-font-scale h3,
+footer.wb-has-font-scale h4,
+footer.wb-has-font-scale .wb-footer-col-title {
+  font-size: calc(13px * var(--wb-font-scale, 1)) !important;
+}
+
+/* Dynamic container width overrides */
+.wb-section.wb-width-narrow > .wb-container,
+header.wb-width-narrow .wb-container,
+footer.wb-width-narrow .wb-container {
+  max-width: min(768px, 100%) !important;
+}
+.wb-section.wb-width-medium > .wb-container,
+header.wb-width-medium .wb-container,
+footer.wb-width-medium .wb-container {
+  max-width: min(1024px, 100%) !important;
+}
+.wb-section.wb-width-wide > .wb-container,
+header.wb-width-wide .wb-container,
+footer.wb-width-wide .wb-container {
+  max-width: min(1400px, 100%) !important;
+}
+.wb-section.wb-width-full > .wb-container,
+.wb-section.wb-width-full > .wb-container-full,
+header.wb-width-full .wb-container,
+footer.wb-width-full .wb-container {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+.wb-section[style*="--wb-section-max-width"] > .wb-container,
+header[style*="--wb-section-max-width"] .wb-container,
+footer[style*="--wb-section-max-width"] .wb-container {
+  max-width: var(--wb-section-max-width) !important;
+}
+
+/* Dynamic heading font-weight */
+[style*="--wb-heading-weight"] h1,
+[style*="--wb-heading-weight"] h2,
+[style*="--wb-heading-weight"] h3,
+[style*="--wb-heading-weight"] h4,
+[style*="--wb-heading-weight"] h5,
+[style*="--wb-heading-weight"] h6,
+[style*="--wb-heading-weight"] .wb-hero h1,
+[style*="--wb-heading-weight"] .wb-hero-curved-title,
+[style*="--wb-heading-weight"] .wb-section-head h2,
+[style*="--wb-heading-weight"] .wb-cardset-title,
+[style*="--wb-heading-weight"] .wb-feature-title,
+[style*="--wb-heading-weight"] .wb-service-title,
+[style*="--wb-heading-weight"] .wb-pricing-title,
+[style*="--wb-heading-weight"] .wb-faq-question,
+[style*="--wb-heading-weight"] .wb-footer-col-title,
+[style*="--wb-heading-weight"] .wb-footer-cta-card h3,
+[style*="--wb-heading-weight"] .wb-testimonial-name,
+header[style*="--wb-heading-weight"] h1,
+header[style*="--wb-heading-weight"] h2,
+header[style*="--wb-heading-weight"] h3,
+footer[style*="--wb-heading-weight"] h2,
+footer[style*="--wb-heading-weight"] h3,
+footer[style*="--wb-heading-weight"] h4,
+footer[style*="--wb-heading-weight"] .wb-footer-col-title {
+  font-weight: var(--wb-heading-weight) !important;
+}
+
+/* Dynamic body font-weight */
+[style*="--wb-body-weight"] p,
+[style*="--wb-body-weight"] span:not(.wb-badge):not(.wb-btn-icon),
+[style*="--wb-body-weight"] a:not(.wb-btn),
+[style*="--wb-body-weight"] li,
+[style*="--wb-body-weight"] .wb-section-head p,
+[style*="--wb-body-weight"] .wb-hero-sub,
+[style*="--wb-body-weight"] .wb-hero-desc,
+[style*="--wb-body-weight"] .wb-hero-curved-sub,
+[style*="--wb-body-weight"] .wb-cardset-desc,
+[style*="--wb-body-weight"] .wb-cardset-intro,
+[style*="--wb-body-weight"] .wb-testimonial-quote,
+[style*="--wb-body-weight"] .wb-testimonial-role,
+[style*="--wb-body-weight"] .wb-faq-answer,
+header[style*="--wb-body-weight"] nav a,
+header[style*="--wb-body-weight"] span,
+footer[style*="--wb-body-weight"],
+footer[style*="--wb-body-weight"] p,
+footer[style*="--wb-body-weight"] span,
+footer[style*="--wb-body-weight"] a,
+footer[style*="--wb-body-weight"] li,
+footer[style*="--wb-body-weight"] .wb-footer-copyright,
+footer[style*="--wb-body-weight"] .wb-legal-links a {
+  font-weight: var(--wb-body-weight) !important;
+}
+
+/* Dynamic heading italic */
+[style*="--wb-heading-font-style"] h1,
+[style*="--wb-heading-font-style"] h2,
+[style*="--wb-heading-font-style"] h3,
+[style*="--wb-heading-font-style"] h4,
+[style*="--wb-heading-font-style"] h5,
+[style*="--wb-heading-font-style"] h6,
+[style*="--wb-heading-font-style"] .wb-hero h1,
+[style*="--wb-heading-font-style"] .wb-hero-curved-title,
+[style*="--wb-heading-font-style"] .wb-hero-curved-title h1,
+[style*="--wb-heading-font-style"] .wb-section-head h2,
+[style*="--wb-heading-font-style"] .wb-cardset-title,
+[style*="--wb-heading-font-style"] .wb-feature-title,
+[style*="--wb-heading-font-style"] .wb-service-title,
+[style*="--wb-heading-font-style"] .wb-pricing-title,
+[style*="--wb-heading-font-style"] .wb-faq-question,
+[style*="--wb-heading-font-style"] .wb-footer-col-title,
+[style*="--wb-heading-font-style"] .wb-footer-cta-card h3,
+[style*="--wb-heading-font-style"] .wb-testimonial-name,
+header[style*="--wb-heading-font-style"] h1,
+header[style*="--wb-heading-font-style"] h2,
+header[style*="--wb-heading-font-style"] h3,
+footer[style*="--wb-heading-font-style"] h2,
+footer[style*="--wb-heading-font-style"] h3,
+footer[style*="--wb-heading-font-style"] h4,
+footer[style*="--wb-heading-font-style"] .wb-footer-col-title,
+.wb-heading-italic h1,
+.wb-heading-italic h2,
+.wb-heading-italic h3,
+.wb-heading-italic h4,
+.wb-heading-italic .wb-hero h1,
+.wb-heading-italic .wb-hero-curved-title h1,
+.wb-heading-italic .wb-section-head h2,
+.wb-heading-italic .wb-cardset-title,
+.wb-heading-italic .wb-feature-title,
+.wb-heading-italic .wb-service-title,
+.wb-heading-italic .wb-pricing-title {
+  font-style: italic !important;
+  overflow: visible !important;
+}
+
+/* Ensure highlight / gradient spans inside italic headings inherit italic without clipping */
+[style*="--wb-heading-font-style"] :is(h1, h2, h3, h4, h5, h6) span,
+.wb-heading-italic :is(h1, h2, h3, h4, h5, h6) span {
+  font-style: italic !important;
+  overflow: visible !important;
+}
+
+/* Dynamic body italic: targets body copy, paragraphs, descriptions, and lists (excluding headings and heading spans) */
+[style*="--wb-body-font-style"] p,
+[style*="--wb-body-font-style"] p span:not(.wb-badge):not(.wb-btn-icon),
+[style*="--wb-body-font-style"] a:not(.wb-btn):not(:is(h1, h2, h3, h4, h5, h6) *),
+[style*="--wb-body-font-style"] li,
+[style*="--wb-body-font-style"] li span,
+[style*="--wb-body-font-style"] .wb-section-head p,
+[style*="--wb-body-font-style"] .wb-hero-sub,
+[style*="--wb-body-font-style"] .wb-hero-sub span,
+[style*="--wb-body-font-style"] .wb-hero-desc,
+[style*="--wb-body-font-style"] .wb-hero-desc span,
+[style*="--wb-body-font-style"] .wb-hero-curved-sub,
+[style*="--wb-body-font-style"] .wb-cardset-desc,
+[style*="--wb-body-font-style"] .wb-cardset-intro,
+[style*="--wb-body-font-style"] .wb-testimonial-quote,
+[style*="--wb-body-font-style"] .wb-testimonial-role,
+[style*="--wb-body-font-style"] .wb-faq-answer,
+header[style*="--wb-body-font-style"] nav a,
+header[style*="--wb-body-font-style"] nav span,
+footer[style*="--wb-body-font-style"],
+footer[style*="--wb-body-font-style"] p,
+footer[style*="--wb-body-font-style"] span:not(:is(h1, h2, h3, h4) *),
+footer[style*="--wb-body-font-style"] a:not(:is(h1, h2, h3, h4) *),
+footer[style*="--wb-body-font-style"] li,
+footer[style*="--wb-body-font-style"] .wb-footer-copyright,
+footer[style*="--wb-body-font-style"] .wb-legal-links a,
+.wb-body-italic p,
+.wb-body-italic p span:not(.wb-badge):not(.wb-btn-icon),
+.wb-body-italic a:not(.wb-btn):not(:is(h1, h2, h3, h4, h5, h6) *),
+.wb-body-italic li,
+.wb-body-italic li span {
+  font-style: italic !important;
+  overflow: visible !important;
+}
+
+/* Universal anti-clipping: give italic letters room on the right/left so slanted glyphs are never cut */
+[style*="italic"],
+.wb-heading-italic,
+.wb-body-italic,
+em, i {
+  overflow: visible !important;
+}
+:is(h1, h2, h3, h4, h5, h6):has(.wb-text-gradient),
+.wb-hero-curved-title,
+.wb-hero-curved-title h1,
+.wb-hero-copy,
+.wb-hero-copy h1 {
+  overflow: visible !important;
+}
 
 .wb-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -1120,8 +1543,17 @@ export const SITE_CSS = `
 }
 .wb-text-gradient {
   background: var(--wb-gradient, linear-gradient(135deg, var(--wb-primary), #ec4899, #8b5cf6));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
   text-shadow: none;
+  display: inline-block;
+  padding: 0.08em 0.32em 0.16em 0.1em;
+  margin: -0.08em -0.28em -0.16em -0.1em;
+  vertical-align: baseline;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  overflow: visible;
 }
 
 /* Hero Action Buttons */
@@ -1132,11 +1564,15 @@ export const SITE_CSS = `
   border: 1px solid var(--wb-border); color: inherit; cursor: pointer; text-decoration: none; transition: all 0.2s ease;
 }
 .wb-btn-video-play:hover { background: color-mix(in srgb, var(--wb-text) 12%, transparent); transform: scale(1.02); }
-.wb-play-icon-pill {
-  width: 28px; height: 28px; border-radius: 50%; background: var(--wb-primary); color: var(--wb-on-primary, #ffffff);
-  display: inline-grid; place-items: center; flex-shrink: 0;
+.wb-play-icon-pill,
+.wb-btn-video-play .wb-btn-icon-wrapper {
+  width: 28px !important; height: 28px !important; min-width: 28px !important; min-height: 28px !important;
+  border-radius: 50% !important; background: var(--wb-primary); color: var(--wb-on-primary, #ffffff);
+  display: inline-grid !important; place-items: center !important; flex-shrink: 0 !important;
 }
-.wb-play-icon-pill svg { width: 12px; height: 12px; margin-left: 1px; }
+.wb-play-icon-pill svg,
+.wb-btn-video-play .wb-btn-icon-wrapper svg { width: 14px !important; height: 14px !important; margin: auto !important; }
+.wb-btn-video-play .wb-btn-icon-wrapper .wb-icon-custom-img { width: 16px !important; height: 16px !important; }
 
 /* Social Proof Rating & Avatars */
 .wb-hero-rating { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 13px; font-weight: 500; }
@@ -1266,12 +1702,30 @@ export const SITE_CSS = `
 @keyframes wbFloat { from { transform: translateY(0); } to { transform: translateY(-8px); } }
 
 /* Hero Layout Variants */
-.wb-hero-centered { text-align: center; }
-.wb-hero-centered .wb-hero-copy { max-width: 820px; margin: 0 auto; align-items: center; }
-.wb-hero-centered .wb-hero-actions { justify-content: center; }
-.wb-hero-centered .wb-hero-media { margin-top: 48px; max-width: 1000px; margin-left: auto; margin-right: auto; }
-.wb-hero-centered .wb-hero-rating { justify-content: center; }
-.wb-hero-centered .wb-trusted-logos { justify-content: center; }
+.wb-hero-centered,
+.wb-hero-gradient,
+.wb-hero-curved-bottom,
+.wb-hero-minimal-typography { text-align: center; }
+.wb-hero-centered .wb-hero-copy,
+.wb-hero-gradient .wb-hero-copy,
+.wb-hero-curved-bottom .wb-hero-copy,
+.wb-hero-minimal-typography .wb-hero-copy { max-width: 820px; margin: 0 auto; align-items: center; }
+.wb-hero-centered .wb-hero-actions,
+.wb-hero-gradient .wb-hero-actions,
+.wb-hero-curved-bottom .wb-hero-actions,
+.wb-hero-minimal-typography .wb-hero-actions { justify-content: center; }
+.wb-hero-centered .wb-hero-media,
+.wb-hero-gradient .wb-hero-media,
+.wb-hero-curved-bottom .wb-hero-media,
+.wb-hero-minimal-typography .wb-hero-media { margin-top: 48px; max-width: 1000px; margin-left: auto; margin-right: auto; }
+.wb-hero-centered .wb-hero-rating,
+.wb-hero-gradient .wb-hero-rating,
+.wb-hero-curved-bottom .wb-hero-rating,
+.wb-hero-minimal-typography .wb-hero-rating { justify-content: center; }
+.wb-hero-centered .wb-trusted-logos,
+.wb-hero-gradient .wb-trusted-logos,
+.wb-hero-curved-bottom .wb-trusted-logos,
+.wb-hero-minimal-typography .wb-trusted-logos { justify-content: center; }
 
 .wb-hero-split .wb-hero-grid, .wb-hero-split-left .wb-hero-grid {
   display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center;
@@ -2159,6 +2613,235 @@ export const SITE_CSS = `
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* ==========================================================================
+   Universal Video Demo Modal Popup
+   ========================================================================== */
+.wb-video-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(6, 9, 20, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: wbVideoFadeIn 0.22s ease-out;
+}
+
+.wb-video-modal-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 1040px;
+  border-radius: 18px;
+  background: #0b0f1c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 90px -15px rgba(0, 0, 0, 0.85), 0 0 40px rgba(59, 130, 246, 0.12);
+  overflow: hidden;
+  animation: wbVideoScaleUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wb-video-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  background: rgba(18, 24, 43, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wb-video-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wb-video-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #60a5fa;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.wb-video-modal-badge-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.wb-video-modal-title {
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-video-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.wb-video-modal-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.wb-video-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: scale(1.02);
+}
+
+.wb-video-modal-close-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.wb-video-modal-esc-hint {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+}
+
+.wb-video-modal-player-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 75vh;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.wb-video-modal-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.wb-video-modal-video-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+}
+
+.wb-video-modal-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000000;
+}
+
+.wb-video-modal-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 5;
+}
+
+.wb-video-modal-spinner {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #3b82f6;
+  animation: wbVideoSpin 0.75s linear infinite;
+}
+
+.wb-video-modal-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: #f87171;
+  font-size: 14px;
+}
+
+.wb-video-modal-error-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.18s ease;
+}
+
+.wb-video-modal-error-btn:hover {
+  background: #1d4ed8;
+}
+
+@keyframes wbVideoFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wbVideoScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes wbVideoSpin {
+  to { transform: rotate(360deg); }
 }
 
 /* Full Image / Video Background Overlay & High Contrast Text */
@@ -5382,7 +6065,7 @@ details[open] > summary .wb-faq-plus {
 .wb-gallery-head { margin-bottom: 32px; text-align: center; }
 
 /* Footer Builder Styles */
-.wb-footer { background: var(--wb-surface); border-top: 1px solid var(--wb-border); padding: 56px 0 32px; font-size: 14px; position: relative; }
+.wb-footer { background: var(--wb-surface); border-top: 1px solid var(--wb-border); padding: 56px 0 32px; font-size: var(--wb-body-size, calc(14px * var(--wb-font-scale, 1))); position: relative; }
 .wb-footer-dark { background: #0c0d12 !important; color: #f1f5f9 !important; border-top: 1px solid rgba(255, 255, 255, 0.08) !important; }
 .wb-footer-dark .wb-muted, .wb-footer-dark p, .wb-footer-dark .wb-footer-contact-block { color: #94a3b8 !important; }
 .wb-footer-dark a { color: #cbd5e1; }
@@ -5404,7 +6087,7 @@ details[open] > summary .wb-faq-plus {
 .wb-footer-newsletter-grid { display: grid; grid-template-columns: 1.1fr 1.4fr 1.3fr; gap: 40px; align-items: start; }
 
 .wb-footer h3, .wb-footer h4, .wb-footer-col-title {
-  font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;
+  font-size: var(--wb-heading-size, calc(13px * var(--wb-heading-scale, var(--wb-font-scale, 1)))); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;
 }
 .wb-footer ul { list-style: none; padding: 0; margin: 0; }
 .wb-footer li + li { margin-top: 10px; }
@@ -5414,7 +6097,7 @@ details[open] > summary .wb-faq-plus {
 
 .wb-footer-about { display: flex; flex-direction: column; gap: 14px; }
 .wb-footer-about .wb-brand { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; display: inline-flex; align-items: center; gap: 8px; }
-.wb-footer-about p { margin: 0; font-size: 14px; line-height: 1.6; max-width: 320px; }
+.wb-footer-about p { margin: 0; font-size: var(--wb-body-size, calc(14px * var(--wb-font-scale, 1))); line-height: 1.6; max-width: 320px; }
 .wb-footer-tagline { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.75; }
 
 /* Social Icons */
@@ -5501,11 +6184,12 @@ details[open] > summary .wb-faq-plus {
 /* Bottom Bar */
 .wb-footer-bottom {
   margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--wb-border);
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: 13px;
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; font-size: var(--wb-body-size, calc(13px * var(--wb-font-scale, 1)));
 }
 .wb-footer-bottom-left { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+.wb-footer-copyright { font-size: var(--wb-body-size, calc(13px * var(--wb-font-scale, 1))); }
 .wb-legal-links { display: flex; flex-wrap: wrap; gap: 14px; list-style: none; padding: 0; margin: 0; }
-.wb-legal-links a { font-size: 12px; text-decoration: none; opacity: 0.8; }
+.wb-legal-links a { font-size: var(--wb-body-size, calc(12px * var(--wb-font-scale, 1))); text-decoration: none; opacity: 0.8; }
 .wb-legal-links a:hover { opacity: 1; }
 
 .wb-footer-simple { padding: 28px 0; }
@@ -5538,8 +6222,14 @@ details[open] > summary .wb-faq-plus {
 .wb-align-left .wb-actions,
 .wb-actions.wb-align-left,
 .wb-align-left .wb-logos-row,
-.wb-logos-row.wb-align-left {
+.wb-logos-row.wb-align-left,
+.wb-align-left .wb-hero-actions,
+.wb-align-left .wb-trusted-logos,
+.wb-align-left .wb-hero-rating {
   justify-content: flex-start;
+}
+.wb-align-left .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards) .wb-hero-copy {
+  align-items: flex-start;
 }
 .wb-align-left .wb-stat { text-align: left; }
 
@@ -5560,8 +6250,14 @@ details[open] > summary .wb-faq-plus {
 .wb-align-center .wb-actions,
 .wb-actions.wb-align-center,
 .wb-align-center .wb-logos-row,
-.wb-logos-row.wb-align-center {
+.wb-logos-row.wb-align-center,
+.wb-align-center .wb-hero-actions,
+.wb-align-center .wb-trusted-logos,
+.wb-align-center .wb-hero-rating {
   justify-content: center;
+}
+.wb-align-center .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards) .wb-hero-copy {
+  align-items: center;
 }
 .wb-align-center .wb-stat { text-align: center; }
 
@@ -5582,8 +6278,14 @@ details[open] > summary .wb-faq-plus {
 .wb-align-right .wb-actions,
 .wb-actions.wb-align-right,
 .wb-align-right .wb-logos-row,
-.wb-logos-row.wb-align-right {
+.wb-logos-row.wb-align-right,
+.wb-align-right .wb-hero-actions,
+.wb-align-right .wb-trusted-logos,
+.wb-align-right .wb-hero-rating {
   justify-content: flex-end;
+}
+.wb-align-right .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards) .wb-hero-copy {
+  align-items: flex-end;
 }
 .wb-align-right .wb-stat { text-align: right; }
 .wb-empty { padding: 32px; text-align: center; font-size: 14px; color: var(--wb-muted); border: 1px dashed var(--wb-border); border-radius: var(--wb-radius); }
@@ -8100,6 +8802,8 @@ ${CONTACT_BUILDER_CSS}
 ${HERO_CONTROLS_CSS}
 ${CARDS_CSS}
 ${SHOP_CSS}
+${ACCOUNT_CSS}
+${VINTAGE_CSS}
 .wb-device-scroll {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
