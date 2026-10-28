@@ -50,8 +50,8 @@ export function MarketingHeader({
             className="brand-logo"
             src="/bytezora-webbuilder-logo.png"
             alt={env.appName}
-            width={180}
-            height={48}
+            width={280}
+            height={72}
           />
           {isTemplates && <span className="brand-badge">Templates</span>}
         </Link>
@@ -192,8 +192,8 @@ export function MarketingFooter() {
                 className="brand-logo foot-logo"
                 src="/bytezora-webbuilder-logo-white-text.png"
                 alt={env.appName}
-                width={240}
-                height={64}
+                width={400}
+                height={104}
               />
             </Link>
             <p style={{ fontSize: "14px" }}>Build and publish your business website by hand or with AI.</p>
