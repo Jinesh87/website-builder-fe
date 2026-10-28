@@ -4,7 +4,7 @@ import { TPLS } from "./data.ts";
 import { MarketingContext, type MarketingContextValue } from "./marketing-context.ts";
 import { MiniSite, TemplateFrame } from "./MiniSite.tsx";
 import Tabs from "./Tabs.tsx";
-import { LayoutTemplate, Mail, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import { env } from "../../config/env.ts";
 import "./marketing.css";
 
@@ -46,10 +46,13 @@ export function MarketingHeader({
     <header className="top">
       <div className="wrap">
         <Link to="/" className="brand" aria-label={`${env.appName} home`}>
-          <span className="brand-mark" aria-hidden="true">
-            <LayoutTemplate className="brand-mark-icon" aria-hidden="true" />
-          </span>
-          <span className="brand-name">{env.appName}</span>
+          <img
+            className="brand-logo"
+            src="/bytezora-webbuilder-logo.png"
+            alt={env.appName}
+            width={180}
+            height={48}
+          />
           {isTemplates && <span className="brand-badge">Templates</span>}
         </Link>
         <nav className="nav" aria-label="Main">
@@ -184,11 +187,14 @@ export function MarketingFooter() {
       <div className="wrap">
         <div className="cols5">
           <div className="col" style={{ maxWidth: "300px" }}>
-            <Link to="/" className="brand" aria-label={`${env.appName} home`} style={{ color: "#FFFFFF" }}>
-              <span className="brand-mark" aria-hidden="true">
-                <LayoutTemplate className="brand-mark-icon" aria-hidden="true" />
-              </span>
-              <span className="brand-name">{env.appName}</span>
+            <Link to="/" className="brand" aria-label={`${env.appName} home`}>
+              <img
+                className="brand-logo"
+                src="/bytezora-webbuilder-logo.png"
+                alt={env.appName}
+                width={180}
+                height={48}
+              />
             </Link>
             <p style={{ fontSize: "14px" }}>Build and publish your business website by hand or with AI.</p>
             <a
