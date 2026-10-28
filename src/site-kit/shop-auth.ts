@@ -196,6 +196,28 @@ export function siteHref(href: string): string {
   return match ? `/live/${match[1]}${path === "/" ? "" : path}` : path;
 }
 
+/** Account page URL that opens a specific panel (e.g. cart). */
+export function accountPanelHref(accountHref: string, panel: "orders" | "cart" | "profile" | "password"): string {
+  const raw = (accountHref || "/account").trim() || "/account";
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(raw)) {
+    try {
+      const url = new URL(raw);
+      url.searchParams.set("panel", panel);
+      return url.toString();
+    } catch {
+      /* fall through */
+    }
+  }
+  const [pathAndQuery, hash = ""] = raw.split("#");
+  const qIndex = pathAndQuery.indexOf("?");
+  const path = qIndex >= 0 ? pathAndQuery.slice(0, qIndex) : pathAndQuery;
+  const query = qIndex >= 0 ? pathAndQuery.slice(qIndex + 1) : "";
+  const params = new URLSearchParams(query);
+  params.set("panel", panel);
+  const text = params.toString();
+  return `${path || "/account"}?${text}${hash ? `#${hash}` : ""}`;
+}
+
 export function fullNameFromForm(form: HTMLFormElement): string {
   const full = form.querySelector<HTMLInputElement>('input[name="fullName"]')?.value?.trim();
   if (full) return full;
@@ -339,6 +361,26 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     setText(root, "cartTotal", money(total));
     if(cartEmpty) cartEmpty.hidden=cart.length>0;
   }
+  function preferredPanel(root){
+    try{
+      var params=new URLSearchParams(window.location.search||"");
+      var name=(params.get("panel")||(window.location.hash||"").replace(/^#/,"")||"").trim();
+      if(!name) return null;
+      var tab=root.querySelector('[data-wb-account-tab="'+name+'"]');
+      return tab?name:null;
+    }catch(_e){ return null; }
+  }
+  function activatePanel(root, tabs, name){
+    if(!name) return;
+    tabs.forEach(function(other){
+      var on=other.getAttribute("data-wb-account-tab")===name;
+      other.classList.toggle("is-active", on);
+      other.setAttribute("aria-selected", on?"true":"false");
+    });
+    root.querySelectorAll("[data-wb-account-panel]").forEach(function(panel){
+      panel.hidden=panel.getAttribute("data-wb-account-panel")!==name;
+    });
+  }
   function bind(root, base, loginHref){
     if(root.getAttribute("data-wb-account-bound")) return;
     root.setAttribute("data-wb-account-bound","1");
@@ -346,16 +388,10 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     tabs.forEach(function(tab){
       tab.addEventListener("click", function(){
         var name=tab.getAttribute("data-wb-account-tab");
-        tabs.forEach(function(other){
-          var on=other===tab;
-          other.classList.toggle("is-active", on);
-          other.setAttribute("aria-selected", on?"true":"false");
-        });
-        root.querySelectorAll("[data-wb-account-panel]").forEach(function(panel){
-          panel.hidden=panel.getAttribute("data-wb-account-panel")!==name;
-        });
+        activatePanel(root, tabs, name);
       });
     });
+    activatePanel(root, tabs, preferredPanel(root));
     root.querySelectorAll("[data-wb-account-logout]").forEach(function(button){
       button.addEventListener("click", function(){
         request(base, "/logout", "POST").catch(function(){}).then(function(){ window.location.href=siteHref(loginHref); });
@@ -727,6 +763,50 @@ export const SHOP_CART_SCRIPT = `(function(){
     var root=shopRoot(node);
     return root.getAttribute("data-wb-shop-account-href")||"/account";
   }
+  function accountPanelHref(href, panel){
+    var raw=(href||"/account").trim()||"/account";
+    if(/^(https?:\\/\\/|mailto:|tel:)/i.test(raw)){
+      try{ var url=new URL(raw); url.searchParams.set("panel", panel); return url.toString(); }catch(_e){}
+    }
+    var parts=raw.split("#");
+    var pathAndQuery=parts[0]||"/account";
+    var hash=parts[1]||"";
+    var q=pathAndQuery.indexOf("?");
+    var path=q>=0?pathAndQuery.slice(0,q):pathAndQuery;
+    var query=q>=0?pathAndQuery.slice(q+1):"";
+    var params=new URLSearchParams(query);
+    params.set("panel", panel);
+    return (path||"/account")+"?"+params.toString()+(hash?"#"+hash:"");
+  }
+  function setCartLink(root, count){
+    var link=root.querySelector("[data-wb-shop-cart-link]");
+    if(!link) return;
+    link.hidden=false;
+    var badge=link.querySelector("[data-wb-shop-cart-count]");
+    if(!badge) return;
+    var total=Math.max(0, Math.floor(Number(count)||0));
+    badge.textContent=String(total);
+    badge.hidden=total<=0;
+  }
+  function refreshCartLinks(){
+    document.querySelectorAll("[data-wb-shop][data-wb-shop-website]").forEach(function(root){
+      var id=root.getAttribute("data-wb-shop-website");
+      var link=root.querySelector("[data-wb-shop-cart-link]");
+      if(!id||!link) return;
+      fetch(apiBase()+"/shop/"+id+"/auth/cart", { method:"GET", credentials:"include", cache:"no-store" })
+        .then(function(response){
+          if(!response.ok){ link.hidden=true; return null; }
+          return response.json().catch(function(){ return {}; });
+        })
+        .then(function(json){
+          if(!json) return;
+          var total=0;
+          (json.cartItems||[]).forEach(function(item){ total+=Number(item.quantity||1); });
+          setCartLink(root, total);
+        })
+        .catch(function(){ link.hidden=true; });
+    });
+  }
   function loginVariant(node){
     var root=shopRoot(node);
     return root.getAttribute("data-wb-cart-login-variant")||"soft-card";
@@ -921,10 +1001,19 @@ export const SHOP_CART_SCRIPT = `(function(){
         return;
       }
       if(buy){
-        window.location.href=siteHref(accountHref(button));
+        window.location.href=siteHref(accountPanelHref(accountHref(button), "cart"));
         return;
       }
       showMessage(button, qty===1?"Added to cart.":("Added "+qty+" to cart."), "ok");
+      var root=shopRoot(button);
+      var link=root.querySelector("[data-wb-shop-cart-link]");
+      if(link){
+        var badge=link.querySelector("[data-wb-shop-cart-count]");
+        var current=badge&&!badge.hidden?Number(badge.textContent||0):0;
+        setCartLink(root, current+qty);
+      } else {
+        refreshCartLinks();
+      }
     }catch(_e){
       showMessage(button, "Can't reach the server. Try again.", "error");
     }finally{
@@ -941,4 +1030,5 @@ export const SHOP_CART_SCRIPT = `(function(){
     }
     askQuantity(button, button.getAttribute("data-wb-cart-action")==="buy");
   });
+  refreshCartLinks();
 })();`;

@@ -508,7 +508,17 @@ type MemberProps = {
 function MemberView({ data, variant, account, websiteId, interactive, loginHref, shopHref }: MemberProps) {
   const panels = panelsOf(data);
   const tabbed = TABBED[variant];
-  const [active, setActive] = useState<Panel>(panels[0] ?? "profile");
+  const [active, setActive] = useState<Panel>(() => {
+    if (typeof window === "undefined") return panels[0] ?? "profile";
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = (params.get("panel") || window.location.hash.replace(/^#/, "") || "").trim() as Panel;
+      if (panels.includes(fromUrl)) return fromUrl;
+    } catch {
+      /* ignore */
+    }
+    return panels[0] ?? "profile";
+  });
   const [cartItems, setCartItems] = useState(account.cartItems);
   const current = panels.includes(active) ? active : (panels[0] ?? "profile");
   const heading = data.heading?.trim();

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
 import ShopCartActions from "../ShopCartActions.tsx";
 import { formatInr, listingSelection, productHref, shopListings, SHOP_LIST_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
-import { SHOP_CART_SCRIPT } from "../shop-auth.ts";
+import { accountPanelHref, SHOP_CART_SCRIPT, siteHref } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ProductsData, SectionOf, ShopCatalogProduct } from "../types.ts";
 
@@ -134,11 +134,37 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
   const from = total === 0 ? 0 : (currentPage - 1) * currentSize + 1;
   const to = total === 0 ? 0 : Math.min(total, from + pageListings.length - 1);
 
+  const cartPageHref = siteHref(accountPanelHref(accountHref, "cart"));
+  const cartIcon = (
+    <a
+      className="wb-shop-cart-link"
+      href={cartPageHref}
+      data-wb-shop-cart-link=""
+      aria-label="Cart"
+      hidden={stat ? true : !interactive}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="9" cy="20" r="1.4" />
+        <circle cx="17" cy="20" r="1.4" />
+        <path d="M3 4h2l2.2 11h10.3l1.8-7H7.2" />
+      </svg>
+      <span className="wb-shop-cart-badge" data-wb-shop-cart-count="" hidden>
+        0
+      </span>
+    </a>
+  );
   const heading = (
     <div className="wb-shop-head">
-      {data.eyebrow && <span className="wb-shop-eyebrow">{parseRichText(data.eyebrow)}</span>}
-      {data.title && <h2 className="wb-shop-title">{parseRichText(data.title)}</h2>}
-      {data.subtitle && <p className="wb-shop-subtitle">{parseRichText(data.subtitle)}</p>}
+      <div className="wb-shop-head-top">
+        <div className="wb-shop-head-copy">
+          {data.eyebrow && <span className="wb-shop-eyebrow">{parseRichText(data.eyebrow)}</span>}
+          <div className="wb-shop-head-titles">
+            {data.title && <h2 className="wb-shop-title">{parseRichText(data.title)}</h2>}
+            {data.subtitle && <p className="wb-shop-subtitle">{parseRichText(data.subtitle)}</p>}
+          </div>
+        </div>
+        {cartIcon}
+      </div>
     </div>
   );
 
@@ -379,7 +405,7 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
       sectionId={section.id}
       settings={section.settings}
       fullWidth
-      className={data.design === "editorial" ? "wb-shop-bleed" : undefined}
+      className={["wb-shop-list-section", data.design === "editorial" ? "wb-shop-bleed" : ""].filter(Boolean).join(" ")}
     >
       <div
         className={`wb-shop wb-shop-list is-${data.design || "classic-grid"}`}

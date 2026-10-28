@@ -1,6 +1,32 @@
 export const SHOP_CSS = `
 .wb-shop { display: flex; flex-direction: column; gap: 28px; }
-.wb-shop-head { display: flex; flex-direction: column; gap: 8px; max-width: 720px; }
+.wb-section.wb-shop-list-section { padding-top: 0; }
+.wb-shop-list:not(.is-editorial) { padding-top: 12px; }
+.wb-shop-head { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: none; }
+.wb-shop-head-top {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; width: 100%;
+}
+.wb-shop-head-copy { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1 1 auto; max-width: 720px; }
+.wb-shop-head-titles { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.wb-shop-cart-link {
+  position: relative; flex: none; align-self: flex-start; margin-left: auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 12px; text-decoration: none;
+  color: var(--wb-text); background: color-mix(in srgb, var(--wb-text) 5%, var(--wb-bg));
+  border: 1px solid color-mix(in srgb, var(--wb-text) 12%, transparent);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.wb-shop-cart-link:hover {
+  background: color-mix(in srgb, var(--wb-text) 9%, var(--wb-bg));
+  border-color: color-mix(in srgb, var(--wb-text) 22%, transparent);
+}
+.wb-shop-cart-link svg { width: 22px; height: 22px; }
+.wb-shop-cart-badge {
+  position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--wb-primary); color: var(--wb-on-primary, #fff);
+  font-size: 0.68rem; font-weight: 700; line-height: 1;
+}
 .wb-shop-eyebrow {
   font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wb-primary);
 }
@@ -364,6 +390,10 @@ export const SHOP_CSS = `
   background: color-mix(in srgb, var(--wb-text) 4%, var(--wb-bg));
 }
 .wb-shop-list.is-editorial .wb-shop-head { max-width: none; margin-bottom: 22px; gap: 6px; }
+.wb-shop-list.is-editorial .wb-shop-cart-link {
+  width: 40px; height: 40px; border-radius: 10px;
+}
+.wb-shop-list.is-editorial .wb-shop-cart-link svg { width: 20px; height: 20px; }
 .wb-shop-list.is-editorial .wb-shop-title { font-size: 1.35rem; font-weight: 650; line-height: 1.15; letter-spacing: -0.03em; }
 .wb-shop-list.is-editorial .wb-shop-subtitle { font-size: 0.84rem; line-height: 1.5; }
 .wb-shop-list.is-editorial .wb-shop-tools { gap: 18px; }
@@ -405,7 +435,10 @@ export const SHOP_CSS = `
 .wb-shop-list.is-editorial .wb-shop-card-editorial .wb-shop-price { font-size: 0.9rem; margin-top: 4px; }
 
 .wb-shop-list.is-compact { gap: 20px; }
-.wb-shop-list.is-compact .wb-shop-head { display: grid; grid-template-columns: 1fr 1fr; align-items: end; max-width: none; }
+.wb-shop-list.is-compact .wb-shop-head { max-width: none; }
+.wb-shop-list.is-compact .wb-shop-head-titles {
+  display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: 8px;
+}
 .wb-shop-list.is-compact .wb-shop-subtitle { justify-self: end; text-align: right; }
 .wb-shop-list.is-compact .wb-shop-grid,
 .wb-shop-list.is-compact .wb-shop-grid.is-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -423,7 +456,8 @@ export const SHOP_CSS = `
 .wb-shop-list.is-showcase { max-width: none; }
 .wb-shop-list.is-classic-grid .wb-shop-grid,
 .wb-shop-list.is-classic-grid .wb-shop-grid.is-2 { grid-template-columns: repeat(auto-fill, minmax(180px, 220px)); }
-.wb-shop-list.is-showcase .wb-shop-head { max-width: 980px; }
+.wb-shop-list.is-showcase .wb-shop-head { max-width: none; }
+.wb-shop-list.is-showcase .wb-shop-head-copy { max-width: 980px; }
 .wb-shop-list.is-showcase .wb-shop-title { font-size: clamp(2.4rem, 5vw, 4rem); line-height: 1.05; }
 .wb-shop-list.is-showcase .wb-shop-tools {
   display: grid; grid-template-columns: minmax(230px, 1fr) minmax(0, 1.5fr) auto;

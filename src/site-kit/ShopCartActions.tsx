@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { shopAuthApi, siteHref, type ShopAuthError } from "./shop-auth.ts";
+import { accountPanelHref, shopAuthApi, siteHref, type ShopAuthError } from "./shop-auth.ts";
 
 type Props = {
   variantId?: string;
@@ -85,7 +85,7 @@ export default function ShopCartActions({
     try {
       await shopAuthApi.addToCart(websiteId, { variantId, quantity: qty });
       if (action === "buy") {
-        window.location.href = siteHref(accountHref);
+        window.location.href = siteHref(accountPanelHref(accountHref, "cart"));
         return;
       }
       setMessage({ kind: "ok", text: qty === 1 ? "Added to cart." : `Added ${qty} to cart.` });
