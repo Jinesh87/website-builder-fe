@@ -50,6 +50,41 @@ function apiBase(): string {
   return "/api";
 }
 
+/** Auth endpoints that must never trigger a refresh-and-retry loop. */
+const SKIP_SHOP_REFRESH = new Set([
+  "/login",
+  "/signup",
+  "/verify-email",
+  "/resend-verification",
+  "/refresh",
+  "/logout",
+  "/forgot-password",
+  "/reset-password",
+]);
+
+const shopRefreshInFlight = new Map<string, Promise<boolean>>();
+let shopLastRefreshAt = 0;
+
+async function refreshShopSession(websiteId: string): Promise<boolean> {
+  const existing = shopRefreshInFlight.get(websiteId);
+  if (existing) return existing;
+  const pending = fetch(`${apiBase()}/shop/${websiteId}/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+  })
+    .then((response) => {
+      if (response.ok) shopLastRefreshAt = Date.now();
+      return response.ok;
+    })
+    .catch(() => false)
+    .finally(() => {
+      shopRefreshInFlight.delete(websiteId);
+    });
+  shopRefreshInFlight.set(websiteId, pending);
+  return pending;
+}
+
 async function shopAuthFetch(
   websiteId: string,
   path: string,
@@ -59,12 +94,24 @@ async function shopAuthFetch(
   if (init.body !== undefined && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const response = await fetch(`${apiBase()}/shop/${websiteId}/auth${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-    cache: "no-store",
-  });
+  const send = () =>
+    fetch(`${apiBase()}/shop/${websiteId}/auth${path}`, {
+      ...init,
+      headers,
+      credentials: "include",
+      cache: "no-store",
+    });
+
+  const startedAt = Date.now();
+  let response = await send();
+  if (response.status === 401 && !SKIP_SHOP_REFRESH.has(path.split("?")[0] ?? path)) {
+    if (shopLastRefreshAt < startedAt) {
+      const refreshed = await refreshShopSession(websiteId);
+      if (refreshed) response = await send();
+    } else {
+      response = await send();
+    }
+  }
   if (response.status === 204) return { ok: response.ok, status: response.status, body: null };
   const body = await response.json().catch(() => ({}));
   return { ok: response.ok, status: response.status, body };
@@ -282,12 +329,31 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     node.classList.toggle("is-ok", !!ok);
     node.classList.toggle("is-error", !!text&&!ok);
   }
+  var refreshInFlight=null;
+  var lastRefreshAt=0;
+  var skipRefresh={ "/login":1, "/signup":1, "/verify-email":1, "/resend-verification":1, "/refresh":1, "/logout":1, "/forgot-password":1, "/reset-password":1 };
+  function refreshSession(base){
+    if(refreshInFlight) return refreshInFlight;
+    refreshInFlight=fetch(base+"/refresh", { method:"POST", credentials:"include", cache:"no-store" })
+      .then(function(response){ if(response.ok) lastRefreshAt=Date.now(); return response.ok; })
+      .catch(function(){ return false; })
+      .finally(function(){ refreshInFlight=null; });
+    return refreshInFlight;
+  }
+  function parseResponse(response){
+    if(response.status===204) return { ok:true, status:204, json:{} };
+    return response.json().catch(function(){ return {}; }).then(function(json){ return { ok:response.ok, status:response.status, json:json }; });
+  }
   function request(base, path, method, body){
-    return fetch(base+path, { method:method, headers:body?{ "Content-Type":"application/json" }:{}, credentials:"include", cache:"no-store", body:body?JSON.stringify(body):undefined })
-      .then(function(response){
-        if(response.status===204) return { ok:true, status:204, json:{} };
-        return response.json().catch(function(){ return {}; }).then(function(json){ return { ok:response.ok, status:response.status, json:json }; });
-      });
+    var startedAt=Date.now();
+    function once(){
+      return fetch(base+path, { method:method, headers:body?{ "Content-Type":"application/json" }:{}, credentials:"include", cache:"no-store", body:body?JSON.stringify(body):undefined }).then(parseResponse);
+    }
+    return once().then(function(result){
+      if(result.status!==401 || skipRefresh[path]) return result;
+      if(lastRefreshAt>=startedAt) return once();
+      return refreshSession(base).then(function(ok){ return ok?once():result; });
+    });
   }
   function fill(root, account){
     var customer=account.customer||{};
@@ -377,6 +443,11 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       other.classList.toggle("is-active", on);
       other.setAttribute("aria-selected", on?"true":"false");
     });
+    root.querySelectorAll("[data-wb-account-stat]").forEach(function(stat){
+      var on=stat.getAttribute("data-wb-account-stat")===name;
+      stat.classList.toggle("is-active", on);
+      if(stat.hasAttribute("aria-pressed")) stat.setAttribute("aria-pressed", on?"true":"false");
+    });
     root.querySelectorAll("[data-wb-account-panel]").forEach(function(panel){
       panel.hidden=panel.getAttribute("data-wb-account-panel")!==name;
     });
@@ -389,6 +460,15 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       tab.addEventListener("click", function(){
         var name=tab.getAttribute("data-wb-account-tab");
         activatePanel(root, tabs, name);
+      });
+    });
+    root.querySelectorAll("[data-wb-account-stat]").forEach(function(stat){
+      stat.addEventListener("click", function(){
+        var name=stat.getAttribute("data-wb-account-stat");
+        if(!name) return;
+        if(root.querySelector('[data-wb-account-tab="'+name+'"], [data-wb-account-panel="'+name+'"]')){
+          activatePanel(root, tabs, name);
+        }
       });
     });
     activatePanel(root, tabs, preferredPanel(root));
@@ -644,7 +724,13 @@ export const SHOP_AUTH_SCRIPT = `(function(){
     var there=successHref(root).replace(/\\/+$/,"")||"/";
     if(!resetToken && here!==there){
       fetch(base+"/me", { credentials:"include", cache:"no-store" })
-        .then(function(response){ if(response.ok) window.location.replace(successHref(root)); })
+        .then(function(response){
+          if(response.ok){ window.location.replace(successHref(root)); return null; }
+          if(response.status!==401) return null;
+          return fetch(base+"/refresh", { method:"POST", credentials:"include", cache:"no-store" })
+            .then(function(refresh){ if(refresh.ok) return fetch(base+"/me", { credentials:"include", cache:"no-store" }); })
+            .then(function(retry){ if(retry&&retry.ok) window.location.replace(successHref(root)); });
+        })
         .catch(function(){});
     }
     root.addEventListener("submit", function(event){
@@ -668,7 +754,7 @@ export const SHOP_AUTH_SCRIPT = `(function(){
         pendingEmail(root, body.email);
       } else if(view==="login"){
         path="/login";
-        body={ email:(emailInput&&emailInput.value||"").trim().toLowerCase(), password:passwordInput&&passwordInput.value||"", remember:!!(remember&&remember.checked) };
+        body={ email:(emailInput&&emailInput.value||"").trim().toLowerCase(), password:passwordInput&&passwordInput.value||"", remember:!remember||remember.checked };
       } else if(view==="forgot"){
         path="/forgot-password";
         body={ email:(emailInput&&emailInput.value||"").trim().toLowerCase() };
@@ -788,12 +874,32 @@ export const SHOP_CART_SCRIPT = `(function(){
     badge.textContent=String(total);
     badge.hidden=total<=0;
   }
+  var refreshInFlight={};
+  var lastRefreshAt={};
+  function refreshSession(id){
+    if(refreshInFlight[id]) return refreshInFlight[id];
+    refreshInFlight[id]=fetch(apiBase()+"/shop/"+id+"/auth/refresh", { method:"POST", credentials:"include", cache:"no-store" })
+      .then(function(response){ if(response.ok) lastRefreshAt[id]=Date.now(); return response.ok; })
+      .catch(function(){ return false; })
+      .finally(function(){ delete refreshInFlight[id]; });
+    return refreshInFlight[id];
+  }
+  function shopFetch(id, path, init){
+    var startedAt=Date.now();
+    var url=apiBase()+"/shop/"+id+"/auth"+path;
+    function once(){ return fetch(url, Object.assign({ credentials:"include", cache:"no-store" }, init||{})); }
+    return once().then(function(response){
+      if(response.status!==401 || path==="/refresh" || path==="/login") return response;
+      if((lastRefreshAt[id]||0)>=startedAt) return once();
+      return refreshSession(id).then(function(ok){ return ok?once():response; });
+    });
+  }
   function refreshCartLinks(){
     document.querySelectorAll("[data-wb-shop][data-wb-shop-website]").forEach(function(root){
       var id=root.getAttribute("data-wb-shop-website");
       var link=root.querySelector("[data-wb-shop-cart-link]");
       if(!id||!link) return;
-      fetch(apiBase()+"/shop/"+id+"/auth/cart", { method:"GET", credentials:"include", cache:"no-store" })
+      shopFetch(id, "/cart", { method:"GET" })
         .then(function(response){
           if(!response.ok){ link.hidden=true; return null; }
           return response.json().catch(function(){ return {}; });
@@ -982,11 +1088,9 @@ export const SHOP_CART_SCRIPT = `(function(){
     setBusy(button, true);
     showMessage(button, "", "");
     try{
-      var response=await fetch(apiBase()+"/shop/"+id+"/auth/cart", {
+      var response=await shopFetch(id, "/cart", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        credentials:"include",
-        cache:"no-store",
         body:JSON.stringify({ variantId:variantId, quantity:qty })
       });
       var json=await response.json().catch(function(){ return {}; });
@@ -1031,4 +1135,41 @@ export const SHOP_CART_SCRIPT = `(function(){
     askQuantity(button, button.getAttribute("data-wb-cart-action")==="buy");
   });
   refreshCartLinks();
+})();`;
+
+/** Hides header Login CTAs on published pages once a shop customer session is active. */
+export const SHOP_NAV_AUTH_SCRIPT = `(function(){
+  if(window.__wbShopNavAuthReady) return;
+  window.__wbShopNavAuthReady=1;
+  function apiBase(){
+    var meta=document.querySelector('meta[name="wb-api"]');
+    var content=meta&&meta.getAttribute("content");
+    return content?String(content).replace(/\\/$/,""):"/api";
+  }
+  function siteRoot(){ return document.querySelector(".wb-site"); }
+  function websiteId(){
+    var root=siteRoot();
+    return (root&&root.getAttribute("data-wb-shop-website"))||"";
+  }
+  function apply(authed){
+    var root=siteRoot();
+    if(root) root.classList.toggle("is-shop-authed", !!authed);
+  }
+  var id=websiteId();
+  if(!id || !document.querySelector("[data-wb-hide-when-authed]")) return;
+  var base=apiBase()+"/shop/"+id+"/auth";
+  function check(){
+    return fetch(base+"/me", { credentials:"include", cache:"no-store" }).then(function(response){
+      if(response.ok){ apply(true); return true; }
+      if(response.status!==401){ apply(false); return false; }
+      return fetch(base+"/refresh", { method:"POST", credentials:"include", cache:"no-store" })
+        .then(function(refresh){
+          if(!refresh.ok){ apply(false); return false; }
+          return fetch(base+"/me", { credentials:"include", cache:"no-store" })
+            .then(function(retry){ apply(!!retry.ok); return retry.ok; });
+        })
+        .catch(function(){ apply(false); return false; });
+    }).catch(function(){ apply(false); return false; });
+  }
+  check();
 })();`;

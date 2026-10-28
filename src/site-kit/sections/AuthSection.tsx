@@ -251,7 +251,8 @@ function useAuthFlow(data: AuthData, websiteId?: string, accountHref = "/account
       form.querySelector<HTMLInputElement>('input[name="email"], input[type="email"]')?.value.trim().toLowerCase() ?? "";
     const password =
       form.querySelector<HTMLInputElement>('input[name="password"], input[data-auth-type="password"]')?.value ?? "";
-    const remember = form.querySelector<HTMLInputElement>('input[name="remember"]')?.checked ?? false;
+    const rememberInput = form.querySelector<HTMLInputElement>('input[name="remember"]');
+    const remember = rememberInput ? rememberInput.checked : true;
     const code = form.querySelector<HTMLInputElement>('input[name="code"]')?.value.trim() ?? "";
 
     setBusy(true);
@@ -676,7 +677,7 @@ function AuthForm({ data, flow, hideSwitch, shopLive }: AuthFormProps & { shopLi
           <div className="wb-auth-row">
             {data.login.showRemember ? (
               <label className="wb-auth-check">
-                <input type="checkbox" name="remember" />
+                <input type="checkbox" name="remember" defaultChecked />
                 <span>{data.login.rememberLabel || "Remember me"}</span>
               </label>
             ) : (
@@ -1146,22 +1147,8 @@ export default function AuthSection({ section }: { section: SectionOf<"auth"> })
     />
   );
 
-  // A customer who is already signed in has nothing to do here: send them to their account page.
-  useEffect(() => {
-    if (!websiteId || isStatic) return;
-    const target = siteHref(accountHref).replace(/\/+$/, "") || "/";
-    if ((window.location.pathname.replace(/\/+$/, "") || "/") === target) return;
-    let cancelled = false;
-    void shopAuthApi
-      .me(websiteId)
-      .then(() => {
-        if (!cancelled) window.location.replace(siteHref(accountHref));
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [websiteId, isStatic, accountHref]);
+  // Published pages redirect signed-in shoppers via SHOP_AUTH_SCRIPT. Do not
+  // navigate here in the editor — that would leave the builder entirely.
 
   return (
     <SectionShell

@@ -47,9 +47,18 @@ export const ACCOUNT_CSS = `
   appearance: none; border: 1px solid transparent; background: transparent; color: var(--wb-muted);
   font: inherit; font-weight: 600; font-size: 0.92rem; padding: 0.6rem 0.95rem; border-radius: var(--wb-acct-field-r);
   cursor: pointer; text-align: left; transition: background 0.15s, color 0.15s;
+  display: inline-flex; align-items: center; gap: 8px;
 }
 .wb-acct-tab:hover { color: var(--wb-text); background: var(--wb-acct-soft); }
 .wb-acct-tab.is-active { background: var(--wb-acct-accent); color: var(--wb-acct-on-accent); }
+.wb-acct-tab-count {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem;
+  padding: 0 0.4rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; line-height: 1;
+  background: color-mix(in srgb, var(--wb-text) 10%, transparent); color: inherit;
+}
+.wb-acct-tab.is-active .wb-acct-tab-count {
+  background: color-mix(in srgb, var(--wb-acct-on-accent) 22%, transparent);
+}
 
 .wb-acct-logout {
   appearance: none; border: 1px solid var(--wb-border); background: transparent; color: var(--wb-text);
@@ -123,7 +132,20 @@ export const ACCOUNT_CSS = `
 .wb-acct-stats { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 22px 0; }
 .wb-acct-stat {
   display: grid; gap: 4px; padding: 18px 20px; border-radius: var(--wb-acct-card-r);
-  background: var(--wb-acct-card); border: 1px solid var(--wb-border);
+  background: var(--wb-acct-card); border: 1px solid var(--wb-border); text-align: left; color: inherit;
+}
+.wb-acct-stat.is-action {
+  appearance: none; font: inherit; cursor: pointer; width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.wb-acct-stat.is-action:hover {
+  border-color: color-mix(in srgb, var(--wb-acct-accent) 45%, var(--wb-border));
+  background: color-mix(in srgb, var(--wb-acct-accent) 5%, var(--wb-acct-card));
+}
+.wb-acct-stat.is-action.is-active {
+  border-color: color-mix(in srgb, var(--wb-acct-accent) 55%, var(--wb-border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wb-acct-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--wb-acct-accent) 8%, var(--wb-acct-card));
 }
 .wb-acct-stat-value { font-family: var(--wb-font-heading); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
 .wb-acct-stat-label { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--wb-muted); }
@@ -172,19 +194,43 @@ export const ACCOUNT_CSS = `
 }
 
 /* =========================================================================
-   overview-cards
+   overview-cards — stats + tabs, one full-width workspace (scales with data)
    ========================================================================= */
+.wb-acct-v-overview-cards .wb-acct-member { display: grid; gap: 0; max-width: 1080px; margin: 0 auto; }
 .wb-acct-v-overview-cards .wb-acct-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .wb-acct-v-overview-cards .wb-acct-heading { margin-bottom: 14px; }
-.wb-acct-v-overview-cards .wb-acct-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); align-items: start; }
-.wb-acct-v-overview-cards .wb-acct-panel {
-  padding: 22px; border-radius: var(--wb-acct-card-r); background: var(--wb-acct-card); border: 1px solid var(--wb-border);
+.wb-acct-v-overview-cards .wb-acct-stats { margin: 18px 0 8px; }
+.wb-acct-v-overview-cards .wb-acct-tabs {
+  margin: 4px 0 16px; padding: 5px; gap: 4px; border-radius: 14px; background: var(--wb-acct-soft); width: fit-content; max-width: 100%;
+}
+.wb-acct-v-overview-cards .wb-acct-tab { border-radius: 10px; padding: 0.55rem 0.95rem; }
+.wb-acct-v-overview-cards .wb-acct-workspace {
+  min-width: 0; padding: 22px 24px; border-radius: var(--wb-acct-card-r);
+  background: var(--wb-acct-card); border: 1px solid var(--wb-border);
   box-shadow: 0 18px 40px -32px color-mix(in srgb, var(--wb-text) 40%, transparent);
 }
-.wb-acct-v-overview-cards .wb-acct-panel-title { display: flex; align-items: center; gap: 10px; }
+.wb-acct-v-overview-cards .wb-acct-panel { gap: 14px; }
+.wb-acct-v-overview-cards .wb-acct-panel-title { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
 .wb-acct-v-overview-cards .wb-acct-panel-title::before {
   content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--wb-acct-accent);
 }
+.wb-acct-v-overview-cards .wb-acct-list {
+  gap: 0; max-height: min(52vh, 520px); overflow: auto; -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--wb-border); border-radius: var(--wb-acct-field-r); background: color-mix(in srgb, var(--wb-text) 2%, var(--wb-acct-card));
+}
+.wb-acct-v-overview-cards .wb-acct-row {
+  border: 0; border-bottom: 1px solid color-mix(in srgb, var(--wb-border) 85%, transparent);
+  border-radius: 0; padding: 10px 12px; background: transparent; gap: 12px;
+}
+.wb-acct-v-overview-cards .wb-acct-row:last-child { border-bottom: 0; }
+.wb-acct-v-overview-cards .wb-acct-thumb { width: 40px; height: 40px; border-radius: 8px; }
+.wb-acct-v-overview-cards .wb-acct-row-sub { font-size: 0.78rem; }
+.wb-acct-v-overview-cards .wb-acct-cart-total {
+  margin-top: 4px; padding: 12px 4px 0; position: sticky; bottom: 0;
+  background: linear-gradient(180deg, transparent, var(--wb-acct-card) 28%);
+}
+.wb-acct-v-overview-cards .wb-acct-cart-remove { padding: 0.35rem 0.6rem; font-size: 0.74rem; }
+.wb-acct-v-overview-cards .wb-acct-form-row { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 
 /* =========================================================================
    minimal-list
@@ -263,8 +309,11 @@ export const ACCOUNT_CSS = `
   .wb-acct-v-sidebar-tabs .wb-acct-identity, .wb-acct-v-dark-panel .wb-acct-identity { flex-direction: row; align-items: center; }
   .wb-acct-v-dark-panel .wb-acct-member { padding: 20px; }
   .wb-acct-v-sidebar-tabs .wb-acct-main, .wb-acct-v-top-tabs .wb-acct-main, .wb-acct-v-dark-panel .wb-acct-main,
-  .wb-acct-v-overview-cards .wb-acct-panel { padding: 18px; }
+  .wb-acct-v-overview-cards .wb-acct-workspace { padding: 18px; }
+  .wb-acct-v-overview-cards .wb-acct-tabs { width: 100%; }
+  .wb-acct-v-overview-cards .wb-acct-list { max-height: min(60vh, 420px); }
   .wb-acct-row { flex-wrap: wrap; }
   .wb-acct-row-amount { width: 100%; text-align: right; }
+  .wb-acct-v-overview-cards .wb-acct-row-amount { width: auto; margin-left: auto; }
 }
 `;

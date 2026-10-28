@@ -27,7 +27,7 @@ type Panel = "orders" | "cart" | "profile" | "password";
 const TABBED: Record<AccountVariant, boolean> = {
   "sidebar-tabs": true,
   "top-tabs": true,
-  "overview-cards": false,
+  "overview-cards": true,
   "minimal-list": false,
   "dark-panel": true,
 };
@@ -468,21 +468,60 @@ function PasswordPanel({ websiteId, interactive }: { websiteId?: string; interac
   );
 }
 
-function Stats({ account }: { account: ShopCustomerAccount }) {
+function Stats({
+  account,
+  active,
+  onSelect,
+}: {
+  account: ShopCustomerAccount;
+  active?: Panel;
+  onSelect?: (panel: Panel) => void;
+}) {
+  const cartCount = account.cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const orderStat = (
+    <>
+      <span className="wb-acct-stat-value" data-wb-account-count="orders">
+        {account.orders.length}
+      </span>
+      <span className="wb-acct-stat-label">Orders</span>
+    </>
+  );
+  const cartStat = (
+    <>
+      <span className="wb-acct-stat-value" data-wb-account-count="cart">
+        {cartCount}
+      </span>
+      <span className="wb-acct-stat-label">Items in cart</span>
+    </>
+  );
   return (
     <div className="wb-acct-stats">
-      <div className="wb-acct-stat">
-        <span className="wb-acct-stat-value" data-wb-account-count="orders">
-          {account.orders.length}
-        </span>
-        <span className="wb-acct-stat-label">Orders</span>
-      </div>
-      <div className="wb-acct-stat">
-        <span className="wb-acct-stat-value" data-wb-account-count="cart">
-          {account.cartItems.reduce((sum, item) => sum + item.quantity, 0)}
-        </span>
-        <span className="wb-acct-stat-label">Items in cart</span>
-      </div>
+      {onSelect ? (
+        <button
+          type="button"
+          className={`wb-acct-stat is-action${active === "orders" ? " is-active" : ""}`}
+          data-wb-account-stat="orders"
+          aria-pressed={active === "orders"}
+          onClick={() => onSelect("orders")}
+        >
+          {orderStat}
+        </button>
+      ) : (
+        <div className="wb-acct-stat">{orderStat}</div>
+      )}
+      {onSelect ? (
+        <button
+          type="button"
+          className={`wb-acct-stat is-action${active === "cart" ? " is-active" : ""}`}
+          data-wb-account-stat="cart"
+          aria-pressed={active === "cart"}
+          onClick={() => onSelect("cart")}
+        >
+          {cartStat}
+        </button>
+      ) : (
+        <div className="wb-acct-stat">{cartStat}</div>
+      )}
       <div className="wb-acct-stat">
         <span className="wb-acct-stat-value" data-wb-account-field="memberSince">
           {formatDate(account.customer.createdAt)}
@@ -535,6 +574,7 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
     window.location.href = siteHref(loginHref);
   }
 
+  const cartCount = liveAccount.cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const tabs = tabbed && panels.length > 1 && (
     <nav className="wb-acct-tabs" role="tablist" aria-label="Account sections">
       {panels.map((panel) => (
@@ -547,7 +587,17 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
           data-wb-account-tab={panel}
           onClick={() => setActive(panel)}
         >
-          {labelOf(data, panel)}
+          <span>{labelOf(data, panel)}</span>
+          {panel === "orders" && (
+            <span className="wb-acct-tab-count" data-wb-account-count="orders">
+              {liveAccount.orders.length}
+            </span>
+          )}
+          {panel === "cart" && (
+            <span className="wb-acct-tab-count" data-wb-account-count="cart">
+              {cartCount}
+            </span>
+          )}
         </button>
       ))}
     </nav>
@@ -632,6 +682,9 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
   }
 
   if (variant === "overview-cards") {
+    const openPanel = (panel: Panel) => {
+      if (panels.includes(panel)) setActive(panel);
+    };
     return (
       <div className="wb-acct-member">
         <header className="wb-acct-topbar">
@@ -641,8 +694,9 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
           </div>
           {logoutButton}
         </header>
-        <Stats account={liveAccount} />
-        <div className="wb-acct-main wb-acct-grid">{sections}</div>
+        <Stats account={liveAccount} active={current} onSelect={openPanel} />
+        {tabs}
+        <div className="wb-acct-main wb-acct-workspace">{sections}</div>
       </div>
     );
   }
