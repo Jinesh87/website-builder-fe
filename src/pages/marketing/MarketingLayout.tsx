@@ -189,11 +189,11 @@ export function MarketingFooter() {
           <div className="col" style={{ maxWidth: "300px" }}>
             <Link to="/" className="brand" aria-label={`${env.appName} home`}>
               <img
-                className="brand-logo"
+                className="brand-logo foot-logo"
                 src="/bytezora-webbuilder-logo-white-text.png"
                 alt={env.appName}
-                width={180}
-                height={48}
+                width={240}
+                height={64}
               />
             </Link>
             <p style={{ fontSize: "14px" }}>Build and publish your business website by hand or with AI.</p>
