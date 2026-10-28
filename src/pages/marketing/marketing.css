@@ -65,6 +65,7 @@
 .mk .brand {display:flex;align-items:center;gap:10px;font-weight:700;font-size:20px;color:var(--fg);text-decoration:none;letter-spacing:-0.02em}
 .mk .brand:hover {opacity:0.92}
 .mk .brand-logo {display:block;height:44px;width:auto;max-width:min(200px,52vw);object-fit:contain;flex-shrink:0}
+.mk footer .foot-logo {height:64px;max-width:min(280px,70vw)}
 .mk .brand-mark {width:32px;height:32px;border-radius:9px;background:var(--color-brand, #2447c7);color:#FFFFFF;display:grid;place-items:center;flex-shrink:0;box-shadow:0 2px 6px -1px rgba(36,71,199,0.35);transition:transform 0.15s ease}
 .mk .brand:hover .brand-mark {transform:scale(1.04)}
 .mk .brand-mark svg,.mk .brand-mark-icon {width:18px;height:18px}
