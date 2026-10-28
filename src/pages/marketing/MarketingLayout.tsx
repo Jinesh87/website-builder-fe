@@ -190,7 +190,7 @@ export function MarketingFooter() {
             <Link to="/" className="brand" aria-label={`${env.appName} home`}>
               <img
                 className="brand-logo"
-                src="/bytezora-webbuilder-logo.png"
+                src="/bytezora-webbuilder-logo-white-text.png"
                 alt={env.appName}
                 width={180}
                 height={48}
