@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,7 +21,7 @@ import { CAT_LABEL, findTemplateById, type Template } from "../marketing/data.ts
 import { useMarketing } from "../marketing/marketing-context.ts";
 import { ART } from "../marketing/art.tsx";
 import { ApiError, errorMessage } from "../../api/http.ts";
-import { templatesApi, type TemplatePreview } from "../../api/websites.ts";
+import { templatesApi, websitesApi, type TemplatePreview, type ThemeOption } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
 import { SitePage } from "../../site-kit/index.ts";
@@ -425,10 +425,37 @@ function FullTemplateSite({
 
 function MarketingDetailView({ template, index }: { template: Template; index: number }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const themeParam = searchParams.get("themeId");
+  const [themeOption, setThemeOption] = useState<ThemeOption | null>(null);
+
+  useEffect(() => {
+    if (!themeParam) return;
+    let cancelled = false;
+    websitesApi
+      .themes()
+      .then((loaded) => {
+        if (cancelled) return;
+        const match = loaded.find((t) => t.id === themeParam || t.name.toLowerCase() === themeParam.toLowerCase());
+        if (match) setThemeOption(match);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [themeParam]);
+
   const { user } = useAuth();
   const { shortlist, toggleShortlist, toast } = useMarketing();
   const [device, setDevice] = useState<Device>("desktop");
-  const site = useMemo(() => getTemplateSite(template.id), [template.id]);
+  const rawSite = useMemo(() => getTemplateSite(template.id), [template.id]);
+  const site = useMemo(() => {
+    if (!rawSite) return null;
+    if (themeOption?.settings) {
+      return { ...rawSite, theme: themeOption.settings };
+    }
+    return rawSite;
+  }, [rawSite, themeOption]);
   const pages = useMemo(
     () => (site ? site.pages.map((page) => page.name) : template.pages.split(", ")),
     [site, template.pages],
@@ -462,7 +489,8 @@ function MarketingDetailView({ template, index }: { template: Template; index: n
   };
 
   const handleUseTemplate = () => {
-    const createPath = `/websites/new?templateKey=${encodeURIComponent(getTemplateKey(template.id) ?? template.id)}`;
+    const key = getTemplateKey(template.id) ?? template.id;
+    const createPath = `/websites/new?templateKey=${encodeURIComponent(key)}${themeParam ? `&themeId=${encodeURIComponent(themeParam)}` : ""}`;
     if (user) {
       navigate(createPath);
     } else {
@@ -690,6 +718,26 @@ export default function TemplateDetailPage() {
 
 function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const themeParam = searchParams.get("themeId");
+  const [themeOption, setThemeOption] = useState<ThemeOption | null>(null);
+
+  useEffect(() => {
+    if (!themeParam) return;
+    let cancelled = false;
+    websitesApi
+      .themes()
+      .then((loaded) => {
+        if (cancelled) return;
+        const match = loaded.find((t) => t.id === themeParam || t.name.toLowerCase() === themeParam.toLowerCase());
+        if (match) setThemeOption(match);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [themeParam]);
+
   const { user } = useAuth();
   const [preview, setPreview] = useState<TemplatePreview | null>(null);
   const [error, setError] = useState<{ notFound: boolean; message: string } | null>(null);
@@ -718,7 +766,15 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
     };
   }, [templateKey]);
 
-  const pages = useMemo(() => preview?.site.pages ?? [], [preview]);
+  const site = useMemo(() => {
+    if (!preview?.site) return null;
+    if (themeOption?.settings) {
+      return { ...preview.site, theme: themeOption.settings };
+    }
+    return preview.site;
+  }, [preview?.site, themeOption]);
+
+  const pages = useMemo(() => site?.pages ?? preview?.site.pages ?? [], [site, preview]);
   const page = pages.find((candidate) => candidate.slug === pageSlug) ?? pages[0];
 
   function handleLinkClick(href: string): boolean {
@@ -739,7 +795,7 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
   };
 
   const handleUseTemplate = () => {
-    const createPath = `/websites/new?templateKey=${encodeURIComponent(templateKey)}`;
+    const createPath = `/websites/new?templateKey=${encodeURIComponent(templateKey)}${themeParam ? `&themeId=${encodeURIComponent(themeParam)}` : ""}`;
     if (user) {
       navigate(createPath);
     } else {
@@ -854,7 +910,7 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
       </header>
 
       {(() => {
-        const bg = preview?.site?.theme?.colors?.background || "#ffffff";
+        const bg = site?.theme?.colors?.background || preview?.site?.theme?.colors?.background || "#ffffff";
         const isSiteLight = isLightColor(bg);
         const scrollThumbColor = isSiteLight ? "rgba(24, 24, 27, 0.45)" : "rgba(255, 255, 255, 0.45)";
         const scrollThumbHoverColor = isSiteLight ? "rgba(24, 24, 27, 0.75)" : "rgba(255, 255, 255, 0.75)";
@@ -868,15 +924,17 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
               ["--scrollbar-thumb-hover" as any]: scrollThumbHoverColor,
             }}
           >
-            <PreviewFrame
-              device={device}
-              onLinkClick={handleLinkClick}
-              allowOffsiteLinks
-              scrollResetKey={page.slug}
-              theme={preview?.site?.theme}
-            >
-              <SitePage site={preview.site} page={page} />
-            </PreviewFrame>
+            {site && (
+              <PreviewFrame
+                device={device}
+                onLinkClick={handleLinkClick}
+                allowOffsiteLinks
+                scrollResetKey={page.slug}
+                theme={site.theme}
+              >
+                <SitePage site={site} page={page} />
+              </PreviewFrame>
+            )}
           </main>
         );
       })()}

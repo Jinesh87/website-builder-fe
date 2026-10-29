@@ -10,6 +10,7 @@ import {
   SelectField,
   TextAreaField,
   TextField,
+  VideoField,
 } from "./fields.tsx";
 import { cardImageSize } from "./media-dimensions.ts";
 
@@ -228,6 +229,7 @@ export default function FilmVaultFields({ data, onChange }: Props) {
             badge: "BRAND FILM • 01:30",
             description: "Cinematic commercial filmed on vintage anamorphic lenses.",
             image: { url: "", alt: "Film frame thumbnail" },
+            videoUrl: "/bannervid.mp4",
           })}
           itemTitle={(item) => item.title || "Untitled Film"}
           addLabel="Add film frame"
@@ -263,12 +265,12 @@ export default function FilmVaultFields({ data, onChange }: Props) {
                 optional
                 dimensionHint={cardImageSize("16:9")}
               />
-              <TextField
-                label="Video URL"
-                value={item.videoUrl ?? ""}
+              <VideoField
+                label="Video URL / Media"
+                value={item.videoUrl}
                 onChange={(videoUrl) => update({ ...item, videoUrl: videoUrl || undefined })}
                 placeholder="https://youtube.com/watch?v=... or .mp4"
-                hint="YouTube, Vimeo, or MP4 link for preview player."
+                hint="Upload a video, choose from library, or paste YouTube/Vimeo/MP4 link."
               />
               <TextAreaField
                 label="Synopsis / Description"

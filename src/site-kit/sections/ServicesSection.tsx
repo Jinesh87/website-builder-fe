@@ -1,7 +1,7 @@
 import { useState } from "react";
+import EditorialSpecsSection from "./EditorialSpecsSection.tsx";
 import {
   gridStyle,
-  parseRichText,
   SectionHead,
   SectionShell,
   SiteButton,
@@ -12,16 +12,7 @@ import {
 import { StaticStates, useStaticRender } from "../render-mode.tsx";
 import type { FeatureColor, SectionOf, ServiceItem } from "../types.ts";
 
-const DEFAULT_COLOR_PALETTE: FeatureColor[] = [
-  "blue",
-  "indigo",
-  "purple",
-  "cyan",
-  "green",
-  "orange",
-  "pink",
-  "yellow",
-];
+const DEFAULT_COLOR_PALETTE: FeatureColor[] = ["primary", "secondary"];
 
 function getItemColor(item: ServiceItem, index: number): FeatureColor {
   if (item.iconColor && item.iconColor !== "default") {
@@ -634,68 +625,7 @@ export default function ServicesSection({
 
   // 6. Editorial Specs Variant (Vintage Reels "THE SPECS — WHAT WE MAKE" / "WHAT WE SHOOT")
   if (variant === "editorial-specs") {
-    const isGrid = (data.columns ?? 1) > 1;
-    return (
-      <SectionShell
-        sectionId={section.id}
-        settings={section.settings}
-        className={`wb-services-editorial-specs ${isGrid ? "wb-specs-grid-mode" : ""}`}
-        label={data.heading || "The Specs"}
-        fullWidth
-      >
-        <div className="wb-container">
-          {data.eyebrow && <p className="wb-vr-eyebrow">{data.eyebrow}</p>}
-          {data.heading && (
-            <h2 className={isGrid ? "wb-specs-shoot-heading" : "wb-specs-heading-title"}>
-              {parseRichText(data.heading)}
-            </h2>
-          )}
-
-          {isGrid ? (
-            <div className="wb-specs-columns-grid">
-              {data.items.map((item, index) => {
-                const num = String(index + 1).padStart(2, "0");
-                return (
-                  <div key={index} className="wb-specs-grid-cell">
-                    <span className="wb-specs-grid-num">[{num}]</span>
-                    <h3 className="wb-specs-grid-title">{item.title}</h3>
-                    <p className="wb-specs-grid-desc">{item.description}</p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="wb-specs-list">
-              {data.items.map((item, index) => {
-                const num = String(index + 1).padStart(2, "0");
-                const isStamp = item.stampHighlight ?? false;
-                return (
-                  <div key={index} className="wb-specs-row">
-                    <span className="wb-specs-num">{num}</span>
-                    <h3
-                      className={`wb-specs-title ${isStamp ? "wb-specs-stamp" : ""}`}
-                      data-text={item.title}
-                    >
-                      {item.title}
-                    </h3>
-                    <p className="wb-specs-desc">{item.description}</p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {data.bottomCta && (
-            <div
-              className={`wb-services-bottom-cta wb-align-${align}`}
-              style={{ marginTop: "32px" }}
-            >
-              <SiteButton link={data.bottomCta} tone="primary" />
-            </div>
-          )}
-        </div>
-      </SectionShell>
-    );
+    return <EditorialSpecsSection section={section} />;
   }
 
   // 7. Standard Modern Cards Grid Variant (Default)

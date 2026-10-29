@@ -227,8 +227,7 @@ export const ROOFING_SITE: SiteData = {
             minHeight: "tall",
             contentAlign: "left",
             rating: { stars: 5, text: "4.9 average from 640 Google reviews", avatarCount: 4 },
-          },
-          { customColors: { gradientFrom: "#E0A96D", gradientTo: "#F5D7B2" } },
+          }
         ),
         materials,
         section("services", {

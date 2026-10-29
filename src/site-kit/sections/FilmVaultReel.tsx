@@ -1,8 +1,29 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { SectionShell, SiteImage, SiteLink } from "../primitives.tsx";
 import { useStaticRender } from "../render-mode.tsx";
 import type { CardItem, CardsData, SectionSettings } from "../types.ts";
 import { parseVideoUrl } from "../VideoModal.tsx";
+
+const DEFAULT_FILM_VIDEOS: Record<string, string> = {
+  "MUSIC VIDEOS": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+  "BRAND FILMS": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+  "WEDDINGS & EVENTS": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+  "SHORT FILMS": "/bannervid.mp4",
+};
+
+export function getFilmVideoUrl(item: Partial<CardItem>): string {
+  if (item.videoUrl && item.videoUrl.trim()) return item.videoUrl.trim();
+  const sub = (item.subtitle || "").toUpperCase();
+  if (DEFAULT_FILM_VIDEOS[sub]) return DEFAULT_FILM_VIDEOS[sub];
+  const cat = (item.category || "").toUpperCase();
+  if (DEFAULT_FILM_VIDEOS[cat]) return DEFAULT_FILM_VIDEOS[cat];
+  const badge = (item.badge || "").toUpperCase();
+  if (badge.includes("MUSIC")) return DEFAULT_FILM_VIDEOS["MUSIC VIDEOS"];
+  if (badge.includes("BRAND")) return DEFAULT_FILM_VIDEOS["BRAND FILMS"];
+  if (badge.includes("WEDDING") || badge.includes("EVENT")) return DEFAULT_FILM_VIDEOS["WEDDINGS & EVENTS"];
+  return "/bannervid.mp4";
+}
 
 export default function FilmVaultReel({
   sectionId,
@@ -22,6 +43,28 @@ export default function FilmVaultReel({
   const timecodeMode = data.timecodeMode ?? "live";
   const initialTimecode = data.timecode || "00:00:45:14";
   const [timecode, setTimecode] = useState<string>(initialTimecode);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    if (!selectedFilm) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedFilm(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedFilm]);
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (!selectedFilm || typeof document === "undefined") return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [selectedFilm]);
 
   useEffect(() => {
     setTimecode(initialTimecode);
@@ -113,8 +156,69 @@ export default function FilmVaultReel({
   const cardWidthStyle = data.filmCardWidth ? `${data.filmCardWidth}px` : undefined;
   const cardHeightStyle = data.filmCardHeight ? `${data.filmCardHeight}px` : undefined;
 
-  // Video parsing for selected modal film
-  const parsedVideo = selectedFilm?.videoUrl ? parseVideoUrl(selectedFilm.videoUrl) : null;
+  // Video parsing for selected modal film with dynamic fallback
+  const activeVideoUrl = selectedFilm ? getFilmVideoUrl(selectedFilm) : "";
+  const parsedVideo = activeVideoUrl ? parseVideoUrl(activeVideoUrl) : null;
+
+  const modalContent = selectedFilm && (
+    <div
+      className="wb-film-modal-overlay"
+      onClick={() => setSelectedFilm(null)}
+      role="dialog"
+      aria-modal="true"
+      aria-label={selectedFilm.title}
+    >
+      <div className="wb-film-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="wb-film-modal-header">
+          <div className="wb-film-modal-title-wrap">
+            {selectedFilm.badge && (
+              <span className="wb-film-modal-badge">{selectedFilm.badge}</span>
+            )}
+            <h3 className="wb-film-modal-title">{selectedFilm.title}</h3>
+          </div>
+          <button
+            type="button"
+            className="wb-film-modal-close"
+            onClick={() => setSelectedFilm(null)}
+            aria-label="Close preview"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="wb-film-modal-player">
+          {parsedVideo && (parsedVideo.type === "youtube" || parsedVideo.type === "vimeo") && parsedVideo.embedUrl ? (
+            <iframe
+              src={parsedVideo.embedUrl}
+              title={selectedFilm.title}
+              className="wb-film-modal-video-frame"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          ) : (
+            <video
+              src={parsedVideo?.directUrl || activeVideoUrl}
+              controls
+              autoPlay
+              playsInline
+              className="wb-film-modal-video-frame"
+            />
+          )}
+        </div>
+        {(selectedFilm.description || selectedFilm.link) && (
+          <div className="wb-film-modal-footer">
+            {selectedFilm.description && (
+              <p className="wb-film-modal-desc">{selectedFilm.description}</p>
+            )}
+            {selectedFilm.link && (
+              <SiteLink link={selectedFilm.link} className="wb-film-modal-cta">
+                {selectedFilm.link.label || "View Project"} →
+              </SiteLink>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <SectionShell
@@ -201,58 +305,67 @@ export default function FilmVaultReel({
 
         {/* Horizontal scrollable film reel */}
         <div ref={reelRef} className="wb-film-reel-track">
-          {filteredItems.map((item, index) => (
-            <div
-              key={index}
-              className="wb-film-strip-card"
-              style={{
-                width: cardWidthStyle,
-                height: cardHeightStyle,
-              }}
-              onClick={() => setSelectedFilm(item)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setSelectedFilm(item);
-                }
-              }}
-              aria-label={`View ${item.title}`}
-            >
-              <div className="wb-film-card-image-wrap">
-                {item.image && (
-                  <SiteImage
-                    image={item.image}
-                    className="wb-film-strip-img"
-                    contextText={item.title}
-                  />
-                )}
-                <div className="wb-film-vignette" />
-              </div>
-
-              {/* Duration / category badge top-right */}
-              {item.badge && <span className="wb-film-tag-badge">{item.badge}</span>}
-
-              {/* Centered circular play button */}
-              <button
-                type="button"
-                className="wb-film-play-btn"
-                aria-label={`Play ${item.title}`}
+          {filteredItems.map((item, index) => {
+            const itemVideoUrl = getFilmVideoUrl(item);
+            return (
+              <div
+                key={index}
+                className="wb-film-strip-card"
+                style={{
+                  width: cardWidthStyle,
+                  height: cardHeightStyle,
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedFilm(item);
                 }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedFilm(item);
+                  }
+                }}
+                aria-label={`Play ${item.title}`}
+                data-wb-video-modal="true"
+                data-wb-video-url={itemVideoUrl}
+                data-wb-video-title={item.title}
               >
-                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </button>
+                <div className="wb-film-card-image-wrap">
+                  {item.image && (
+                    <SiteImage
+                      image={item.image}
+                      className="wb-film-strip-img"
+                      contextText={item.title}
+                    />
+                  )}
+                  <div className="wb-film-vignette" />
+                </div>
 
-              {/* Film Title bottom-left */}
-              <div className="wb-film-title-label">{item.title}</div>
-            </div>
-          ))}
+                {/* Duration / category badge top-right */}
+                {item.badge && <span className="wb-film-tag-badge">{item.badge}</span>}
+
+                {/* Centered circular play button */}
+                <button
+                  type="button"
+                  className="wb-film-play-btn"
+                  aria-label={`Play ${item.title}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFilm(item);
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </button>
+
+                {/* Film Title bottom-left */}
+                <div className="wb-film-title-label">{item.title}</div>
+              </div>
+            );
+          })}
         </div>
 
         {/* Bottom sprocket holes row */}
@@ -292,75 +405,8 @@ export default function FilmVaultReel({
         </div>
       </div>
 
-      {/* Video Preview Modal */}
-      {selectedFilm && (
-        <div
-          className="wb-film-modal-overlay"
-          onClick={() => setSelectedFilm(null)}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="wb-film-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="wb-film-modal-header">
-              <div className="wb-film-modal-title-wrap">
-                {selectedFilm.badge && (
-                  <span className="wb-film-modal-badge">{selectedFilm.badge}</span>
-                )}
-                <h3 className="wb-film-modal-title">{selectedFilm.title}</h3>
-              </div>
-              <button
-                type="button"
-                className="wb-film-modal-close"
-                onClick={() => setSelectedFilm(null)}
-                aria-label="Close preview"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="wb-film-modal-player">
-              {parsedVideo && (parsedVideo.type === "youtube" || parsedVideo.type === "vimeo") && parsedVideo.embedUrl ? (
-                <iframe
-                  src={parsedVideo.embedUrl}
-                  title={selectedFilm.title}
-                  className="wb-film-modal-video-frame"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : parsedVideo && parsedVideo.type === "direct" && parsedVideo.directUrl ? (
-                <video
-                  src={parsedVideo.directUrl}
-                  controls
-                  autoPlay
-                  className="wb-film-modal-video-frame"
-                />
-              ) : (
-                <>
-                  {selectedFilm.image && (
-                    <SiteImage image={selectedFilm.image} className="wb-film-modal-img" />
-                  )}
-                  <div className="wb-film-scanlines" />
-                  <div className="wb-film-player-hud">
-                    <span className="wb-film-player-rec">● PLAY</span>
-                    <span className="wb-film-player-tc">{timecode}</span>
-                  </div>
-                </>
-              )}
-            </div>
-            {(selectedFilm.description || selectedFilm.link) && (
-              <div className="wb-film-modal-footer">
-                {selectedFilm.description && (
-                  <p className="wb-film-modal-desc">{selectedFilm.description}</p>
-                )}
-                {selectedFilm.link && (
-                  <SiteLink link={selectedFilm.link} className="wb-film-modal-cta">
-                    {selectedFilm.link.label || "View Project"} →
-                  </SiteLink>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Video Preview Modal rendered via Portal to root document */}
+      {modalContent && (typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent)}
     </SectionShell>
   );
 }

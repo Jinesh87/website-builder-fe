@@ -125,25 +125,21 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
         items: [
           {
             icon: "gear",
-            iconColor: "orange",
             title: "Choosing a Service",
             description: "Choosing an accountant that matches your needs.",
           },
           {
             icon: "user",
-            iconColor: "green",
             title: "Our Clients Say",
             description: "Read the reviews from some of our satisfied clients.",
           },
           {
             icon: "mail",
-            iconColor: "yellow",
             title: "Initial Consultation",
             description: "Understanding your accountancy requirements.",
           },
           {
             icon: "phone",
-            iconColor: "cyan",
             title: "Request a Callback",
             description: "Let's talk at a more convenient time for you.",
           },
@@ -177,9 +173,7 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
             description:
               "Distinctive positioning, messaging architectures, and memorable visual identities that stand out.",
             badge: "Strategic",
-            badgeColor: "blue",
             icon: "sparkles",
-            iconColor: "blue",
             price: "From $1,200",
             duration: "2-3 weeks",
             features: [
@@ -194,9 +188,7 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
             description:
               "High-converting, responsive websites and web applications built with modern frameworks and pixel perfection.",
             badge: "Popular",
-            badgeColor: "purple",
             icon: "code",
-            iconColor: "purple",
             price: "From $2,400",
             duration: "3-4 weeks",
             features: [
@@ -212,9 +204,7 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
             description:
               "Data-driven acquisition channels, search optimization, and automated conversion funnels.",
             badge: "Turnkey",
-            badgeColor: "green",
             icon: "chart",
-            iconColor: "green",
             price: "From $900/mo",
             duration: "Monthly sprint",
             features: [
@@ -1676,6 +1666,9 @@ export const SECTION_PRESETS: SectionPreset[] = [
           variant: "editorial-specs",
           eyebrow: "THE SPECS — WHAT WE MAKE",
           heading: "The Specs",
+          columns: 1,
+          mobileColumns: 1,
+          bottomCta: undefined,
           items: [
             {
               title: "Music videos",
@@ -1701,6 +1694,52 @@ export const SECTION_PRESETS: SectionPreset[] = [
             {
               title: "Post-production",
               description: "Edit, colour grade, sound and film looks",
+            },
+          ],
+        },
+      }),
+  },
+  {
+    key: "services-cinema-specs-grid",
+    type: "services",
+    label: "Services · Cinema specs grid (What We Shoot)",
+    category: "Services",
+    description:
+      "High-contrast 3-column dark cinema specifications grid with red index badges and condensed typography.",
+    create: () =>
+      createSection("services", {
+        settings: { background: "dark" },
+        data: {
+          variant: "editorial-specs",
+          eyebrow: undefined,
+          heading: "WHAT WE SHOOT",
+          columns: 3,
+          mobileColumns: 1,
+          bottomCta: undefined,
+          items: [
+            {
+              title: "MUSIC VIDEOS",
+              description: "Concept, performance and story for artists and labels.",
+            },
+            {
+              title: "BRAND FILMS",
+              description: "Commercials and brand stories with a classic feel.",
+            },
+            {
+              title: "WEDDINGS & EVENTS",
+              description: "Celebrations and launches, filmed like cinema.",
+            },
+            {
+              title: "SHORT FILMS",
+              description: "Script to screen for festivals and online release.",
+            },
+            {
+              title: "DOCUMENTARIES",
+              description: "Real stories, told with warmth.",
+            },
+            {
+              title: "POST-PRODUCTION",
+              description: "Editing, colour grading, sound and film looks.",
             },
           ],
         },
@@ -2213,26 +2252,22 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               icon: "gear",
-              iconColor: "orange",
               title: "Choosing a Service",
               description: "Choosing an accountant that matches your needs.",
             },
             {
               icon: "user",
-              iconColor: "green",
               title: "Our Clients Say",
               description:
                 "Read the reviews from some of our satisfied clients.",
             },
             {
               icon: "mail",
-              iconColor: "yellow",
               title: "Initial Consultation",
               description: "Understanding your accountancy requirements.",
             },
             {
               icon: "phone",
-              iconColor: "cyan",
               title: "Request a Callback",
               description: "Let's talk at a more convenient time for you.",
             },
@@ -2261,28 +2296,24 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               icon: "check",
-              iconColor: "green",
               title: "Easy To Use",
               description:
                 "The Isaac SDK robotics developer toolbox designed to change that with general availability.",
             },
             {
               icon: "chart",
-              iconColor: "yellow",
               title: "Daily Report",
               description:
                 "Comprehensive analytics and automated daily summary digests for your entire team.",
             },
             {
               icon: "clock",
-              iconColor: "blue",
               title: "Real Time",
               description:
                 "Instant data synchronization and lightning-fast low latency updates across all platforms.",
             },
             {
               icon: "shield",
-              iconColor: "pink",
               title: "Extreme Security",
               description:
                 "Enterprise-grade end-to-end data encryption and compliance safeguards by default.",
@@ -2313,42 +2344,36 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               icon: "gear",
-              iconColor: "blue",
               title: "Powerful Dashboard",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "tools",
-              iconColor: "blue",
               title: "User Friendly",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "bell",
-              iconColor: "blue",
               title: "Smart Notifications",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "wallet",
-              iconColor: "blue",
               title: "Cost Control",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "pointer",
-              iconColor: "blue",
               title: "Unique Features",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "help",
-              iconColor: "blue",
               title: "Support 24/7",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
@@ -2379,7 +2404,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               icon: "sparkles",
-              iconColor: "purple",
               badge: "AI Powered",
               title: "Smart Automation",
               description:
@@ -2387,7 +2411,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
             },
             {
               icon: "rocket",
-              iconColor: "orange",
               badge: "Blazing Fast",
               title: "Instant Global CDN",
               description:
@@ -2395,7 +2418,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
             },
             {
               icon: "lock",
-              iconColor: "green",
               badge: "Enterprise",
               title: "Bank-Grade Protection",
               description:
@@ -2519,9 +2541,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Scalable cloud architectures, blazing fast interactive frontends, and robust API backends built to scale effortlessly.",
               badge: "Flagship",
-              badgeColor: "blue",
               icon: "code",
-              iconColor: "blue",
               price: "From $3,500",
               duration: "4-6 weeks",
               featured: true,
@@ -2538,9 +2558,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "User research, wireframing, and design systems in Figma.",
               badge: "Design",
-              badgeColor: "purple",
               icon: "sparkles",
-              iconColor: "purple",
               price: "$1,800",
               features: [
                 "Interactive prototypes",
@@ -2552,9 +2570,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               title: "Performance & SEO Optimization",
               description: "Core Web Vitals tuning and technical search audit.",
               badge: "Speed",
-              badgeColor: "green",
               icon: "bolt",
-              iconColor: "green",
               price: "$950",
               features: ["Sub-second load times", "Lighthouse 95+ score"],
               link: { label: "Learn more", href: "/contact" },
@@ -2591,9 +2607,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Creating intuitive interfaces that turn complex workflows into delightful customer journeys.",
               badge: "UX / UI",
-              badgeColor: "orange",
               icon: "pointer",
-              iconColor: "orange",
               price: "From $1,500",
               features: [
                 "Journey mapping",
@@ -2607,9 +2621,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Clean, maintainable codebases with state-of-the-art responsiveness and maximum uptime.",
               badge: "Dev",
-              badgeColor: "cyan",
               icon: "layers",
-              iconColor: "cyan",
               price: "From $2,800",
               features: [
                 "TypeScript & Tailwind",
@@ -2623,9 +2635,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Embed intelligent workflows, automated pipelines, and generative assistants directly into your product.",
               badge: "AI 2026",
-              badgeColor: "purple",
               icon: "sparkles",
-              iconColor: "purple",
               price: "From $2,200",
               features: [
                 "LLM API orchestration",
@@ -2660,7 +2670,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Crafting distinct voice, tone, positioning pillars, and comprehensive visual systems.",
               badge: "Strategy",
-              badgeColor: "blue",
               icon: "star",
               price: "Sprint · $2,500",
               features: [
@@ -2675,7 +2684,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Custom headless websites with cinematic interactions, fluid motion, and lightning-fast speed.",
               badge: "Production",
-              badgeColor: "purple",
               icon: "rocket",
               price: "Project · $4,800",
               features: [
@@ -2690,7 +2698,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Systematic experimentation, landing page split-testing, and retention automation.",
               badge: "Growth",
-              badgeColor: "green",
               icon: "chart",
               price: "Monthly · $1,500",
               features: [
@@ -2727,9 +2734,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "End-to-end architecture and engineering of robust software-as-a-service platforms, multi-tenant portals, and secure cloud workflows.",
               badge: "Enterprise",
-              badgeColor: "blue",
               icon: "code",
-              iconColor: "blue",
               price: "$5,000+",
               duration: "6-8 weeks",
               features: [
@@ -2745,9 +2750,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Unified cross-platform design token architecture and accessible component libraries built for high velocity team execution.",
               badge: "Design Ops",
-              badgeColor: "purple",
               icon: "layers",
-              iconColor: "purple",
               price: "$3,200",
               duration: "3-4 weeks",
               features: [
@@ -2786,7 +2789,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Rigorous assessment of technical debt, cloud cost efficiency, and architecture modernization.",
               badge: "Advisory",
-              badgeColor: "gray",
               features: [
                 "Architecture review",
                 "Security risk report",
@@ -2799,7 +2801,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Pragmatic integration of machine learning and generative workflows that create real operational leverage.",
               badge: "Strategy",
-              badgeColor: "indigo",
               features: [
                 "Workflow automation audit",
                 "Model evaluation",
@@ -2812,7 +2813,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Executive-level engineering leadership to guide hiring, technical vision, and board alignment.",
               badge: "Leadership",
-              badgeColor: "orange",
               features: [
                 "Sprint cadence governance",
                 "Team hiring & coaching",
@@ -2851,7 +2851,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Holistic brand experiences that captivate audiences and establish market leadership.",
               badge: "Creative",
-              badgeColor: "orange",
               icon: "sparkles",
               price: "From $1,500",
               features: [
@@ -2866,7 +2865,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Next-generation applications built with speed, accessibility, and clean scalable architecture.",
               badge: "Engineering",
-              badgeColor: "cyan",
               icon: "code",
               price: "From $2,800",
               features: [
@@ -3349,6 +3347,52 @@ export const SECTION_PRESETS: SectionPreset[] = [
             "Consulting",
           ],
         },
+      }),
+  },
+  {
+    key: "contact-clapper-slate",
+    type: "contact",
+    label: "Contact · 35mm Clapperboard Slate (Vintage Reels)",
+    category: "Contact",
+    description:
+      "Cinematic 35mm film clapper slate form with live timecode, REC indicator, and production details.",
+    create: () =>
+      createSection("contact", {
+        data: {
+          variant: "clapper-slate",
+          eyebrow: "CONTACT",
+          heading: "ROLL CAMERA",
+          solidHeading: "ROLL",
+          outlineHeading: "CAMERA",
+          text: "Tell us about your project. We reply within [1 working day] with ideas, timing and a quote.",
+          recText: "REC · TAKE 01",
+          timecode: "00:00:25:10",
+          timecodeMode: "live",
+          email: "[hello@vintagereels.com]",
+          phone: "[+91 00000 00000]",
+          address: "[Street, City, PIN]",
+          officeHours: "[Mon–Sat, 10:00–19:00]",
+          socialLinksText: "[Instagram] · [YouTube] · [Vimeo]",
+          serviceOptions: [
+            "MUSIC VIDEO",
+            "BRAND FILM",
+            "WEDDING / EVENT",
+            "SHORT FILM",
+            "DOCUMENTARY",
+            "POST-PRODUCTION",
+          ],
+          budgetOptions: [
+            "Choose a range",
+            "Under $5,000",
+            "$5,000 – $15,000",
+            "$15,000 – $30,000",
+            "$30,000+",
+          ],
+          sceneTakeLabel: "SCENE 01 · TAKE 01",
+          submitLabel: "SEND IT ●",
+          showForm: true,
+        },
+        settings: { background: "dark" },
       }),
   },
   {
@@ -4680,6 +4724,129 @@ export const SECTION_PRESETS: SectionPreset[] = [
     description: preset.description,
     create: () => createSection("account", { data: accountData(preset.variant, preset.overrides) }),
   })),
+  {
+    key: "blog-vintage-journal",
+    type: "blog",
+    label: "Blog · Vintage Journal (Cutting Room)",
+    category: "Blog",
+    description:
+      "Editorial cinema journal with featured widescreen hero post, 3-column articles grid, and inbox newsletter strip.",
+    create: () =>
+      createSection("blog", {
+        data: {
+          variant: "vintage-journal",
+          eyebrow: "THE VINTAGE REELS BLOG",
+          title: "Notes from the cutting room",
+          italicTitle: "cutting room",
+          categories: ["ALL", "TRENDS", "GUIDES", "CRAFT"],
+          showNewsletterCard: true,
+          newsletterTitle: "Get new articles in your inbox",
+          newsletterPlaceholder: "Your email address",
+          newsletterButtonText: "SUBSCRIBE",
+          posts: [
+            {
+              id: "post-1",
+              title: "Why vintage looks are back in music videos",
+              slug: "/blog/why-vintage-looks-are-back",
+              excerpt: "The resurgence of warm halation, 16mm grain, and authentic analog lenses in modern chart-topping visuals.",
+              coverImage: {
+                url: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=1200&q=80",
+                alt: "Concert stage lights with audience",
+              },
+              category: "TRENDS",
+              authorName: "Vintage Reels",
+              date: "Spring 2026",
+              readTime: "4 MIN READ",
+              featured: true,
+            },
+            {
+              id: "post-2",
+              title: "How to plan a brand film in five steps",
+              slug: "/blog/how-to-plan-a-brand-film",
+              excerpt: "A simple plan that keeps your shoot on time and on budget.",
+              coverImage: {
+                url: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=1000&q=80",
+                alt: "Artisanal espresso coffee cup",
+              },
+              category: "GUIDE",
+              authorName: "Vintage Reels",
+              date: "Spring 2026",
+              readTime: "5 MIN",
+            },
+            {
+              id: "post-3",
+              title: "Getting the film look with digital cameras",
+              slug: "/blog/getting-the-film-look",
+              excerpt: "Lenses, light and grading choices that make digital feel like film.",
+              coverImage: {
+                url: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1000&q=80",
+                alt: "Cinema theatre projector light",
+              },
+              category: "CRAFT",
+              authorName: "Vintage Reels",
+              date: "Spring 2026",
+              readTime: "6 MIN",
+            },
+            {
+              id: "post-4",
+              title: "Seven questions to ask your wedding filmmaker",
+              slug: "/blog/seven-questions-wedding-filmmaker",
+              excerpt: "What to check before you book, from style to delivery time.",
+              coverImage: {
+                url: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1000&q=80",
+                alt: "Sunlit meadow and pine trees",
+              },
+              category: "GUIDE",
+              authorName: "Vintage Reels",
+              date: "Spring 2026",
+              readTime: "4 MIN",
+            },
+            {
+              id: "post-5",
+              title: "Why vintage looks are back in music videos",
+              slug: "/blog/why-vintage-looks-are-back",
+              excerpt: "Grain, light leaks and 4:3 frames are everywhere again.",
+              coverImage: {
+                url: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=1000&q=80",
+                alt: "Music video stage lighting",
+              },
+              category: "TRENDS",
+              authorName: "Vintage Reels",
+              date: "Spring 2026",
+              readTime: "4 MIN",
+            },
+            {
+              id: "post-6",
+              title: "Inside our colour suite",
+              slug: "/blog/inside-our-colour-suite",
+              excerpt: "How one grade turns everyday footage into a memory. [Article to write.]",
+              coverImage: {
+                url: "https://images.unsplash.com/photo-1495578942200-c5f5d2137def?auto=format&fit=crop&w=1000&q=80",
+                alt: "Studio brick wall texture",
+              },
+              category: "CRAFT",
+              authorName: "Vintage Reels",
+              date: "Spring 2026",
+              readTime: "3 MIN",
+            },
+            {
+              id: "post-7",
+              title: "Short-form films that feel like cinema",
+              slug: "/blog/short-form-films-cinema",
+              excerpt: "Making reels and shorts with a big-screen look. [Article to write.]",
+              coverImage: {
+                url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=1000&q=80",
+                alt: "Director with vintage camera on tripod",
+              },
+              category: "TRENDS",
+              authorName: "Vintage Reels",
+              date: "Spring 2026",
+              readTime: "5 MIN",
+            },
+          ],
+        },
+      }),
+  },
   {
     key: "blog-cards-grid",
     type: "blog",

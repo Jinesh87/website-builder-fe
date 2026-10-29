@@ -1573,7 +1573,7 @@ em, i {
   color: var(--wb-primary);
 }
 .wb-text-gradient {
-  background: var(--wb-gradient, linear-gradient(135deg, var(--wb-primary), #ec4899, #8b5cf6));
+  background: var(--wb-gradient, linear-gradient(135deg, var(--wb-primary), var(--wb-secondary-ink, var(--wb-primary))));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -3178,9 +3178,24 @@ em, i {
 }
 .wb-sunburst-rays {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 57%;
+  width: max(2600px, 300%);
+  height: max(2600px, 300%);
+  transform: translate(-50%, -50%);
   pointer-events: none;
-  background: repeating-conic-gradient(from 0deg at 57% 50%, #F3CB7C 0deg 5deg, transparent 5deg 10deg);
+  background: repeating-conic-gradient(from 0deg at center, #F3CB7C 0deg 5deg, transparent 5deg 10deg);
+  animation: wbSunburstSpin 35s linear infinite;
+  transform-origin: center center;
+  will-change: transform;
+}
+@keyframes wbSunburstSpin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 .wb-sunburst-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: flex-start; }
 .wb-sunburst-badge {
@@ -3232,12 +3247,14 @@ em, i {
 .wb-sunburst-circle-frame img { display: block; width: 100%; height: 100%; object-fit: cover; filter: sepia(0.7) contrast(1.05); }
 @container wb-site (max-width: 960px) {
   .wb-hero-sunburst-card { grid-template-columns: 1fr; gap: 32px; padding: 48px 24px; }
+  .wb-sunburst-rays { left: 50%; }
   .wb-site .wb-sunburst-heading { font-size: clamp(48px, 12cqi, 83px); line-height: 0.96; }
   .wb-sunburst-portrait-wrap { justify-content: center; }
   .wb-sunburst-circle-frame { width: min(317px, 70cqi); height: min(317px, 70cqi); }
 }
 @media (max-width: 960px) {
   .wb-hero-sunburst-card { grid-template-columns: 1fr; gap: 32px; padding: 48px 24px; }
+  .wb-sunburst-rays { left: 50%; }
   .wb-site .wb-sunburst-heading { font-size: clamp(48px, 12cqi, 83px); line-height: 0.96; }
   .wb-sunburst-portrait-wrap { justify-content: center; }
   .wb-sunburst-circle-frame { width: min(317px, 70cqi); height: min(317px, 70cqi); }
@@ -3669,6 +3686,17 @@ em, i {
   height: 24px !important;
 }
 
+/* Theme colours: follow the site's primary and secondary instead of a fixed palette */
+.wb-color-primary.wb-icon-style-pastel-circle { background: color-mix(in srgb, var(--wb-primary) 14%, transparent); color: var(--wb-primary); }
+.wb-color-primary.wb-icon-style-square-badge { background: color-mix(in srgb, var(--wb-primary) 8%, transparent); border: 1px solid color-mix(in srgb, var(--wb-primary) 22%, transparent); color: var(--wb-primary); }
+.wb-color-primary.wb-icon-style-colored-circle { background: linear-gradient(135deg, color-mix(in srgb, var(--wb-primary) 70%, #ffffff), var(--wb-primary)); color: var(--wb-on-primary) !important; }
+.wb-color-primary.wb-icon-style-minimal-accent { color: var(--wb-primary); }
+
+.wb-color-secondary.wb-icon-style-pastel-circle { background: color-mix(in srgb, var(--wb-secondary) 16%, transparent); color: var(--wb-secondary-ink); }
+.wb-color-secondary.wb-icon-style-square-badge { background: color-mix(in srgb, var(--wb-secondary) 10%, transparent); border: 1px solid color-mix(in srgb, var(--wb-secondary-ink) 24%, transparent); color: var(--wb-secondary-ink); }
+.wb-color-secondary.wb-icon-style-colored-circle { background: linear-gradient(135deg, color-mix(in srgb, var(--wb-secondary) 70%, #ffffff), var(--wb-secondary)); color: var(--wb-on-secondary) !important; }
+.wb-color-secondary.wb-icon-style-minimal-accent { color: var(--wb-secondary-ink); }
+
 /* Curated Pastel & Color Palette Badges */
 .wb-color-orange.wb-icon-style-pastel-circle { background: #ffedd5; color: #ea580c; }
 .wb-color-orange.wb-icon-style-square-badge { background: #fff7ed; border: 1px solid #ffedd5; color: #f97316; }
@@ -3742,6 +3770,8 @@ em, i {
   padding: 2px 8px;
   border-radius: 999px;
 }
+.wb-color-primary .wb-feature-badge { background: color-mix(in srgb, var(--wb-primary) 14%, transparent); color: var(--wb-primary); }
+.wb-color-secondary .wb-feature-badge { background: color-mix(in srgb, var(--wb-secondary) 16%, transparent); color: var(--wb-secondary-ink); }
 .wb-color-orange .wb-feature-badge { background: #ffedd5; color: #ea580c; }
 .wb-color-green .wb-feature-badge { background: #dcfce7; color: #16a34a; }
 .wb-color-blue .wb-feature-badge { background: #dbeafe; color: #2563eb; }
@@ -4209,6 +4239,8 @@ em, i {
   border: 1px solid transparent;
 }
 
+.wb-color-primary .wb-service-badge, .wb-color-primary.wb-service-badge { background: color-mix(in srgb, var(--wb-primary) 8%, transparent); color: var(--wb-primary); border-color: color-mix(in srgb, var(--wb-primary) 20%, transparent); }
+.wb-color-secondary .wb-service-badge, .wb-color-secondary.wb-service-badge { background: color-mix(in srgb, var(--wb-secondary) 12%, transparent); color: var(--wb-secondary-ink); border-color: color-mix(in srgb, var(--wb-secondary-ink) 22%, transparent); }
 .wb-color-orange .wb-service-badge, .wb-color-orange.wb-service-badge { background: #fff7ed; color: #ea580c; border-color: #ffedd5; }
 .wb-color-green .wb-service-badge, .wb-color-green.wb-service-badge { background: #f0fdf4; color: #16a34a; border-color: #dcfce7; }
 .wb-color-blue .wb-service-badge, .wb-color-blue.wb-service-badge { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }
@@ -4558,6 +4590,17 @@ em, i {
 /* --------------------------------------- Services: Editorial Specs ("The specs — what we make") */
 .wb-section.wb-services-editorial-specs { padding: 40px 0 0; background: transparent; }
 .wb-services-editorial-specs .wb-vr-eyebrow { padding-bottom: 22px; border-bottom: 1px solid rgba(29, 25, 16, 0.32); }
+.wb-site .wb-specs-heading-title {
+  margin: 18px 0 0;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(29, 25, 16, 0.32);
+  font-family: var(--vr-serif);
+  font-size: clamp(32px, 5vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--vr-text);
+  line-height: 1.1;
+}
 .wb-specs-list { display: flex; flex-direction: column; }
 .wb-specs-row {
   display: grid;
@@ -9972,7 +10015,30 @@ ${VINTAGE_CSS}
   color: #EDE7DA;
   text-decoration: none;
 }
+.wb-clapper-detail-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
 .wb-clapper-detail-link:hover {
   color: var(--vr-gold, #E6AD4A);
+}
+.wb-clapper-contact-wrap .wb-vr-rec-text {
+  color: #EDE7DA;
+}
+.wb-clapper-follow-row {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+}
+.wb-clapper-follow-item {
+  display: inline-flex;
+  align-items: center;
+}
+.wb-clapper-follow-sep {
+  color: #EDE7DA;
+  user-select: none;
+  margin: 0 4px;
 }
 `;
