@@ -1,5 +1,5 @@
 import { useState, useEffect, type CSSProperties, type ReactNode } from "react";
-import { isExternalHref, safeHref } from "./links.ts";
+import { isExternalHref, mailtoHref, safeHref, telHref } from "./links.ts";
 import { sectionFontStyle, sectionTypographyStyle, sectionTypographyClasses } from "./theme.ts";
 import type { GridColumns, IconName, ImageRef, LinkRef, SectionAlign, SectionSettings } from "./types.ts";
 import { isLightColor, normalizeHexColor } from "../utils/colors.ts";
@@ -86,6 +86,35 @@ export function SiteLink({ link, className, children, hideWhenAuthed }: SiteLink
       )}
     </a>
   );
+}
+
+type ContactLinkProps = {
+  value?: string;
+  className?: string;
+  /** Custom content such as an icon card; defaults to the value itself. */
+  children?: ReactNode;
+};
+
+function ContactLink({ href, value, className, children }: ContactLinkProps & { href: string | null }) {
+  const text = value?.trim();
+  if (!text) return null;
+  const content = children ?? text;
+  if (!href) return <span className={className}>{content}</span>;
+  return (
+    <a href={safeHref(href)} className={className}>
+      {content}
+    </a>
+  );
+}
+
+/** A phone number that opens the dialer when tapped. Renders nothing for an empty value. */
+export function PhoneLink(props: ContactLinkProps) {
+  return <ContactLink {...props} href={telHref(props.value)} />;
+}
+
+/** An email address that opens the mail app when clicked. Renders nothing for an empty value. */
+export function EmailLink(props: ContactLinkProps) {
+  return <ContactLink {...props} href={mailtoHref(props.value)} />;
 }
 
 export function SiteButton({
@@ -634,12 +663,71 @@ export function SectionShell({ sectionId, settings, className, label, children, 
     }
   }
 
+  const presetBg = !bg && settings.background && settings.background !== "default" ? settings.background : null;
+  const presetStyle: Record<string, unknown> = presetBg === "surface"
+    ? {
+        "--wb-section-bg": "var(--wb-surface)",
+        "--vr-story": "var(--wb-surface)",
+        "--vr-cream": "var(--wb-surface)",
+        backgroundColor: "var(--wb-surface)",
+        background: "var(--wb-surface)",
+      }
+    : presetBg === "primary"
+    ? {
+        "--wb-section-bg": "var(--wb-primary)",
+        "--wb-section-text": "var(--wb-on-primary)",
+        "--vr-story": "var(--wb-primary)",
+        "--vr-cream": "var(--wb-primary)",
+        "--vr-paper": "var(--wb-on-primary)",
+        backgroundColor: "var(--wb-primary)",
+        background: "var(--wb-primary)",
+        color: "var(--wb-on-primary)",
+      }
+    : presetBg === "dark"
+    ? {
+        "--wb-section-bg": "var(--wb-text)",
+        "--wb-section-text": "var(--wb-bg)",
+        "--vr-story": "var(--wb-text)",
+        "--vr-cream": "var(--wb-text)",
+        "--vr-paper": "var(--wb-bg)",
+        backgroundColor: "var(--wb-text)",
+        background: "var(--wb-text)",
+        color: "var(--wb-bg)",
+      }
+    : {};
+
   const customStyle: CSSProperties = {
     ...sectionFontStyle(settings.font),
     ...sectionTypographyStyle(settings),
-    ...(bg ? { "--wb-bg": bg, backgroundColor: bg } : {}),
-    ...(text ? { "--wb-text": text, color: text } : {}),
-    ...(primary ? { "--wb-primary": primary } : {}),
+    ...presetStyle,
+    ...(bg
+      ? {
+          "--wb-bg": bg,
+          "--wb-surface": bg,
+          "--wb-section-bg": bg,
+          "--vr-story": bg,
+          "--vr-cream": bg,
+          "--vr-footer": bg,
+          backgroundColor: bg,
+          background: bg,
+        }
+      : {}),
+    ...(text
+      ? {
+          "--wb-text": text,
+          "--wb-section-text": text,
+          "--vr-paper": text,
+          "--vr-text": text,
+          color: text,
+        }
+      : {}),
+    ...(primary
+      ? {
+          "--wb-primary": primary,
+          "--wb-accent": primary,
+          "--vr-gold": primary,
+        }
+      : {}),
     ...(muted ? { "--wb-muted": muted } : {}),
     ...(border ? { "--wb-border": border } : {}),
     ...(gradFrom || gradTo

@@ -29,12 +29,12 @@ export default function PlatformTemplateCard({ template }: PlatformTemplateCardP
       }
       actions={
         <>
+          <Link to={useTemplatePath} className="btn-use" title={`Use template ${template.name}`}>
+            Use template →
+          </Link>
           <Link to={templatePath} className="btn-preview" title={`Preview ${template.name}`}>
             <TemplateCardEyeIcon size={14} />
             Preview
-          </Link>
-          <Link to={useTemplatePath} className="btn-use" title={`Use template ${template.name}`}>
-            Use template →
           </Link>
         </>
       }

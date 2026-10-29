@@ -557,8 +557,8 @@ export const CARDS_CSS = `
 /* ---------------- Film Vault (Vintage Reels Recent Work / Portfolio Showcase) ---------------- */
 .wb-section.wb-film-vault-wrap {
   padding: 40px 0 20px;
-  background: #0A0A0A;
-  color: #EDE7DA;
+  background: var(--wb-section-bg, #0A0A0A);
+  color: var(--wb-section-text, #EDE7DA);
 }
 .wb-film-vault-container {
   display: flex;
@@ -1004,7 +1004,7 @@ export const CARDS_CSS = `
 }
 
 /* ---------------- Polaroid Grid (Vintage Reels Why Choose Us / Featured Frames) ---------------- */
-.wb-section.wb-polaroids-section { padding: 80px 0 86px; background: #151310; color: #FAF5EE; }
+.wb-section.wb-polaroids-section { padding: 80px 0 86px; background: var(--wb-section-bg, #151310); color: var(--wb-section-text, #FAF5EE); }
 .wb-scalloped-top {
   display: block;
   height: 14px;
