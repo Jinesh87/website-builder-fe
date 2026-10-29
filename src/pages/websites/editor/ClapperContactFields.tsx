@@ -170,37 +170,37 @@ export default function ClapperContactFields({ data, onChange }: Props) {
       <FormGroup title="Production Contact Details">
         <TextField
           label="Email address"
-          value={data.email ?? "[hello@vintagereels.com]"}
+          value={data.email ?? "hello@vintagereels.com"}
           onChange={(email) => set({ email: email || undefined })}
-          placeholder="[hello@vintagereels.com]"
+          placeholder="hello@vintagereels.com"
           maxLength={100}
         />
         <TextField
           label="Phone / WhatsApp"
-          value={data.phone ?? "[+91 98201 44520]"}
+          value={data.phone ?? "+91 98201 44520"}
           onChange={(phone) => set({ phone: phone || undefined })}
-          placeholder="[+91 98201 44520]"
+          placeholder="+91 98201 44520"
           maxLength={50}
         />
         <TextField
           label="Studio address"
-          value={data.address ?? "[14 Film City Rd, Goregaon East, Mumbai 400065]"}
+          value={data.address ?? "14 Film City Rd, Goregaon East, Mumbai 400065"}
           onChange={(address) => set({ address: address || undefined })}
-          placeholder="[14 Film City Rd, Goregaon East, Mumbai 400065]"
+          placeholder="14 Film City Rd, Goregaon East, Mumbai 400065"
           maxLength={120}
         />
         <TextField
           label="Business hours"
-          value={data.officeHours ?? "[Mon–Sat, 10:00–19:00]"}
+          value={data.officeHours ?? "Mon–Sat, 10:00–19:00"}
           onChange={(officeHours) => set({ officeHours: officeHours || undefined })}
-          placeholder="[Mon–Sat, 10:00–19:00]"
+          placeholder="Mon–Sat, 10:00–19:00"
           maxLength={80}
         />
         <TextField
           label="Follow channels"
-          value={data.socialLinksText ?? "[Instagram] · [YouTube] · [Vimeo]"}
+          value={data.socialLinksText ?? "Instagram · YouTube · Vimeo"}
           onChange={(socialLinksText) => set({ socialLinksText: socialLinksText || undefined })}
-          placeholder="[Instagram] · [YouTube] · [Vimeo]"
+          placeholder="Instagram · YouTube · Vimeo"
           maxLength={120}
         />
       </FormGroup>

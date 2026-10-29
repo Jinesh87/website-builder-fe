@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isOffsiteHref, resolvePageLink } from "./links.ts";
+import { isOffsiteHref, mailtoHref, resolvePageLink, telHref } from "./links.ts";
 
 const pages = [
   { id: "p-home", name: "Home", slug: "/" },
@@ -15,6 +15,34 @@ describe("isOffsiteHref", () => {
     expect(isOffsiteHref("tel:+15550192834")).toBe(true);
     expect(isOffsiteHref("/about")).toBe(false);
     expect(isOffsiteHref("#pricing")).toBe(false);
+  });
+});
+
+describe("telHref", () => {
+  it("keeps only the dialable digits and a leading plus", () => {
+    expect(telHref("+91 98201-44520")).toBe("tel:+919820144520");
+    expect(telHref("(555) 019-2834")).toBe("tel:5550192834");
+    expect(telHref(" +1 (555) 019 2834 ")).toBe("tel:+15550192834");
+  });
+
+  it("rejects values that can't be dialed", () => {
+    expect(telHref(undefined)).toBeNull();
+    expect(telHref("")).toBeNull();
+    expect(telHref("Call us")).toBeNull();
+  });
+});
+
+describe("mailtoHref", () => {
+  it("links email addresses", () => {
+    expect(mailtoHref("hello@studio.com")).toBe("mailto:hello@studio.com");
+    expect(mailtoHref("  team@example.co.in ")).toBe("mailto:team@example.co.in");
+  });
+
+  it("rejects values that aren't emails", () => {
+    expect(mailtoHref(undefined)).toBeNull();
+    expect(mailtoHref("hello")).toBeNull();
+    expect(mailtoHref("hello@studio")).toBeNull();
+    expect(mailtoHref("a b@example.com")).toBeNull();
   });
 });
 

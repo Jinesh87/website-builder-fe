@@ -1,6 +1,11 @@
 import { useContext, useId } from "react";
 import { Link } from "lucide-react";
 import {
+  BLOG_SHARE_PLATFORMS,
+  DEFAULT_BLOG_SHARE_PLATFORMS,
+  type BlogSharePlatform,
+  type BlogSocialLink,
+  type BlogSocialPlatform,
   type BlogContentSection,
   type BlogData,
   type BlogDetailData,
@@ -106,6 +111,98 @@ function BlogPostLinkField({
         </datalist>
       </div>
     </div>
+  );
+}
+
+const SOCIAL_OPTIONS: {
+  value: BlogSocialPlatform;
+  label: string;
+  placeholder: string;
+}[] = [
+  { value: "facebook", label: "Facebook", placeholder: "facebook.com/your-page" },
+  { value: "instagram", label: "Instagram", placeholder: "@handle or instagram.com/handle" },
+  { value: "twitter", label: "X / Twitter", placeholder: "@handle or x.com/handle" },
+  { value: "linkedin", label: "LinkedIn", placeholder: "linkedin.com/in/your-name" },
+  { value: "youtube", label: "YouTube", placeholder: "@channel or youtube.com/@channel" },
+  { value: "tiktok", label: "TikTok", placeholder: "@handle or tiktok.com/@handle" },
+  { value: "threads", label: "Threads", placeholder: "@handle or threads.net/@handle" },
+  { value: "pinterest", label: "Pinterest", placeholder: "pinterest.com/your-profile" },
+  { value: "whatsapp", label: "WhatsApp", placeholder: "+91 98765 43210 or wa.me/919876543210" },
+  { value: "telegram", label: "Telegram", placeholder: "@channel or t.me/channel" },
+  { value: "github", label: "GitHub", placeholder: "github.com/username" },
+  { value: "website", label: "Website", placeholder: "https://your-site.com" },
+  { value: "email", label: "Email", placeholder: "name@example.com" },
+];
+
+const SHARE_LABELS: Record<BlogSharePlatform, string> = {
+  twitter: "X / Twitter",
+  linkedin: "LinkedIn",
+  facebook: "Facebook",
+  whatsapp: "WhatsApp",
+  telegram: "Telegram",
+  pinterest: "Pinterest",
+  email: "Email",
+  copy: "Copy link",
+};
+
+/** Mirrors the backend rule: a full http(s)/mailto link, a bare domain, @handle, email or phone. */
+const SOCIAL_URL = /^(https?:\/\/\S+|mailto:\S+|\+?[0-9][0-9 ()-]{5,}|[^\s:]+)$/i;
+
+function socialUrlError(url: string): string | undefined {
+  const value = url.trim();
+  if (!value || SOCIAL_URL.test(value)) return undefined;
+  return "Use a web address, @handle, phone number or email";
+}
+
+function SocialLinksField({
+  label,
+  links,
+  onChange,
+}: {
+  label: string;
+  links: BlogSocialLink[] | undefined;
+  onChange: (links: BlogSocialLink[]) => void;
+}) {
+  const optionFor = (platform: BlogSocialPlatform) => SOCIAL_OPTIONS.find((o) => o.value === platform);
+
+  return (
+    <ItemList<BlogSocialLink>
+      label={label}
+      items={links || []}
+      max={16}
+      addLabel="Add social link"
+      create={() => ({ platform: "facebook", url: "" })}
+      itemTitle={(link) => {
+        const name = optionFor(link.platform)?.label ?? link.platform;
+        return link.url.trim() ? name : `${name} (no link yet)`;
+      }}
+      onChange={onChange}
+      renderItem={(link, onLinkChange) => (
+        <div className="flex flex-col gap-2 p-1">
+          <SelectField
+            label="Platform"
+            value={link.platform}
+            options={SOCIAL_OPTIONS}
+            onChange={(platform) => onLinkChange({ ...link, platform: platform as BlogSocialPlatform })}
+          />
+          <TextField
+            label={
+              link.platform === "email"
+                ? "Email address"
+                : link.platform === "whatsapp"
+                  ? "Phone number or link"
+                  : "Profile link"
+            }
+            value={link.url}
+            onChange={(url) => onLinkChange({ ...link, url })}
+            maxLength={255}
+            placeholder={optionFor(link.platform)?.placeholder}
+            error={socialUrlError(link.url)}
+            hint="Opens in a new tab. Leave empty to hide this button."
+          />
+        </div>
+      )}
+    />
   );
 }
 
@@ -355,6 +452,7 @@ export function BlogDetailForm({
   };
 
   const contentSections = data.content || [];
+  const sharePlatforms = data.sharePlatforms ?? DEFAULT_BLOG_SHARE_PLATFORMS;
 
   return (
     <>
@@ -405,7 +503,8 @@ export function BlogDetailForm({
         <ImageField
           label="Cover Image"
           value={data.coverImage}
-          onChange={(v) => update("coverImage", v || { url: "", alt: "" })}
+          onChange={(v) => update("coverImage", v)}
+          optional
           dimensionHint={MEDIA_SIZE.blogArticleCover}
           hint={MEDIA_HINT.cropped}
         />
@@ -432,8 +531,9 @@ export function BlogDetailForm({
         />
         <ImageField
           label="Author Avatar"
-          value={data.authorAvatar || { url: "", alt: "" }}
-          onChange={(v) => update("authorAvatar", v || { url: "", alt: "" })}
+          value={data.authorAvatar}
+          onChange={(v) => update("authorAvatar", v)}
+          optional
           dimensionHint={MEDIA_SIZE.avatar}
           hint={MEDIA_HINT.avatar}
         />
@@ -441,6 +541,11 @@ export function BlogDetailForm({
           label="Author Bio"
           value={data.authorBio || ""}
           onChange={(v) => update("authorBio", v)}
+        />
+        <SocialLinksField
+          label="Author social links"
+          links={data.authorSocialLinks}
+          onChange={(links) => update("authorSocialLinks", links)}
         />
       </FormGroup>
 
@@ -512,13 +617,49 @@ export function BlogDetailForm({
         />
         <CheckboxField
           label="Show social share buttons"
+          hint="Buttons readers use to share this article."
           checked={data.showShareButtons !== false}
           onChange={(v) => update("showShareButtons", v)}
         />
+        {data.showShareButtons !== false && (
+          <div className="ml-6 grid grid-cols-2 gap-x-2 gap-y-1.5">
+            {BLOG_SHARE_PLATFORMS.map((platform) => (
+              <CheckboxField
+                key={platform}
+                label={SHARE_LABELS[platform]}
+                checked={sharePlatforms.includes(platform)}
+                onChange={(on) =>
+                  update(
+                    "sharePlatforms",
+                    BLOG_SHARE_PLATFORMS.filter((p) =>
+                      p === platform ? on : sharePlatforms.includes(p),
+                    ),
+                  )
+                }
+              />
+            ))}
+          </div>
+        )}
         <CheckboxField
           label="Show author bio box"
+          hint="Author card with avatar, role, bio and social links."
           checked={data.showAuthorBio !== false}
           onChange={(v) => update("showAuthorBio", v)}
+        />
+      </FormGroup>
+
+      <FormGroup title="Social Media Links">
+        <TextField
+          label="Heading"
+          value={data.socialLinksTitle ?? ""}
+          onChange={(v) => update("socialLinksTitle", v)}
+          placeholder="Follow us"
+          maxLength={60}
+        />
+        <SocialLinksField
+          label="Profiles"
+          links={data.socialLinks}
+          onChange={(links) => update("socialLinks", links)}
         />
       </FormGroup>
     </>

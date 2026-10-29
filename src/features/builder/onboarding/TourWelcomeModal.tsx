@@ -5,9 +5,10 @@ type TourWelcomeModalProps = {
   isOpen: boolean;
   onStart: () => void;
   onSkip: () => void;
+  showAi?: boolean;
 };
 
-export function TourWelcomeModal({ isOpen, onStart, onSkip }: TourWelcomeModalProps) {
+export function TourWelcomeModal({ isOpen, onStart, onSkip, showAi = true }: TourWelcomeModalProps) {
   const startButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export function TourWelcomeModal({ isOpen, onStart, onSkip }: TourWelcomeModalPr
         <div className="space-y-1 mb-5">
           <h2
             id="welcome-modal-title"
-            className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white"
+            className="text-lg font-semibold tracking-tight text-zinc-900 dark:white"
           >
             Let’s build your site
           </h2>
@@ -64,19 +65,23 @@ export function TourWelcomeModal({ isOpen, onStart, onSkip }: TourWelcomeModalPr
             id="welcome-modal-desc"
             className="text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400"
           >
-            A quick 1-minute walkthrough to introduce visual canvas editing, our AI design chat, and publishing.
+            {showAi
+              ? "A quick 1-minute walkthrough to introduce visual canvas editing, our AI design chat, and publishing."
+              : "A quick 1-minute walkthrough to introduce visual canvas editing, page styling, and publishing."}
           </p>
         </div>
 
         {/* Minimal Feature Highlights (Clean & Monochrome) */}
         <div className="space-y-2 mb-6 rounded-xl border border-zinc-100 bg-zinc-50/70 p-3 dark:border-zinc-800/80 dark:bg-zinc-800/40">
-          <div className="flex items-start gap-2.5 text-xs text-zinc-700 dark:text-zinc-200">
-            <Sparkles className="mt-0.5 size-3.5 shrink-0 text-zinc-700 dark:text-zinc-300" />
-            <div className="min-w-0">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">AI Assistant Chat:</span>{" "}
-              <span className="text-zinc-500 dark:text-zinc-400">Ask AI to build sections, rewrite copy, and refine styles.</span>
+          {showAi && (
+            <div className="flex items-start gap-2.5 text-xs text-zinc-700 dark:text-zinc-200">
+              <Sparkles className="mt-0.5 size-3.5 shrink-0 text-zinc-700 dark:text-zinc-300" />
+              <div className="min-w-0">
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">AI Assistant Chat:</span>{" "}
+                <span className="text-zinc-500 dark:text-zinc-400">Ask AI to build sections, rewrite copy, and refine styles.</span>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="flex items-start gap-2.5 text-xs text-zinc-700 dark:text-zinc-200">
             <Layout className="mt-0.5 size-3.5 shrink-0 text-zinc-700 dark:text-zinc-300" />

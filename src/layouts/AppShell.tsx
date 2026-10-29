@@ -14,6 +14,8 @@ export type ShellNavItem = {
   end?: boolean;
   /** Extra path prefixes that also mark this item active (e.g. detail pages). */
   activePrefixes?: string[];
+  /** Count of items waiting for attention; hidden when zero. */
+  badge?: number;
 };
 
 type AppShellProps = {
@@ -80,7 +82,7 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
         </div>
 
         <nav aria-label="Main" className="mt-6 flex flex-1 flex-col gap-1 overflow-y-auto pr-1">
-          {nav.map(({ label, icon: Icon, to, end, activePrefixes }) =>
+          {nav.map(({ label, icon: Icon, to, end, activePrefixes, badge }) =>
             to ? (
               <NavLink
                 key={label}
@@ -94,6 +96,12 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
               >
                 <Icon className="size-4 shrink-0" aria-hidden />
                 <span className="truncate">{label}</span>
+                {badge ? (
+                  <span className="ml-auto min-w-5 shrink-0 rounded-full bg-brand px-1.5 text-center text-[11px] font-semibold leading-5 text-white">
+                    {badge > 99 ? "99+" : badge}
+                    <span className="sr-only"> new</span>
+                  </span>
+                ) : null}
               </NavLink>
             ) : (
               <span

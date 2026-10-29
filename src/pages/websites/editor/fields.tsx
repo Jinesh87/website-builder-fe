@@ -31,6 +31,15 @@ const SAFE_HREF =
 export const SAFE_IMAGE_URL =
   /^(https?:\/\/\S+|\/(?!\/)\S*|data:image\/(?:png|jpe?g|webp|gif|svg\+xml|avif)(?:;[a-z0-9=_-]+)*;?(?:base64)?,[\s\S]*)$/i;
 
+const YOUTUBE_URL =
+  /^(?:https?:\/\/)?(?:(?:www\.|m\.)?youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)[\w-]{6,}(?:[^\s]*)?$/i;
+
+function normalizeYouTubeUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!YOUTUBE_URL.test(trimmed)) return null;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 
 const inputClass =
   "h-8 w-full rounded-ed border border-ed-border bg-ed-panel px-2.5 text-ed-sm text-ed-text placeholder:text-ed-faint shadow-ed-xs transition-all duration-150 hover:border-ed-border-strong focus:border-ed-accent focus:bg-ed-panel focus:outline-none focus:ring-2 focus:ring-ed-accent/15 aria-invalid:border-ed-danger aria-invalid:focus:ring-ed-danger/15 disabled:bg-ed-subtle disabled:text-ed-muted disabled:cursor-not-allowed";
@@ -321,12 +330,14 @@ export function ColorField({
   value,
   onChange,
   fallback = "#ffffff",
+  placeholder,
   hint,
 }: {
   label: string;
   value: string | undefined;
   onChange: (value: string) => void;
   fallback?: string;
+  placeholder?: string;
   hint?: string;
 }) {
   return (
@@ -341,7 +352,7 @@ export function ColorField({
           <CellColorPicker.Label />
           <div className="flex items-center gap-1.5 w-36">
             <CellColorPicker.Trigger />
-            <CellColorPicker.ValueDisplay />
+            <CellColorPicker.ValueDisplay placeholder={placeholder} />
           </div>
         </div>
         <CellColorPicker.Popover>
@@ -1249,6 +1260,8 @@ type VideoFieldProps = {
   placeholder?: string;
   optional?: boolean;
   dimensionHint?: string;
+  /** upload-or-youtube: file upload plus a YouTube link. any: upload, library, or any video link. */
+  mode?: "any" | "upload-or-youtube";
 };
 
 export function VideoField({
@@ -1256,9 +1269,10 @@ export function VideoField({
   value = "",
   onChange,
   hint,
-  placeholder = "https://www.youtube.com/watch?v=... or https://.../video.mp4",
+  placeholder,
   optional = true,
   dimensionHint,
+  mode = "any",
 }: VideoFieldProps) {
   const media = useContext(MediaTargetContext);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1270,17 +1284,41 @@ export function VideoField({
   } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  const youtubeOnly = mode === "upload-or-youtube";
   const videoUrl = value?.trim() || "";
+  const savedYouTube = normalizeYouTubeUrl(videoUrl) ?? "";
+  const [youtubeDraft, setYoutubeDraft] = useState<string | null>(null);
+  const [trackedYouTube, setTrackedYouTube] = useState(savedYouTube);
+  const [youtubeError, setYoutubeError] = useState<string | null>(null);
+  if (trackedYouTube !== savedYouTube) {
+    setTrackedYouTube(savedYouTube);
+    setYoutubeDraft(null);
+    setYoutubeError(null);
+  }
+  const youtubeInput = youtubeDraft ?? savedYouTube;
+  const urlPlaceholder =
+    placeholder ??
+    (youtubeOnly
+      ? "https://www.youtube.com/watch?v=..."
+      : "https://www.youtube.com/watch?v=... or https://.../video.mp4");
   const isDirectVideo =
     videoUrl.endsWith(".mp4") ||
     videoUrl.endsWith(".webm") ||
     videoUrl.includes("/media/") ||
     videoUrl.includes("blob:") ||
     videoUrl.includes("linodeobjects.com");
+  const isYouTube = Boolean(savedYouTube);
   const isYouTubeOrVimeo =
+    isYouTube ||
     videoUrl.includes("youtube.com") ||
     videoUrl.includes("youtu.be") ||
     videoUrl.includes("vimeo.com");
+
+  function clearVideo() {
+    setYoutubeDraft(null);
+    setYoutubeError(null);
+    onChange(undefined);
+  }
 
   async function upload(rawFile: File) {
     if (!media) return;
@@ -1300,6 +1338,8 @@ export function VideoField({
         websiteId: media.websiteId,
       });
 
+      setYoutubeDraft(null);
+      setYoutubeError(null);
       onChange(uploaded.url);
 
       setUploadProgress({
@@ -1333,8 +1373,8 @@ export function VideoField({
         {optional && value && (
           <button
             type="button"
-            onClick={() => onChange(undefined)}
-            className="text-[11px] font-medium text-ed-danger hover:underline"
+            onClick={clearVideo}
+            className="text-[11px] font-medium text-ed-danger hover:underline cursor-pointer"
           >
             Remove video
           </button>
@@ -1381,9 +1421,9 @@ export function VideoField({
           {optional && (
             <button
               type="button"
-              onClick={() => onChange(undefined)}
+              onClick={clearVideo}
               title="Remove video"
-              className="absolute top-1.5 right-1.5 inline-flex items-center justify-center rounded-ed bg-red-600/90 hover:bg-red-600 text-white size-6 shadow-md transition active:scale-95 z-10"
+              className="absolute top-1.5 right-1.5 inline-flex items-center justify-center rounded-ed bg-red-600/90 hover:bg-red-600 text-white size-6 shadow-md transition active:scale-95 z-10 cursor-pointer"
             >
               <Trash2 className="size-3.5" />
             </button>
@@ -1394,7 +1434,7 @@ export function VideoField({
       {/* Upload and Media Library Action Bar */}
       {media && (
         <div className="flex flex-col gap-1.5">
-          <div className="grid grid-cols-2 gap-2">
+          <div className={youtubeOnly ? "grid grid-cols-1 gap-2" : "grid grid-cols-2 gap-2"}>
             <input
               ref={inputRef}
               type="file"
@@ -1417,17 +1457,19 @@ export function VideoField({
               <Upload className="size-3.5 shrink-0" aria-hidden />
               <span className="truncate">{uploading ? "Uploading…" : "Upload Video"}</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setPicking(true)}
-              onMouseEnter={() => void MediaPickerDialog.preload()}
-              onFocus={() => void MediaPickerDialog.preload()}
-              disabled={uploading}
-              className="flex h-8 items-center justify-center gap-1.5 rounded-ed border border-ed-border bg-ed-panel px-2 text-ed-xs font-medium text-ed-text shadow-ed-xs transition hover:bg-ed-hover hover:border-ed-border-strong disabled:opacity-60 truncate"
-            >
-              <Film className="size-3.5 shrink-0" aria-hidden />
-              <span className="truncate">Library</span>
-            </button>
+            {youtubeOnly ? null : (
+              <button
+                type="button"
+                onClick={() => setPicking(true)}
+                onMouseEnter={() => void MediaPickerDialog.preload()}
+                onFocus={() => void MediaPickerDialog.preload()}
+                disabled={uploading}
+                className="flex h-8 items-center justify-center gap-1.5 rounded-ed border border-ed-border bg-ed-panel px-2 text-ed-xs font-medium text-ed-text shadow-ed-xs transition hover:bg-ed-hover hover:border-ed-border-strong disabled:opacity-60 truncate"
+              >
+                <Film className="size-3.5 shrink-0" aria-hidden />
+                <span className="truncate">Library</span>
+              </button>
+            )}
           </div>
 
           {/* Real-time 0-100% Linode Upload Progress Bar */}
@@ -1454,14 +1496,38 @@ export function VideoField({
         </div>
       )}
 
-      {/* Video URL Text Input */}
-      <TextField
-        label="Video link or URL"
-        value={value}
-        onChange={(url) => onChange(url || undefined)}
-        placeholder={placeholder}
-        hint={hint ?? "Upload MP4/WebM (max 50 MB) or paste YouTube / Vimeo link."}
-      />
+      {youtubeOnly ? (
+        <TextField
+          label="YouTube URL"
+          value={youtubeInput}
+          onChange={(url) => {
+            setYoutubeDraft(url);
+            const next = normalizeYouTubeUrl(url);
+            if (!url.trim()) {
+              setYoutubeError(null);
+              if (savedYouTube) onChange(undefined);
+              return;
+            }
+            if (next) {
+              setYoutubeError(null);
+              if (next !== videoUrl) onChange(next);
+            } else {
+              setYoutubeError("Paste a YouTube link, like https://www.youtube.com/watch?v=…");
+            }
+          }}
+          placeholder={urlPlaceholder}
+          hint={hint ?? "Upload a video file, or paste a YouTube link. Remove it to leave this frame without a video."}
+          error={youtubeError ?? undefined}
+        />
+      ) : (
+        <TextField
+          label="Video link or URL"
+          value={value}
+          onChange={(url) => onChange(url || undefined)}
+          placeholder={urlPlaceholder}
+          hint={hint ?? "Upload MP4/WebM (max 50 MB) or paste YouTube / Vimeo link."}
+        />
+      )}
 
       {/* Media Picker Dialog for Video */}
       {picking && media && (

@@ -1392,6 +1392,43 @@ export type BlogContentSection = {
   image?: ImageRef;
 };
 
+export const BLOG_SOCIAL_PLATFORMS = [
+  "facebook",
+  "instagram",
+  "twitter",
+  "linkedin",
+  "youtube",
+  "tiktok",
+  "threads",
+  "pinterest",
+  "whatsapp",
+  "telegram",
+  "github",
+  "website",
+  "email",
+] as const;
+export type BlogSocialPlatform = (typeof BLOG_SOCIAL_PLATFORMS)[number];
+
+export type BlogSocialLink = {
+  platform: BlogSocialPlatform;
+  /** Full URL, bare domain ("linkedin.com/in/jane"), @handle, phone (WhatsApp) or email address. */
+  url: string;
+};
+
+/** Buttons that share the current article; "copy" copies its link. */
+export const BLOG_SHARE_PLATFORMS = [
+  "twitter",
+  "linkedin",
+  "facebook",
+  "whatsapp",
+  "telegram",
+  "pinterest",
+  "email",
+  "copy",
+] as const;
+export type BlogSharePlatform = (typeof BLOG_SHARE_PLATFORMS)[number];
+export const DEFAULT_BLOG_SHARE_PLATFORMS: readonly BlogSharePlatform[] = ["twitter", "linkedin", "copy"];
+
 export type BlogDetailData = {
   design: BlogDetailDesign;
   title: string;
@@ -1402,12 +1439,18 @@ export type BlogDetailData = {
   authorRole?: string;
   authorAvatar?: ImageRef;
   authorBio?: string;
+  authorSocialLinks?: BlogSocialLink[];
   readTime: string;
-  coverImage: ImageRef;
+  coverImage?: ImageRef;
   coverImageCaption?: string;
   content: BlogContentSection[];
   tags: string[];
   showShareButtons?: boolean;
+  /** Unset means DEFAULT_BLOG_SHARE_PLATFORMS. */
+  sharePlatforms?: BlogSharePlatform[];
+  /** Profile links shown next to the share buttons, e.g. the publication's own accounts. */
+  socialLinks?: BlogSocialLink[];
+  socialLinksTitle?: string;
   showAuthorBio?: boolean;
   showNewsletter?: boolean;
   newsletterTitle?: string;
@@ -1506,7 +1549,7 @@ export type CardItem = {
   iconColor?: string;
   featured?: boolean;
   checklist?: Array<CardChecklistItem | string>;
-  /** Optional video URL (YouTube, Vimeo, MP4) played in the reel preview modal */
+  /** Optional. A YouTube link or an uploaded video. Empty means this frame has no video. */
   videoUrl?: string;
   category?: string;
 };

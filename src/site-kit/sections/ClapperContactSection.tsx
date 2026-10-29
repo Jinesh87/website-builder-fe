@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { SectionShell } from "../primitives.tsx";
+import { EmailLink, PhoneLink, SectionShell } from "../primitives.tsx";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ContactData, SectionOf } from "../types.ts";
 import { safeHref } from "../links.ts";
@@ -278,34 +278,26 @@ export default function ClapperContactSection({
             {/* Email */}
             <div className="wb-clapper-detail-item">
               <span className="wb-clapper-detail-tag">EMAIL</span>
-              <a
-                href={safeHref(
-                  `mailto:${(data.email || "hello@vintagereels.com").replace(/[[\]]/g, "")}`
-                )}
+              <EmailLink
+                value={(data.email || "hello@vintagereels.com").replace(/[[\]]/g, "")}
                 className="wb-clapper-detail-val wb-clapper-detail-link"
-              >
-                {data.email || "[hello@vintagereels.com]"}
-              </a>
+              />
             </div>
 
             {/* Phone / Whatsapp */}
             <div className="wb-clapper-detail-item">
               <span className="wb-clapper-detail-tag">PHONE / WHATSAPP</span>
-              <a
-                href={safeHref(
-                  `tel:${(data.phone || "+91 98201 44520").replace(/[^0-9+]/g, "")}`
-                )}
+              <PhoneLink
+                value={(data.phone || "+91 98201 44520").replace(/[[\]]/g, "")}
                 className="wb-clapper-detail-val wb-clapper-detail-link"
-              >
-                {data.phone || "[+91 98201 44520]"}
-              </a>
+              />
             </div>
 
             {/* Studio */}
             <div className="wb-clapper-detail-item">
               <span className="wb-clapper-detail-tag">STUDIO</span>
               <span className="wb-clapper-detail-val">
-                {data.address || "[14 Film City Rd, Goregaon East, Mumbai 400065]"}
+                {(data.address || "14 Film City Rd, Goregaon East, Mumbai 400065").replace(/[[\]]/g, "")}
               </span>
             </div>
 
@@ -313,7 +305,7 @@ export default function ClapperContactSection({
             <div className="wb-clapper-detail-item">
               <span className="wb-clapper-detail-tag">HOURS</span>
               <span className="wb-clapper-detail-val">
-                {data.officeHours || "[Mon–Sat, 10:00–19:00]"}
+                {(data.officeHours || "Mon–Sat, 10:00–19:00").replace(/[[\]]/g, "")}
               </span>
             </div>
 
@@ -322,7 +314,7 @@ export default function ClapperContactSection({
               <span className="wb-clapper-detail-tag">FOLLOW</span>
               <div className="wb-clapper-detail-val wb-clapper-follow-row">
                 {(() => {
-                  const raw = data.socialLinksText || "[Instagram] · [YouTube] · [Vimeo]";
+                  const raw = (data.socialLinksText || "Instagram · YouTube · Vimeo").replace(/[[\]]/g, "");
                   const items = raw.split("·").map((s) => s.trim()).filter(Boolean);
                   return items.map((item, idx) => {
                     const clean = item.replace(/[[\]]/g, "").toLowerCase();

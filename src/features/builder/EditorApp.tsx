@@ -48,7 +48,7 @@ import Inspector from "./shell/Inspector.tsx";
 import LeftRail from "./shell/LeftRail.tsx";
 import PublishDialog from "./shell/PublishDialog.tsx";
 import TopBar from "./shell/TopBar.tsx";
-import { TourProvider, EditorOnboarding } from "./onboarding/index.ts";
+import { TourProvider, EditorOnboarding, EDITOR_TOUR_STEPS } from "./onboarding/index.ts";
 
 type Toast = { id: number; message: string; tone: "success" | "danger" };
 
@@ -90,7 +90,7 @@ function blockHistoryHotkeys(): () => void {
 
 /** Lives inside <Puck> so it can reach editor state; draws the canvas and site chrome. */
 function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublish: () => void; onCommit: (data: Data) => void }) {
-  const { draft, page, siteArea, setSiteArea, setLeftPanel, device, aiOpen, setAiOpen, aiLock, selectPage, notify } = useEditor();
+  const { website, draft, page, siteArea, setSiteArea, setLeftPanel, device, aiOpen, setAiOpen, aiLock, selectPage, notify } = useEditor();
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const getPuck = useGetPuck();
   const wasLocked = useRef(false);
@@ -234,7 +234,7 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
               <Puck.Preview />
             </ShopCatalogBridge>
           </CanvasViewport>
-          {aiOpen ? (
+          {website.builderType === "AI" && aiOpen ? (
             <Suspense fallback={<AiDrawerSkeleton onClose={() => setAiOpen(false)} />}>
               <AiDrawer />
             </Suspense>
@@ -283,7 +283,15 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
   const [savedSections, setSavedSectionsState] = useState(initialSaved);
   const [leftPanel, setLeftPanel] = useState<LeftPanelId | null>("add");
   const [siteArea, setSiteArea] = useState<SiteArea>("page");
-  const [aiOpen, setAiOpen] = useState(false);
+  const isAiSite = website.builderType === "AI";
+  const [aiOpen, setAiOpenState] = useState(false);
+  const setAiOpen = useCallback(
+    (open: boolean) => {
+      if (website.builderType !== "AI") return;
+      setAiOpenState(open);
+    },
+    [website.builderType],
+  );
   const [aiBuilding, setAiBuilding] = useState<import("./editor-context.ts").AiBuildingState>(null);
   const [aiLock, setAiLockState] = useState<AiLock>(null);
   const aiLockRef = useRef<AiLock>(null);
@@ -412,7 +420,7 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
     <EditorContext.Provider value={value}>
       <LinkTargetsContext.Provider value={linkTargets}>
         <MediaTargetContext.Provider value={mediaTarget}>
-          <TourProvider>
+          <TourProvider steps={isAiSite ? EDITOR_TOUR_STEPS : EDITOR_TOUR_STEPS.filter((step) => step.id !== "step-3-ai-chat")}>
             <div className="ed-root flex h-dvh flex-col overflow-hidden bg-ed-app font-sans text-ed-text">
               <PageCanvas
                 key={page.id}
