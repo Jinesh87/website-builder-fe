@@ -12,7 +12,7 @@ function pkg(id: string, prices: HostingPackage["prices"], extra: Partial<Hostin
     featured: false,
     isCustom: false,
     prices,
-    startingFrom: { QUARTERLY: null, YEARLY: null },
+    defaultPrices: { QUARTERLY: null, YEARLY: null },
     ...extra,
   };
 }
@@ -79,5 +79,11 @@ describe("defaultPlan", () => {
 
   it("returns null when nothing can be paid", () => {
     expect(defaultPlan({ packages: [custom], subscription: null })).toBeNull();
+  });
+
+  it("offers the custom package at its default price", () => {
+    const defaults = { QUARTERLY: 750_000, YEARLY: 2_400_000 };
+    const priced = pkg("custom", defaults, { isCustom: true, defaultPrices: defaults });
+    expect(defaultPlan({ packages: [priced], subscription: null })).toEqual({ packageId: "custom", cycle: "YEARLY" });
   });
 });

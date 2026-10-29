@@ -600,6 +600,8 @@ em, i {
 .wb-btn:hover { opacity: 0.9; }
 .wb-btn-primary { background: var(--wb-primary); color: var(--wb-on-primary); border: 2px solid var(--wb-primary); }
 .wb-btn-secondary { background: transparent; color: var(--wb-text); border: 2px solid var(--wb-border); }
+.wb-btn-sm { min-height: 36px; padding: 6px 16px; font-size: 13.5px; }
+.wb-btn-lg { min-height: 50px; padding: 12px 28px; font-size: 16px; }
 .wb-site.wb-buttons-outline .wb-btn-primary { background: transparent; color: var(--wb-primary); }
 .wb-bg-primary .wb-btn-primary { background: var(--wb-on-primary); color: var(--wb-primary); border-color: var(--wb-on-primary); }
 .wb-bg-primary .wb-btn-secondary { color: inherit; border-color: currentColor; }
@@ -8803,6 +8805,7 @@ details[open] > summary .wb-faq-plus {
 .wb-carousel-showcase-title { font-size: 20px; font-weight: 700; margin: 0; }
 .wb-carousel-showcase-desc { font-size: 14px; line-height: 1.5; color: var(--wb-muted); margin: 0; }
 .wb-carousel-showcase-btn { margin-top: 10px; }
+.wb-carousel-showcase-actions { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 .wb-carousel-showcase-nav { display: flex; align-items: center; gap: 16px; }
 .wb-carousel-counter { font-family: ui-monospace, monospace; font-size: 14px; font-weight: 600; color: var(--wb-muted); }
 
@@ -9159,6 +9162,13 @@ details[open] > summary .wb-faq-plus {
   margin: 0;
   line-height: 1.5;
 }
+.wb-carousel-strip-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
 
 /* =========================================================================
    VARIANT 7: COVERFLOW 3D IMAGE REEL
@@ -9253,6 +9263,14 @@ details[open] > summary .wb-faq-plus {
   font-size: 13.5px;
   color: var(--wb-muted);
   margin: 0;
+}
+.wb-carousel-coverflow-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
 }
 .wb-carousel-coverflow-nav {
   display: flex;

@@ -9,6 +9,7 @@ import type { Device } from "../../components/websites/DevicePreview.tsx";
 import PublishSuccessModal from "../../components/websites/PublishSuccessModal.tsx";
 import { draftFromWebsite, homePage, updatePage, type EditorDraft } from "../../pages/websites/editor/editor-state.ts";
 import { LinkTargetsContext, MediaTargetContext } from "../../pages/websites/editor/fields.tsx";
+import { isExternalHref, isOffsiteHref, resolvePageLink } from "../../site-kit/links.ts";
 import type { Section } from "../../site-kit/index.ts";
 import { useAutosave } from "./autosave/use-autosave.ts";
 import {
@@ -170,12 +171,38 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
       openAddPanel: () => setLeftPanel("add"),
       navigateToHref: (href: string) => {
         if (!href || href === "#") return;
+        if (isOffsiteHref(href) || isExternalHref(href)) {
+          window.open(href, "_blank", "noopener,noreferrer");
+          return;
+        }
+        if (href.startsWith("#")) {
+          const anchorName = href.slice(1);
+          const el = document.getElementById(anchorName) || document.querySelector(`[data-section-id="${anchorName}"]`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth" });
+          }
+          return;
+        }
         const bare = href.split("#")[0] ?? "";
         const queryAt = bare.indexOf("?");
         const pathOnly = queryAt === -1 ? bare : bare.slice(0, queryAt);
         const selection = Object.fromEntries(new URLSearchParams(queryAt === -1 ? "" : bare.slice(queryAt + 1)));
         const clean = pathOnly.startsWith("/") ? pathOnly : `/${pathOnly}`;
         const pages = pagesRef.current;
+        const resolved = resolvePageLink(pages, href, page);
+        if (resolved) {
+          setProductSlug(undefined);
+          setProductSelection(undefined);
+          selectPage(resolved.page.id);
+          notify(`Switched to page: ${resolved.page.name}`);
+          if (resolved.hash) {
+            setTimeout(() => {
+              const el = document.getElementById(resolved.hash) || document.querySelector(`[data-section-id="${resolved.hash}"]`);
+              el?.scrollIntoView({ behavior: "smooth" });
+            }, 100);
+          }
+          return;
+        }
         const target = pages.find(
           (p) =>
             p.slug === clean ||
@@ -198,11 +225,14 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
               p.sections.some((section) => section.type === "product_detail"),
           )
           .sort((a, b) => b.slug.length - a.slug.length)[0];
-        if (!detail) return;
-        setProductSlug(decodeURIComponent(clean.slice(detail.slug.length + 1).split("/")[0] ?? ""));
-        setProductSelection(Object.keys(selection).length > 0 ? selection : undefined);
-        selectPage(detail.id);
-        notify(`Switched to page: ${detail.name}`);
+        if (detail) {
+          setProductSlug(decodeURIComponent(clean.slice(detail.slug.length + 1).split("/")[0] ?? ""));
+          setProductSelection(Object.keys(selection).length > 0 ? selection : undefined);
+          selectPage(detail.id);
+          notify(`Switched to page: ${detail.name}`);
+          return;
+        }
+        notify(`Page "${clean}" not found (create this page in the Pages tab to view it)`);
       },
     }),
     [draft.theme, draft.header, draft.footer, hasSelection, siteArea, isEmpty, dispatch, setSiteArea, setLeftPanel, selectPage, notify],
