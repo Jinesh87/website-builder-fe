@@ -80,7 +80,7 @@ export function SiteLink({ link, className, children, hideWhenAuthed }: SiteLink
       {children ?? (
         <>
           {iconPos === "left" && iconNode}
-          <span className="wb-btn-text">{link.label}</span>
+          <span className="wb-btn-text">{(link.label ?? "").replace(/^\[(.*)\]$/, "$1")}</span>
           {iconPos === "right" && iconNode}
         </>
       )}

@@ -4,25 +4,43 @@ import { SectionShell, SiteImage, SiteLink } from "../primitives.tsx";
 import { useStaticRender } from "../render-mode.tsx";
 import type { CardItem, CardsData, SectionSettings } from "../types.ts";
 import { parseVideoUrl } from "../VideoModal.tsx";
-
-const DEFAULT_FILM_VIDEOS: Record<string, string> = {
-  "MUSIC VIDEOS": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-  "BRAND FILMS": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-  "WEDDINGS & EVENTS": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-  "SHORT FILMS": "/bannervid.mp4",
-};
+import { DEFAULT_FILM_VIDEO_URL } from "../sample-films.ts";
 
 export function getFilmVideoUrl(item: Partial<CardItem>): string {
-  if (item.videoUrl && item.videoUrl.trim()) return item.videoUrl.trim();
-  const sub = (item.subtitle || "").toUpperCase();
-  if (DEFAULT_FILM_VIDEOS[sub]) return DEFAULT_FILM_VIDEOS[sub];
-  const cat = (item.category || "").toUpperCase();
-  if (DEFAULT_FILM_VIDEOS[cat]) return DEFAULT_FILM_VIDEOS[cat];
-  const badge = (item.badge || "").toUpperCase();
-  if (badge.includes("MUSIC")) return DEFAULT_FILM_VIDEOS["MUSIC VIDEOS"];
-  if (badge.includes("BRAND")) return DEFAULT_FILM_VIDEOS["BRAND FILMS"];
-  if (badge.includes("WEDDING") || badge.includes("EVENT")) return DEFAULT_FILM_VIDEOS["WEDDINGS & EVENTS"];
-  return "/bannervid.mp4";
+  if (item.videoUrl === undefined) return DEFAULT_FILM_VIDEO_URL;
+  return item.videoUrl.trim();
+}
+
+function FilmThumbnail({ item, videoUrl }: { item: CardItem; videoUrl: string }) {
+  if (item.image?.url) {
+    return <SiteImage image={item.image} className="wb-film-strip-img" contextText={item.title} />;
+  }
+  if (!videoUrl) return null;
+  const parsed = parseVideoUrl(videoUrl);
+  if (parsed.type === "youtube" && parsed.videoId) {
+    return (
+      <img
+        src={`https://i.ytimg.com/vi/${parsed.videoId}/hqdefault.jpg`}
+        alt={item.title}
+        className="wb-film-strip-img"
+        loading="lazy"
+      />
+    );
+  }
+  if (parsed.type === "direct" && parsed.directUrl) {
+    return (
+      <video
+        src={`${parsed.directUrl.split("#")[0]}#t=1`}
+        className="wb-film-strip-img"
+        muted
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
+        tabIndex={-1}
+      />
+    );
+  }
+  return null;
 }
 
 export default function FilmVaultReel({
@@ -156,7 +174,7 @@ export default function FilmVaultReel({
   const cardWidthStyle = data.filmCardWidth ? `${data.filmCardWidth}px` : undefined;
   const cardHeightStyle = data.filmCardHeight ? `${data.filmCardHeight}px` : undefined;
 
-  // Video parsing for selected modal film with dynamic fallback
+  // Video parsing for the selected film. No videoUrl means the frame stays a still.
   const activeVideoUrl = selectedFilm ? getFilmVideoUrl(selectedFilm) : "";
   const parsedVideo = activeVideoUrl ? parseVideoUrl(activeVideoUrl) : null;
 
@@ -194,15 +212,22 @@ export default function FilmVaultReel({
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
-          ) : (
+          ) : activeVideoUrl ? (
             <video
               src={parsedVideo?.directUrl || activeVideoUrl}
+              poster={selectedFilm.image?.url || undefined}
               controls
               autoPlay
               playsInline
               className="wb-film-modal-video-frame"
             />
-          )}
+          ) : selectedFilm.image ? (
+            <SiteImage
+              image={selectedFilm.image}
+              className="wb-film-modal-video-frame"
+              contextText={selectedFilm.title}
+            />
+          ) : null}
         </div>
         {(selectedFilm.description || selectedFilm.link) && (
           <div className="wb-film-modal-footer">
@@ -327,39 +352,38 @@ export default function FilmVaultReel({
                     setSelectedFilm(item);
                   }
                 }}
-                aria-label={`Play ${item.title}`}
-                data-wb-video-modal="true"
-                data-wb-video-url={itemVideoUrl}
-                data-wb-video-title={item.title}
+                aria-label={itemVideoUrl ? `Play ${item.title}` : item.title}
+                {...(itemVideoUrl
+                  ? {
+                      "data-wb-video-modal": "true",
+                      "data-wb-video-url": itemVideoUrl,
+                      "data-wb-video-title": item.title,
+                    }
+                  : {})}
               >
                 <div className="wb-film-card-image-wrap">
-                  {item.image && (
-                    <SiteImage
-                      image={item.image}
-                      className="wb-film-strip-img"
-                      contextText={item.title}
-                    />
-                  )}
+                  <FilmThumbnail item={item} videoUrl={itemVideoUrl} />
                   <div className="wb-film-vignette" />
                 </div>
 
                 {/* Duration / category badge top-right */}
                 {item.badge && <span className="wb-film-tag-badge">{item.badge}</span>}
 
-                {/* Centered circular play button */}
-                <button
-                  type="button"
-                  className="wb-film-play-btn"
-                  aria-label={`Play ${item.title}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedFilm(item);
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </button>
+                {itemVideoUrl ? (
+                  <button
+                    type="button"
+                    className="wb-film-play-btn"
+                    aria-label={`Play ${item.title}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFilm(item);
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </button>
+                ) : null}
 
                 {/* Film Title bottom-left */}
                 <div className="wb-film-title-label">{item.title}</div>

@@ -284,7 +284,7 @@ export default function ClapperContactSection({
                 )}
                 className="wb-clapper-detail-val wb-clapper-detail-link"
               >
-                {data.email || "[hello@vintagereels.com]"}
+                {(data.email || "hello@vintagereels.com").replace(/[[\]]/g, "")}
               </a>
             </div>
 
@@ -297,7 +297,7 @@ export default function ClapperContactSection({
                 )}
                 className="wb-clapper-detail-val wb-clapper-detail-link"
               >
-                {data.phone || "[+91 98201 44520]"}
+                {(data.phone || "+91 98201 44520").replace(/[[\]]/g, "")}
               </a>
             </div>
 
@@ -305,7 +305,7 @@ export default function ClapperContactSection({
             <div className="wb-clapper-detail-item">
               <span className="wb-clapper-detail-tag">STUDIO</span>
               <span className="wb-clapper-detail-val">
-                {data.address || "[14 Film City Rd, Goregaon East, Mumbai 400065]"}
+                {(data.address || "14 Film City Rd, Goregaon East, Mumbai 400065").replace(/[[\]]/g, "")}
               </span>
             </div>
 
@@ -313,7 +313,7 @@ export default function ClapperContactSection({
             <div className="wb-clapper-detail-item">
               <span className="wb-clapper-detail-tag">HOURS</span>
               <span className="wb-clapper-detail-val">
-                {data.officeHours || "[Mon–Sat, 10:00–19:00]"}
+                {(data.officeHours || "Mon–Sat, 10:00–19:00").replace(/[[\]]/g, "")}
               </span>
             </div>
 
@@ -322,7 +322,7 @@ export default function ClapperContactSection({
               <span className="wb-clapper-detail-tag">FOLLOW</span>
               <div className="wb-clapper-detail-val wb-clapper-follow-row">
                 {(() => {
-                  const raw = data.socialLinksText || "[Instagram] · [YouTube] · [Vimeo]";
+                  const raw = (data.socialLinksText || "Instagram · YouTube · Vimeo").replace(/[[\]]/g, "");
                   const items = raw.split("·").map((s) => s.trim()).filter(Boolean);
                   return items.map((item, idx) => {
                     const clean = item.replace(/[[\]]/g, "").toLowerCase();

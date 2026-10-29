@@ -819,7 +819,7 @@ export default function AiDrawer() {
   useEffect(() => () => setAiLock(null), [setAiLock]);
   const aiBusy = aiLock === "thinking" || aiLock === "building";
 
-  if (!aiOpen) return null;
+  if (!isAiSite || !aiOpen) return null;
 
   const currentSection = selectedItem ? itemAsSection(selectedItem) : null;
   const isSectionScope = Boolean(currentSection);

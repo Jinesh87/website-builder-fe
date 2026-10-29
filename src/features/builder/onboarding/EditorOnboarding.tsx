@@ -13,6 +13,7 @@ export function EditorOnboarding() {
     currentStep,
     currentStepIndex,
     totalSteps,
+    hasAiStep,
     startTour,
     nextStep,
     prevStep,
@@ -40,6 +41,7 @@ export function EditorOnboarding() {
         isOpen={isWelcomeOpen}
         onStart={() => startTour(false)}
         onSkip={skipTour}
+        showAi={hasAiStep}
       />
 
       {/* 2. Walkthrough Spotlight and Tooltip Card */}

@@ -76,12 +76,14 @@ function RailButton({
 
 export default memo(function LeftRail() {
   const { leftPanel, setLeftPanel, aiOpen, setAiOpen, aiLock, role, website } = useEditor();
+  const isAiSite = website.builderType === "AI";
   const inTemplateStudio = role === "SUPER_ADMIN" && website.isTemplateStudio;
   const panels = PANELS.filter((panel) => !panel.templateStudioOnly || inTemplateStudio);
   const active = panels.find((panel) => panel.id === leftPanel);
   const Panel = active?.render;
 
   const preloadAi = () => {
+    if (!isAiSite) return;
     void import("./AiDrawer.tsx");
   };
 
@@ -99,18 +101,22 @@ export default memo(function LeftRail() {
             <Icon className="size-4.5" strokeWidth={1.75} aria-hidden />
           </RailButton>
         ))}
-        <span className="my-1 h-px w-6 shrink-0 bg-ed-border" aria-hidden />
-        <RailButton
-          label="AI assistant"
-          dataTour="left-rail-ai"
-          active={aiOpen}
-          disabled={aiLock !== null}
-          onClick={() => setAiOpen(!aiOpen)}
-          onMouseEnter={preloadAi}
-          onFocus={preloadAi}
-        >
-          <AiSparklesIcon className="size-4.5" variant="glossy" aria-hidden />
-        </RailButton>
+        {isAiSite && (
+          <>
+            <span className="my-1 h-px w-6 shrink-0 bg-ed-border" aria-hidden />
+            <RailButton
+              label="AI assistant"
+              dataTour="left-rail-ai"
+              active={aiOpen}
+              disabled={aiLock !== null}
+              onClick={() => setAiOpen(!aiOpen)}
+              onMouseEnter={preloadAi}
+              onFocus={preloadAi}
+            >
+              <AiSparklesIcon className="size-4.5" variant="glossy" aria-hidden />
+            </RailButton>
+          </>
+        )}
       </nav>
       {active && Panel && (
         <aside

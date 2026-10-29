@@ -148,6 +148,8 @@ export function TourProvider({
     return isOpen && steps[currentStepIndex] ? steps[currentStepIndex] : null;
   }, [isOpen, steps, currentStepIndex]);
 
+  const hasAiStep = useMemo(() => steps.some((s) => s.id === "step-3-ai-chat"), [steps]);
+
   const value = useMemo<TourContextValue>(
     () => ({
       isOpen,
@@ -156,6 +158,7 @@ export function TourProvider({
       totalSteps: steps.length,
       currentStep,
       hasCompleted,
+      hasAiStep,
       startTour,
       nextStep,
       prevStep,
@@ -171,6 +174,7 @@ export function TourProvider({
       steps.length,
       currentStep,
       hasCompleted,
+      hasAiStep,
       startTour,
       nextStep,
       prevStep,
