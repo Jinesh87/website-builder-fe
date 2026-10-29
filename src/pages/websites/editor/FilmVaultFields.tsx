@@ -13,6 +13,7 @@ import {
   VideoField,
 } from "./fields.tsx";
 import { cardImageSize } from "./media-dimensions.ts";
+import { DEFAULT_FILM_VIDEO_URL } from "../../../site-kit/sample-films.ts";
 
 type Props = {
   data: CardsData;
@@ -228,8 +229,7 @@ export default function FilmVaultFields({ data, onChange }: Props) {
             subtitle: "BRAND FILMS",
             badge: "BRAND FILM • 01:30",
             description: "Cinematic commercial filmed on vintage anamorphic lenses.",
-            image: { url: "", alt: "Film frame thumbnail" },
-            videoUrl: "/bannervid.mp4",
+            videoUrl: DEFAULT_FILM_VIDEO_URL,
           })}
           itemTitle={(item) => item.title || "Untitled Film"}
           addLabel="Add film frame"
@@ -258,19 +258,22 @@ export default function FilmVaultFields({ data, onChange }: Props) {
                   maxLength={40}
                 />
               </div>
+              <VideoField
+                label="Film video"
+                value={item.videoUrl ?? DEFAULT_FILM_VIDEO_URL}
+                onChange={(videoUrl) => update({ ...item, videoUrl: videoUrl || "" })}
+                optional
+                mode="upload-or-youtube"
+                placeholder="https://www.youtube.com/watch?v=..."
+                hint="A free sample video plays by default. Upload your own, paste a YouTube link, or use Remove video for no video."
+              />
               <ImageField
-                label="Thumbnail photo"
+                label="Thumbnail photo (optional)"
                 value={item.image}
                 onChange={(image) => update({ ...item, image })}
                 optional
+                hint="Leave empty to use a frame from the film's video."
                 dimensionHint={cardImageSize("16:9")}
-              />
-              <VideoField
-                label="Video URL / Media"
-                value={item.videoUrl}
-                onChange={(videoUrl) => update({ ...item, videoUrl: videoUrl || undefined })}
-                placeholder="https://youtube.com/watch?v=... or .mp4"
-                hint="Upload a video, choose from library, or paste YouTube/Vimeo/MP4 link."
               />
               <TextAreaField
                 label="Synopsis / Description"

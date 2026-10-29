@@ -1531,9 +1531,9 @@ Sitemap: ${dom}/sitemap.xml`;
 
       {seoToolsEnabled && (
       <FormGroup title="Search engines (SEO)">
-        {/* AI SEO Action Buttons */}
-        <div className="flex flex-col gap-2 -mt-1">
-          {website && (
+        {/* AI SEO Action Buttons (AI builder only) */}
+        {website?.builderType === "AI" && (
+          <div className="flex flex-col gap-2 -mt-1">
             <button
               type="button"
               onClick={() => setReviewModalOpen(true)}
@@ -1550,8 +1550,6 @@ Sitemap: ${dom}/sitemap.xml`;
               </div>
               <ChevronRight className="size-3.5 text-ed-faint group-hover:text-ed-muted group-hover:translate-x-0.5 transition-all shrink-0" />
             </button>
-          )}
-          {website && (
             <button
               type="button"
               disabled={isGenerating}
@@ -1576,8 +1574,8 @@ Sitemap: ${dom}/sitemap.xml`;
                 </>
               )}
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {error && (
           <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-2.5 text-ed-2xs text-red-600 dark:text-red-400">
@@ -1733,7 +1731,9 @@ Sitemap: ${dom}/sitemap.xml`;
             </button>
           </div>
           <p className="text-ed-2xs text-ed-muted">
-            Saved with the page and used by the AI SEO generator. Work them into your title, description and copy.
+            {website?.builderType === "AI"
+              ? "Saved with the page and used by the AI SEO generator. Work them into your title, description and copy."
+              : "Saved with the page. Work them into your title, description and copy."}
           </p>
         </div>
 
@@ -1890,7 +1890,7 @@ Sitemap: ${dom}/sitemap.xml`;
         </Modal.Backdrop>
       )}
 
-      {website && seoToolsEnabled && (
+      {website && website.builderType === "AI" && seoToolsEnabled && (
         <PageSeoContentReviewModal
           isOpen={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}

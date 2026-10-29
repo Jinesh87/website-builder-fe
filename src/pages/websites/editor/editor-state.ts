@@ -1,5 +1,5 @@
 import type { SaveDraftInput, WebsiteDetail, WebsitePage } from "../../../api/websites.ts";
-import type { FooterData, HeaderData, HeaderMenuItem, LinkRef, Section, ThemeSettings } from "../../../site-kit/index.ts";
+import type { ContactData, FooterData, HeaderData, HeaderMenuItem, LinkRef, Section, ThemeSettings } from "../../../site-kit/index.ts";
 import { getTemplateSite } from "../../../site-kit/templates/index.ts";
 import { liftSiteChrome } from "../../../features/builder/utils/site-chrome.ts";
 
@@ -79,6 +79,44 @@ export function draftFromWebsite(website: WebsiteDetail): EditorDraft {
       }),
     }));
   }
+
+  if (footer.columns?.length) {
+    footer = {
+      ...footer,
+      columns: footer.columns.map((col) => ({
+        ...col,
+        links: col.links.map((link) => ({
+          ...link,
+          label: link.label?.replace(/^\[(.*)\]$/, "$1") ?? link.label,
+        })),
+      })),
+    };
+  }
+
+  pages = pages.map((page) => ({
+    ...page,
+    sections: page.sections.map((sec) => {
+      if (sec.type === "contact" && sec.data) {
+        const cData = sec.data as ContactData;
+        const cleanField = (val: string | undefined) => (typeof val === "string" ? val.replace(/^\[(.*)\]$/, "$1") : val);
+        return {
+          ...sec,
+          data: {
+            ...cData,
+            email: cleanField(cData.email),
+            phone: cleanField(cData.phone),
+            address: cleanField(cData.address),
+            officeHours: cleanField(cData.officeHours),
+            socialLinksText:
+              typeof cData.socialLinksText === "string"
+                ? cData.socialLinksText.replace(/[[\]]/g, "")
+                : cData.socialLinksText,
+          } as ContactData,
+        };
+      }
+      return sec;
+    }),
+  }));
 
   return { theme, ...liftSiteChrome({ header, footer, pages }) };
 }

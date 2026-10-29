@@ -1,4 +1,5 @@
 import type { CardItem, CardsData } from "./types.ts";
+import { SAMPLE_FILM_VIDEOS } from "./sample-films.ts";
 
 const unsplash = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=80`;
 
@@ -323,6 +324,82 @@ export const CARDS_PRESETS: CardsPreset[] = [
             "Do not over-tighten screws as it may damage the material.",
             "Do not use for load-bearing structural columns without support.",
           ],
+        },
+      ],
+    }),
+  },
+  {
+    key: "cards-film-vault",
+    label: "Cards · Film Reel Vault",
+    description: "Dark 35mm film strip with sprocket holes, REC badge, live timecode, category tabs and click-to-play film frames.",
+    data: () => ({
+      variant: "film-vault",
+      eyebrow: "PORTFOLIO",
+      heading: "OUR WORK",
+      intro: "Music videos, brand films, weddings and short films. Swipe the strip and press play on any frame.",
+      columns: 4,
+      mobileColumns: 1,
+      items: [
+        {
+          title: "MIDNIGHT RADIO",
+          badge: "MUSIC VIDEO • 03:42",
+          subtitle: "MUSIC VIDEOS",
+          description: "Broadcast commercial captured on vintage anamorphic lenses.",
+          videoUrl: SAMPLE_FILM_VIDEOS.sintel,
+        },
+        {
+          title: "GOLDEN BREW CO.",
+          badge: "BRAND FILM • 01:15",
+          subtitle: "BRAND FILMS",
+          description: "Sensory commercial series for artisanal coffee roasters.",
+          videoUrl: SAMPLE_FILM_VIDEOS.flower,
+        },
+        {
+          title: "FIELD OF GOLD",
+          badge: "WEDDING • 05:20",
+          subtitle: "WEDDINGS & EVENTS",
+          description: "Documentary portrait of rural artisans and master woodworkers.",
+          videoUrl: SAMPLE_FILM_VIDEOS.oceans,
+        },
+        {
+          title: "THE LATE SHOW",
+          badge: "SHORT FILM • 12:40",
+          subtitle: "SHORT FILMS",
+          description: "Feature film prologue filmed on Kodak 35mm vision stock.",
+          videoUrl: SAMPLE_FILM_VIDEOS.bunnyTrailer,
+        },
+      ],
+    }),
+  },
+  {
+    key: "cards-polaroid-grid",
+    label: "Cards · Polaroid Grid",
+    description: "Vintage photo-paper cards on a dark scalloped band. Great for highlights or reasons to choose you.",
+    data: () => ({
+      variant: "polaroid-grid",
+      heading: "Why choose us",
+      columns: 4,
+      mobileColumns: 1,
+      items: [
+        {
+          title: "A signature look",
+          description: "Vintage textures and warm colour your audience will remember.",
+          image: { url: unsplash("photo-1489599849927-2ee91cede3ba"), alt: "Cinema seats" },
+        },
+        {
+          title: "Story first",
+          description: "Every frame serves the story, from 15 seconds to 30 minutes.",
+          image: { url: unsplash("photo-1540039155733-5bb30b53aa14"), alt: "Concert stage lights" },
+        },
+        {
+          title: "One studio",
+          description: "Concept, shoot and post-production with one point of contact.",
+          image: { url: unsplash("photo-1514432324607-a09d9b4aefdd"), alt: "Espresso coffee cup" },
+        },
+        {
+          title: "Every screen",
+          description: "Masters for cinema and TV, cut-downs for YouTube and reels.",
+          image: { url: unsplash("photo-1500534314209-a25ddb2bd429"), alt: "Green field and forest" },
         },
       ],
     }),

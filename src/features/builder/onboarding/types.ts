@@ -37,6 +37,7 @@ export type TourContextValue = {
   totalSteps: number;
   currentStep: TourStep | null;
   hasCompleted: boolean;
+  hasAiStep?: boolean;
   startTour: (showWelcome?: boolean) => void;
   nextStep: () => void;
   prevStep: () => void;
