@@ -12,16 +12,7 @@ import {
 import { StaticStates, useStaticRender } from "../render-mode.tsx";
 import type { FeatureColor, SectionOf, ServiceItem } from "../types.ts";
 
-const DEFAULT_COLOR_PALETTE: FeatureColor[] = [
-  "blue",
-  "indigo",
-  "purple",
-  "cyan",
-  "green",
-  "orange",
-  "pink",
-  "yellow",
-];
+const DEFAULT_COLOR_PALETTE: FeatureColor[] = ["primary", "secondary"];
 
 function getItemColor(item: ServiceItem, index: number): FeatureColor {
   if (item.iconColor && item.iconColor !== "default") {

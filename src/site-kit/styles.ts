@@ -1573,7 +1573,7 @@ em, i {
   color: var(--wb-primary);
 }
 .wb-text-gradient {
-  background: var(--wb-gradient, linear-gradient(135deg, var(--wb-primary), #ec4899, #8b5cf6));
+  background: var(--wb-gradient, linear-gradient(135deg, var(--wb-primary), var(--wb-secondary-ink, var(--wb-primary))));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -3686,6 +3686,17 @@ em, i {
   height: 24px !important;
 }
 
+/* Theme colours: follow the site's primary and secondary instead of a fixed palette */
+.wb-color-primary.wb-icon-style-pastel-circle { background: color-mix(in srgb, var(--wb-primary) 14%, transparent); color: var(--wb-primary); }
+.wb-color-primary.wb-icon-style-square-badge { background: color-mix(in srgb, var(--wb-primary) 8%, transparent); border: 1px solid color-mix(in srgb, var(--wb-primary) 22%, transparent); color: var(--wb-primary); }
+.wb-color-primary.wb-icon-style-colored-circle { background: linear-gradient(135deg, color-mix(in srgb, var(--wb-primary) 70%, #ffffff), var(--wb-primary)); color: var(--wb-on-primary) !important; }
+.wb-color-primary.wb-icon-style-minimal-accent { color: var(--wb-primary); }
+
+.wb-color-secondary.wb-icon-style-pastel-circle { background: color-mix(in srgb, var(--wb-secondary) 16%, transparent); color: var(--wb-secondary-ink); }
+.wb-color-secondary.wb-icon-style-square-badge { background: color-mix(in srgb, var(--wb-secondary) 10%, transparent); border: 1px solid color-mix(in srgb, var(--wb-secondary-ink) 24%, transparent); color: var(--wb-secondary-ink); }
+.wb-color-secondary.wb-icon-style-colored-circle { background: linear-gradient(135deg, color-mix(in srgb, var(--wb-secondary) 70%, #ffffff), var(--wb-secondary)); color: var(--wb-on-secondary) !important; }
+.wb-color-secondary.wb-icon-style-minimal-accent { color: var(--wb-secondary-ink); }
+
 /* Curated Pastel & Color Palette Badges */
 .wb-color-orange.wb-icon-style-pastel-circle { background: #ffedd5; color: #ea580c; }
 .wb-color-orange.wb-icon-style-square-badge { background: #fff7ed; border: 1px solid #ffedd5; color: #f97316; }
@@ -3759,6 +3770,8 @@ em, i {
   padding: 2px 8px;
   border-radius: 999px;
 }
+.wb-color-primary .wb-feature-badge { background: color-mix(in srgb, var(--wb-primary) 14%, transparent); color: var(--wb-primary); }
+.wb-color-secondary .wb-feature-badge { background: color-mix(in srgb, var(--wb-secondary) 16%, transparent); color: var(--wb-secondary-ink); }
 .wb-color-orange .wb-feature-badge { background: #ffedd5; color: #ea580c; }
 .wb-color-green .wb-feature-badge { background: #dcfce7; color: #16a34a; }
 .wb-color-blue .wb-feature-badge { background: #dbeafe; color: #2563eb; }
@@ -4226,6 +4239,8 @@ em, i {
   border: 1px solid transparent;
 }
 
+.wb-color-primary .wb-service-badge, .wb-color-primary.wb-service-badge { background: color-mix(in srgb, var(--wb-primary) 8%, transparent); color: var(--wb-primary); border-color: color-mix(in srgb, var(--wb-primary) 20%, transparent); }
+.wb-color-secondary .wb-service-badge, .wb-color-secondary.wb-service-badge { background: color-mix(in srgb, var(--wb-secondary) 12%, transparent); color: var(--wb-secondary-ink); border-color: color-mix(in srgb, var(--wb-secondary-ink) 22%, transparent); }
 .wb-color-orange .wb-service-badge, .wb-color-orange.wb-service-badge { background: #fff7ed; color: #ea580c; border-color: #ffedd5; }
 .wb-color-green .wb-service-badge, .wb-color-green.wb-service-badge { background: #f0fdf4; color: #16a34a; border-color: #dcfce7; }
 .wb-color-blue .wb-service-badge, .wb-color-blue.wb-service-badge { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }

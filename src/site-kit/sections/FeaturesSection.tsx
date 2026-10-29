@@ -153,16 +153,7 @@ function FeatureMockupIllustration() {
   );
 }
 
-const DEFAULT_COLOR_PALETTE: FeatureColor[] = [
-  "orange",
-  "green",
-  "yellow",
-  "cyan",
-  "blue",
-  "purple",
-  "pink",
-  "indigo",
-];
+const DEFAULT_COLOR_PALETTE: FeatureColor[] = ["primary", "secondary"];
 
 function getItemColor(item: FeatureItem, index: number): FeatureColor {
   if (item.iconColor && item.iconColor !== "default") {

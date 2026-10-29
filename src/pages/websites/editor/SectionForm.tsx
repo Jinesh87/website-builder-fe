@@ -122,7 +122,9 @@ export const ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
 ];
 
 const FEATURE_COLOR_OPTIONS = [
-  { value: "default", label: "Auto (Palette cycled)" },
+  { value: "default", label: "Auto (Theme colours)" },
+  { value: "primary", label: "Theme primary" },
+  { value: "secondary", label: "Theme secondary" },
   { value: "none", label: "None / Neutral (No color tint)" },
   { value: "gray", label: "Gray / Slate" },
   { value: "orange", label: "Orange" },

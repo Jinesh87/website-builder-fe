@@ -125,25 +125,21 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
         items: [
           {
             icon: "gear",
-            iconColor: "orange",
             title: "Choosing a Service",
             description: "Choosing an accountant that matches your needs.",
           },
           {
             icon: "user",
-            iconColor: "green",
             title: "Our Clients Say",
             description: "Read the reviews from some of our satisfied clients.",
           },
           {
             icon: "mail",
-            iconColor: "yellow",
             title: "Initial Consultation",
             description: "Understanding your accountancy requirements.",
           },
           {
             icon: "phone",
-            iconColor: "cyan",
             title: "Request a Callback",
             description: "Let's talk at a more convenient time for you.",
           },
@@ -177,9 +173,7 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
             description:
               "Distinctive positioning, messaging architectures, and memorable visual identities that stand out.",
             badge: "Strategic",
-            badgeColor: "blue",
             icon: "sparkles",
-            iconColor: "blue",
             price: "From $1,200",
             duration: "2-3 weeks",
             features: [
@@ -194,9 +188,7 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
             description:
               "High-converting, responsive websites and web applications built with modern frameworks and pixel perfection.",
             badge: "Popular",
-            badgeColor: "purple",
             icon: "code",
-            iconColor: "purple",
             price: "From $2,400",
             duration: "3-4 weeks",
             features: [
@@ -212,9 +204,7 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
             description:
               "Data-driven acquisition channels, search optimization, and automated conversion funnels.",
             badge: "Turnkey",
-            badgeColor: "green",
             icon: "chart",
-            iconColor: "green",
             price: "From $900/mo",
             duration: "Monthly sprint",
             features: [
@@ -2262,26 +2252,22 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               icon: "gear",
-              iconColor: "orange",
               title: "Choosing a Service",
               description: "Choosing an accountant that matches your needs.",
             },
             {
               icon: "user",
-              iconColor: "green",
               title: "Our Clients Say",
               description:
                 "Read the reviews from some of our satisfied clients.",
             },
             {
               icon: "mail",
-              iconColor: "yellow",
               title: "Initial Consultation",
               description: "Understanding your accountancy requirements.",
             },
             {
               icon: "phone",
-              iconColor: "cyan",
               title: "Request a Callback",
               description: "Let's talk at a more convenient time for you.",
             },
@@ -2310,28 +2296,24 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               icon: "check",
-              iconColor: "green",
               title: "Easy To Use",
               description:
                 "The Isaac SDK robotics developer toolbox designed to change that with general availability.",
             },
             {
               icon: "chart",
-              iconColor: "yellow",
               title: "Daily Report",
               description:
                 "Comprehensive analytics and automated daily summary digests for your entire team.",
             },
             {
               icon: "clock",
-              iconColor: "blue",
               title: "Real Time",
               description:
                 "Instant data synchronization and lightning-fast low latency updates across all platforms.",
             },
             {
               icon: "shield",
-              iconColor: "pink",
               title: "Extreme Security",
               description:
                 "Enterprise-grade end-to-end data encryption and compliance safeguards by default.",
@@ -2362,42 +2344,36 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               icon: "gear",
-              iconColor: "blue",
               title: "Powerful Dashboard",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "tools",
-              iconColor: "blue",
               title: "User Friendly",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "bell",
-              iconColor: "blue",
               title: "Smart Notifications",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "wallet",
-              iconColor: "blue",
               title: "Cost Control",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "pointer",
-              iconColor: "blue",
               title: "Unique Features",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
             },
             {
               icon: "help",
-              iconColor: "blue",
               title: "Support 24/7",
               description:
                 "Utise wisi enim minim veniam, quis et stationes ullamcorper suscipit ets lobortis nisle consequat nihis etim.",
@@ -2428,7 +2404,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
           items: [
             {
               icon: "sparkles",
-              iconColor: "purple",
               badge: "AI Powered",
               title: "Smart Automation",
               description:
@@ -2436,7 +2411,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
             },
             {
               icon: "rocket",
-              iconColor: "orange",
               badge: "Blazing Fast",
               title: "Instant Global CDN",
               description:
@@ -2444,7 +2418,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
             },
             {
               icon: "lock",
-              iconColor: "green",
               badge: "Enterprise",
               title: "Bank-Grade Protection",
               description:
@@ -2568,9 +2541,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Scalable cloud architectures, blazing fast interactive frontends, and robust API backends built to scale effortlessly.",
               badge: "Flagship",
-              badgeColor: "blue",
               icon: "code",
-              iconColor: "blue",
               price: "From $3,500",
               duration: "4-6 weeks",
               featured: true,
@@ -2587,9 +2558,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "User research, wireframing, and design systems in Figma.",
               badge: "Design",
-              badgeColor: "purple",
               icon: "sparkles",
-              iconColor: "purple",
               price: "$1,800",
               features: [
                 "Interactive prototypes",
@@ -2601,9 +2570,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               title: "Performance & SEO Optimization",
               description: "Core Web Vitals tuning and technical search audit.",
               badge: "Speed",
-              badgeColor: "green",
               icon: "bolt",
-              iconColor: "green",
               price: "$950",
               features: ["Sub-second load times", "Lighthouse 95+ score"],
               link: { label: "Learn more", href: "/contact" },
@@ -2640,9 +2607,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Creating intuitive interfaces that turn complex workflows into delightful customer journeys.",
               badge: "UX / UI",
-              badgeColor: "orange",
               icon: "pointer",
-              iconColor: "orange",
               price: "From $1,500",
               features: [
                 "Journey mapping",
@@ -2656,9 +2621,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Clean, maintainable codebases with state-of-the-art responsiveness and maximum uptime.",
               badge: "Dev",
-              badgeColor: "cyan",
               icon: "layers",
-              iconColor: "cyan",
               price: "From $2,800",
               features: [
                 "TypeScript & Tailwind",
@@ -2672,9 +2635,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Embed intelligent workflows, automated pipelines, and generative assistants directly into your product.",
               badge: "AI 2026",
-              badgeColor: "purple",
               icon: "sparkles",
-              iconColor: "purple",
               price: "From $2,200",
               features: [
                 "LLM API orchestration",
@@ -2709,7 +2670,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Crafting distinct voice, tone, positioning pillars, and comprehensive visual systems.",
               badge: "Strategy",
-              badgeColor: "blue",
               icon: "star",
               price: "Sprint · $2,500",
               features: [
@@ -2724,7 +2684,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Custom headless websites with cinematic interactions, fluid motion, and lightning-fast speed.",
               badge: "Production",
-              badgeColor: "purple",
               icon: "rocket",
               price: "Project · $4,800",
               features: [
@@ -2739,7 +2698,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Systematic experimentation, landing page split-testing, and retention automation.",
               badge: "Growth",
-              badgeColor: "green",
               icon: "chart",
               price: "Monthly · $1,500",
               features: [
@@ -2776,9 +2734,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "End-to-end architecture and engineering of robust software-as-a-service platforms, multi-tenant portals, and secure cloud workflows.",
               badge: "Enterprise",
-              badgeColor: "blue",
               icon: "code",
-              iconColor: "blue",
               price: "$5,000+",
               duration: "6-8 weeks",
               features: [
@@ -2794,9 +2750,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Unified cross-platform design token architecture and accessible component libraries built for high velocity team execution.",
               badge: "Design Ops",
-              badgeColor: "purple",
               icon: "layers",
-              iconColor: "purple",
               price: "$3,200",
               duration: "3-4 weeks",
               features: [
@@ -2835,7 +2789,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Rigorous assessment of technical debt, cloud cost efficiency, and architecture modernization.",
               badge: "Advisory",
-              badgeColor: "gray",
               features: [
                 "Architecture review",
                 "Security risk report",
@@ -2848,7 +2801,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Pragmatic integration of machine learning and generative workflows that create real operational leverage.",
               badge: "Strategy",
-              badgeColor: "indigo",
               features: [
                 "Workflow automation audit",
                 "Model evaluation",
@@ -2861,7 +2813,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Executive-level engineering leadership to guide hiring, technical vision, and board alignment.",
               badge: "Leadership",
-              badgeColor: "orange",
               features: [
                 "Sprint cadence governance",
                 "Team hiring & coaching",
@@ -2900,7 +2851,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Holistic brand experiences that captivate audiences and establish market leadership.",
               badge: "Creative",
-              badgeColor: "orange",
               icon: "sparkles",
               price: "From $1,500",
               features: [
@@ -2915,7 +2865,6 @@ export const SECTION_PRESETS: SectionPreset[] = [
               description:
                 "Next-generation applications built with speed, accessibility, and clean scalable architecture.",
               badge: "Engineering",
-              badgeColor: "cyan",
               icon: "code",
               price: "From $2,800",
               features: [

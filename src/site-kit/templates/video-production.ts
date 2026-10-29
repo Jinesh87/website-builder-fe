@@ -82,6 +82,7 @@ const filmVault = section(
         subtitle: "MUSIC VIDEOS",
         description: "Broadcast commercial captured on vintage anamorphic lenses.",
         image: photo("1540039155733-5bb30b53aa14", "Midnight Radio stage lighting", 1000),
+        videoUrl: "/bannervid.mp4",
       },
       {
         title: "GOLDEN BREW CO.",
@@ -89,6 +90,7 @@ const filmVault = section(
         subtitle: "BRAND FILMS",
         description: "Sensory commercial series for artisanal coffee roasters.",
         image: photo("1514432324607-a09d9b4aefdd", "Artisanal espresso coffee cup", 1000),
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
       },
       {
         title: "FIELD OF GOLD",
@@ -96,6 +98,7 @@ const filmVault = section(
         subtitle: "WEDDINGS & EVENTS",
         description: "Documentary portrait of rural artisans and master woodworkers.",
         image: photo("1500382017468-9049fed747ef", "Field of gold sunlit meadow", 1000),
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
       },
       {
         title: "THE LATE SHOW",
@@ -103,6 +106,7 @@ const filmVault = section(
         subtitle: "SHORT FILMS",
         description: "Feature film prologue filmed on Kodak 35mm vision stock.",
         image: photo("1489599849927-2ee91cede3ba", "The Late Show cinema theatre", 1000),
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
       },
       {
         title: "BRICK LANE SESSION",
@@ -110,6 +114,7 @@ const filmVault = section(
         subtitle: "MUSIC VIDEOS",
         description: "Studio live performance recorded direct to analog tape.",
         image: photo("1495578942200-c5f5d2137def", "Brick Lane session texture", 1000),
+        videoUrl: "/bannervid.mp4",
       },
       {
         title: "THE CRAFTSMAN",
@@ -117,6 +122,7 @@ const filmVault = section(
         subtitle: "SHORT FILMS",
         description: "Intimate character study of master Japanese wood joinery.",
         image: photo("1581091226825-a6a2a5aee158", "Master craftsman at work", 1000),
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
       },
       {
         title: "NEON DREAMS",
@@ -124,6 +130,7 @@ const filmVault = section(
         subtitle: "BRAND FILMS",
         description: "Night drive through Tokyo captured on 500T film stock.",
         image: photo("1509198397868-475647b2a1e5", "Neon city lights reflections", 1000),
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
       },
       {
         title: "SUMMER OF 96",
@@ -131,6 +138,7 @@ const filmVault = section(
         subtitle: "SHORT FILMS",
         description: "Coming-of-age road movie across California coastal highway.",
         image: photo("1469854523086-cc02fe5d8800", "Vintage road trip through desert", 1000),
+        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
       },
     ],
   },

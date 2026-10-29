@@ -485,6 +485,8 @@ export type HeroData = {
 export type GridColumns = 1 | 2 | 3 | 4;
 
 export type FeatureColor =
+  | "primary"
+  | "secondary"
   | "orange"
   | "green"
   | "blue"

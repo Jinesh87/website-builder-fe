@@ -48,6 +48,43 @@ export function contrastText(hex: string): string {
   return luminance > 0.6 ? "#111111" : "#ffffff";
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  return [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16)) as [number, number, number];
+}
+
+function rgbToHex(rgb: [number, number, number]): string {
+  return `#${rgb.map((channel) => Math.round(channel).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function relativeLuminance(hex: string): number {
+  const [r, g, b] = hexToRgb(hex).map((channel) => {
+    const c = channel / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrastRatio(a: string, b: string): number {
+  const [light, dark] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x) as [number, number];
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * `color` as close to itself as possible while still readable on `background`:
+ * blended towards `text` until it reaches the 3:1 contrast WCAG asks of large text and icons.
+ */
+function readableOn(color: string, background: string, text: string): string {
+  if (contrastRatio(color, background) >= 3) return color;
+  const from = hexToRgb(color);
+  const to = hexToRgb(text);
+  for (let step = 1; step <= 10; step++) {
+    const amount = step / 10;
+    const mixed = rgbToHex(from.map((channel, i) => channel + (to[i]! - channel) * amount) as [number, number, number]);
+    if (contrastRatio(mixed, background) >= 3) return mixed;
+  }
+  return text;
+}
+
 export function themeToCssVars(theme: ThemeSettings): CSSProperties {
   const defaults = DEFAULT_THEME.colors;
   const colors = {
@@ -66,6 +103,8 @@ export function themeToCssVars(theme: ThemeSettings): CSSProperties {
     "--wb-primary": colors.primary,
     "--wb-on-primary": contrastText(colors.primary),
     "--wb-secondary": colors.secondary,
+    "--wb-on-secondary": contrastText(colors.secondary),
+    "--wb-secondary-ink": readableOn(colors.secondary, colors.background, colors.text),
     "--wb-bg": colors.background,
     "--wb-surface": colors.surface,
     "--wb-text": colors.text,
