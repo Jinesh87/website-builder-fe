@@ -174,7 +174,7 @@ export default function ShopRazorpayPanel({ websiteId }: { websiteId: string }) 
         <CopyRow
           label="Webhook address"
           value={config.webhookUrl}
-          hint="In Razorpay Dashboard → Webhooks, add this URL. It is on this platform, not your website, and that is expected. Subscribe to payment.captured, order.paid, and payment.failed."
+          hint="In Razorpay Dashboard → Webhooks, add this URL. It is on this platform, not your website, and that is expected. Subscribe to payment.captured, order.paid, payment.failed, refund.created, refund.processed, and refund.failed."
         />
         <TextInput
           label="Key ID"
