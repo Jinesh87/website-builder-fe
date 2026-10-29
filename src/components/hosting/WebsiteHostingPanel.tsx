@@ -278,7 +278,9 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
             {isAdmin && (
               <div className="border-t border-line pt-4">
                 <h3 className="text-sm font-semibold text-ink">Custom price for this website</h3>
-                <p className="mb-3 mt-0.5 text-xs text-ink-muted">For a deal agreed with the client. Only Super Admins can set it.</p>
+                <p className="mb-3 mt-0.5 text-xs text-ink-muted">
+                  Starts from the default Custom price; change it for a deal agreed with the client. Only Super Admins can set it.
+                </p>
                 <WebsitePriceEditor hosting={hosting} onSaved={onChange} />
               </div>
             )}

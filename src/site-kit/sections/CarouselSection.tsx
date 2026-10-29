@@ -351,9 +351,10 @@ function CarouselShowcase({
                 {slide.badge && <span className="wb-carousel-badge-inline">{slide.badge}</span>}
                 <h3 className="wb-carousel-showcase-title">{slide.title}</h3>
                 {slide.description && <p className="wb-carousel-showcase-desc">{slide.description}</p>}
-                {isCenter && slide.button && (
-                  <div className="wb-carousel-showcase-btn">
-                    <SiteLink link={slide.button} className="wb-btn wb-btn-primary" />
+                {isCenter && (slide.button || slide.secondaryButton) && (
+                  <div className="wb-carousel-showcase-actions" onClick={(e) => e.stopPropagation()}>
+                    {slide.button && <SiteLink link={slide.button} className="wb-btn wb-btn-primary" />}
+                    {slide.secondaryButton && <SiteLink link={slide.secondaryButton} className="wb-btn wb-btn-secondary" />}
                   </div>
                 )}
               </div>
@@ -659,6 +660,12 @@ function CarouselImageStrip({
                   {(slide.caption || slide.description) && (
                     <p className="wb-carousel-strip-desc">{slide.caption || slide.description}</p>
                   )}
+                  {(slide.button || slide.secondaryButton) && (
+                    <div className="wb-carousel-strip-actions" onClick={(e) => e.stopPropagation()}>
+                      {slide.button && <SiteLink link={slide.button} className="wb-btn wb-btn-primary wb-btn-sm" />}
+                      {slide.secondaryButton && <SiteLink link={slide.secondaryButton} className="wb-btn wb-btn-secondary wb-btn-sm" />}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -762,6 +769,12 @@ function CarouselImageCoverflow({
                 <h4 className="wb-carousel-coverflow-title">{slide.title}</h4>
                 {(slide.caption || slide.subtitle) && (
                   <p className="wb-carousel-coverflow-sub">{slide.caption || slide.subtitle}</p>
+                )}
+                {(slide.button || slide.secondaryButton) && (
+                  <div className="wb-carousel-coverflow-actions" onClick={(e) => e.stopPropagation()}>
+                    {slide.button && <SiteLink link={slide.button} className="wb-btn wb-btn-primary wb-btn-sm" />}
+                    {slide.secondaryButton && <SiteLink link={slide.secondaryButton} className="wb-btn wb-btn-secondary wb-btn-sm" />}
+                  </div>
                 )}
               </div>
             </div>

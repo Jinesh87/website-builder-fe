@@ -223,7 +223,7 @@ export default function HostingCheckoutModal({
             <div className="flex gap-2">
               {isAdmin && selected.isCustom && !editingPrice && (
                 <Button size="sm" variant="ghost" onPress={() => setEditingPrice(true)} isDisabled={paying}>
-                  <Pencil className="size-3.5" aria-hidden /> Edit price
+                  <Pencil className="size-3.5" aria-hidden /> Adjust price
                 </Button>
               )}
               <Button size="sm" variant="outline" onPress={onChangePlan} isDisabled={paying}>
@@ -245,8 +245,8 @@ export default function HostingCheckoutModal({
 
         {isAdmin && editingPrice && (
           <div className="rounded-xl border border-brand/30 bg-brand-soft/30 p-4">
-            <p className="text-sm font-semibold text-ink">Custom price for this website</p>
-            <p className="mb-3 mt-0.5 text-xs text-ink-muted">Save it, then record the payment.</p>
+            <p className="text-sm font-semibold text-ink">Price for this website</p>
+            <p className="mb-3 mt-0.5 text-xs text-ink-muted">Starts from the default price. Save a change, then record the payment.</p>
             <WebsitePriceEditor
               hosting={hosting}
               onSaved={handlePriceSaved}
