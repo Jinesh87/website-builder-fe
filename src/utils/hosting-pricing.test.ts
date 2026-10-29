@@ -3,7 +3,18 @@ import type { HostingPackage, HostingSubscription } from "../api/hosting.ts";
 import { bestYearlySaving, connectsForPaise, defaultPlan, paiseToRupeesInput, rupeesInputToPaise, yearlySavingPercent } from "./hosting-pricing.ts";
 
 function pkg(id: string, prices: HostingPackage["prices"], extra: Partial<HostingPackage> = {}): HostingPackage {
-  return { id, slug: id, name: id, description: "", features: [], featured: false, isCustom: false, prices, ...extra };
+  return {
+    id,
+    slug: id,
+    name: id,
+    description: "",
+    features: [],
+    featured: false,
+    isCustom: false,
+    prices,
+    startingFrom: { QUARTERLY: null, YEARLY: null },
+    ...extra,
+  };
 }
 
 describe("yearlySavingPercent", () => {

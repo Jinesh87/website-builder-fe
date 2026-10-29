@@ -19,6 +19,8 @@ type Form = {
   features: string[];
   quarterly: string;
   yearly: string;
+  startingQuarterly: string;
+  startingYearly: string;
   featured: boolean;
   active: boolean;
 };
@@ -32,6 +34,8 @@ function toForm(pkg: AdminHostingPackage): Form {
     features: pkg.features.length ? pkg.features : [""],
     quarterly: paiseToRupeesInput(pkg.prices.QUARTERLY),
     yearly: paiseToRupeesInput(pkg.prices.YEARLY),
+    startingQuarterly: paiseToRupeesInput(pkg.startingFrom.QUARTERLY),
+    startingYearly: paiseToRupeesInput(pkg.startingFrom.YEARLY),
     featured: pkg.featured,
     active: pkg.active,
   };
@@ -59,17 +63,24 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
 
   const quarterly = pkg.isCustom ? 0 : rupeesInputToPaise(form.quarterly) ?? 0;
   const yearly = pkg.isCustom ? 0 : rupeesInputToPaise(form.yearly) ?? 0;
+  const startingQuarterly = pkg.isCustom ? rupeesInputToPaise(form.startingQuarterly) ?? 0 : 0;
+  const startingYearly = pkg.isCustom ? rupeesInputToPaise(form.startingYearly) ?? 0 : 0;
   const features = form.features.map((feature) => feature.trim()).filter(Boolean);
   const errors = {
     name: form.name.trim() ? undefined : "Enter a name",
     description: form.description.trim() ? undefined : "Enter a short description",
     quarterly: Number.isNaN(quarterly) ? "Enter an amount like 2100 or 2100.50" : undefined,
     yearly: Number.isNaN(yearly) ? "Enter an amount like 7000 or 7000.50" : undefined,
+    startingQuarterly: Number.isNaN(startingQuarterly) ? "Enter an amount like 3600 or 3600.50" : undefined,
+    startingYearly: Number.isNaN(startingYearly) ? "Enter an amount like 12000 or 12000.50" : undefined,
   };
   const invalid = Object.values(errors).some(Boolean);
   const pricesChanged = quarterly !== (pkg.prices.QUARTERLY ?? 0) || yearly !== (pkg.prices.YEARLY ?? 0);
+  const startingChanged =
+    startingQuarterly !== (pkg.startingFrom.QUARTERLY ?? 0) || startingYearly !== (pkg.startingFrom.YEARLY ?? 0);
   const changed =
     pricesChanged ||
+    startingChanged ||
     form.name.trim() !== pkg.name ||
     form.description.trim() !== pkg.description ||
     form.featured !== pkg.featured ||
@@ -96,6 +107,7 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
           features,
           quarterlyPricePaise: quarterly,
           yearlyPricePaise: yearly,
+          ...(pkg.isCustom ? { startingQuarterlyPaise: startingQuarterly, startingYearlyPaise: startingYearly } : {}),
           featured: form.featured,
           active: form.active,
         }),
@@ -137,9 +149,34 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
         </div>
 
         {pkg.isCustom ? (
-          <p className="rounded-lg bg-canvas px-3 py-2 text-xs text-ink-muted">
-            No list price: visitors see a fixed "starting from" price and contact you. Agree a price per website from its Hosting tab.
-          </p>
+          <div className="grid gap-3">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <RupeesInput
+                id={`starting-quarterly-${pkg.id}`}
+                label="Starting from, quarterly (3 months)"
+                value={form.startingQuarterly}
+                onChange={(value) => update("startingQuarterly", value)}
+                placeholder="Not shown"
+                hint={startingQuarterly > 0 ? `Shown as "From ${formatPaise(startingQuarterly)} / 3 months"` : 'Empty = shows "Custom"'}
+                error={errors.startingQuarterly}
+                isDisabled={saving}
+              />
+              <RupeesInput
+                id={`starting-yearly-${pkg.id}`}
+                label="Starting from, yearly (12 months)"
+                value={form.startingYearly}
+                onChange={(value) => update("startingYearly", value)}
+                placeholder="Not shown"
+                hint={startingYearly > 0 ? `Shown as "From ${formatPaise(startingYearly)} / year"` : 'Empty = shows "Custom"'}
+                error={errors.startingYearly}
+                isDisabled={saving}
+              />
+            </div>
+            <p className="rounded-lg bg-canvas px-3 py-2 text-xs text-ink-muted">
+              Display only: visitors see this "starting from" price and contact you; it is never charged. Agree the real price per website
+              from its Hosting tab.
+            </p>
+          </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             <RupeesInput

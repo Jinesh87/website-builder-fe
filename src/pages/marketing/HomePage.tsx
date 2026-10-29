@@ -659,7 +659,7 @@ export default function HomePage() {
                   <span key={plan.id} className={plan.featured ? "hot" : undefined}>
                     <b>{plan.name}</b>
                     {plan.isCustom
-                      ? customStartingLabel("YEARLY")
+                      ? customStartingLabel(plan, "YEARLY")
                       : yearly
                         ? `${formatPaise(yearly)} / year`
                         : quarterly && `${formatPaise(quarterly)} / 3 months`}
