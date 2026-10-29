@@ -801,7 +801,7 @@ const ACCOUNT_PRESETS: Array<{ key: string; variant: AccountData["variant"]; lab
     variant: "top-tabs",
     label: "Account · Top tabs",
     description: "A compact header with pill tabs above one content panel. Good for narrow pages.",
-    overrides: { successPopupVariant: "simple", orderDetailVariant: "steps" },
+    overrides: { successPopupVariant: "celebration", orderDetailVariant: "timeline" },
   },
   {
     key: "account-overview-cards",
@@ -810,8 +810,8 @@ const ACCOUNT_PRESETS: Array<{ key: string; variant: AccountData["variant"]; lab
     description: "Quick stats (orders, cart, member since) and every panel as a card on one screen.",
     overrides: {
       subheading: "Everything about your orders and details, at a glance.",
-      successPopupVariant: "receipt",
-      orderDetailVariant: "compact",
+      successPopupVariant: "celebration",
+      orderDetailVariant: "timeline",
     },
   },
   {
@@ -819,7 +819,7 @@ const ACCOUNT_PRESETS: Array<{ key: string; variant: AccountData["variant"]; lab
     variant: "minimal-list",
     label: "Account · Minimal list",
     description: "One editorial column with stacked sections and hairline dividers. No cards, no tabs.",
-    overrides: { heading: "Account", subheading: "", successPopupVariant: "simple", orderDetailVariant: "timeline" },
+    overrides: { heading: "Account", subheading: "", successPopupVariant: "celebration", orderDetailVariant: "timeline" },
   },
   {
     key: "account-dark-panel",
