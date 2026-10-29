@@ -22,7 +22,7 @@ import TextInput from "../../components/ui/TextInput.tsx";
 import TemplateThumbnail from "../../components/websites/TemplateThumbnail.tsx";
 import { getTemplateKey } from "../../site-kit/templates/index.ts";
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 type InfoForm = {
   name: string;
@@ -41,12 +41,12 @@ export type CreatedState = { created?: boolean };
 
 type BuilderMode = "MANUAL" | "AI";
 
-const STEPS: Record<BuilderMode, { step: Step | 4; label: string }[]> = {
+const STEPS: Record<BuilderMode, { step: Step; label: string }[]> = {
   MANUAL: [
     { step: 1, label: "Builder type" },
     { step: 2, label: "Website info" },
-    { step: 3, label: "Starting point" },
-    { step: 4, label: "Create draft" },
+    { step: 3, label: "Theme selection" },
+    { step: 4, label: "Template selection" },
   ],
   AI: [
     { step: 1, label: "Builder type" },
@@ -210,6 +210,7 @@ export default function CreateWebsitePage() {
 
   const myTemplates = (templates ?? []).filter((template) => template.isCustom);
   const selectedTemplate = templates?.find((template) => template.key === templateKey);
+  const selectedTheme = themes?.find((theme) => theme.id === themeId);
   const platformTemplates = useMemo(() => (templates ?? []).filter((template) => !template.isCustom), [templates]);
   const categories = useMemo(
     () => ["All", ...new Set(platformTemplates.map((template) => template.category))],
@@ -268,8 +269,7 @@ export default function CreateWebsitePage() {
   function chooseTemplate(template: WebsiteTemplate | null) {
     setTemplateKey(template?.key ?? "");
     if (template?.isCustom) setThemeId("");
-    else if (template?.themeId) setThemeId(template.themeId);
-    else if (!themeId) setThemeId(themes?.[0]?.id ?? "");
+    else if (!themeId) setThemeId(template?.themeId ?? themes?.[0]?.id ?? "");
   }
 
   function infoInput(): CreateWebsiteInput {
@@ -526,7 +526,7 @@ export default function CreateWebsitePage() {
               <Button variant="outline" onPress={() => setStep(1)}>
                 Back
               </Button>
-              <Button type="submit">{mode === "AI" ? "Continue: describe your website" : "Continue: starting point"}</Button>
+              <Button type="submit">{mode === "AI" ? "Continue: describe your website" : "Continue: theme selection"}</Button>
             </div>
           </form>
         )}
@@ -571,9 +571,9 @@ export default function CreateWebsitePage() {
 
         {step === 3 && mode === "MANUAL" && (
           <section className="mt-6 rounded-xl border border-line bg-surface p-6">
-            <h2 className="text-lg font-semibold text-ink">How do you want to start?</h2>
+            <h2 className="text-lg font-semibold text-ink">Theme selection</h2>
             <p className="mt-1 text-sm text-ink-body">
-              Build your own design from our ready-made sections, or start from a template and change it.
+              Select your preferred theme. Colours and fonts for every section can be fine-tuned later in the editor.
             </p>
 
             {submitError && (
@@ -582,31 +582,14 @@ export default function CreateWebsitePage() {
               </div>
             )}
 
-            <div className="mt-5 flex w-full items-center gap-4 rounded-lg border border-line bg-surface p-5">
-              <span className="grid size-12 shrink-0 place-items-center rounded-lg border border-dashed border-line-strong bg-canvas">
-                <LayoutTemplate className="size-5 text-brand" aria-hidden />
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
-                  Start blank and build my own design
-                  <span className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-body">Recommended</span>
-                </p>
-                <p className="mt-1 text-sm text-ink-body">
-                  You get an empty home page. Add sections like hero, services, gallery and contact from the component
-                  library, then edit the text, images and layout.
-                </p>
+            {!themes && !loadError && (
+              <div className="grid place-items-center py-16">
+                <Spinner aria-label="Loading themes" />
               </div>
-              {templateKey !== "" && (
-                <Button size="sm" variant="outline" onPress={() => chooseTemplate(null)}>
-                  Use blank
-                </Button>
-              )}
-            </div>
+            )}
 
-            <div className="mt-8">
-              <h3 className="text-sm font-semibold text-ink">Colour style</h3>
-              <p className="mt-0.5 text-sm text-ink-body">Colours and fonts for every section. You can fine-tune them in the editor.</p>
-              <div role="radiogroup" aria-label="Colour style" className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6">
+              <div role="radiogroup" aria-label="Colour style" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {selectedTemplate?.isCustom && (
                   <button
                     type="button"
@@ -614,7 +597,7 @@ export default function CreateWebsitePage() {
                     aria-checked={themeId === ""}
                     onClick={() => setThemeId("")}
                     className={`rounded-lg border-2 p-3 text-left transition-colors ${
-                      themeId === "" ? "border-brand" : "border-line hover:border-line-strong"
+                      themeId === "" ? "border-brand bg-brand-soft/20" : "border-line hover:border-line-strong"
                     }`}
                   >
                     <span className="grid h-14 place-items-center rounded-md border border-dashed border-line-strong text-xs text-ink-body">
@@ -634,7 +617,7 @@ export default function CreateWebsitePage() {
                       aria-checked={selected}
                       onClick={() => setThemeId(theme.id)}
                       className={`rounded-lg border-2 p-3 text-left transition-colors ${
-                        selected ? "border-brand" : "border-line hover:border-line-strong"
+                        selected ? "border-brand bg-brand-soft/20 ring-1 ring-brand" : "border-line hover:border-line-strong"
                       }`}
                     >
                       <span
@@ -646,11 +629,84 @@ export default function CreateWebsitePage() {
                         <span className="h-4 w-6 rounded" style={{ background: colors.secondary }} />
                         <span className="h-3 flex-1 rounded" style={{ background: colors.surface }} />
                       </span>
-                      <span className="mt-2 block text-sm font-medium text-ink">{theme.name}</span>
+                      <span className="mt-2 flex items-center justify-between">
+                        <span className="text-sm font-medium text-ink">{theme.name}</span>
+                        {selected && (
+                          <span className="rounded-full bg-brand px-1.5 py-0.5 text-[10px] font-semibold text-white">Selected</span>
+                        )}
+                      </span>
                     </button>
                   );
                 })}
               </div>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
+              <Button variant="outline" onPress={() => setStep(2)}>
+                Back
+              </Button>
+              <div className="flex items-center gap-3">
+                {selectedTheme && (
+                  <span className="text-sm text-ink-body">
+                    Selected theme: <strong className="font-medium text-ink">{selectedTheme.name}</strong>
+                  </span>
+                )}
+                <Button onPress={() => setStep(4)} isDisabled={!themeId && !selectedTemplate?.isCustom}>
+                  Continue: template selection
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {step === 4 && mode === "MANUAL" && (
+          <section className="mt-6 rounded-xl border border-line bg-surface p-6">
+            <h2 className="text-lg font-semibold text-ink">Template selection</h2>
+            <p className="mt-1 text-sm text-ink-body">
+              Build your own design from our ready-made sections, or start from a template and change it.
+            </p>
+
+            {submitError && (
+              <div className="mt-5">
+                <FormAlert status="danger">{submitError}</FormAlert>
+              </div>
+            )}
+
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => chooseTemplate(null)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  chooseTemplate(null);
+                }
+              }}
+              className={`mt-5 flex w-full items-center gap-4 rounded-lg border-2 p-5 transition-colors cursor-pointer ${
+                templateKey === "" ? "border-brand bg-brand-soft/20" : "border-line bg-surface hover:border-line-strong"
+              }`}
+            >
+              <span className="grid size-12 shrink-0 place-items-center rounded-lg border border-dashed border-line-strong bg-canvas">
+                <LayoutTemplate className="size-5 text-brand" aria-hidden />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
+                  Start blank and build my own design
+                  <span className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-body">Recommended</span>
+                  {templateKey === "" && (
+                    <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-medium text-white">Selected</span>
+                  )}
+                </p>
+                <p className="mt-1 text-sm text-ink-body">
+                  You get an empty home page. Add sections like hero, services, gallery and contact from the component
+                  library, then edit the text, images and layout.
+                </p>
+              </div>
+              {templateKey !== "" && (
+                <Button size="sm" variant="outline" onPress={() => chooseTemplate(null)}>
+                  Use blank
+                </Button>
+              )}
             </div>
 
             {myTemplates.length > 0 && (
@@ -769,13 +825,19 @@ export default function CreateWebsitePage() {
             </div>
 
             <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-              <Button variant="outline" onPress={() => setStep(2)} isDisabled={creating}>
+              <Button variant="outline" onPress={() => setStep(3)} isDisabled={creating}>
                 Back
               </Button>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-ink-body">
-                  {selectedTemplate ? `Template: ${selectedTemplate.name}` : "Blank website"}
-                </span>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-ink-body">
+                  <span>{selectedTemplate ? `Template: ${selectedTemplate.name}` : "Blank website"}</span>
+                  {selectedTheme && (
+                    <>
+                      <span className="hidden sm:inline text-ink-muted" aria-hidden>•</span>
+                      <span>Theme: <strong className="font-medium text-ink">{selectedTheme.name}</strong></span>
+                    </>
+                  )}
+                </div>
                 <Button onPress={createDraft} isPending={creating} isDisabled={!themes}>
                   Create and open editor
                 </Button>
