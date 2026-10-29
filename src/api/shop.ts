@@ -132,6 +132,57 @@ export type ShopCustomerPage = {
   total: number;
 };
 
+export type ShopOrderStatus =
+  | "pending"
+  | "paid"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "failed"
+  | "cancelled";
+
+export type ShopRefundStatus = "none" | "pending" | "processed" | "failed";
+
+export type ShopOrderItem = {
+  id: string;
+  productName: string;
+  variantName: string;
+  unitPricePaise: number;
+  quantity: number;
+  lineTotalPaise: number;
+};
+
+export type ShopOrder = {
+  id: string;
+  number: string;
+  status: ShopOrderStatus;
+  refundStatus: ShopRefundStatus;
+  totalPaise: number;
+  currency: "INR";
+  customer: {
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string | null;
+  };
+  items: ShopOrderItem[];
+  razorpayOrderId: string | null;
+  razorpayPaymentId: string | null;
+  razorpayRefundId: string | null;
+  paidAt: string | null;
+  refundedAt: string | null;
+  failureReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ShopOrderPage = {
+  orders: ShopOrder[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 export type ShopProductQuery = {
   search?: string;
   categoryId?: string;
@@ -232,4 +283,22 @@ export const shopApi = {
 
   customer: (websiteId: string, customerId: string) =>
     request<{ customer: ShopCustomer }>(`${base(websiteId)}/customers/${customerId}`).then((data) => data.customer),
+
+  orders: (websiteId: string, params: { search?: string; status?: ShopOrderStatus; page?: number } = {}) => {
+    const query = new URLSearchParams();
+    if (params.search) query.set("search", params.search);
+    if (params.status) query.set("status", params.status);
+    if (params.page) query.set("page", String(params.page));
+    const text = query.toString();
+    return request<ShopOrderPage>(`${base(websiteId)}/orders${text ? `?${text}` : ""}`);
+  },
+
+  order: (websiteId: string, orderId: string) =>
+    request<{ order: ShopOrder }>(`${base(websiteId)}/orders/${orderId}`).then((data) => data.order),
+
+  updateOrderStatus: (websiteId: string, orderId: string, status: ShopOrderStatus) =>
+    request<{ order: ShopOrder }>(`${base(websiteId)}/orders/${orderId}`, {
+      method: "PATCH",
+      body: { status },
+    }).then((data) => data.order),
 };

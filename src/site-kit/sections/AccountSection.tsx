@@ -13,6 +13,7 @@ import {
 } from "../shop-auth.ts";
 import { formatInr, useShopCatalog } from "../shop-catalog.tsx";
 import type { AccountData, AccountVariant, SectionOf } from "../types.ts";
+import { CheckoutDismissedError, openRazorpayCheckout } from "../../utils/razorpay-checkout.ts";
 
 /**
  * The signed-in customer's page. On the published site a small script asks the shop API who is
@@ -43,9 +44,9 @@ const SAMPLE: ShopCustomerAccount = {
     createdAt: "2026-02-14T09:30:00.000Z",
   },
   orders: [
-    { id: "o1", number: "1042", status: "paid", totalPaise: 249900, currency: "INR", createdAt: "2026-10-21T10:12:00.000Z" },
-    { id: "o2", number: "1038", status: "pending", totalPaise: 89900, currency: "INR", createdAt: "2026-10-04T16:40:00.000Z" },
-    { id: "o3", number: "1021", status: "cancelled", totalPaise: 159900, currency: "INR", createdAt: "2026-09-12T08:05:00.000Z" },
+    { id: "o1", number: "1042", status: "paid", refundStatus: "none", totalPaise: 249900, currency: "INR", createdAt: "2026-10-21T10:12:00.000Z", refundedAt: null },
+    { id: "o2", number: "1038", status: "pending", refundStatus: "none", totalPaise: 89900, currency: "INR", createdAt: "2026-10-04T16:40:00.000Z", refundedAt: null },
+    { id: "o3", number: "1021", status: "failed", refundStatus: "processed", totalPaise: 159900, currency: "INR", createdAt: "2026-09-12T08:05:00.000Z", refundedAt: "2026-09-12T08:20:00.000Z" },
   ],
   cartItems: [
     { id: "c1", productId: "p1", variantId: "v1", productName: "Everyday tee", variantName: "M / Blue", quantity: 2, pricePaise: 99900 },
@@ -133,8 +134,48 @@ function Identity({ account, compact }: { account: ShopCustomerAccount; compact?
   );
 }
 
+function statusLabel(status: string): string {
+  switch (status) {
+    case "pending":
+      return "Pending";
+    case "paid":
+      return "Paid";
+    case "processing":
+      return "Processing";
+    case "shipped":
+      return "Shipped";
+    case "delivered":
+      return "Delivered";
+    case "failed":
+      return "Failed";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return status;
+  }
+}
+
+function refundLabel(status: string): string | null {
+  switch (status) {
+    case "pending":
+      return "Refund pending";
+    case "processed":
+      return "Refunded";
+    case "failed":
+      return "Refund failed";
+    default:
+      return null;
+  }
+}
+
 function StatusBadge({ status }: { status: string }) {
-  return <span className={`wb-acct-badge is-${status}`}>{status}</span>;
+  return <span className={`wb-acct-badge is-${status}`}>{statusLabel(status)}</span>;
+}
+
+function RefundBadge({ status }: { status: string }) {
+  const label = refundLabel(status);
+  if (!label) return null;
+  return <span className={`wb-acct-badge is-refund-${status}`}>{label}</span>;
 }
 
 function OrdersPanel({ data, account, shopHref }: { data: AccountData; account: ShopCustomerAccount; shopHref: string }) {
@@ -148,7 +189,10 @@ function OrdersPanel({ data, account, shopHref }: { data: AccountData; account: 
               <strong>Order #{order.number}</strong>
               <span className="wb-acct-row-sub">{formatDate(order.createdAt)}</span>
             </div>
-            <StatusBadge status={order.status} />
+            <div className="wb-acct-badges">
+              <StatusBadge status={order.status} />
+              <RefundBadge status={order.refundStatus} />
+            </div>
             <strong className="wb-acct-row-amount">{formatInr(order.totalPaise)}</strong>
           </li>
         ))}
@@ -170,6 +214,7 @@ function CartPanel({
   websiteId,
   interactive,
   onCartChange,
+  onPaid,
 }: {
   data: AccountData;
   account: ShopCustomerAccount;
@@ -177,11 +222,14 @@ function CartPanel({
   websiteId?: string;
   interactive: boolean;
   onCartChange?: (items: ShopCustomerAccount["cartItems"]) => void;
+  onPaid?: () => void;
 }) {
   const empty = data.emptyCartText?.trim() || LABELS.emptyCart;
   const [items, setItems] = useState(account.cartItems);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [payMessage, setPayMessage] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<ShopCartItemSummary | null>(null);
   const [removeQty, setRemoveQty] = useState(1);
 
@@ -218,6 +266,40 @@ function CartPanel({
       setError(errorMessage(err));
     } finally {
       setBusyId(null);
+    }
+  }
+
+  async function payNow() {
+    if (!interactive || !websiteId || paying || items.length === 0) return;
+    setPaying(true);
+    setError(null);
+    setPayMessage(null);
+    try {
+      const checkout = await shopAuthApi.startCheckout(websiteId);
+      const confirmation = await openRazorpayCheckout(
+        {
+          orderId: checkout.razorpayOrderId,
+          keyId: checkout.keyId,
+          amountPaise: checkout.amountPaise,
+          currency: checkout.currency,
+          businessName: checkout.businessName,
+          prefill: checkout.prefill,
+        },
+        `Order #${checkout.orderNumber}`,
+      );
+      await shopAuthApi.confirmCheckout(websiteId, confirmation);
+      setItems([]);
+      onCartChange?.([]);
+      setPayMessage("Payment successful. Your order is confirmed.");
+      onPaid?.();
+    } catch (err) {
+      if (err instanceof CheckoutDismissedError) {
+        setPayMessage("Payment cancelled.");
+      } else {
+        setError(errorMessage(err));
+      }
+    } finally {
+      setPaying(false);
     }
   }
 
@@ -337,6 +419,24 @@ function CartPanel({
       <div className="wb-acct-cart-total" data-wb-account-cart-total hidden={items.length === 0}>
         <span>Subtotal</span>
         <strong data-wb-account-field="cartTotal">{formatInr(total)}</strong>
+      </div>
+      <div className="wb-acct-checkout" data-wb-account-checkout hidden={items.length === 0}>
+        <button
+          type="button"
+          className="wb-acct-button is-pay"
+          data-wb-account-pay
+          disabled={paying || (interactive && !websiteId)}
+          onClick={interactive ? () => void payNow() : undefined}
+        >
+          {paying ? "Opening payment…" : "Pay now"}
+        </button>
+        <p
+          className={`wb-acct-message${payMessage && /cancel|fail|could not|couldn't/i.test(payMessage) ? " is-error" : payMessage ? " is-ok" : ""}`}
+          data-wb-account-pay-message
+          hidden={!payMessage}
+        >
+          {payMessage}
+        </p>
       </div>
       <div className="wb-acct-empty" data-wb-account-empty="cart" hidden={items.length > 0}>
         <p>{empty}</p>
@@ -559,19 +659,33 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
     return panels[0] ?? "profile";
   });
   const [cartItems, setCartItems] = useState(account.cartItems);
+  const [orders, setOrders] = useState(account.orders);
   const current = panels.includes(active) ? active : (panels[0] ?? "profile");
   const heading = data.heading?.trim();
   const subheading = data.subheading?.trim();
-  const liveAccount = { ...account, cartItems };
+  const liveAccount = { ...account, cartItems, orders };
 
   useEffect(() => {
     setCartItems(account.cartItems);
-  }, [account.cartItems]);
+    setOrders(account.orders);
+  }, [account.cartItems, account.orders]);
 
   async function logout() {
     if (!interactive || !websiteId) return;
     await shopAuthApi.logout(websiteId);
     window.location.href = siteHref(loginHref);
+  }
+
+  async function refreshAfterPay() {
+    if (!interactive || !websiteId) return;
+    try {
+      const next = await shopAuthApi.account(websiteId);
+      setCartItems(next.cartItems);
+      setOrders(next.orders);
+      if (panels.includes("orders")) setActive("orders");
+    } catch {
+      if (panels.includes("orders")) setActive("orders");
+    }
   }
 
   const cartCount = liveAccount.cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -622,6 +736,7 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
             websiteId={websiteId}
             interactive={interactive}
             onCartChange={setCartItems}
+            onPaid={() => void refreshAfterPay()}
           />
         );
       case "profile":

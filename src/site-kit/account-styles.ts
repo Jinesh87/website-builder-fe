@@ -17,7 +17,7 @@ export const ACCOUNT_CSS = `
   position: relative; width: 100%; color: var(--wb-text);
 }
 .wb-acct-state[hidden], .wb-acct-panel[hidden], .wb-acct-list[hidden], .wb-acct-empty[hidden],
-.wb-acct-message[hidden], .wb-acct-cart-total[hidden] { display: none !important; }
+.wb-acct-message[hidden], .wb-acct-cart-total[hidden], .wb-acct-checkout[hidden] { display: none !important; }
 
 .wb-acct-loading { display: grid; place-items: center; min-height: 240px; }
 .wb-acct-spinner {
@@ -84,13 +84,28 @@ export const ACCOUNT_CSS = `
   flex: none; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
   letter-spacing: 0.05em; text-transform: uppercase; background: var(--wb-acct-soft); color: var(--wb-muted);
 }
-.wb-acct-badge.is-paid { background: color-mix(in srgb, #16a34a 14%, transparent); color: #15803d; }
+.wb-acct-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: none; }
+.wb-acct-badge.is-paid, .wb-acct-badge.is-delivered { background: color-mix(in srgb, #16a34a 14%, transparent); color: #15803d; }
 .wb-acct-badge.is-pending { background: color-mix(in srgb, #f59e0b 16%, transparent); color: #b45309; }
+.wb-acct-badge.is-processing, .wb-acct-badge.is-shipped { background: color-mix(in srgb, #0284c7 14%, transparent); color: #0369a1; }
 .wb-acct-badge.is-failed, .wb-acct-badge.is-cancelled { background: color-mix(in srgb, #dc2626 12%, transparent); color: #b91c1c; }
+.wb-acct-badge.is-refund-pending { background: color-mix(in srgb, #f59e0b 16%, transparent); color: #b45309; }
+.wb-acct-badge.is-refund-processed { background: color-mix(in srgb, #16a34a 14%, transparent); color: #15803d; }
+.wb-acct-badge.is-refund-failed { background: color-mix(in srgb, #dc2626 12%, transparent); color: #b91c1c; }
 .wb-acct-cart-total {
   display: flex; justify-content: space-between; align-items: center; padding: 10px 14px 0;
   border-top: 1px solid var(--wb-border); font-size: 0.95rem;
 }
+.wb-acct-checkout {
+  display: grid; gap: 10px; margin-top: 14px;
+}
+.wb-acct-checkout[hidden] { display: none !important; }
+.wb-acct-button.is-pay {
+  width: 100%; justify-content: center; background: var(--wb-acct-accent); color: var(--wb-acct-on-accent);
+  border: 0; cursor: pointer;
+}
+.wb-acct-button.is-pay:hover:not(:disabled) { filter: brightness(0.96); }
+.wb-acct-button.is-pay:disabled { opacity: 0.6; cursor: not-allowed; }
 .wb-acct-cart-remove {
   flex: none; margin: 0; padding: 0.4rem 0.7rem; border-radius: 8px;
   border: 1px solid color-mix(in srgb, #b91c1c 35%, var(--wb-border));
@@ -291,9 +306,13 @@ export const ACCOUNT_CSS = `
 }
 .wb-acct-v-dark-panel .wb-acct-row { background: rgba(255, 255, 255, 0.04); }
 .wb-acct-v-dark-panel .wb-acct-input { background: rgba(0, 0, 0, 0.25); }
-.wb-acct-v-dark-panel .wb-acct-badge.is-paid { color: #86efac; }
+.wb-acct-v-dark-panel .wb-acct-badge.is-paid, .wb-acct-v-dark-panel .wb-acct-badge.is-delivered { color: #86efac; }
 .wb-acct-v-dark-panel .wb-acct-badge.is-pending { color: #fcd34d; }
+.wb-acct-v-dark-panel .wb-acct-badge.is-processing, .wb-acct-v-dark-panel .wb-acct-badge.is-shipped { color: #7dd3fc; }
 .wb-acct-v-dark-panel .wb-acct-badge.is-failed, .wb-acct-v-dark-panel .wb-acct-badge.is-cancelled { color: #fca5a5; }
+.wb-acct-v-dark-panel .wb-acct-badge.is-refund-pending { color: #fcd34d; }
+.wb-acct-v-dark-panel .wb-acct-badge.is-refund-processed { color: #86efac; }
+.wb-acct-v-dark-panel .wb-acct-badge.is-refund-failed { color: #fca5a5; }
 .wb-acct-v-dark-panel .wb-acct-message.is-ok { color: #86efac; }
 .wb-acct-v-dark-panel .wb-acct-message.is-error { color: #fca5a5; }
 .wb-acct-v-dark-panel .wb-acct-guest { background: rgba(255, 255, 255, 0.05); }

@@ -8,13 +8,37 @@ export type ShopCustomer = {
   createdAt: string;
 };
 
+export type ShopOrderStatus =
+  | "pending"
+  | "paid"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "failed"
+  | "cancelled";
+
+export type ShopRefundStatus = "none" | "pending" | "processed" | "failed";
+
 export type ShopOrderSummary = {
   id: string;
   number: string;
-  status: "pending" | "paid" | "failed" | "cancelled";
+  status: ShopOrderStatus;
+  refundStatus: ShopRefundStatus;
   totalPaise: number;
   currency: "INR";
   createdAt: string;
+  refundedAt: string | null;
+};
+
+export type ShopCheckoutSession = {
+  orderId: string;
+  orderNumber: string;
+  keyId: string;
+  razorpayOrderId: string;
+  amountPaise: number;
+  currency: string;
+  businessName: string;
+  prefill: { name: string; email?: string; contact?: string };
 };
 
 export type ShopCartItemSummary = {
@@ -231,6 +255,24 @@ export const shopAuthApi = {
     if (!result.ok) throw asError(result.status, result.body);
     return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
   },
+
+  startCheckout: async (websiteId: string) => {
+    const result = await shopAuthFetch(websiteId, "/checkout", { method: "POST" });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { checkout: ShopCheckoutSession }).checkout;
+  },
+
+  confirmCheckout: async (
+    websiteId: string,
+    input: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string },
+  ) => {
+    const result = await shopAuthFetch(websiteId, "/checkout/confirm", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { order: ShopOrderSummary }).order;
+  },
 };
 
 /** A site path as the browser should open it: on the local preview sites live under /live/<subdomain>. */
@@ -380,7 +422,15 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         main.appendChild(el("strong","","Order #"+String(order.number||order.id||"")));
         main.appendChild(el("span","wb-acct-row-sub",day(order.createdAt)));
         row.appendChild(main);
-        row.appendChild(el("span","wb-acct-badge is-"+String(order.status||"pending"),String(order.status||"pending")));
+        var status=String(order.status||"pending");
+        var statusText=status.charAt(0).toUpperCase()+status.slice(1);
+        var badges=el("div","wb-acct-badges");
+        badges.appendChild(el("span","wb-acct-badge is-"+status,statusText));
+        var refund=String(order.refundStatus||"none");
+        if(refund==="pending") badges.appendChild(el("span","wb-acct-badge is-refund-pending","Refund pending"));
+        else if(refund==="processed") badges.appendChild(el("span","wb-acct-badge is-refund-processed","Refunded"));
+        else if(refund==="failed") badges.appendChild(el("span","wb-acct-badge is-refund-failed","Refund failed"));
+        row.appendChild(badges);
         row.appendChild(el("strong","wb-acct-row-amount",money(order.totalPaise)));
         orderList.appendChild(row);
       });
@@ -426,6 +476,12 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     if(cartTotal) cartTotal.hidden=cart.length===0;
     setText(root, "cartTotal", money(total));
     if(cartEmpty) cartEmpty.hidden=cart.length>0;
+    root.querySelectorAll("[data-wb-account-checkout]").forEach(function(node){ node.hidden=cart.length===0; });
+    root.querySelectorAll("[data-wb-account-pay]").forEach(function(btn){
+      btn.disabled=cart.length===0;
+      if(!btn.getAttribute("data-wb-pay-label")) btn.setAttribute("data-wb-pay-label", btn.textContent||"Pay now");
+      btn.textContent=btn.getAttribute("data-wb-pay-label")||"Pay now";
+    });
   }
   function preferredPanel(root){
     try{
@@ -588,6 +644,113 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       modal.hidden=false;
       modal.classList.add("is-open");
     });
+    function payMessage(text, ok){
+      root.querySelectorAll("[data-wb-account-pay-message]").forEach(function(node){
+        node.textContent=text||"";
+        node.hidden=!text;
+        node.classList.toggle("is-ok", !!ok);
+        node.classList.toggle("is-error", !ok && !!text);
+      });
+    }
+    function loadRazorpay(){
+      if(window.Razorpay) return Promise.resolve();
+      if(window.__wbRazorpayLoading) return window.__wbRazorpayLoading;
+      window.__wbRazorpayLoading=new Promise(function(resolve, reject){
+        var script=document.createElement("script");
+        script.src="https://checkout.razorpay.com/v1/checkout.js";
+        script.async=true;
+        script.onload=function(){ resolve(); };
+        script.onerror=function(){ window.__wbRazorpayLoading=null; script.remove(); reject(new Error("Couldn't load Razorpay.")); };
+        document.body.appendChild(script);
+      });
+      return window.__wbRazorpayLoading;
+    }
+    function openRazorpay(checkout){
+      return loadRazorpay().then(function(){
+        return new Promise(function(resolve, reject){
+          if(!window.Razorpay){ reject(new Error("Couldn't load Razorpay.")); return; }
+          var lastFailure=null;
+          var instance=new window.Razorpay({
+            key: checkout.keyId,
+            order_id: checkout.razorpayOrderId,
+            amount: checkout.amountPaise,
+            currency: checkout.currency,
+            name: checkout.businessName,
+            description: "Order #"+String(checkout.orderNumber||""),
+            prefill: checkout.prefill||{},
+            theme: { color: "#4f46e5" },
+            handler: function(response){
+              resolve({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature
+              });
+            },
+            modal: { ondismiss: function(){ reject(lastFailure?new Error(lastFailure):new Error("Payment cancelled.")); } }
+          });
+          instance.on("payment.failed", function(response){
+            lastFailure=(response&&response.error&&response.error.description)||"The payment failed. Please try again.";
+          });
+          instance.open();
+        });
+      });
+    }
+    function setPayBusy(busy){
+      root.querySelectorAll("[data-wb-account-pay]").forEach(function(btn){
+        btn.disabled=!!busy;
+        if(!btn.getAttribute("data-wb-pay-label")) btn.setAttribute("data-wb-pay-label", btn.textContent||"Pay now");
+        btn.textContent=busy?"Opening payment…":(btn.getAttribute("data-wb-pay-label")||"Pay now");
+      });
+    }
+    function payNow(){
+      if(root.getAttribute("data-wb-paying")) return;
+      root.setAttribute("data-wb-paying","1");
+      setPayBusy(true);
+      payMessage("", true);
+      request(base, "/checkout", "POST").then(function(result){
+        if(!result.ok){
+          setPayBusy(false);
+          root.removeAttribute("data-wb-paying");
+          payMessage((result.json&&result.json.error&&result.json.error.message)||"Could not start checkout.", false);
+          return;
+        }
+        var checkout=(result.json&&result.json.checkout)||{};
+        return openRazorpay(checkout).then(function(confirmation){
+          return request(base, "/checkout/confirm", "POST", confirmation).then(function(confirmResult){
+            setPayBusy(false);
+            root.removeAttribute("data-wb-paying");
+            if(!confirmResult.ok){
+              payMessage((confirmResult.json&&confirmResult.json.error&&confirmResult.json.error.message)||"Payment received but order confirmation failed. Refresh in a moment.", false);
+              return;
+            }
+            payMessage("Payment successful. Your order is confirmed.", true);
+            return refreshAccount().then(function(){
+              activatePanel(root, tabs, "orders");
+            });
+          });
+        }).catch(function(err){
+          setPayBusy(false);
+          root.removeAttribute("data-wb-paying");
+          payMessage((err&&err.message)||"Payment cancelled.", false);
+        });
+      }).catch(function(){
+        setPayBusy(false);
+        root.removeAttribute("data-wb-paying");
+        payMessage("Can't reach the server. Try again.", false);
+      });
+    }
+    root.querySelectorAll("[data-wb-account-pay]").forEach(function(button){
+      button.addEventListener("click", function(event){
+        event.preventDefault();
+        payNow();
+      });
+    });
+    try{
+      var params=new URLSearchParams(window.location.search||"");
+      if(params.get("checkout")==="1"){
+        setTimeout(function(){ payNow(); }, 400);
+      }
+    }catch(_e){}
     var profile=root.querySelector("[data-wb-account-profile]");
     if(profile){
       profile.addEventListener("submit", function(event){
@@ -1105,7 +1268,14 @@ export const SHOP_CART_SCRIPT = `(function(){
         return;
       }
       if(buy){
-        window.location.href=siteHref(accountPanelHref(accountHref(button), "cart"));
+        var cartUrl=accountPanelHref(accountHref(button), "cart");
+        try{
+          var buyUrl=new URL(cartUrl, window.location.origin);
+          buyUrl.searchParams.set("checkout","1");
+          window.location.href=/^(https?:)/i.test(cartUrl)?buyUrl.toString():siteHref(buyUrl.pathname+buyUrl.search+buyUrl.hash);
+        }catch(_e){
+          window.location.href=siteHref(cartUrl+(cartUrl.indexOf("?")>=0?"&":"?")+"checkout=1");
+        }
         return;
       }
       showMessage(button, qty===1?"Added to cart.":("Added "+qty+" to cart."), "ok");
