@@ -1506,7 +1506,7 @@ export type CardItem = {
   iconColor?: string;
   featured?: boolean;
   checklist?: Array<CardChecklistItem | string>;
-  /** Optional video URL (YouTube, Vimeo, MP4) played in the reel preview modal */
+  /** Optional. A YouTube link or an uploaded video. Empty means this frame has no video. */
   videoUrl?: string;
   category?: string;
 };
