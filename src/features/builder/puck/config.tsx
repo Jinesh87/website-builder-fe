@@ -334,6 +334,7 @@ const baseComponents: { [T in SectionType]: ComponentConfig<SectionProps<T>> } =
   blog_detail: sectionComponent("blog_detail"),
   products: sectionComponent("products"),
   product_detail: sectionComponent("product_detail"),
+  account: sectionComponent("account"),
 };
 
 const presetComponents = Object.fromEntries(

@@ -1612,6 +1612,7 @@ export type SectionDataMap = {
   blog_detail: BlogDetailData;
   products: ProductsData;
   product_detail: ProductDetailData;
+  account: AccountData;
 };
 
 export type SectionType = keyof SectionDataMap;
@@ -1664,6 +1665,8 @@ export type ShopCatalog = {
   websiteId?: string;
   /** Page that holds the auth section, such as "/login". */
   authHref?: string;
+  /** Page that holds the account section, such as "/account". */
+  accountHref?: string;
   products: ShopCatalogProduct[];
   productSlug?: string;
   /** Option values to preselect, from the shop-card link. */
@@ -1683,6 +1686,8 @@ export type ShopCatalog = {
 
 export type ProductsData = {
   design?: "classic-grid" | "editorial" | "compact" | "showcase";
+  /** Style of the guest login popup shown when Cart/Buy is clicked while signed out. */
+  cartLoginPromptVariant?: "soft-card" | "minimal" | "glass" | "split";
   eyebrow?: string;
   title: string;
   subtitle?: string;
@@ -1701,6 +1706,40 @@ export type ProductDetailData = {
   backHref?: string;
   showDescription?: boolean;
   showStock?: boolean;
+};
+
+/** Mirrors backend ACCOUNT_VARIANTS. Stored in site data, so values are only ever appended. */
+export const ACCOUNT_VARIANTS = ["sidebar-tabs", "top-tabs", "overview-cards", "minimal-list", "dark-panel"] as const;
+export type AccountVariant = (typeof ACCOUNT_VARIANTS)[number];
+
+/** The signed-in customer's page: orders, cart and profile. Visitors who aren't signed in get a prompt. */
+export type AccountData = {
+  variant: AccountVariant;
+  /** Which state the editor canvas shows; visitors always get the real one. */
+  preview?: "member" | "guest";
+  heading?: string;
+  subheading?: string;
+  showOrders?: boolean;
+  showCart?: boolean;
+  showProfile?: boolean;
+  showPassword?: boolean;
+  ordersLabel?: string;
+  cartLabel?: string;
+  profileLabel?: string;
+  passwordLabel?: string;
+  logoutLabel?: string;
+  saveLabel?: string;
+  emptyOrdersText?: string;
+  emptyCartText?: string;
+  /** Page that holds the login section, such as "/login". */
+  loginHref?: string;
+  /** Page that lists the products, linked from empty states. */
+  shopHref?: string;
+  /** Sends logged-out visitors straight to the login page instead of showing the prompt. */
+  redirectWhenLoggedOut?: boolean;
+  guestHeading?: string;
+  guestText?: string;
+  guestButtonLabel?: string;
 };
 
 export type SiteData = {

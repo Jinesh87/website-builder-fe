@@ -29,7 +29,11 @@ import BlogSection from "./sections/BlogSection.tsx";
 import BlogDetailSection from "./sections/BlogDetailSection.tsx";
 import ProductsSection from "./sections/ProductsSection.tsx";
 import ProductDetailSection from "./sections/ProductDetailSection.tsx";
+import AccountSection from "./sections/AccountSection.tsx";
+import { useShopCatalog } from "./shop-catalog.tsx";
 import { ShopCatalogProvider } from "./shop-catalog.tsx";
+import { SHOP_NAV_AUTH_SCRIPT } from "./shop-auth.ts";
+import { useStaticRender } from "./render-mode.tsx";
 import { SITE_CSS } from "./styles.ts";
 import { themeToCssVars } from "./theme.ts";
 import type { FooterData, HeaderData, PageData, Section, SectionOf, SiteData, ThemeSettings } from "./types.ts";
@@ -88,6 +92,8 @@ export const SectionView = memo(function SectionView({ section }: { section: Sec
       return <ProductsSection section={section} />;
     case "product_detail":
       return <ProductDetailSection section={section} />;
+    case "account":
+      return <AccountSection section={section} />;
   }
 }, (prev, next) => {
   if (prev.section === next.section) return true;
@@ -108,17 +114,24 @@ type SiteFrameProps = {
   header: ReactNode;
   footer: ReactNode;
   children: ReactNode;
+  shopWebsiteId?: string;
+  navAuthScript?: boolean;
 };
 
 /** Themed page wrapper shared by the published page and the visual editor canvas. */
-export function SiteFrame({ theme, header, footer, children }: SiteFrameProps) {
+export function SiteFrame({ theme, header, footer, children, shopWebsiteId, navAuthScript }: SiteFrameProps) {
   const classes = ["wb-site", `wb-buttons-${theme.buttonStyle}`, `wb-cards-${theme.cardStyle}`].join(" ");
   return (
     <VideoModalProvider>
-      <div className={classes} style={themeToCssVars(theme)}>
+      <div
+        className={classes}
+        style={themeToCssVars(theme)}
+        {...(shopWebsiteId ? { "data-wb-shop-website": shopWebsiteId } : {})}
+      >
         {header}
         <main>{children}</main>
         {footer}
+        {navAuthScript && shopWebsiteId && <script dangerouslySetInnerHTML={{ __html: SHOP_NAV_AUTH_SCRIPT }} />}
       </div>
     </VideoModalProvider>
   );
@@ -163,6 +176,9 @@ export default function SitePage({ site, page, editor }: SitePageProps) {
 }
 
 function SitePageBody({ site, page, editor }: SitePageProps) {
+  const catalog = useShopCatalog();
+  const isStatic = useStaticRender();
+  const shopWebsiteId = catalog?.live ? catalog.websiteId : undefined;
   // A page's own header/footer replaces the site-wide one; a hidden one means the page has none.
   const pageHeaderSection = page.sections.find((section): section is SectionOf<"header"> => section.type === "header");
   const pageFooterSection = page.sections.find((section): section is SectionOf<"footer"> => section.type === "footer");
@@ -194,6 +210,8 @@ function SitePageBody({ site, page, editor }: SitePageProps) {
         theme={site.theme}
         header={editor && effectiveHeader ? editor.renderHeader(effectiveHeader) : effectiveHeader}
         footer={editor && effectiveFooter ? editor.renderFooter(effectiveFooter) : effectiveFooter}
+        shopWebsiteId={shopWebsiteId}
+        navAuthScript={Boolean(isStatic && shopWebsiteId)}
       >
         {editor
           ? bodySections.length === 0

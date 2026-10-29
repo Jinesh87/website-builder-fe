@@ -10,6 +10,8 @@ type SiteLinkProps = {
   link: LinkRef;
   className?: string;
   children?: ReactNode;
+  /** Hide this control on published sites once a shop customer is signed in. */
+  hideWhenAuthed?: boolean;
 };
 
 function formatDownloadHref(href: string, isDownload: boolean): string {
@@ -23,7 +25,7 @@ function formatDownloadHref(href: string, isDownload: boolean): string {
   return href;
 }
 
-export function SiteLink({ link, className, children }: SiteLinkProps) {
+export function SiteLink({ link, className, children, hideWhenAuthed }: SiteLinkProps) {
   const isVideo = link.actionType === "video" || Boolean(link.videoUrl);
   const videoUrl = isVideo ? (link.videoUrl || link.href || "") : "";
   const isDownload = link.actionType === "download";
@@ -63,6 +65,7 @@ export function SiteLink({ link, className, children }: SiteLinkProps) {
       href={href}
       className={className}
       onClick={handleClick}
+      {...(hideWhenAuthed ? { "data-wb-hide-when-authed": "" } : {})}
       {...(isVideo
         ? {
             "data-wb-video-modal": "true",
@@ -85,8 +88,16 @@ export function SiteLink({ link, className, children }: SiteLinkProps) {
   );
 }
 
-export function SiteButton({ link, tone = "primary" }: { link: LinkRef; tone?: "primary" | "secondary" }) {
-  return <SiteLink link={link} className={`wb-btn wb-btn-${tone}`} />;
+export function SiteButton({
+  link,
+  tone = "primary",
+  hideWhenAuthed,
+}: {
+  link: LinkRef;
+  tone?: "primary" | "secondary";
+  hideWhenAuthed?: boolean;
+}) {
+  return <SiteLink link={link} className={`wb-btn wb-btn-${tone}`} hideWhenAuthed={hideWhenAuthed} />;
 }
 
 export function SiteImage({

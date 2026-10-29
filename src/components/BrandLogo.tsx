@@ -1,23 +1,26 @@
-import { LayoutTemplate } from "lucide-react";
 import { Link } from "react-router-dom";
 import { env } from "../config/env.ts";
 
 type BrandLogoProps = {
+  /** "dark" = dark text on light bg; "light" = white text on dark bg. */
   tone?: "dark" | "light";
 };
 
 export default function BrandLogo({ tone = "dark" }: BrandLogoProps) {
+  const src =
+    tone === "light"
+      ? "/bytezora-webbuilder-logo-white-text.png"
+      : "/bytezora-webbuilder-logo.png";
+
   return (
-    <Link
-      to="/"
-      className={`inline-flex items-center gap-2.5 font-semibold tracking-tight ${
-        tone === "dark" ? "text-ink" : "text-white"
-      }`}
-    >
-      <span className="grid size-8 place-items-center rounded-md bg-brand text-white">
-        <LayoutTemplate className="size-4.5" aria-hidden />
-      </span>
-      <span className="text-[17px]">{env.appName}</span>
+    <Link to="/" className="inline-flex items-center" aria-label={`${env.appName} home`}>
+      <img
+        src={src}
+        alt={env.appName}
+        width={360}
+        height={96}
+        className="h-24 w-auto max-w-[min(400px,80vw)] object-contain"
+      />
     </Link>
   );
 }

@@ -4,6 +4,7 @@
  * responsive rules use container queries so the editor's tablet/mobile preview
  * frames behave exactly like real devices on the published site.
  */
+import { ACCOUNT_CSS } from "./account-styles.ts";
 import { AUTH_CSS } from "./auth-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
 import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
@@ -709,6 +710,8 @@ em, i {
 .wb-nav a:hover { color: var(--wb-primary); }
 .wb-header-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; flex-shrink: 0; }
 .wb-header-cta { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+/* Shop customer session: hide marked Login CTAs in the header/nav. */
+.wb-site.is-shop-authed [data-wb-hide-when-authed] { display: none !important; }
 .wb-header-classical .wb-nav { margin: 0 auto; }
 .wb-header-minimalist .wb-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .wb-header-minimalist .wb-nav-left { display: flex; align-items: center; gap: 24px; white-space: nowrap; }
@@ -9626,6 +9629,7 @@ ${CONTACT_BUILDER_CSS}
 ${HERO_CONTROLS_CSS}
 ${CARDS_CSS}
 ${SHOP_CSS}
+${ACCOUNT_CSS}
 ${VINTAGE_CSS}
 .wb-device-scroll {
   scrollbar-width: none !important;

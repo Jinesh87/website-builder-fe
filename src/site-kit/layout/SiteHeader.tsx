@@ -10,8 +10,33 @@ import {
   SiteImage,
   SiteLink,
 } from "../primitives.tsx";
-import type { BrandDisplayMode, HeaderData, HeaderMenuItem, ImageRef, SectionSettings } from "../types.ts";
+import { useShopCatalog } from "../shop-catalog.tsx";
+import type { BrandDisplayMode, HeaderData, HeaderMenuItem, ImageRef, LinkRef, SectionSettings } from "../types.ts";
 import { chromeStyle } from "./chrome.ts";
+
+function normalizeSitePath(href: string | undefined): string {
+  const raw = (href || "").trim().split("?")[0].split("#")[0];
+  const withoutLive = raw.replace(/^\/live\/[^/]+/i, "");
+  const path = (withoutLive.startsWith("/") ? withoutLive : `/${withoutLive}`).replace(/\/+$/, "");
+  return path || "/";
+}
+
+/** Header CTAs that open the shop login page should disappear once the customer is signed in. */
+function isShopLoginLink(link: LinkRef | undefined, authHref: string): boolean {
+  if (!link?.href) return false;
+  const path = normalizeSitePath(link.href);
+  const auth = normalizeSitePath(authHref || "/login");
+  if (path === auth) return true;
+  if (path === "/login" || path.endsWith("/login")) return true;
+  const label = (link.label || "").trim().toLowerCase();
+  return label === "login" || label === "log in" || label === "sign in";
+}
+
+function HeaderCtaButton({ link, tone }: { link: LinkRef; tone: "primary" | "secondary" }) {
+  const catalog = useShopCatalog();
+  const hideWhenAuthed = Boolean(catalog?.live && catalog.websiteId && isShopLoginLink(link, catalog.authHref || "/login"));
+  return <SiteButton link={link} tone={tone} hideWhenAuthed={hideWhenAuthed} />;
+}
 
 export function SiteBrand({
   siteName,
@@ -171,8 +196,8 @@ function ActionButtons({ header }: { header: HeaderData }) {
   if (!header.cta && !header.secondaryCta) return null;
   return (
     <div className="wb-header-cta">
-      {header.secondaryCta && <SiteButton link={header.secondaryCta} tone="secondary" />}
-      {header.cta && <SiteButton link={header.cta} tone="primary" />}
+      {header.secondaryCta && <HeaderCtaButton link={header.secondaryCta} tone="secondary" />}
+      {header.cta && <HeaderCtaButton link={header.cta} tone="primary" />}
     </div>
   );
 }
@@ -253,12 +278,12 @@ function MobileDrawer({
             <div className="wb-drawer-actions">
               {header.secondaryCta && (
                 <div onClick={onClose}>
-                  <SiteButton link={header.secondaryCta} tone="secondary" />
+                  <HeaderCtaButton link={header.secondaryCta} tone="secondary" />
                 </div>
               )}
               {header.cta && (
                 <div onClick={onClose}>
-                  <SiteButton link={header.cta} tone="primary" />
+                  <HeaderCtaButton link={header.cta} tone="primary" />
                 </div>
               )}
             </div>
@@ -325,12 +350,12 @@ function EditorialCurtainDrawer({
               <div className="wb-curtain-actions">
                 {header.secondaryCta && (
                   <div onClick={onClose}>
-                    <SiteButton link={header.secondaryCta} tone="secondary" />
+                    <HeaderCtaButton link={header.secondaryCta} tone="secondary" />
                   </div>
                 )}
                 {header.cta && (
                   <div onClick={onClose}>
-                    <SiteButton link={header.cta} tone="primary" />
+                    <HeaderCtaButton link={header.cta} tone="primary" />
                   </div>
                 )}
               </div>
@@ -658,7 +683,7 @@ export default function SiteHeader({ header, settings }: { header: HeaderData; s
               <span className="wb-side-summary-text">{header.tagline || "Digital Studio & Platform"}</span>
             </div>
             <div className="wb-side-actions">
-              {header.cta && <SiteButton link={header.cta} tone="primary" />}
+              {header.cta && <HeaderCtaButton link={header.cta} tone="primary" />}
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}

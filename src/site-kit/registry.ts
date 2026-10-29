@@ -1,6 +1,7 @@
 import { AUTH_PRESETS, createAuthData } from "./auth-defaults.ts";
 import { CARDS_PRESETS, createCardsData } from "./cards-defaults.ts";
 import type {
+  AccountData,
   Section,
   SectionDataMap,
   SectionOf,
@@ -27,6 +28,7 @@ export type SectionCategory =
   | "Carousel"
   | "Marquee"
   | "Auth"
+  | "Account"
   | "Blog"
   | "Shop";
 
@@ -728,6 +730,7 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
       description: "Lists this website’s shop products, with search and category filters.",
       createData: () => ({
         design: "classic-grid",
+        cartLoginPromptVariant: "soft-card",
         eyebrow: "Shop",
         title: "Our products",
         subtitle: "Browse the catalogue. Each card opens the product page.",
@@ -752,7 +755,78 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
         showStock: true,
       }),
     },
+    account: {
+      type: "account",
+      label: "Customer account",
+      category: "Account",
+      description: "The signed-in customer's orders, cart and profile. Visitors who aren't signed in see a sign-in prompt.",
+      createData: () => accountData("sidebar-tabs"),
+    },
   };
+
+/** Shared defaults of every account template; only the layout differs between presets. */
+export function accountData(variant: AccountData["variant"], overrides: Partial<AccountData> = {}): AccountData {
+  return {
+    variant,
+    preview: "member",
+    heading: "My account",
+    subheading: "Your orders, cart and profile in one place.",
+    showOrders: true,
+    showCart: true,
+    showProfile: true,
+    showPassword: true,
+    ordersLabel: "Orders",
+    cartLabel: "Cart",
+    profileLabel: "Profile",
+    passwordLabel: "Password",
+    logoutLabel: "Log out",
+    saveLabel: "Save changes",
+    emptyOrdersText: "You haven't placed any orders yet.",
+    emptyCartText: "Your cart is empty.",
+    loginHref: "/login",
+    shopHref: "/shop",
+    redirectWhenLoggedOut: false,
+    guestHeading: "Sign in to see your account",
+    guestText: "Your orders, cart and profile details are only shown to signed-in customers.",
+    guestButtonLabel: "Log in",
+    ...overrides,
+  };
+}
+
+const ACCOUNT_PRESETS: Array<{ key: string; variant: AccountData["variant"]; label: string; description: string; overrides?: Partial<AccountData> }> = [
+  {
+    key: "account-sidebar-tabs",
+    variant: "sidebar-tabs",
+    label: "Account · Sidebar tabs",
+    description: "Profile card with a vertical menu on the left; orders, cart and settings open on the right.",
+  },
+  {
+    key: "account-top-tabs",
+    variant: "top-tabs",
+    label: "Account · Top tabs",
+    description: "A compact header with pill tabs above one content panel. Good for narrow pages.",
+  },
+  {
+    key: "account-overview-cards",
+    variant: "overview-cards",
+    label: "Account · Overview dashboard",
+    description: "Quick stats (orders, cart, member since) and every panel as a card on one screen.",
+    overrides: { subheading: "Everything about your orders and details, at a glance." },
+  },
+  {
+    key: "account-minimal-list",
+    variant: "minimal-list",
+    label: "Account · Minimal list",
+    description: "One editorial column with stacked sections and hairline dividers. No cards, no tabs.",
+    overrides: { heading: "Account", subheading: "" },
+  },
+  {
+    key: "account-dark-panel",
+    variant: "dark-panel",
+    label: "Account · Dark panel",
+    description: "A dark glass dashboard with an accent glow, side menu and tabbed panels.",
+  },
+];
 
 export const SECTION_TYPES = Object.keys(SECTION_DEFINITIONS) as SectionType[];
 
@@ -4598,6 +4672,14 @@ export const SECTION_PRESETS: SectionPreset[] = [
         settings: { spacing: "none", ...preset.settings },
       }),
   })),
+  ...ACCOUNT_PRESETS.map((preset): SectionPreset => ({
+    key: preset.key,
+    type: "account",
+    label: preset.label,
+    category: "Account",
+    description: preset.description,
+    create: () => createSection("account", { data: accountData(preset.variant, preset.overrides) }),
+  })),
   {
     key: "blog-cards-grid",
     type: "blog",
@@ -4613,7 +4695,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     label: "Product list · Classic grid",
     category: "Shop",
     description: "Balanced cards with rounded images, search, and category filters.",
-    create: () => createSection("products"),
+    create: () => createSection("products", { data: { cartLoginPromptVariant: "soft-card" } }),
   },
   {
     key: "shop-product-list-editorial",
@@ -4621,7 +4703,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     label: "Product list · Filter sidebar",
     category: "Shop",
     description: "A catalogue with search, categories, and sorting in a dedicated sidebar.",
-    create: () => createSection("products", { data: { design: "editorial", layout: "grid-2" } }),
+    create: () => createSection("products", { data: { design: "editorial", layout: "grid-2", cartLoginPromptVariant: "minimal" } }),
   },
   {
     key: "shop-product-list-compact",
@@ -4629,7 +4711,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     label: "Product list · Compact",
     category: "Shop",
     description: "A denser catalogue that fits more products on screen.",
-    create: () => createSection("products", { data: { design: "compact", layout: "grid-3" } }),
+    create: () => createSection("products", { data: { design: "compact", layout: "grid-3", cartLoginPromptVariant: "glass" } }),
   },
   {
     key: "shop-product-list-showcase",
@@ -4637,7 +4719,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     label: "Product list · Marketplace",
     category: "Shop",
     description: "A storefront toolbar above modern image-led product cards.",
-    create: () => createSection("products", { data: { design: "showcase", layout: "grid-3" } }),
+    create: () => createSection("products", { data: { design: "showcase", layout: "grid-3", cartLoginPromptVariant: "split" } }),
   },
   {
     key: "shop-product-detail",

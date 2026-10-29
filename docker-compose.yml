@@ -1,5 +1,5 @@
 # Must differ per environment on the same server (e.g. staging vs prod), or one stack replaces the other.
-name: ${COMPOSE_PROJECT_NAME:-webbuilder-frontend}
+name: ${COMPOSE_PROJECT_NAME:-webbuilder-frontend-prod}
 
 x-build-args: &build-args
   VITE_APP_NAME: ${VITE_APP_NAME:-WebBuilder}

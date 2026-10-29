@@ -31,7 +31,7 @@ type InfoForm = {
   industry: string;
   contactEmail: string;
   contactPhone: string;
-  subdomain: string;
+  address: string;
   description: string;
 };
 
@@ -67,8 +67,6 @@ const WEBSITE_TYPES: SelectOption<string>[] = [
   { value: "Other", label: "Other" },
 ];
 
-/** Mirrors the backend subdomain rule. */
-const SUBDOMAIN_PATTERN = /^[a-z0-9](?:[a-z0-9-]{1,38}[a-z0-9])$/;
 const PHONE_PATTERN = /^\+?[0-9 ()-]{7,20}$/;
 const INFO_FIELDS = new Set<string>([
   "name",
@@ -77,7 +75,7 @@ const INFO_FIELDS = new Set<string>([
   "industry",
   "contactEmail",
   "contactPhone",
-  "subdomain",
+  "address",
   "description",
   "clientId",
 ]);
@@ -93,7 +91,6 @@ function validateInfo(form: InfoForm, needsClient: boolean, clientId: string): I
   const name = form.name.trim();
   const contactEmail = form.contactEmail.trim();
   const contactPhone = form.contactPhone.trim();
-  const subdomain = form.subdomain.trim().toLowerCase();
 
   return {
     clientId: needsClient && !clientId ? "Choose the client this website is for" : undefined,
@@ -108,8 +105,6 @@ function validateInfo(form: InfoForm, needsClient: boolean, clientId: string): I
       ? (validateEmail(contactEmail) ?? tooLong(contactEmail, MAX_LENGTHS.contactEmail, "Contact email"))
       : undefined,
     contactPhone: contactPhone && !PHONE_PATTERN.test(contactPhone) ? "Enter a valid phone number" : undefined,
-    subdomain:
-      subdomain && !SUBDOMAIN_PATTERN.test(subdomain) ? "Use 3-40 lowercase letters, numbers or hyphens" : undefined,
     description: tooLong(form.description, MAX_LENGTHS.description, "Business description"),
   };
 }
@@ -138,7 +133,7 @@ export default function CreateWebsitePage() {
     industry: "",
     contactEmail: "",
     contactPhone: "",
-    subdomain: "",
+    address: "",
     description: "",
   });
   const [errors, setErrors] = useState<InfoErrors>({});
@@ -281,13 +276,13 @@ export default function CreateWebsitePage() {
     return {
       ...(isAdmin ? { clientId } : {}),
       name: form.name.trim(),
-      subdomain: optional(form.subdomain.toLowerCase()),
       businessName: optional(form.businessName),
       websiteType: optional(form.websiteType),
       industry: optional(form.industry),
       description: optional(form.description),
       contactEmail: optional(form.contactEmail),
       contactPhone: optional(form.contactPhone),
+      address: optional(form.address),
     };
   }
 
@@ -327,11 +322,9 @@ export default function CreateWebsitePage() {
     } catch (err) {
       if (err instanceof ApiError) {
         const fieldErrors: InfoErrors =
-          err.code === "SUBDOMAIN_TAKEN"
-            ? { subdomain: err.message }
-            : err.code === "CLIENT_REQUIRED" || err.code === "CLIENT_NOT_FOUND"
-              ? { clientId: err.message }
-              : err.fieldErrors();
+          err.code === "CLIENT_REQUIRED" || err.code === "CLIENT_NOT_FOUND"
+            ? { clientId: err.message }
+            : err.fieldErrors();
         if (Object.keys(fieldErrors).some((field) => INFO_FIELDS.has(field))) {
           setErrors(fieldErrors);
           setStep(2);
@@ -510,12 +503,11 @@ export default function CreateWebsitePage() {
               <div className="sm:col-span-3">
                 <TextInput
                   label="Preferred address (optional)"
-                  name="subdomain"
-                  value={form.subdomain}
-                  onChange={update("subdomain")}
-                  error={errors.subdomain}
-                  placeholder="e.g. bloom-florist"
-                  description="Your free default address. Leave empty to generate one from the website name. Custom domains can be added later."
+                  name="address"
+                  value={form.address}
+                  onChange={update("address")}
+                  placeholder="Street, Area, City, State, PIN"
+                  description="Enter the full address in comma-separated form (e.g. 12 MG Road, Indiranagar, Bengaluru, Karnataka, 560038). Shown on your site contact details."
                 />
               </div>
               <div className="sm:col-span-3">
@@ -590,31 +582,26 @@ export default function CreateWebsitePage() {
               </div>
             )}
 
-            <button
-              type="button"
-              aria-pressed={templateKey === ""}
-              onClick={() => chooseTemplate(null)}
-              className={`mt-5 flex w-full items-center gap-4 rounded-lg border-2 p-5 text-left transition-colors ${
-                templateKey === "" ? "border-brand bg-brand-soft/40" : "border-line hover:border-line-strong"
-              }`}
-            >
-              <span className="grid size-12 shrink-0 place-items-center rounded-lg border-2 border-dashed border-line-strong bg-surface">
+            <div className="mt-5 flex w-full items-center gap-4 rounded-lg border border-line bg-surface p-5">
+              <span className="grid size-12 shrink-0 place-items-center rounded-lg border border-dashed border-line-strong bg-canvas">
                 <LayoutTemplate className="size-5 text-brand" aria-hidden />
               </span>
-              <span className="flex-1">
-                <span className="flex items-center gap-2 font-medium text-ink">
+              <div className="flex-1 min-w-0">
+                <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
                   Start blank and build my own design
                   <span className="rounded-full bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink-body">Recommended</span>
-                </span>
-                <span className="mt-1 block text-sm text-ink-body">
+                </p>
+                <p className="mt-1 text-sm text-ink-body">
                   You get an empty home page. Add sections like hero, services, gallery and contact from the component
                   library, then edit the text, images and layout.
-                </span>
-              </span>
-              {templateKey === "" && (
-                <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-medium text-white">Selected</span>
+                </p>
+              </div>
+              {templateKey !== "" && (
+                <Button size="sm" variant="outline" onPress={() => chooseTemplate(null)}>
+                  Use blank
+                </Button>
               )}
-            </button>
+            </div>
 
             <div className="mt-8">
               <h3 className="text-sm font-semibold text-ink">Colour style</h3>

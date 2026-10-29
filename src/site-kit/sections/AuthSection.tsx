@@ -12,7 +12,7 @@ import {
 import { safeHref } from "../links.ts";
 import { SectionShell, SiteImage, SocialIcon } from "../primitives.tsx";
 import { StaticStates, useStaticRender } from "../render-mode.tsx";
-import { fullNameFromForm, SHOP_AUTH_SCRIPT, shopAuthApi, type ShopAuthError } from "../shop-auth.ts";
+import { fullNameFromForm, SHOP_AUTH_SCRIPT, shopAuthApi, siteHref, type ShopAuthError } from "../shop-auth.ts";
 import { useShopCatalog } from "../shop-catalog.tsx";
 import { contrastText } from "../theme.ts";
 import type {
@@ -204,12 +204,20 @@ function passwordsMismatch(form: HTMLFormElement): boolean {
   return Array.from(confirms).some((input) => input.value !== password.value);
 }
 
+/** Where a signed-in customer goes: the section's own success link when it is a page, else the site's account page. */
+function accountPageHref(data: AuthData, fallback?: string): string {
+  const own = data.successLink?.href?.trim();
+  if (own && own.startsWith("/") && !own.startsWith("//") && own !== "/") return own;
+  return fallback || "/account";
+}
+
 function authErrorMessage(error: unknown): string {
   if (error && typeof error === "object" && "message" in error) return String((error as ShopAuthError).message);
   return "Something went wrong. Please try again.";
 }
 
-function useAuthFlow(data: AuthData, websiteId?: string): AuthFlow {
+
+function useAuthFlow(data: AuthData, websiteId?: string, accountHref = "/account"): AuthFlow {
   const shopLive = Boolean(websiteId);
   const [view, setView] = useState<AuthView>(() => initialView(data, websiteId));
   const [done, setDone] = useState<DoneState>(null);
@@ -243,7 +251,8 @@ function useAuthFlow(data: AuthData, websiteId?: string): AuthFlow {
       form.querySelector<HTMLInputElement>('input[name="email"], input[type="email"]')?.value.trim().toLowerCase() ?? "";
     const password =
       form.querySelector<HTMLInputElement>('input[name="password"], input[data-auth-type="password"]')?.value ?? "";
-    const remember = form.querySelector<HTMLInputElement>('input[name="remember"]')?.checked ?? false;
+    const rememberInput = form.querySelector<HTMLInputElement>('input[name="remember"]');
+    const remember = rememberInput ? rememberInput.checked : true;
     const code = form.querySelector<HTMLInputElement>('input[name="code"]')?.value.trim() ?? "";
 
     setBusy(true);
@@ -262,7 +271,7 @@ function useAuthFlow(data: AuthData, websiteId?: string): AuthFlow {
       }
       if (activeView === "login") {
         await shopAuthApi.login(websiteId, { email, password, remember });
-        setDone("complete");
+        window.location.href = siteHref(accountHref);
         return;
       }
       if (activeView === "forgot") {
@@ -272,7 +281,7 @@ function useAuthFlow(data: AuthData, websiteId?: string): AuthFlow {
       }
       if (activeView === "otp") {
         await shopAuthApi.verifyEmail(websiteId, pendingEmail || email, code);
-        setDone("complete");
+        window.location.href = siteHref(accountHref);
         return;
       }
       if (activeView === "reset") {
@@ -282,7 +291,7 @@ function useAuthFlow(data: AuthData, websiteId?: string): AuthFlow {
         }
         await shopAuthApi.resetPassword(websiteId, resetToken, password);
         setResetToken("");
-        setDone("complete");
+        window.location.href = siteHref(accountHref);
       }
     } catch (err) {
       const shopErr = err as ShopAuthError;
@@ -668,7 +677,7 @@ function AuthForm({ data, flow, hideSwitch, shopLive }: AuthFormProps & { shopLi
           <div className="wb-auth-row">
             {data.login.showRemember ? (
               <label className="wb-auth-check">
-                <input type="checkbox" name="remember" />
+                <input type="checkbox" name="remember" defaultChecked />
                 <span>{data.login.rememberLabel || "Remember me"}</span>
               </label>
             ) : (
@@ -1106,7 +1115,8 @@ export default function AuthSection({ section }: { section: SectionOf<"auth"> })
   const catalog = useShopCatalog();
   const websiteId = catalog?.live ? catalog.websiteId : undefined;
   const shopLive = Boolean(websiteId);
-  const flow = useAuthFlow(data, websiteId);
+  const accountHref = accountPageHref(data, catalog?.accountHref);
+  const flow = useAuthFlow(data, websiteId, accountHref);
   const isStatic = useStaticRender();
   const variant: AuthVariant = data.variant in LAYOUTS ? data.variant : "diagonal-split";
   const Layout = LAYOUTS[variant];
@@ -1137,6 +1147,9 @@ export default function AuthSection({ section }: { section: SectionOf<"auth"> })
     />
   );
 
+  // Published pages redirect signed-in shoppers via SHOP_AUTH_SCRIPT. Do not
+  // navigate here in the editor — that would leave the builder entirely.
+
   return (
     <SectionShell
       sectionId={section.id}
@@ -1148,7 +1161,7 @@ export default function AuthSection({ section }: { section: SectionOf<"auth"> })
       <div
         className={classes}
         style={colorVars(data)}
-        {...(websiteId ? { "data-wb-shop-auth": websiteId } : {})}
+        {...(websiteId ? { "data-wb-shop-auth": websiteId, "data-wb-shop-success-href": accountHref } : {})}
       >
         {isStatic ? (
           <StaticStates
