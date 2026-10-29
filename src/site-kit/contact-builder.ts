@@ -8,6 +8,7 @@ import type {
   ContactInfoKind,
   ContactLayout,
 } from "./types.ts";
+import { mailtoHref, telHref } from "./links.ts";
 
 /** Mirrors CONTACT_LIMITS on the server, which rejects anything larger. */
 export const CONTACT_LIMITS = {
@@ -142,7 +143,7 @@ export function createContactBlock(
         id,
         type,
         label: data.phone ? "Call us" : "Get directions",
-        href: data.phone ? `tel:${data.phone.replace(/[^\d+]/g, "")}` : "#",
+        href: telHref(data.phone) ?? "#",
         tone: "secondary",
       };
     case "image":
@@ -257,11 +258,9 @@ export function contactInfoHref(kind: ContactInfoKind, value: string): string | 
   if (!text) return null;
   switch (kind) {
     case "email":
-      return `mailto:${text}`;
-    case "phone": {
-      const dial = text.replace(/[^\d+]/g, "");
-      return dial ? `tel:${dial}` : null;
-    }
+      return mailtoHref(text);
+    case "phone":
+      return telHref(text);
     case "whatsapp": {
       const digits = text.replace(/\D/g, "");
       return digits ? `https://wa.me/${digits}` : null;

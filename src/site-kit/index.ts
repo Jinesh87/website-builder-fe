@@ -47,6 +47,9 @@ export { default as EditorialSpecsSection } from "./sections/EditorialSpecsSecti
 export { default as VintageBlogSection } from "./sections/VintageBlogSection.tsx";
 export { default as ClapperContactSection } from "./sections/ClapperContactSection.tsx";
 export {
+  BLOG_SHARE_PLATFORMS,
+  BLOG_SOCIAL_PLATFORMS,
+  DEFAULT_BLOG_SHARE_PLATFORMS,
   BUTTON_RADIUS_MAX,
   BUTTON_SHAPES,
   CARDS_BUTTON_SIZES,

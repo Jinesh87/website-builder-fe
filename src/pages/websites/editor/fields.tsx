@@ -330,12 +330,14 @@ export function ColorField({
   value,
   onChange,
   fallback = "#ffffff",
+  placeholder,
   hint,
 }: {
   label: string;
   value: string | undefined;
   onChange: (value: string) => void;
   fallback?: string;
+  placeholder?: string;
   hint?: string;
 }) {
   return (
@@ -350,7 +352,7 @@ export function ColorField({
           <CellColorPicker.Label />
           <div className="flex items-center gap-1.5 w-36">
             <CellColorPicker.Trigger />
-            <CellColorPicker.ValueDisplay />
+            <CellColorPicker.ValueDisplay placeholder={placeholder} />
           </div>
         </div>
         <CellColorPicker.Popover>

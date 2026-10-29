@@ -1,9 +1,3 @@
-/**
- * Stylesheet for rendered client websites. Every rule is scoped under
- * `.wb-site` so it can't leak into (or be overridden by) the builder UI, and
- * responsive rules use container queries so the editor's tablet/mobile preview
- * frames behave exactly like real devices on the published site.
- */
 import { ACCOUNT_CSS } from "./account-styles.ts";
 import { AUTH_CSS } from "./auth-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
@@ -3164,7 +3158,7 @@ em, i {
 }
 
 /* --------------------------------------- Hero: Vintage Sunburst (About page) */
-.wb-section.wb-hero-sunburst-wrap { padding: 21px 0 0; min-height: 0; background: var(--vr-cream); }
+.wb-section.wb-hero-sunburst-wrap { padding: 21px 0 0; min-height: 0; background: var(--wb-section-bg, var(--vr-cream)); }
 .wb-hero-sunburst-card {
   position: relative;
   display: grid;
@@ -3261,7 +3255,7 @@ em, i {
 }
 
 /* -------------------------------------- Split: studio polaroid (About) */
-.wb-section.wb-split-vintage { padding: 70px 0 0; background: var(--vr-cream); }
+.wb-section.wb-split-vintage { padding: 70px 0 0; background: var(--wb-section-bg, var(--vr-cream)); }
 .wb-split-vintage .wb-split-grid { grid-template-columns: 455px minmax(0, 1fr); gap: 47px; align-items: start; }
 .wb-split-polaroid-frame {
   position: relative;
@@ -3908,7 +3902,7 @@ em, i {
 }
 
 /* ------------------------------------------- Features: Colored Pillars (What drives us - About page) */
-.wb-section.wb-colored-pillars-wrap { padding: 80px 0 0; background: var(--vr-cream); }
+.wb-section.wb-colored-pillars-wrap { padding: 80px 0 0; background: var(--wb-section-bg, var(--vr-cream)); }
 .wb-site .wb-colored-pillars-title {
   margin: 0;
   font-family: var(--vr-serif);
@@ -6016,7 +6010,12 @@ details[open] > summary .wb-faq-plus {
 }
 
 /* ---------------------------------------------- CTA: Vintage Story ("Have a story to tell?") */
-.wb-section.wb-cta-vintage-story { padding: 76px 0; background: var(--vr-story); color: var(--vr-paper); text-align: center; }
+.wb-section.wb-cta-vintage-story {
+  padding: 76px 0;
+  background: var(--wb-section-bg, var(--vr-story));
+  color: var(--wb-section-text, var(--vr-paper));
+  text-align: center;
+}
 .wb-site .wb-cta-story-heading {
   margin: 0;
   font-family: var(--vr-serif);
@@ -6024,9 +6023,9 @@ details[open] > summary .wb-faq-plus {
   line-height: 1.1;
   font-weight: 300;
   letter-spacing: -0.025em;
-  color: var(--vr-paper);
+  color: var(--wb-section-text, var(--vr-paper, #ffffff));
 }
-.wb-cta-story-heading em { font-style: italic; color: #D0573A; }
+.wb-cta-story-heading em { font-style: italic; color: var(--wb-primary, #D0573A); }
 .wb-cta-story-btn {
   display: inline-flex;
   align-items: center;
@@ -6035,18 +6034,27 @@ details[open] > summary .wb-faq-plus {
   margin-top: 15px;
   padding: 0 24px;
   border-radius: 9999px;
-  background: var(--vr-paper);
-  color: var(--vr-text);
+  background: var(--wb-section-text, var(--vr-paper));
+  color: var(--wb-section-bg, var(--vr-text));
   font-family: var(--wb-font-body);
   font-size: 12.5px;
   font-weight: 700;
   text-decoration: none;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
-.wb-cta-story-btn:hover { background: #FFFFFF; color: var(--vr-text); transform: translateY(-1px); }
+.wb-cta-story-btn:hover {
+  background: var(--wb-primary, #FFFFFF);
+  color: var(--wb-on-primary, var(--vr-text));
+  transform: translateY(-1px);
+}
 
 /* ---------------------------------------------- CTA: Vintage Banner */
-.wb-section.wb-cta-vintage-banner { padding: 60px 0; background: var(--vr-cream); color: #22160F; text-align: center; }
+.wb-section.wb-cta-vintage-banner {
+  padding: 60px 0;
+  background: var(--wb-section-bg, var(--vr-cream));
+  color: var(--wb-section-text, #22160F);
+  text-align: center;
+}
 .wb-site .wb-cta-banner-heading {
   margin: 0;
   font-family: var(--vr-serif);
@@ -6054,7 +6062,7 @@ details[open] > summary .wb-faq-plus {
   line-height: 1.15;
   font-weight: 300;
   letter-spacing: -0.02em;
-  color: #22160F;
+  color: var(--wb-section-text, #22160F);
 }
 .wb-cta-banner-btn {
   display: inline-flex;
@@ -6064,20 +6072,24 @@ details[open] > summary .wb-faq-plus {
   margin-top: 18px;
   padding: 0 24px;
   border-radius: 9999px;
-  background: #22160F;
-  color: var(--vr-cream);
+  background: var(--wb-section-text, #22160F);
+  color: var(--wb-section-bg, var(--vr-cream));
   font-family: var(--wb-font-body);
   font-size: 12.5px;
   font-weight: 700;
   text-decoration: none;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
 }
-.wb-cta-banner-btn:hover { background: #382419; color: var(--vr-cream); transform: translateY(-1px); }
+.wb-cta-banner-btn:hover {
+  background: var(--wb-primary, #382419);
+  color: var(--wb-on-primary, var(--vr-cream));
+  transform: translateY(-1px);
+}
 
 /* ---------------- Vintage Banner Roll Camera Mode ("ROLL CAMERA?") ---------------- */
 .wb-section.wb-cta-vintage-banner.wb-cta-roll-camera {
   padding: 60px 0 80px;
-  background: #0A0A0A;
+  background: var(--wb-section-bg, #0A0A0A);
 }
 .wb-cta-roll-camera .wb-cta-banner-card {
   position: relative;
@@ -6867,8 +6879,8 @@ details[open] > summary .wb-faq-plus {
 .wb-gallery-head { margin-bottom: 32px; text-align: center; }
 
 /* Footer Builder Styles */
-.wb-footer { background: var(--wb-surface); border-top: 1px solid var(--wb-border); padding: 56px 0 32px; font-size: var(--wb-body-size, calc(14px * var(--wb-font-scale, 1))); position: relative; }
-.wb-footer-dark { background: #0c0d12 !important; color: #f1f5f9 !important; border-top: 1px solid rgba(255, 255, 255, 0.08) !important; }
+.wb-footer { background: var(--wb-footer-bg, var(--wb-surface)); border-top: 1px solid var(--wb-border); padding: 56px 0 32px; font-size: var(--wb-body-size, calc(14px * var(--wb-font-scale, 1))); position: relative; }
+.wb-footer-dark { background: var(--wb-footer-bg, #0c0d12) !important; color: var(--wb-footer-text, #f1f5f9) !important; border-top: 1px solid rgba(255, 255, 255, 0.08) !important; }
 .wb-footer-dark .wb-muted, .wb-footer-dark p, .wb-footer-dark .wb-footer-contact-block { color: #94a3b8 !important; }
 .wb-footer-dark a { color: #cbd5e1; }
 .wb-footer-dark a:hover { color: #ffffff !important; }
@@ -6879,7 +6891,7 @@ details[open] > summary .wb-faq-plus {
 .wb-footer-dark .wb-newsletter-input::placeholder { color: #64748b; }
 .wb-footer-dark .wb-payment-badge { background: rgba(255, 255, 255, 0.95); border-color: rgba(255, 255, 255, 0.2); }
 
-.wb-footer-light { background: #ffffff !important; color: #0f172a !important; border-top: 1px solid rgba(0, 0, 0, 0.08) !important; }
+.wb-footer-light { background: var(--wb-footer-bg, #ffffff) !important; color: var(--wb-footer-text, #0f172a) !important; border-top: 1px solid rgba(0, 0, 0, 0.08) !important; }
 .wb-footer-light .wb-muted, .wb-footer-light p { color: #64748b !important; }
 
 /* Grid & Column Layouts */
@@ -7001,8 +7013,8 @@ details[open] > summary .wb-faq-plus {
 .wb-site:has(.wb-header-vintage-editorial) .wb-footer {
   padding: 46px 0 0;
   border-top: 0;
-  background: var(--vr-footer, #0C0B09);
-  color: #D9D3C7;
+  background: var(--wb-footer-bg, var(--vr-footer, #0C0B09));
+  color: var(--wb-footer-text, #D9D3C7);
 }
 .wb-site:has(.wb-header-vintage-editorial) .wb-footer-grid { grid-template-columns: 1.6fr repeat(var(--wb-footer-cols, 3), 1fr); gap: 28px; min-height: 187px; }
 .wb-site:has(.wb-header-vintage-editorial) .wb-footer-about { gap: 0; }

@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { safeHref } from "../links.ts";
 import { SiteBrand } from "./SiteHeader.tsx";
-import { PaymentIconsBar, SiteLink, SocialIcon } from "../primitives.tsx";
+import { EmailLink, PaymentIconsBar, PhoneLink, SiteLink, SocialIcon } from "../primitives.tsx";
 import type { FooterData, LinkRef, SectionSettings } from "../types.ts";
 import { chromeStyle } from "./chrome.ts";
 
@@ -35,13 +35,13 @@ function ContactBlock({ contact }: { contact: NonNullable<FooterData["contact"]>
       {contact.phone && (
         <div className="wb-footer-contact-item">
           <span>Call Us Now:</span>
-          <a href={safeHref(`tel:${contact.phone.replace(/\s+/g, "")}`)}>{contact.phone}</a>
+          <PhoneLink value={contact.phone} />
         </div>
       )}
       {contact.email && (
         <div className="wb-footer-contact-item">
           <span>Email:</span>
-          <a href={safeHref(`mailto:${contact.email}`)}>{contact.email}</a>
+          <EmailLink value={contact.email} />
         </div>
       )}
       {contact.hours && <div className="wb-footer-contact-item wb-muted">{contact.hours}</div>}
@@ -203,8 +203,8 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
             {contact && (contact.address || contact.phone || contact.email) && (
               <div className="wb-muted text-xs flex flex-wrap justify-center gap-x-4 gap-y-1">
                 {contact.address && <span>{contact.address}</span>}
-                {contact.phone && <span>Call: {contact.phone}</span>}
-                {contact.email && <span>Email: {contact.email}</span>}
+                {contact.phone && <span>Call: <PhoneLink value={contact.phone} /></span>}
+                {contact.email && <span>Email: <EmailLink value={contact.email} /></span>}
               </div>
             )}
           </div>

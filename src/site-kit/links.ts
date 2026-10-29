@@ -22,6 +22,20 @@ export function isOffsiteHref(href: string): boolean {
   return SAFE_SCHEME.test(href.trim());
 }
 
+/** A `tel:` link for a display number like "+91 98201-44520", or null when it has too few digits to dial. */
+export function telHref(phone: string | undefined): string | null {
+  const text = phone?.trim() ?? "";
+  const digits = text.replace(/\D/g, "");
+  if (digits.length < 3) return null;
+  return `tel:${text.startsWith("+") ? "+" : ""}${digits}`;
+}
+
+/** A `mailto:` link for an address, or null when the value isn't an email. */
+export function mailtoHref(email: string | undefined): string | null {
+  const text = email?.trim() ?? "";
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text) ? `mailto:${text}` : null;
+}
+
 type LinkablePage = { id?: string; slug: string; name: string };
 
 export type ResolvedPageLink<P extends LinkablePage> = {
