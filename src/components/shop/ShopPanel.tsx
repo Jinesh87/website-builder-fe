@@ -8,6 +8,7 @@ import { formatPaise } from "../../api/wallet.ts";
 import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
 import ShopCustomersPanel from "./ShopCustomersPanel.tsx";
 import { ShopInventoryLogPanel, ShopInventoryPanel } from "./ShopInventoryPanel.tsx";
+import ShopOrdersPanel from "./ShopOrdersPanel.tsx";
 import ShopRazorpayPanel from "./ShopRazorpayPanel.tsx";
 import CommonModal from "../ui/CommonModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
@@ -220,13 +221,14 @@ function setsFromProduct(product: ShopProduct): SetDraft[] {
   return [blankSet()];
 }
 
-type ShopSection = "category" | "settings" | "products" | "customers" | "inventory" | "inventory-log" | "razorpay";
+type ShopSection = "category" | "settings" | "products" | "customers" | "orders" | "inventory" | "inventory-log" | "razorpay";
 
 const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "category", label: "Category" },
   { id: "settings", label: "Shop settings" },
   { id: "products", label: "Products" },
   { id: "customers", label: "Customers" },
+  { id: "orders", label: "Orders" },
   { id: "inventory", label: "Inventory" },
   { id: "inventory-log", label: "Inventory log" },
   { id: "razorpay", label: "Razorpay" },
@@ -316,11 +318,12 @@ export default function ShopPanel({
       {(section === "category" ||
         section === "products" ||
         section === "customers" ||
+        section === "orders" ||
         section === "inventory" ||
         section === "inventory-log") &&
         !website.shopEnabled && (
         <section className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
-          <p className="text-sm text-ink-body">Turn the shop on in Shop settings before managing categories, products, customers, or stock.</p>
+          <p className="text-sm text-ink-body">Turn the shop on in Shop settings before managing categories, products, customers, orders, or stock.</p>
           <Button size="sm" variant="outline" className="mt-4" onPress={() => setSection("settings")}>
             Open shop settings
           </Button>
@@ -328,6 +331,7 @@ export default function ShopPanel({
       )}
 
       {section === "customers" && website.shopEnabled && <ShopCustomersPanel websiteId={website.id} />}
+      {section === "orders" && website.shopEnabled && <ShopOrdersPanel websiteId={website.id} />}
       {section === "inventory" && website.shopEnabled && <ShopInventoryPanel websiteId={website.id} />}
       {section === "inventory-log" && website.shopEnabled && <ShopInventoryLogPanel websiteId={website.id} />}
 

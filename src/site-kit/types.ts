@@ -1758,11 +1758,17 @@ export type ProductDetailData = {
 export const ACCOUNT_VARIANTS = ["sidebar-tabs", "top-tabs", "overview-cards", "minimal-list", "dark-panel"] as const;
 export type AccountVariant = (typeof ACCOUNT_VARIANTS)[number];
 
+export const ACCOUNT_SUCCESS_POPUP_VARIANTS = ["simple", "celebration", "receipt"] as const;
+export type AccountSuccessPopupVariant = (typeof ACCOUNT_SUCCESS_POPUP_VARIANTS)[number];
+
+export const ACCOUNT_ORDER_DETAIL_VARIANTS = ["timeline", "steps", "compact"] as const;
+export type AccountOrderDetailVariant = (typeof ACCOUNT_ORDER_DETAIL_VARIANTS)[number];
+
 /** The signed-in customer's page: orders, cart and profile. Visitors who aren't signed in get a prompt. */
 export type AccountData = {
   variant: AccountVariant;
   /** Which state the editor canvas shows; visitors always get the real one. */
-  preview?: "member" | "guest";
+  preview?: "member" | "guest" | "success" | "order-detail";
   heading?: string;
   subheading?: string;
   showOrders?: boolean;
@@ -1786,6 +1792,13 @@ export type AccountData = {
   guestHeading?: string;
   guestText?: string;
   guestButtonLabel?: string;
+  /** Layout of the post-payment success popup. */
+  successPopupVariant?: AccountSuccessPopupVariant;
+  successHeading?: string;
+  successText?: string;
+  successButtonLabel?: string;
+  /** Layout of the order detail / tracking view. */
+  orderDetailVariant?: AccountOrderDetailVariant;
 };
 
 export type SiteData = {
