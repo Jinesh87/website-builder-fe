@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { LayoutTemplate } from "lucide-react";
 import { templatesApi, type TemplatePreview, type WebsiteTemplate } from "../../api/websites.ts";
+import type { ThemeSettings } from "../../site-kit/index.ts";
 import SiteThumbnail from "./SiteThumbnail.tsx";
 
 type TemplateThumbnailProps = {
   template: Pick<WebsiteTemplate, "key" | "name" | "thumbnailUrl" | "isCustom">;
+  theme?: ThemeSettings | null;
   className?: string;
 };
 
 /** Live render of a platform template's home page; uses the uploaded thumbnail when there is one. */
-export default function TemplateThumbnail({ template, className = "" }: TemplateThumbnailProps) {
+export default function TemplateThumbnail({ template, theme, className = "" }: TemplateThumbnailProps) {
   const canRender = !template.thumbnailUrl && !template.isCustom;
   const [preview, setPreview] = useState<TemplatePreview | null>(null);
   const [failed, setFailed] = useState(false);
@@ -39,7 +41,10 @@ export default function TemplateThumbnail({ template, className = "" }: Template
     );
   }
 
-  if (preview) return <SiteThumbnail site={preview.site} className={className} />;
+  if (preview) {
+    const site = theme ? { ...preview.site, theme } : preview.site;
+    return <SiteThumbnail site={site} className={className} />;
+  }
 
   return (
     <div

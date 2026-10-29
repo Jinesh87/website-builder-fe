@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 export type VideoModalData = {
   url: string;
@@ -214,7 +215,7 @@ export function VideoModal(props?: VideoModalProps) {
 
   if (!isOpen || !videoUrl) return null;
 
-  return (
+  const modalElement = (
     <div
       className="wb-video-modal-backdrop"
       role="dialog"
@@ -321,4 +322,6 @@ export function VideoModal(props?: VideoModalProps) {
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modalElement, document.body) : modalElement;
 }

@@ -14,7 +14,7 @@ export default function ClapperContactSection({
 
   // Timecode
   const timecodeMode = data.timecodeMode ?? "live";
-  const initialTimecode = data.timecode || "00:00:59:09";
+  const initialTimecode = data.timecode || "00:00:25:10";
   const [timecode, setTimecode] = useState<string>(initialTimecode);
 
   useEffect(() => {
@@ -24,8 +24,12 @@ export default function ClapperContactSection({
   useEffect(() => {
     if (isStatic || timecodeMode === "static") return;
     const parts = initialTimecode.split(":");
-    let sec = parts.length >= 2 ? parseInt(parts[parts.length - 2], 10) || 59 : 59;
-    let frame = parts.length >= 1 ? parseInt(parts[parts.length - 1], 10) || 9 : 9;
+    let hr = parts.length >= 4 ? parseInt(parts[0], 10) || 0 : 0;
+    let min = parts.length >= 3 ? parseInt(parts[parts.length - 3], 10) || 0 : 0;
+    let sec = parts.length >= 2 ? parseInt(parts[parts.length - 2], 10) : 25;
+    if (isNaN(sec)) sec = 25;
+    let frame = parts.length >= 1 ? parseInt(parts[parts.length - 1], 10) : 10;
+    if (isNaN(frame)) frame = 10;
 
     const interval = setInterval(() => {
       frame++;
@@ -33,9 +37,11 @@ export default function ClapperContactSection({
         frame = 0;
         sec = (sec + 1) % 60;
       }
+      const h = String(hr).padStart(2, "0");
+      const m = String(min).padStart(2, "0");
       const s = String(sec).padStart(2, "0");
       const f = String(frame).padStart(2, "0");
-      setTimecode(`00:00:${s}:${f}`);
+      setTimecode(`${h}:${m}:${s}:${f}`);
     }, 100);
 
     return () => clearInterval(interval);
@@ -113,7 +119,7 @@ export default function ClapperContactSection({
         <div className="wb-vr-work-subrow">
           <p className="wb-vr-work-desc">
             {data.text ||
-              "Tell us about your project. We reply within [1 working day] with ideas, timing and a quote."}
+              "Tell us about your project. We reply within 24 hours with ideas, timing and a quote."}
           </p>
           <div className="wb-vr-timecode" aria-label="Digital timecode">
             {timecode}
@@ -274,7 +280,7 @@ export default function ClapperContactSection({
               <span className="wb-clapper-detail-tag">EMAIL</span>
               <a
                 href={safeHref(
-                  `mailto:${(data.email || "hello@vintagereels.com").replace(/[\[\]]/g, "")}`
+                  `mailto:${(data.email || "hello@vintagereels.com").replace(/[[\]]/g, "")}`
                 )}
                 className="wb-clapper-detail-val wb-clapper-detail-link"
               >
@@ -287,11 +293,11 @@ export default function ClapperContactSection({
               <span className="wb-clapper-detail-tag">PHONE / WHATSAPP</span>
               <a
                 href={safeHref(
-                  `tel:${(data.phone || "+91 00000 00000").replace(/[^0-9+]/g, "")}`
+                  `tel:${(data.phone || "+91 98201 44520").replace(/[^0-9+]/g, "")}`
                 )}
                 className="wb-clapper-detail-val wb-clapper-detail-link"
               >
-                {data.phone || "[+91 00000 00000]"}
+                {data.phone || "[+91 98201 44520]"}
               </a>
             </div>
 
@@ -299,7 +305,7 @@ export default function ClapperContactSection({
             <div className="wb-clapper-detail-item">
               <span className="wb-clapper-detail-tag">STUDIO</span>
               <span className="wb-clapper-detail-val">
-                {data.address || "[Street, City, PIN]"}
+                {data.address || "[14 Film City Rd, Goregaon East, Mumbai 400065]"}
               </span>
             </div>
 
@@ -314,9 +320,37 @@ export default function ClapperContactSection({
             {/* Follow */}
             <div className="wb-clapper-detail-item wb-clapper-detail-last">
               <span className="wb-clapper-detail-tag">FOLLOW</span>
-              <span className="wb-clapper-detail-val">
-                {data.socialLinksText || "[Instagram] · [YouTube] · [Vimeo]"}
-              </span>
+              <div className="wb-clapper-detail-val wb-clapper-follow-row">
+                {(() => {
+                  const raw = data.socialLinksText || "[Instagram] · [YouTube] · [Vimeo]";
+                  const items = raw.split("·").map((s) => s.trim()).filter(Boolean);
+                  return items.map((item, idx) => {
+                    const clean = item.replace(/[[\]]/g, "").toLowerCase();
+                    const href = clean.includes("insta")
+                      ? "https://instagram.com"
+                      : clean.includes("youtu")
+                        ? "https://youtube.com"
+                        : clean.includes("vimeo")
+                          ? "https://vimeo.com"
+                          : clean.includes("x.com") || clean.includes("twitter")
+                            ? "https://x.com"
+                            : "#";
+                    return (
+                      <span key={idx} className="wb-clapper-follow-item">
+                        {idx > 0 && <span className="wb-clapper-follow-sep"> · </span>}
+                        <a
+                          href={safeHref(href)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="wb-clapper-detail-val wb-clapper-detail-link"
+                        >
+                          {item}
+                        </a>
+                      </span>
+                    );
+                  });
+                })()}
+              </div>
             </div>
           </div>
         </div>

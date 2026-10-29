@@ -142,6 +142,11 @@ const LAYOUT_OPTIONS = [
   { value: "grid-2", label: "2-Column Wide Grid" },
 ];
 
+const BLOG_VARIANT_OPTIONS = [
+  { value: "default", label: "Standard Modern Grid" },
+  { value: "vintage-journal", label: "Vintage Journal (Cutting Room / Editorial)" },
+];
+
 export function BlogForm({
   data,
   onChange,
@@ -155,18 +160,34 @@ export function BlogForm({
 
   return (
     <>
+      <FormGroup title="Layout Design">
+        <SelectField
+          label="Style Variant"
+          value={data.variant || "default"}
+          options={BLOG_VARIANT_OPTIONS}
+          onChange={(v) => update("variant", v as BlogData["variant"])}
+        />
+      </FormGroup>
+
       <FormGroup title="Header & Description">
         <TextField
           label="Eyebrow text"
           value={data.eyebrow || ""}
           onChange={(v) => update("eyebrow", v)}
-          placeholder="e.g. Articles & Insights"
+          placeholder="e.g. THE VINTAGE REELS BLOG"
         />
         <TextField
           label="Section Title"
           value={data.title}
           onChange={(v) => update("title", v)}
-          placeholder="e.g. The Kindsight Blog"
+          placeholder="e.g. Notes from the cutting room"
+        />
+        <TextField
+          label="Italic accent word(s)"
+          value={data.italicTitle || ""}
+          onChange={(v) => update("italicTitle", v)}
+          placeholder="e.g. cutting room"
+          hint="Word(s) rendered in red italic serif in Vintage Journal"
         />
         <TextAreaField
           label="Subtitle description"
@@ -276,9 +297,44 @@ export function BlogForm({
                 }
                 placeholder="Read More →"
               />
+              <CheckboxField
+                label="Featured Hero Card (Widescreen banner)"
+                checked={post.featured ?? false}
+                onChange={(featured) => onPostChange({ ...post, featured })}
+              />
             </div>
           )}
         />
+      </FormGroup>
+
+      <FormGroup title="Newsletter Box">
+        <CheckboxField
+          label="Show newsletter subscription box"
+          checked={data.showNewsletterCard ?? false}
+          onChange={(v) => update("showNewsletterCard", v)}
+        />
+        {data.showNewsletterCard && (
+          <>
+            <TextField
+              label="Newsletter title"
+              value={data.newsletterTitle || ""}
+              onChange={(v) => update("newsletterTitle", v)}
+              placeholder="Get new articles in your inbox"
+            />
+            <TextField
+              label="Input placeholder"
+              value={data.newsletterPlaceholder || ""}
+              onChange={(v) => update("newsletterPlaceholder", v)}
+              placeholder="Your email address"
+            />
+            <TextField
+              label="Button label"
+              value={data.newsletterButtonText || ""}
+              onChange={(v) => update("newsletterButtonText", v)}
+              placeholder="SUBSCRIBE"
+            />
+          </>
+        )}
       </FormGroup>
     </>
   );

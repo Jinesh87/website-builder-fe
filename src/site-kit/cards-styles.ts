@@ -861,8 +861,8 @@ export const CARDS_CSS = `
 .wb-film-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
-  background: rgba(0, 0, 0, 0.85);
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.88);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -872,11 +872,22 @@ export const CARDS_CSS = `
 .wb-film-modal-content {
   background: #111111;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  max-width: 720px;
+  border-radius: 6px;
+  max-width: 840px;
   width: 100%;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95);
+  animation: wbFilmModalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes wbFilmModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 .wb-film-modal-header {
   display: flex;

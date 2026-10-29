@@ -485,6 +485,8 @@ export type HeroData = {
 export type GridColumns = 1 | 2 | 3 | 4;
 
 export type FeatureColor =
+  | "primary"
+  | "secondary"
   | "orange"
   | "green"
   | "blue"
@@ -1367,6 +1369,7 @@ export type BlogData = {
   variant?: "default" | "vintage-journal";
   eyebrow?: string;
   title: string;
+  italicTitle?: string;
   subtitle?: string;
   categories: string[];
   layout?: "grid-3" | "grid-2" | "magazine";

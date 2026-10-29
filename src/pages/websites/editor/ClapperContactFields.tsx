@@ -85,7 +85,7 @@ export default function ClapperContactFields({ data, onChange }: Props) {
           label="Subheading / Text"
           value={
             data.text ??
-            "Tell us about your project. We reply within [1 working day] with ideas, timing and a quote."
+            "Tell us about your project. We reply within 24 hours with ideas, timing and a quote."
           }
           onChange={(text) => set({ text: text || undefined })}
           maxLength={500}
@@ -110,9 +110,9 @@ export default function ClapperContactFields({ data, onChange }: Props) {
         </div>
         <TextField
           label="Timecode value"
-          value={data.timecode ?? "00:00:59:09"}
+          value={data.timecode ?? "00:00:25:10"}
           onChange={(timecode) => set({ timecode: timecode || undefined })}
-          placeholder="00:00:59:09"
+          placeholder="00:00:25:10"
           maxLength={16}
         />
       </FormGroup>
@@ -177,16 +177,16 @@ export default function ClapperContactFields({ data, onChange }: Props) {
         />
         <TextField
           label="Phone / WhatsApp"
-          value={data.phone ?? "[+91 00000 00000]"}
+          value={data.phone ?? "[+91 98201 44520]"}
           onChange={(phone) => set({ phone: phone || undefined })}
-          placeholder="[+91 00000 00000]"
+          placeholder="[+91 98201 44520]"
           maxLength={50}
         />
         <TextField
           label="Studio address"
-          value={data.address ?? "[Street, City, PIN]"}
+          value={data.address ?? "[14 Film City Rd, Goregaon East, Mumbai 400065]"}
           onChange={(address) => set({ address: address || undefined })}
-          placeholder="[Street, City, PIN]"
+          placeholder="[14 Film City Rd, Goregaon East, Mumbai 400065]"
           maxLength={120}
         />
         <TextField
