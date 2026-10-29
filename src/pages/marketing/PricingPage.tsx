@@ -5,7 +5,7 @@ import { formatPaise } from "../../api/wallet.ts";
 import { bestYearlySaving, yearlySavingPercent } from "../../utils/hosting-pricing.ts";
 import Icon from "./Icon.tsx";
 import Tabs from "./Tabs.tsx";
-import { CYCLE_MONTHS, CYCLE_UNIT, customStartingLabel, usePublicPricing } from "./use-pricing.ts";
+import { CYCLE_MONTHS, CYCLE_UNIT, customPriceLabel, usePublicPricing } from "./use-pricing.ts";
 
 const CYCLE_NAMES: Record<BillingCycle, string> = { QUARTERLY: "quarterly", YEARLY: "yearly" };
 
@@ -34,7 +34,6 @@ function allFeatures(packages: HostingPackage[]): string[] {
 
 function PlanCard({ plan, cycle, onStart }: { plan: HostingPackage; cycle: BillingCycle; onStart: (plan: HostingPackage) => void }) {
   const price = plan.prices[cycle];
-  const starting = plan.startingFrom[cycle];
   const saving = cycle === "YEARLY" ? yearlySavingPercent(plan.prices) : 0;
   const badge = saving > 0 ? `Save ${saving}%` : plan.featured ? "Most popular" : null;
 
@@ -45,18 +44,10 @@ function PlanCard({ plan, cycle, onStart }: { plan: HostingPackage; cycle: Billi
         {badge && <span className="badge">{badge}</span>}
       </div>
       <p>{plan.description}</p>
-      {plan.isCustom ? (
+      {plan.isCustom && !price ? (
         <>
           <div className="price">
-            {starting ? (
-              <>
-                <span className="muted">Starting from</span>
-                <b>{formatPaise(starting)}</b>
-                <span className="muted">{CYCLE_UNIT[cycle]}</span>
-              </>
-            ) : (
-              <b>Custom</b>
-            )}
+            <b>Custom</b>
           </div>
           <p className="hint">The final price depends on your project. We'll send you a quote.</p>
           <Link to="/contact" className="btn lg block">
@@ -82,6 +73,11 @@ function PlanCard({ plan, cycle, onStart }: { plan: HostingPackage; cycle: Billi
           >
             Get started
           </button>
+          {plan.isCustom && (
+            <p className="hint" style={{ textAlign: "center" }}>
+              Need something different? <Link to="/contact">Request a custom quote</Link>.
+            </p>
+          )}
         </>
       )}
       {plan.features.length > 0 && (
@@ -237,7 +233,7 @@ export default function PricingPage() {
                       const price = plan.prices[cycle];
                       return (
                         <td key={plan.id} className={plan.featured ? "us" : undefined}>
-                          {plan.isCustom ? customStartingLabel(plan, cycle) : price ? `${formatPaise(price)} ${CYCLE_UNIT[cycle]}` : "–"}
+                          {plan.isCustom ? customPriceLabel(plan, cycle) : price ? `${formatPaise(price)} ${CYCLE_UNIT[cycle]}` : "–"}
                         </td>
                       );
                     })}

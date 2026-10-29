@@ -7,7 +7,7 @@ import { prefersReducedMotion } from "./marketing-context.ts";
 import { MediaTile, TemplateFrame, type SitePart } from "./MiniSite.tsx";
 import TemplateCard from "./TemplateCard.tsx";
 import HeroGalleryBanner from "./HeroGalleryBanner.tsx";
-import { customStartingLabel, lowestPrice, usePublicPricing } from "./use-pricing.ts";
+import { customPriceLabel, lowestPrice, usePublicPricing } from "./use-pricing.ts";
 
 
 
@@ -659,7 +659,7 @@ export default function HomePage() {
                   <span key={plan.id} className={plan.featured ? "hot" : undefined}>
                     <b>{plan.name}</b>
                     {plan.isCustom
-                      ? customStartingLabel(plan, "YEARLY")
+                      ? customPriceLabel(plan, "YEARLY")
                       : yearly
                         ? `${formatPaise(yearly)} / year`
                         : quarterly && `${formatPaise(quarterly)} / 3 months`}

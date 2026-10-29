@@ -19,11 +19,11 @@ export type HostingPackage = {
   description: string;
   features: string[];
   featured: boolean;
-  /** No list price: contact sales, unless a price is agreed for the website. */
+  /** Priced per website: the website's own price, else `defaultPrices`. */
   isCustom: boolean;
   prices: CyclePrices;
-  /** Custom package only: the display-only "starting from" price; null = not shown (always null on listed packages). */
-  startingFrom: CyclePrices;
+  /** Custom package only: the price for websites without their own; null = none (always null on listed packages). */
+  defaultPrices: CyclePrices;
 };
 
 export type AdminHostingPackage = HostingPackage & {
@@ -42,7 +42,7 @@ export type HostingSubscription = {
   cycle: BillingCycle;
   status: HostingStatus;
   autoRenew: boolean;
-  /** This website's custom package price in paise; null = not agreed. */
+  /** This website's custom package price in paise; null = the package's default. */
   customQuarterlyPaise: number | null;
   customYearlyPaise: number | null;
   currentPeriodStart: string | null;
@@ -124,7 +124,7 @@ export type UpdatePlanInput = {
   packageId?: string;
   cycle?: BillingCycle;
   autoRenew?: boolean;
-  /** Super Admin only; null = no custom price. */
+  /** Super Admin only; null = the custom package's default price. */
   customQuarterlyPaise?: number | null;
   customYearlyPaise?: number | null;
 };
@@ -183,9 +183,9 @@ export type HostingPackageInput = {
   features: string[];
   quarterlyPricePaise: number;
   yearlyPricePaise: number;
-  /** Custom package only; 0 = no "starting from" price shown. */
-  startingQuarterlyPaise?: number;
-  startingYearlyPaise?: number;
+  /** Custom package only: the default price; 0 = none. */
+  defaultQuarterlyPaise?: number;
+  defaultYearlyPaise?: number;
   featured: boolean;
   active: boolean;
 };

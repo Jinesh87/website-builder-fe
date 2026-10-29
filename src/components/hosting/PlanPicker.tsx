@@ -11,9 +11,9 @@ type PlanPickerProps = {
   onChange: (plan: PlanChoice) => void;
   /** Marks the website's current package. */
   currentPackageId?: string | null;
-  /** Client: shown on the custom card while it has no price for this website, e.g. "Contact us". */
+  /** Client: shown on the custom card while it has neither a default nor an own price, e.g. "Contact us". */
   customAction?: ReactNode;
-  /** Super Admin: the custom card can always be chosen and shows a button to set or edit this website's price. */
+  /** Super Admin: the custom card can always be chosen and shows a button to set or adjust this website's price. */
   onEditCustom?: () => void;
   isDisabled?: boolean;
 };
@@ -73,6 +73,7 @@ export default function PlanPicker({
           const canChoose = selectable(pkg, cycle) && !isDisabled;
           const selected = selectable(pkg, cycle) && value?.packageId === pkg.id && value.cycle === cycle;
           const editable = pkg.isCustom && onEditCustom;
+          const ownPrice = pkg.isCustom && price !== null && price !== pkg.defaultPrices[cycle];
           const pkgSaving = cycle === "YEARLY" && !pkg.isCustom ? yearlySavingPercent(pkg.prices) : 0;
           const tag = pkg.id === currentPackageId ? "Current" : pkg.featured ? "Popular" : pkgSaving > 0 ? `Save ${pkgSaving}%` : null;
           const choose = () => canChoose && onChange({ packageId: pkg.id, cycle });
@@ -118,7 +119,7 @@ export default function PlanPicker({
                       ? `No ${CYCLE_LABELS[cycle].toLowerCase()} price for this site`
                       : "Priced for your project"
                     : `Not offered ${CYCLE_LABELS[cycle].toLowerCase()}`
-                  : `per ${CYCLE_PERIOD[cycle]}${pkg.isCustom ? " · this site only" : ""}`}
+                  : `per ${CYCLE_PERIOD[cycle]}${ownPrice ? " · this site only" : ""}`}
               </p>
               {pkg.features.length > 0 && (
                 <ul className="mt-2.5 flex flex-col gap-1 border-t border-line/60 pt-2.5 text-xs text-ink-body">
@@ -142,7 +143,7 @@ export default function PlanPicker({
                   className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-lg border border-line-strong/80 bg-surface px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Pencil className="size-3.5" aria-hidden />
-                  {price === null ? "Set price" : "Edit price"}
+                  {price === null ? "Set price" : "Adjust price"}
                 </button>
               ) : (
                 pkg.isCustom && price === null && customAction && <div className="mt-3">{customAction}</div>

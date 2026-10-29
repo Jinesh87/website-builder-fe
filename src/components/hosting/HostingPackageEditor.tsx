@@ -19,8 +19,8 @@ type Form = {
   features: string[];
   quarterly: string;
   yearly: string;
-  startingQuarterly: string;
-  startingYearly: string;
+  defaultQuarterly: string;
+  defaultYearly: string;
   featured: boolean;
   active: boolean;
 };
@@ -32,10 +32,10 @@ function toForm(pkg: AdminHostingPackage): Form {
     name: pkg.name,
     description: pkg.description,
     features: pkg.features.length ? pkg.features : [""],
-    quarterly: paiseToRupeesInput(pkg.prices.QUARTERLY),
-    yearly: paiseToRupeesInput(pkg.prices.YEARLY),
-    startingQuarterly: paiseToRupeesInput(pkg.startingFrom.QUARTERLY),
-    startingYearly: paiseToRupeesInput(pkg.startingFrom.YEARLY),
+    quarterly: pkg.isCustom ? "" : paiseToRupeesInput(pkg.prices.QUARTERLY),
+    yearly: pkg.isCustom ? "" : paiseToRupeesInput(pkg.prices.YEARLY),
+    defaultQuarterly: paiseToRupeesInput(pkg.defaultPrices.QUARTERLY),
+    defaultYearly: paiseToRupeesInput(pkg.defaultPrices.YEARLY),
     featured: pkg.featured,
     active: pkg.active,
   };
@@ -63,24 +63,23 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
 
   const quarterly = pkg.isCustom ? 0 : rupeesInputToPaise(form.quarterly) ?? 0;
   const yearly = pkg.isCustom ? 0 : rupeesInputToPaise(form.yearly) ?? 0;
-  const startingQuarterly = pkg.isCustom ? rupeesInputToPaise(form.startingQuarterly) ?? 0 : 0;
-  const startingYearly = pkg.isCustom ? rupeesInputToPaise(form.startingYearly) ?? 0 : 0;
+  const defaultQuarterly = pkg.isCustom ? rupeesInputToPaise(form.defaultQuarterly) ?? 0 : 0;
+  const defaultYearly = pkg.isCustom ? rupeesInputToPaise(form.defaultYearly) ?? 0 : 0;
   const features = form.features.map((feature) => feature.trim()).filter(Boolean);
   const errors = {
     name: form.name.trim() ? undefined : "Enter a name",
     description: form.description.trim() ? undefined : "Enter a short description",
     quarterly: Number.isNaN(quarterly) ? "Enter an amount like 2100 or 2100.50" : undefined,
     yearly: Number.isNaN(yearly) ? "Enter an amount like 7000 or 7000.50" : undefined,
-    startingQuarterly: Number.isNaN(startingQuarterly) ? "Enter an amount like 3600 or 3600.50" : undefined,
-    startingYearly: Number.isNaN(startingYearly) ? "Enter an amount like 12000 or 12000.50" : undefined,
+    defaultQuarterly: Number.isNaN(defaultQuarterly) ? "Enter an amount like 7500 or 7500.50" : undefined,
+    defaultYearly: Number.isNaN(defaultYearly) ? "Enter an amount like 24000 or 24000.50" : undefined,
   };
   const invalid = Object.values(errors).some(Boolean);
-  const pricesChanged = quarterly !== (pkg.prices.QUARTERLY ?? 0) || yearly !== (pkg.prices.YEARLY ?? 0);
-  const startingChanged =
-    startingQuarterly !== (pkg.startingFrom.QUARTERLY ?? 0) || startingYearly !== (pkg.startingFrom.YEARLY ?? 0);
+  const pricesChanged = pkg.isCustom
+    ? defaultQuarterly !== (pkg.defaultPrices.QUARTERLY ?? 0) || defaultYearly !== (pkg.defaultPrices.YEARLY ?? 0)
+    : quarterly !== (pkg.prices.QUARTERLY ?? 0) || yearly !== (pkg.prices.YEARLY ?? 0);
   const changed =
     pricesChanged ||
-    startingChanged ||
     form.name.trim() !== pkg.name ||
     form.description.trim() !== pkg.description ||
     form.featured !== pkg.featured ||
@@ -107,12 +106,19 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
           features,
           quarterlyPricePaise: quarterly,
           yearlyPricePaise: yearly,
-          ...(pkg.isCustom ? { startingQuarterlyPaise: startingQuarterly, startingYearlyPaise: startingYearly } : {}),
+          ...(pkg.isCustom ? { defaultQuarterlyPaise: defaultQuarterly, defaultYearlyPaise: defaultYearly } : {}),
           featured: form.featured,
           active: form.active,
         }),
       );
-      setFeedback({ status: "success", message: pricesChanged ? "Saved. New prices apply from each plan's next payment." : "Saved." });
+      setFeedback({
+        status: "success",
+        message: !pricesChanged
+          ? "Saved."
+          : pkg.isCustom
+            ? "Saved. The new default applies to websites without their own price; paid plans keep theirs."
+            : "Saved. New prices apply from each plan's next payment.",
+      });
     } catch (err) {
       setFeedback({ status: "danger", message: errorMessage(err) });
     } finally {
@@ -126,7 +132,7 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-ink">{pkg.name}</h3>
-          {pkg.isCustom && <Chip size="sm" variant="soft">Contact us</Chip>}
+          {pkg.isCustom && <Chip size="sm" variant="soft">Priced per website</Chip>}
           {!pkg.active && <Chip size="sm">Hidden</Chip>}
         </div>
         <span className="text-xs text-ink-muted">
@@ -152,29 +158,37 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
           <div className="grid gap-3">
             <div className="grid gap-4 sm:grid-cols-2">
               <RupeesInput
-                id={`starting-quarterly-${pkg.id}`}
-                label="Starting from, quarterly (3 months)"
-                value={form.startingQuarterly}
-                onChange={(value) => update("startingQuarterly", value)}
-                placeholder="Not shown"
-                hint={startingQuarterly > 0 ? `Shown as "From ${formatPaise(startingQuarterly)} / 3 months"` : 'Empty = shows "Custom"'}
-                error={errors.startingQuarterly}
+                id={`default-quarterly-${pkg.id}`}
+                label="Default price, quarterly (3 months)"
+                value={form.defaultQuarterly}
+                onChange={(value) => update("defaultQuarterly", value)}
+                placeholder="No default"
+                hint={
+                  defaultQuarterly > 0
+                    ? `About ${formatPaise(Math.round(defaultQuarterly / 3))} a month`
+                    : "Empty = quarterly only with a website's own price"
+                }
+                error={errors.defaultQuarterly}
                 isDisabled={saving}
               />
               <RupeesInput
-                id={`starting-yearly-${pkg.id}`}
-                label="Starting from, yearly (12 months)"
-                value={form.startingYearly}
-                onChange={(value) => update("startingYearly", value)}
-                placeholder="Not shown"
-                hint={startingYearly > 0 ? `Shown as "From ${formatPaise(startingYearly)} / year"` : 'Empty = shows "Custom"'}
-                error={errors.startingYearly}
+                id={`default-yearly-${pkg.id}`}
+                label="Default price, yearly (12 months)"
+                value={form.defaultYearly}
+                onChange={(value) => update("defaultYearly", value)}
+                placeholder="No default"
+                hint={
+                  defaultYearly > 0
+                    ? `About ${formatPaise(Math.round(defaultYearly / 12))} a month`
+                    : "Empty = yearly only with a website's own price"
+                }
+                error={errors.defaultYearly}
                 isDisabled={saving}
               />
             </div>
             <p className="rounded-lg bg-canvas px-3 py-2 text-xs text-ink-muted">
-              Display only: visitors see this "starting from" price and contact you; it is never charged. Agree the real price per website
-              from its Hosting tab.
+              Every website on {form.name.trim() || pkg.name} pays this unless you set its own price with "Adjust price" (when publishing,
+              or from its Hosting tab). A paid plan keeps the price it paid, so changing the default only affects new and unpaid plans.
             </p>
           </div>
         ) : (
@@ -264,11 +278,12 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
         onConfirm={save}
         isPending={saving}
         tone="warning"
-        title={`Change ${pkg.name} prices?`}
-        confirmLabel="Change prices"
+        title={pkg.isCustom ? `Change the default ${pkg.name} price?` : `Change ${pkg.name} prices?`}
+        confirmLabel={pkg.isCustom ? "Change default" : "Change prices"}
       >
-        {pkg.plans} {pkg.plans === 1 ? "website is" : "websites are"} on {pkg.name}. The new prices apply from each one's next payment;
-        periods already paid don't change.
+        {pkg.isCustom
+          ? `${pkg.plans} ${pkg.plans === 1 ? "website is" : "websites are"} on ${pkg.name}. Paid plans and websites with their own price keep it; the rest pay the new default from their first payment.`
+          : `${pkg.plans} ${pkg.plans === 1 ? "website is" : "websites are"} on ${pkg.name}. The new prices apply from each one's next payment; periods already paid don't change.`}
       </ConfirmModal>
     </article>
   );
