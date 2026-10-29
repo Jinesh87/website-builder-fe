@@ -2132,6 +2132,13 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
                   checked={item.featured === true}
                   onChange={(featured) => update({ ...item, featured })}
                 />
+                {data.variant === "editorial-specs" && (
+                  <CheckboxField
+                    label="Chromatic stamp highlight"
+                    checked={item.stampHighlight === true}
+                    onChange={(stampHighlight) => update({ ...item, stampHighlight })}
+                  />
+                )}
               </div>
 
               <TextField

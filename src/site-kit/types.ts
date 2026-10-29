@@ -1367,6 +1367,7 @@ export type BlogData = {
   variant?: "default" | "vintage-journal";
   eyebrow?: string;
   title: string;
+  italicTitle?: string;
   subtitle?: string;
   categories: string[];
   layout?: "grid-3" | "grid-2" | "magazine";

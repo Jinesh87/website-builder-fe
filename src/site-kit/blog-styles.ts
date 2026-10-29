@@ -1310,39 +1310,356 @@ export const BLOG_CSS = `
 }
 
 /* ==========================================================================
-   LAYOUT DESIGN: VINTAGE REELS JOURNAL (RETRO EDITORIAL)
+   LAYOUT DESIGN: VINTAGE REELS JOURNAL (RETRO EDITORIAL / CUTTING ROOM)
    ========================================================================== */
-.wb-section.wb-blog-vintage-journal { padding: 87px 0 80px; background: transparent; }
-.wb-vr-journal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 25px; margin-top: 22px; }
-.wb-vr-journal-card { display: block; color: inherit; text-decoration: none; }
-.wb-vr-journal-media { position: relative; overflow: hidden; aspect-ratio: 3 / 2; background: #1D1A15; }
-.wb-vr-journal-media img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: transform 0.4s ease; }
-.wb-vr-journal-card:hover .wb-vr-journal-media img { transform: scale(1.04); }
-.wb-vr-journal-card:first-child .wb-vr-journal-media::before {
-  content: "";
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  right: 6px;
-  height: 3px;
-  z-index: 1;
-  background: repeating-linear-gradient(90deg, rgba(242, 238, 227, 0.8) 0 4px, transparent 4px 10px);
-}
-.wb-vr-journal-meta { display: block; margin-top: 9px; font-family: var(--vr-mono, "JetBrains Mono", monospace); font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--vr-red, #C4472D); }
-.wb-site .wb-vr-journal-title {
-  margin: 12px 0 0;
-  font-family: var(--vr-serif, Georgia, serif);
-  font-size: 21px;
-  line-height: 24.5px;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+.wb-section.wb-blog-vintage-journal {
+  padding: 64px 0 88px;
+  background: var(--vr-paper, #F7F6F2);
   color: var(--vr-text, #1D1910);
 }
-.wb-vr-journal-card:hover .wb-vr-journal-title { color: var(--vr-red, #C4472D); }
-@container wb-site (max-width: 860px) {
-  .wb-vr-journal-grid { grid-template-columns: 1fr; }
+.wb-vr-blog-container {
+  display: flex;
+  flex-direction: column;
 }
-@media (max-width: 860px) {
-  .wb-vr-journal-grid { grid-template-columns: 1fr; }
+.wb-vr-blog-header {
+  text-align: center;
+  margin-bottom: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
+.wb-vr-blog-eyebrow {
+  display: inline-block;
+  font-family: var(--vr-mono, monospace);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--vr-red, #C4472D);
+  margin-bottom: 12px;
+}
+.wb-vr-blog-title {
+  margin: 0 0 16px;
+  font-family: var(--vr-serif, "Playfair Display", "Fraunces", Georgia, serif);
+  font-size: clamp(34px, 5.2vw, 56px);
+  font-weight: 400;
+  line-height: 1.15;
+  color: #1D1910;
+  letter-spacing: -0.01em;
+}
+.wb-vr-blog-title-accent {
+  font-style: italic;
+  color: var(--vr-red, #C4472D);
+  font-weight: 400;
+  font-family: inherit;
+}
+.wb-vr-blog-subtitle {
+  max-width: 580px;
+  margin: 0 auto 20px;
+  font-family: var(--wb-font-body, "Manrope", sans-serif);
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6B645A;
+}
+.wb-vr-blog-filters {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.wb-vr-blog-filter-btn {
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  font-family: var(--vr-mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #8E8A82;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  position: relative;
+}
+.wb-vr-blog-filter-btn:hover {
+  color: #1D1910;
+}
+.wb-vr-blog-filter-btn.active {
+  color: #1D1910;
+  font-weight: 700;
+}
+.wb-vr-blog-filter-btn.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1.5px;
+  background: var(--vr-red, #C4472D);
+}
+
+/* Featured Hero Banner Card */
+.wb-vr-blog-featured-card {
+  display: block;
+  text-decoration: none;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 38px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.1);
+  background: #141210;
+}
+.wb-vr-blog-featured-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2.4 / 1;
+  min-height: 250px;
+  max-height: 420px;
+  overflow: hidden;
+  background: #141210;
+}
+.wb-vr-blog-featured-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wb-vr-blog-featured-card:hover .wb-vr-blog-featured-img {
+  transform: scale(1.025);
+}
+.wb-vr-blog-featured-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0.45) 60%, rgba(0, 0, 0, 0.85) 100%);
+  pointer-events: none;
+}
+.wb-vr-blog-featured-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: clamp(20px, 3.5vw, 36px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 2;
+}
+.wb-vr-blog-featured-tag {
+  font-family: var(--vr-mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #E8402F;
+}
+.wb-vr-blog-featured-title {
+  margin: 0;
+  font-family: var(--vr-serif, "Playfair Display", "Fraunces", Georgia, serif);
+  font-size: clamp(22px, 3.4vw, 36px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: #FFFFFF;
+  max-width: 680px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* 3-Column Articles Grid */
+.wb-vr-blog-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 34px 28px;
+  margin-bottom: 56px;
+}
+@container wb-site (max-width: 900px) {
+  .wb-vr-blog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .wb-vr-blog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container wb-site (max-width: 600px) {
+  .wb-vr-blog-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .wb-vr-blog-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wb-vr-blog-card {
+  display: flex;
+  flex-direction: column;
+}
+.wb-vr-blog-card-link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+.wb-vr-blog-card-media {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #E8E2D5;
+  border-radius: 2px;
+  position: relative;
+}
+.wb-vr-blog-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.45s ease;
+}
+.wb-vr-blog-card-link:hover .wb-vr-blog-card-img {
+  transform: scale(1.04);
+}
+.wb-vr-blog-card-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #E8E2D5;
+}
+.wb-vr-blog-card-body {
+  padding-top: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wb-vr-blog-card-tag {
+  font-family: var(--vr-mono, monospace);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--vr-red, #C4472D);
+}
+.wb-vr-blog-card-title {
+  margin: 0;
+  font-family: var(--vr-serif, "Playfair Display", "Fraunces", Georgia, serif);
+  font-size: 19px;
+  line-height: 1.32;
+  font-weight: 600;
+  color: #1D1910;
+  transition: color 0.15s ease;
+}
+.wb-vr-blog-card-link:hover .wb-vr-blog-card-title {
+  color: var(--vr-red, #C4472D);
+}
+.wb-vr-blog-card-excerpt {
+  margin: 0;
+  font-family: var(--wb-font-body, "Manrope", sans-serif);
+  font-size: 13px;
+  line-height: 1.55;
+  color: #6B645A;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Newsletter Subscription Strip */
+.wb-vr-blog-newsletter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 42px 0 10px;
+  border-top: 1px solid rgba(29, 25, 16, 0.14);
+  flex-wrap: wrap;
+}
+.wb-vr-newsletter-title {
+  margin: 0;
+  font-family: var(--vr-serif, "Playfair Display", "Fraunces", Georgia, serif);
+  font-size: clamp(20px, 2.5vw, 26px);
+  font-weight: 500;
+  color: #1D1910;
+}
+.wb-vr-newsletter-form {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  max-width: 480px;
+}
+.wb-vr-newsletter-input {
+  flex: 1;
+  min-width: 180px;
+  height: 38px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(29, 25, 16, 0.35);
+  color: #1D1910;
+  font-family: var(--vr-mono, monospace);
+  font-size: 13px;
+  padding: 0 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.wb-vr-newsletter-input:focus {
+  border-bottom-color: #1D1910;
+}
+.wb-vr-newsletter-btn {
+  height: 38px;
+  padding: 0 24px;
+  background: #141210;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 2px;
+  font-family: var(--vr-mono, monospace);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+.wb-vr-newsletter-btn:hover {
+  background: #2D2824;
+  transform: translateY(-1px);
+}
+.wb-vr-newsletter-success {
+  font-family: var(--vr-mono, monospace);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #166534;
+}
+
+@container wb-site (max-width: 640px) {
+  .wb-vr-blog-newsletter {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .wb-vr-newsletter-form {
+    flex-direction: column;
+    max-width: 100%;
+  }
+  .wb-vr-newsletter-btn {
+    width: 100%;
+  }
+}
+@media (max-width: 640px) {
+  .wb-vr-blog-newsletter {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .wb-vr-newsletter-form {
+    flex-direction: column;
+    max-width: 100%;
+  }
+  .wb-vr-newsletter-btn {
+    width: 100%;
+  }
+}
+
 `;
