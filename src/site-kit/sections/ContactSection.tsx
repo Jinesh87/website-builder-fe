@@ -1,5 +1,5 @@
 import { safeHref } from "../links.ts";
-import { SectionHead, SectionShell, SiteIcon } from "../primitives.tsx";
+import { EmailLink, PhoneLink, SectionHead, SectionShell, SiteIcon } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
 import ContactForm from "./ContactFormBackup.tsx";
 import ContactLayoutView from "./ContactLayoutView.tsx";
@@ -91,32 +91,26 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
         />
 
         <div className="wb-contact-hub-grid">
-          {!hasEmailInChannels && data.email && (
-            <a
-              href={safeHref(`mailto:${data.email}`)}
-              className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
-            >
+          {!hasEmailInChannels && (
+            <EmailLink value={data.email} className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}>
               <div className="wb-contact-hub-icon-wrap">
                 <MailIcon />
               </div>
               <span className="wb-contact-hub-label">Email Us</span>
               <strong className="wb-contact-hub-value">{data.email}</strong>
               <span className="wb-contact-hub-action">Send direct email →</span>
-            </a>
+            </EmailLink>
           )}
 
-          {!hasPhoneInChannels && data.phone && (
-            <a
-              href={safeHref(`tel:${data.phone.replace(/\s+/g, "")}`)}
-              className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
-            >
+          {!hasPhoneInChannels && (
+            <PhoneLink value={data.phone} className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}>
               <div className="wb-contact-hub-icon-wrap">
                 <PhoneIcon />
               </div>
               <span className="wb-contact-hub-label">Call Directly</span>
               <strong className="wb-contact-hub-value">{data.phone}</strong>
               <span className="wb-contact-hub-action">One-tap dial →</span>
-            </a>
+            </PhoneLink>
           )}
 
           {!hasAddressInChannels && data.address && (
@@ -139,9 +133,9 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
 
             if (isEmail) {
               return (
-                <a
+                <EmailLink
                   key={idx}
-                  href={safeHref(`mailto:${ch.value}`)}
+                  value={ch.value}
                   className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
                 >
                   <div className="wb-contact-hub-icon-wrap">
@@ -153,15 +147,15 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
                     <span className="wb-contact-hub-subtext">{ch.description}</span>
                   )}
                   <span className="wb-contact-hub-action">Send direct email →</span>
-                </a>
+                </EmailLink>
               );
             }
 
             if (isPhone) {
               return (
-                <a
+                <PhoneLink
                   key={idx}
-                  href={safeHref(`tel:${ch.value.replace(/\s+/g, "")}`)}
+                  value={ch.value}
                   className={`wb-contact-hub-card wb-contact-card-style-${cardStyle}`}
                 >
                   <div className="wb-contact-hub-icon-wrap">
@@ -173,7 +167,7 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
                     <span className="wb-contact-hub-subtext">{ch.description}</span>
                   )}
                   <span className="wb-contact-hub-action">One-tap dial →</span>
-                </a>
+                </PhoneLink>
               );
             }
 
@@ -256,17 +250,13 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
                   {data.email && (
                     <div className="wb-contact-editorial-item">
                       <span className="wb-contact-editorial-item-label">Email</span>
-                      <a href={safeHref(`mailto:${data.email}`)} className="wb-contact-link">
-                        {data.email}
-                      </a>
+                      <EmailLink value={data.email} className="wb-contact-link" />
                     </div>
                   )}
                   {data.phone && (
                     <div className="wb-contact-editorial-item">
                       <span className="wb-contact-editorial-item-label">Phone</span>
-                      <a href={safeHref(`tel:${data.phone.replace(/\s+/g, "")}`)} className="wb-contact-link">
-                        {data.phone}
-                      </a>
+                      <PhoneLink value={data.phone} className="wb-contact-link" />
                     </div>
                   )}
                   {data.address && (
@@ -325,18 +315,14 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
               {data.text && <p className="wb-contact-glass-text">{data.text}</p>}
 
               <div className="wb-contact-glass-channels">
-                {data.email && (
-                  <a href={safeHref(`mailto:${data.email}`)} className="wb-contact-channel-pill">
-                    <MailIcon />
-                    <span>{data.email}</span>
-                  </a>
-                )}
-                {data.phone && (
-                  <a href={safeHref(`tel:${data.phone.replace(/\s+/g, "")}`)} className="wb-contact-channel-pill">
-                    <PhoneIcon />
-                    <span>{data.phone}</span>
-                  </a>
-                )}
+                <EmailLink value={data.email} className="wb-contact-channel-pill">
+                  <MailIcon />
+                  <span>{data.email}</span>
+                </EmailLink>
+                <PhoneLink value={data.phone} className="wb-contact-channel-pill">
+                  <PhoneIcon />
+                  <span>{data.phone}</span>
+                </PhoneLink>
                 {data.address && (
                   <div className="wb-contact-channel-pill">
                     <PinIcon />
@@ -390,35 +376,25 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
 
           {hasStandardDetails && (
             <div className="wb-contact-cards-stack">
-              {data.email && (
-                <a
-                  href={safeHref(`mailto:${data.email}`)}
-                  className={`wb-contact-info-card wb-contact-card-style-${cardStyle}`}
-                >
-                  <div className="wb-contact-icon-box">
-                    <MailIcon />
-                  </div>
-                  <div className="wb-contact-info-text">
-                    <span className="wb-contact-info-label">Email Support</span>
-                    <strong className="wb-contact-info-value">{data.email}</strong>
-                  </div>
-                </a>
-              )}
+              <EmailLink value={data.email} className={`wb-contact-info-card wb-contact-card-style-${cardStyle}`}>
+                <div className="wb-contact-icon-box">
+                  <MailIcon />
+                </div>
+                <div className="wb-contact-info-text">
+                  <span className="wb-contact-info-label">Email Support</span>
+                  <strong className="wb-contact-info-value">{data.email}</strong>
+                </div>
+              </EmailLink>
 
-              {data.phone && (
-                <a
-                  href={safeHref(`tel:${data.phone.replace(/\s+/g, "")}`)}
-                  className={`wb-contact-info-card wb-contact-card-style-${cardStyle}`}
-                >
-                  <div className="wb-contact-icon-box">
-                    <PhoneIcon />
-                  </div>
-                  <div className="wb-contact-info-text">
-                    <span className="wb-contact-info-label">Direct Phone</span>
-                    <strong className="wb-contact-info-value">{data.phone}</strong>
-                  </div>
-                </a>
-              )}
+              <PhoneLink value={data.phone} className={`wb-contact-info-card wb-contact-card-style-${cardStyle}`}>
+                <div className="wb-contact-icon-box">
+                  <PhoneIcon />
+                </div>
+                <div className="wb-contact-info-text">
+                  <span className="wb-contact-info-label">Direct Phone</span>
+                  <strong className="wb-contact-info-value">{data.phone}</strong>
+                </div>
+              </PhoneLink>
 
               {data.address && (
                 <div className={`wb-contact-info-card wb-contact-card-style-${cardStyle}`}>

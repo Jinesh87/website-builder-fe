@@ -4858,33 +4858,46 @@ export function SectionStyleForm({
           label="Section background"
           value={customColors.background}
           onChange={(background) => updateCustomColor({ background })}
-          fallback="#ffffff"
+          fallback={
+            settings.background === "dark"
+              ? "#0f172a"
+              : settings.background === "primary"
+              ? "#6366f1"
+              : settings.background === "surface"
+              ? "#f8fafc"
+              : "#ffffff"
+          }
+          placeholder="Theme default"
           hint="Overrides the theme background for this specific section."
         />
         <ColorField
           label="Text / Heading color"
           value={customColors.text}
           onChange={(text) => updateCustomColor({ text })}
-          fallback="#0f172a"
+          fallback={settings.background === "dark" ? "#f8fafc" : "#0f172a"}
+          placeholder="Auto"
         />
         <ColorField
           label="Primary / Accent color"
           value={customColors.primary}
           onChange={(primary) => updateCustomColor({ primary })}
           fallback="#6366f1"
+          placeholder="Theme"
           hint="Used for CTA buttons, gradient highlights, and active elements."
         />
         <ColorField
           label="Muted / Subtitle text"
           value={customColors.muted}
           onChange={(muted) => updateCustomColor({ muted })}
-          fallback="#64748b"
+          fallback={settings.background === "dark" ? "#94a3b8" : "#64748b"}
+          placeholder="Auto"
         />
         <ColorField
           label="Border & divider line"
           value={customColors.border}
           onChange={(border) => updateCustomColor({ border })}
-          fallback="#e2e8f0"
+          fallback={settings.background === "dark" ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0"}
+          placeholder="Auto"
         />
         <ColorField
           label="Gradient text start"

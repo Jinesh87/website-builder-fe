@@ -4,6 +4,7 @@ import { useStaticRender } from "../render-mode.tsx";
 import {
   ChevronDownIcon,
   CloseIcon,
+  EmailLink,
   MenuIcon,
   SearchIcon,
   SiteButton,
@@ -342,10 +343,12 @@ function EditorialCurtainDrawer({
             ))}
           </nav>
           <div className="wb-curtain-footer">
-            <div className="wb-curtain-meta">
-              <span className="wb-curtain-meta-title">Direct Inquiries</span>
-              <a href="mailto:hello@studio.domain" className="wb-curtain-email">hello@studio.domain</a>
-            </div>
+            {header.contactEmail?.trim() && (
+              <div className="wb-curtain-meta">
+                <span className="wb-curtain-meta-title">{header.contactLabel || "Get in touch"}</span>
+                <EmailLink value={header.contactEmail} className="wb-curtain-email" />
+              </div>
+            )}
             {(header.cta || header.secondaryCta) && (
               <div className="wb-curtain-actions">
                 {header.secondaryCta && (
