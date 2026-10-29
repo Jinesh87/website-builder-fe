@@ -97,7 +97,10 @@ export function runPrePublishSeoAudit(website: WebsiteDetail): SeoAuditReport {
       category: "On-Page SEO",
       scoreWeight: missingTitles > 0 ? 10 : 18,
       message: warnings.join("; ") + ".",
-      recommendation: "Use the AI SEO generator in Site Settings to auto-generate unique page meta tags.",
+      recommendation:
+        website.builderType === "AI"
+          ? "Use the AI SEO generator in Site Settings to auto-generate unique page meta tags."
+          : "Add unique page titles and meta descriptions in Page Settings.",
       icon: FileText,
     });
   }

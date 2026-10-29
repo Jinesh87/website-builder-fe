@@ -38,6 +38,7 @@ const BuilderRoute = lazy(() => import("./features/builder/BuilderRoute.tsx"));
 
 // Admin pages
 const ClientsPage = lazy(() => import("./pages/admin/ClientsPage.tsx"));
+const EnquiriesPage = lazy(() => import("./pages/admin/EnquiriesPage.tsx"));
 const ClientFormPage = lazy(() => import("./pages/admin/ClientFormPage.tsx"));
 const AllWebsitesPage = lazy(() => import("./pages/admin/AllWebsitesPage.tsx"));
 const ClientWebsitesPage = lazy(() => import("./pages/admin/ClientWebsitesPage.tsx"));
@@ -108,6 +109,7 @@ export default function App() {
             <Route element={<RequireAuth roles={["SUPER_ADMIN"]} />}>
               <Route path="admin" element={<AdminLayout />}>
                 <Route index element={<ClientsPage />} />
+                <Route path="enquiries" element={<EnquiriesPage />} />
                 <Route path="clients/new" element={<ClientFormPage />} />
                 <Route path="clients/:id" element={<ClientFormPage />} />
                 <Route path="websites" element={<AllWebsitesPage />} />

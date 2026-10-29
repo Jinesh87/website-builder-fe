@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button, Spinner } from "@heroui/react";
 import {
   ArrowLeft,
+  ArrowRight,
+  ArrowUp,
   Check,
   LayoutTemplate,
   MousePointerClick,
@@ -552,8 +554,11 @@ export default function CreateWebsitePage() {
                 </span>
               </button>
             </div>
-            <div className="mt-6 flex justify-end">
-              <Button onPress={() => setStep(2)}>Continue: website info</Button>
+            <div className="mt-6 flex justify-end border-t border-line pt-5">
+              <Button onPress={() => setStep(2)} className="font-medium">
+                <span>Continue: website info</span>
+                <ArrowRight className="size-4" aria-hidden />
+              </Button>
             </div>
           </section>
         )}
@@ -657,14 +662,22 @@ export default function CreateWebsitePage() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-between gap-2">
-              <Button variant="outline" onPress={() => setStep(1)}>
-                Back
+            <div className="mt-6 flex justify-between gap-2 border-t border-line pt-5">
+              <Button
+                variant="outline"
+                onPress={() => setStep(1)}
+                className="font-medium text-ink-body hover:text-ink"
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+                <span>Back</span>
               </Button>
-              <Button type="submit">
-                {mode === "AI"
-                  ? "Continue: describe your website"
-                  : "Continue: theme selection"}
+              <Button type="submit" className="font-medium">
+                <span>
+                  {mode === "AI"
+                    ? "Continue: describe your website"
+                    : "Continue: theme selection"}
+                </span>
+                <ArrowRight className="size-4" aria-hidden />
               </Button>
             </div>
           </form>
@@ -704,28 +717,71 @@ export default function CreateWebsitePage() {
                 variant="outline"
                 onPress={() => setStep(2)}
                 isDisabled={creating}
+                className="font-medium text-ink-body hover:text-ink"
               >
-                Back
+                <ArrowLeft className="size-4" aria-hidden />
+                <span>Back</span>
               </Button>
-              <Button onPress={generateWithAi} isPending={creating}>
+              <Button
+                onPress={generateWithAi}
+                isPending={creating}
+                className="font-medium"
+              >
                 <AiSparklesIcon
                   className="size-4"
                   variant="current"
                   aria-hidden
                 />{" "}
-                Generate website
+                <span>Generate website</span>
               </Button>
             </div>
           </section>
         )}
 
         {step === 3 && mode === "MANUAL" && (
-          <section className="mt-6 rounded-xl border border-line bg-surface p-6">
-            <h2 className="text-lg font-semibold text-ink">Theme selection</h2>
-            <p className="mt-1 text-sm text-ink-body">
-              Select your preferred theme. Colours and fonts for every section
-              can be fine-tuned later in the editor.
-            </p>
+          <section className="mt-6 rounded-xl border border-line bg-surface p-6 shadow-xs">
+            <div className="border-b border-line pb-4">
+              <h2 className="text-xl font-semibold tracking-tight text-ink">
+                Theme selection
+              </h2>
+              <p className="mt-1 text-sm text-ink-body">
+                Select your preferred theme. Colours and fonts for every section
+                can be fine-tuned later in the editor.
+              </p>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+              <Button
+                variant="outline"
+                onPress={() => setStep(2)}
+                className="font-medium text-ink-body hover:text-ink"
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+                <span>Back</span>
+              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                {selectedTheme && (
+                  <div className="flex items-center gap-2 rounded-lg border border-line bg-canvas/80 px-3 py-1.5 text-xs">
+                    <span className="text-ink-muted">Selected theme:</span>
+                    <span className="flex items-center gap-1.5 font-semibold text-ink">
+                      <span
+                        className="size-3 rounded-full border border-black/10 inline-block shadow-xs"
+                        style={{ background: selectedTheme.settings.colors.primary }}
+                      />
+                      {selectedTheme.name}
+                    </span>
+                  </div>
+                )}
+                <Button
+                  onPress={() => setStep(4)}
+                  isDisabled={!themeId && !selectedTemplate?.isCustom}
+                  className="font-medium"
+                >
+                  <span>Continue: template selection</span>
+                  <ArrowRight className="size-4" aria-hidden />
+                </Button>
+              </div>
+            </div>
 
             {submitError && (
               <div className="mt-5">
@@ -816,23 +872,44 @@ export default function CreateWebsitePage() {
             </div>
 
             <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-              <Button variant="outline" onPress={() => setStep(2)}>
-                Back
-              </Button>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onPress={() => setStep(2)}
+                  className="font-medium text-ink-body hover:text-ink"
+                >
+                  <ArrowLeft className="size-4" aria-hidden />
+                  <span>Back</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onPress={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="font-medium text-ink-body hover:text-ink"
+                >
+                  <ArrowUp className="size-4" aria-hidden />
+                  <span>Back to top</span>
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
                 {selectedTheme && (
-                  <span className="text-sm text-ink-body">
-                    Selected theme:{" "}
-                    <strong className="font-medium text-ink">
+                  <div className="flex items-center gap-2 rounded-lg border border-line bg-canvas/80 px-3 py-1.5 text-xs">
+                    <span className="text-ink-muted">Selected theme:</span>
+                    <span className="flex items-center gap-1.5 font-semibold text-ink">
+                      <span
+                        className="size-3 rounded-full border border-black/10 inline-block shadow-xs"
+                        style={{ background: selectedTheme.settings.colors.primary }}
+                      />
                       {selectedTheme.name}
-                    </strong>
-                  </span>
+                    </span>
+                  </div>
                 )}
                 <Button
                   onPress={() => setStep(4)}
                   isDisabled={!themeId && !selectedTemplate?.isCustom}
+                  className="font-medium"
                 >
-                  Continue: template selection
+                  <span>Continue: template selection</span>
+                  <ArrowRight className="size-4" aria-hidden />
                 </Button>
               </div>
             </div>
@@ -840,36 +917,57 @@ export default function CreateWebsitePage() {
         )}
 
         {step === 4 && mode === "MANUAL" && (
-          <section className="mt-6 rounded-xl border border-line bg-surface p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-ink">
-                  Template selection
-                </h2>
-                <p className="mt-1 text-sm text-ink-body">
-                  Build your own design from our ready-made sections, or start from
-                  a template and change it.
-                </p>
+          <section className="mt-6 rounded-xl border border-line bg-surface p-6 shadow-xs">
+            <div className="border-b border-line pb-4">
+              <h2 className="text-xl font-semibold tracking-tight text-ink">
+                Template selection
+              </h2>
+              <p className="mt-1 text-sm text-ink-body">
+                Build your own design from our ready-made sections, or start from
+                a template and change it.
+              </p>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
+              <Button
+                variant="outline"
+                onPress={() => setStep(3)}
+                isDisabled={creating}
+                className="font-medium text-ink-body hover:text-ink"
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+                <span>Back</span>
+              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                {selectedTheme && (
+                  <div className="flex items-center gap-2 rounded-lg border border-line bg-canvas/80 px-3 py-1.5 text-xs">
+                    <span className="text-ink-muted">Applied theme:</span>
+                    <span className="flex items-center gap-1.5 font-semibold text-ink">
+                      <span
+                        className="size-3 rounded-full border border-black/10 inline-block shadow-xs"
+                        style={{ background: selectedTheme.settings.colors.primary }}
+                      />
+                      {selectedTheme.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setStep(3)}
+                      className="ml-1 font-semibold text-brand hover:underline"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+                <Button
+                  onPress={createDraft}
+                  isPending={creating}
+                  isDisabled={!themes}
+                  className="font-medium"
+                >
+                  <span>Create and open editor</span>
+                  <ArrowRight className="size-4" aria-hidden />
+                </Button>
               </div>
-              {selectedTheme && (
-                <div className="flex items-center gap-2 rounded-lg border border-line bg-canvas px-3 py-1.5 text-xs">
-                  <span className="text-ink-body">Applied theme:</span>
-                  <span className="flex items-center gap-1.5 font-medium text-ink">
-                    <span
-                      className="size-3 rounded-full border border-black/10 inline-block"
-                      style={{ background: selectedTheme.settings.colors.primary }}
-                    />
-                    {selectedTheme.name}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setStep(3)}
-                    className="ml-1 text-brand hover:underline font-medium"
-                  >
-                    Change
-                  </button>
-                </div>
-              )}
             </div>
 
             {submitError && (
@@ -1080,33 +1178,43 @@ export default function CreateWebsitePage() {
             </div>
 
             <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-              <Button
-                variant="outline"
-                onPress={() => setStep(3)}
-                isDisabled={creating}
-              >
-                Back
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onPress={() => setStep(3)}
+                  isDisabled={creating}
+                  className="font-medium text-ink-body hover:text-ink"
+                >
+                  <ArrowLeft className="size-4" aria-hidden />
+                  <span>Back</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onPress={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  className="font-medium text-ink-body hover:text-ink"
+                >
+                  <ArrowUp className="size-4" aria-hidden />
+                  <span>Back to top</span>
+                </Button>
+              </div>
               <div className="flex flex-wrap items-center gap-3">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-ink-body">
-                  <span>
+                <div className="flex items-center gap-2 rounded-lg border border-line bg-canvas/80 px-3 py-1.5 text-xs">
+                  <span className="font-medium text-ink-body">
                     {selectedTemplate
                       ? `Template: ${selectedTemplate.name}`
                       : "Blank website"}
                   </span>
                   {selectedTheme && (
                     <>
-                      <span
-                        className="hidden sm:inline text-ink-muted"
-                        aria-hidden
-                      >
+                      <span className="text-ink-muted" aria-hidden>
                         •
                       </span>
-                      <span>
-                        Theme:{" "}
-                        <strong className="font-medium text-ink">
-                          {selectedTheme.name}
-                        </strong>
+                      <span className="flex items-center gap-1.5 font-semibold text-ink">
+                        <span
+                          className="size-3 rounded-full border border-black/10 inline-block shadow-xs"
+                          style={{ background: selectedTheme.settings.colors.primary }}
+                        />
+                        {selectedTheme.name}
                       </span>
                     </>
                   )}
@@ -1115,8 +1223,10 @@ export default function CreateWebsitePage() {
                   onPress={createDraft}
                   isPending={creating}
                   isDisabled={!themes}
+                  className="font-medium"
                 >
-                  Create and open editor
+                  <span>Create and open editor</span>
+                  <ArrowRight className="size-4" aria-hidden />
                 </Button>
               </div>
             </div>
