@@ -110,6 +110,63 @@ function RefundBadge({ status }: { status: ShopRefundStatus }) {
   );
 }
 
+const FULFILLMENT_STEPS: { key: ShopOrderStatus; label: string }[] = [
+  { key: "paid", label: "Order received" },
+  { key: "processing", label: "Processing" },
+  { key: "shipped", label: "Shipped" },
+  { key: "delivered", label: "Delivered" },
+];
+
+function fulfillmentIndex(status: ShopOrderStatus): number {
+  return FULFILLMENT_STEPS.findIndex((step) => step.key === status);
+}
+
+function OrderTimeline({ order }: { order: ShopOrder }) {
+  const current = fulfillmentIndex(order.status);
+  const events = order.timeline ?? [];
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {FULFILLMENT_STEPS.map((step, index) => {
+          const done = current >= 0 && index < current;
+          const active = index === current;
+          return (
+            <div
+              key={step.key}
+              className={`rounded-lg border px-2 py-2 text-center text-xs font-semibold ${
+                done || active
+                  ? "border-sky-200 bg-sky-50 text-sky-800"
+                  : "border-line bg-surface text-ink-muted"
+              }`}
+            >
+              {step.label}
+            </div>
+          );
+        })}
+      </div>
+      <ol className="space-y-0 border-l border-line pl-4">
+        {events.length === 0 ? (
+          <li className="text-sm text-ink-muted">No status history yet.</li>
+        ) : (
+          events.map((event) => (
+            <li key={event.id} className="relative pb-4 last:pb-0">
+              <span
+                className="absolute -left-[1.15rem] top-1.5 size-2.5 rounded-full bg-sky-500 ring-4 ring-surface"
+                aria-hidden
+              />
+              <p className="text-sm font-medium text-ink">{statusLabel(event.status as ShopOrderStatus)}</p>
+              <p className="text-xs text-ink-muted">{formatWhen(event.createdAt)}</p>
+              {event.note && <p className="mt-0.5 text-xs text-ink-muted">{event.note}</p>}
+              <p className="mt-0.5 text-[11px] uppercase tracking-wide text-ink-muted/80">{event.actorType}</p>
+            </li>
+          ))
+        )}
+      </ol>
+    </div>
+  );
+}
+
 function OrderDetail({
   websiteId,
   orderId,
@@ -252,6 +309,13 @@ function OrderDetail({
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-medium text-ink-muted">Fulfillment timeline</h4>
+            <div className="mt-2 rounded-lg border border-line px-4 py-4">
+              <OrderTimeline order={order} />
+            </div>
           </div>
         </div>
       )}

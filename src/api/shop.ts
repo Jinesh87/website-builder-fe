@@ -152,6 +152,14 @@ export type ShopOrderItem = {
   lineTotalPaise: number;
 };
 
+export type ShopOrderTimelineEvent = {
+  id: string;
+  status: string;
+  actorType: string;
+  note: string | null;
+  createdAt: string;
+};
+
 export type ShopOrder = {
   id: string;
   number: string;
@@ -172,6 +180,7 @@ export type ShopOrder = {
   paidAt: string | null;
   refundedAt: string | null;
   failureReason: string | null;
+  timeline: ShopOrderTimelineEvent[];
   createdAt: string;
   updatedAt: string;
 };

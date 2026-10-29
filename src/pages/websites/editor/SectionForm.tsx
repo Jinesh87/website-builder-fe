@@ -3205,6 +3205,8 @@ function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
           options={[
             { value: "member", label: "Signed-in customer (sample data)" },
             { value: "guest", label: "Visitor who isn't signed in" },
+            { value: "success", label: "After payment success popup" },
+            { value: "order-detail", label: "Order detail + timeline" },
           ]}
           hint="Only changes what you see here. Visitors always get the state that matches their session."
         />
@@ -3224,6 +3226,43 @@ function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
         <TextField label="Log out button" value={data.logoutLabel ?? ""} onChange={(logoutLabel) => set({ logoutLabel })} maxLength={40} />
         <TextField label="No orders yet" value={data.emptyOrdersText ?? ""} onChange={(emptyOrdersText) => set({ emptyOrdersText })} maxLength={200} />
         <TextField label="Empty cart" value={data.emptyCartText ?? ""} onChange={(emptyCartText) => set({ emptyCartText })} maxLength={200} />
+      </FormGroup>
+      <FormGroup title="After payment">
+        <SelectField
+          label="Success popup style"
+          value={data.successPopupVariant ?? "celebration"}
+          onChange={(successPopupVariant) =>
+            set({
+              successPopupVariant: successPopupVariant as AccountData["successPopupVariant"],
+              preview: "success",
+            })
+          }
+          options={[
+            { value: "celebration", label: "Celebration" },
+            { value: "simple", label: "Simple" },
+            { value: "receipt", label: "Receipt" },
+          ]}
+          hint="Shown right after a successful checkout. Changing this opens the popup preview on the canvas."
+        />
+        <TextField label="Success heading" value={data.successHeading ?? ""} onChange={(successHeading) => set({ successHeading, preview: "success" })} maxLength={120} />
+        <TextAreaField label="Success message" value={data.successText ?? ""} onChange={(successText) => set({ successText, preview: "success" })} rows={2} maxLength={280} />
+        <TextField label="View order button" value={data.successButtonLabel ?? ""} onChange={(successButtonLabel) => set({ successButtonLabel, preview: "success" })} maxLength={40} />
+        <SelectField
+          label="Order detail style"
+          value={data.orderDetailVariant ?? "timeline"}
+          onChange={(orderDetailVariant) =>
+            set({
+              orderDetailVariant: orderDetailVariant as AccountData["orderDetailVariant"],
+              preview: "order-detail",
+            })
+          }
+          options={[
+            { value: "timeline", label: "Vertical timeline" },
+            { value: "steps", label: "Step strip" },
+            { value: "compact", label: "Compact list" },
+          ]}
+          hint="Tracking layout when a customer opens an order. Changing this opens the order detail preview."
+        />
       </FormGroup>
       <FormGroup title="Visitors who aren't signed in">
         <CheckboxField

@@ -335,4 +335,110 @@ export const ACCOUNT_CSS = `
   .wb-acct-row-amount { width: 100%; text-align: right; }
   .wb-acct-v-overview-cards .wb-acct-row-amount { width: auto; margin-left: auto; }
 }
+
+/* =========================================================================
+   success popup + order detail / timeline
+   ========================================================================= */
+.wb-acct-row.is-clickable { cursor: pointer; }
+.wb-acct-row.is-clickable:hover { background: color-mix(in srgb, var(--wb-acct-accent) 6%, transparent); }
+.wb-acct-success-modal, .wb-acct-order-modal {
+  /* Re-declare tokens: these modals mount on body, outside .wb-acct-root / .wb-site. */
+  --wb-acct-accent: var(--wb-primary, #194a7a);
+  --wb-acct-on-accent: var(--wb-on-primary, #ffffff);
+  --wb-acct-card: var(--wb-bg, #ffffff);
+  --wb-acct-soft: color-mix(in srgb, var(--wb-text, #1a1d23) 6%, var(--wb-bg, #ffffff));
+  --wb-acct-field-r: max(min(var(--wb-radius, 8px), 12px), 4px);
+  --wb-acct-card-r: calc(var(--wb-radius, 8px) + 10px);
+  --wb-border: color-mix(in srgb, var(--wb-text, #1a1d23) 12%, transparent);
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  box-sizing: border-box; overflow: auto; color: var(--wb-text, #1a1d23);
+}
+/* Editor canvas: keep the popup inside the section, not over the whole builder UI. */
+.wb-acct-root.is-editor-preview { position: relative; min-height: 560px; }
+.wb-acct-root.is-editor-preview .wb-acct-success-modal,
+.wb-acct-root.is-editor-preview .wb-acct-order-modal {
+  position: absolute; z-index: 5;
+}
+.wb-acct-success-modal[hidden], .wb-acct-order-modal[hidden] { display: none !important; }
+.wb-acct-success-backdrop, .wb-acct-order-backdrop {
+  position: absolute; inset: 0; border: 0; padding: 0; margin: 0; cursor: pointer;
+  background: rgba(11, 18, 32, 0.72);
+}
+.wb-acct-success-dialog, .wb-acct-order-dialog {
+  position: relative; z-index: 1; width: min(440px, 100%); max-height: min(88vh, 720px); overflow: auto;
+  box-sizing: border-box; padding: 28px 24px; border-radius: calc(var(--wb-acct-card-r) + 4px);
+  /* Solid fallback first — modal is on body and must never be see-through. */
+  background-color: #ffffff !important;
+  background-color: var(--wb-bg, #ffffff) !important;
+  color: var(--wb-text, #1a1d23);
+  border: 1px solid var(--wb-border);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.34);
+  isolation: isolate;
+}
+.wb-acct-order-dialog { width: min(560px, 100%); }
+.wb-acct-success-dialog.is-celebration {
+  text-align: center;
+  background-image:
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--wb-acct-accent) 18%, transparent), transparent 45%),
+    radial-gradient(circle at 90% 10%, color-mix(in srgb, #f59e0b 14%, transparent), transparent 40%);
+  background-color: var(--wb-bg, #ffffff) !important;
+}
+.wb-acct-success-dialog.is-receipt { border-radius: 4px; border-style: dashed; }
+.wb-acct-success-kicker { margin: 0 0 8px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wb-muted); }
+.wb-acct-success-title { margin: 0; font-family: var(--wb-font-heading); font-size: 1.55rem; line-height: 1.2; }
+.wb-acct-success-text { margin: 10px 0 0; color: var(--wb-muted); }
+.wb-acct-success-meta { margin: 18px 0 0; padding: 12px 14px; border-radius: var(--wb-acct-field-r); background: var(--wb-acct-soft); display: grid; gap: 4px; color: var(--wb-text); }
+.wb-acct-order-dialog .wb-acct-panel-title { color: var(--wb-text); }
+.wb-acct-order-dialog .wb-acct-order-item { color: var(--wb-text); }
+.wb-acct-order-dialog .wb-acct-timeline-label { color: var(--wb-text); }
+.wb-acct-success-actions { display: grid; gap: 8px; margin-top: 20px; }
+.wb-acct-order-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 18px; }
+.wb-acct-order-close {
+  flex: none; border: 0; background: transparent; font: inherit; font-size: 1.4rem; line-height: 1; cursor: pointer; color: var(--wb-muted);
+}
+.wb-acct-order-items { display: grid; gap: 8px; margin: 16px 0; }
+.wb-acct-order-item { display: flex; justify-content: space-between; gap: 12px; font-size: 0.92rem; }
+.wb-acct-order-item span { color: var(--wb-muted); }
+.wb-acct-timeline { display: grid; gap: 0; margin: 8px 0 0; padding: 0; list-style: none; }
+.wb-acct-timeline-step {
+  display: grid; grid-template-columns: 18px 1fr; gap: 12px; position: relative; padding: 0 0 18px;
+}
+.wb-acct-timeline-step:last-child { padding-bottom: 0; }
+.wb-acct-timeline-dot {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--wb-border);
+  background: var(--wb-acct-card); margin-top: 2px; z-index: 1;
+}
+.wb-acct-timeline-step.is-done .wb-acct-timeline-dot {
+  background: var(--wb-acct-accent); border-color: var(--wb-acct-accent);
+}
+.wb-acct-timeline-step.is-current .wb-acct-timeline-dot {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--wb-acct-accent) 22%, transparent);
+  border-color: var(--wb-acct-accent);
+}
+.wb-acct-timeline-step::before {
+  content: ""; position: absolute; left: 8px; top: 20px; bottom: 0; width: 2px;
+  background: color-mix(in srgb, var(--wb-border) 90%, transparent);
+}
+.wb-acct-timeline-step:last-child::before { display: none; }
+.wb-acct-timeline-step.is-done::before { background: color-mix(in srgb, var(--wb-acct-accent) 55%, transparent); }
+.wb-acct-timeline-label { font-weight: 700; font-size: 0.92rem; }
+.wb-acct-timeline-time { display: block; margin-top: 2px; font-size: 0.78rem; color: var(--wb-muted); }
+.wb-acct-timeline-note { display: block; margin-top: 4px; font-size: 0.8rem; color: var(--wb-muted); }
+.wb-acct-steps {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 12px 0 0;
+}
+.wb-acct-step {
+  text-align: center; padding: 10px 6px; border-radius: var(--wb-acct-field-r);
+  border: 1px solid var(--wb-border); font-size: 0.72rem; font-weight: 700; color: var(--wb-muted);
+}
+.wb-acct-step.is-done, .wb-acct-step.is-current {
+  border-color: color-mix(in srgb, var(--wb-acct-accent) 45%, var(--wb-border));
+  color: var(--wb-acct-accent); background: color-mix(in srgb, var(--wb-acct-accent) 8%, transparent);
+}
+.wb-acct-order-compact .wb-acct-timeline-step { grid-template-columns: 1fr; padding-bottom: 12px; border-bottom: 1px solid var(--wb-border); }
+.wb-acct-order-compact .wb-acct-timeline-step::before, .wb-acct-order-compact .wb-acct-timeline-dot { display: none; }
+@media (max-width: 640px) {
+  .wb-acct-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 `;

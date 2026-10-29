@@ -779,6 +779,11 @@ export function accountData(variant: AccountData["variant"], overrides: Partial<
     guestHeading: "Sign in to see your account",
     guestText: "Your orders, cart and profile details are only shown to signed-in customers.",
     guestButtonLabel: "Log in",
+    successPopupVariant: "celebration",
+    successHeading: "Order confirmed",
+    successText: "Thanks for your purchase. We'll update you as it moves along.",
+    successButtonLabel: "View order",
+    orderDetailVariant: "timeline",
     ...overrides,
   };
 }
@@ -789,26 +794,32 @@ const ACCOUNT_PRESETS: Array<{ key: string; variant: AccountData["variant"]; lab
     variant: "sidebar-tabs",
     label: "Account · Sidebar tabs",
     description: "Profile card with a vertical menu on the left; orders, cart and settings open on the right.",
+    overrides: { successPopupVariant: "celebration", orderDetailVariant: "timeline" },
   },
   {
     key: "account-top-tabs",
     variant: "top-tabs",
     label: "Account · Top tabs",
     description: "A compact header with pill tabs above one content panel. Good for narrow pages.",
+    overrides: { successPopupVariant: "simple", orderDetailVariant: "steps" },
   },
   {
     key: "account-overview-cards",
     variant: "overview-cards",
     label: "Account · Overview dashboard",
     description: "Quick stats (orders, cart, member since) and every panel as a card on one screen.",
-    overrides: { subheading: "Everything about your orders and details, at a glance." },
+    overrides: {
+      subheading: "Everything about your orders and details, at a glance.",
+      successPopupVariant: "receipt",
+      orderDetailVariant: "compact",
+    },
   },
   {
     key: "account-minimal-list",
     variant: "minimal-list",
     label: "Account · Minimal list",
     description: "One editorial column with stacked sections and hairline dividers. No cards, no tabs.",
-    overrides: { heading: "Account", subheading: "" },
+    overrides: { heading: "Account", subheading: "", successPopupVariant: "simple", orderDetailVariant: "timeline" },
   },
   {
     key: "account-dark-panel",

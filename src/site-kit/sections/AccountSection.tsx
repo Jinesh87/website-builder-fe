@@ -10,10 +10,31 @@ import {
   type ShopAuthError,
   type ShopCartItemSummary,
   type ShopCustomerAccount,
+  type ShopOrderDetail,
+  type ShopOrderSummary,
 } from "../shop-auth.ts";
 import { formatInr, useShopCatalog } from "../shop-catalog.tsx";
-import type { AccountData, AccountVariant, SectionOf } from "../types.ts";
+import type { AccountData, AccountOrderDetailVariant, AccountSuccessPopupVariant, AccountVariant, SectionOf } from "../types.ts";
 import { CheckoutDismissedError, openRazorpayCheckout } from "../../utils/razorpay-checkout.ts";
+
+const FULFILLMENT = [
+  { key: "paid", label: "Order received" },
+  { key: "processing", label: "Processing" },
+  { key: "shipped", label: "Shipped" },
+  { key: "delivered", label: "Delivered" },
+] as const;
+
+function fulfillmentIndex(status: string): number {
+  const i = FULFILLMENT.findIndex((step) => step.key === status);
+  if (i >= 0) return i;
+  if (status === "pending") return -1;
+  return -1;
+}
+
+function eventTime(timeline: { status: string; createdAt: string }[], status: string): string | null {
+  const hit = [...timeline].reverse().find((event) => event.status === status);
+  return hit?.createdAt ?? null;
+}
 
 /**
  * The signed-in customer's page. On the published site a small script asks the shop API who is
@@ -44,7 +65,7 @@ const SAMPLE: ShopCustomerAccount = {
     createdAt: "2026-02-14T09:30:00.000Z",
   },
   orders: [
-    { id: "o1", number: "1042", status: "paid", refundStatus: "none", totalPaise: 249900, currency: "INR", createdAt: "2026-10-21T10:12:00.000Z", refundedAt: null },
+    { id: "o1", number: "1042", status: "shipped", refundStatus: "none", totalPaise: 249900, currency: "INR", createdAt: "2026-10-21T10:12:00.000Z", refundedAt: null },
     { id: "o2", number: "1038", status: "pending", refundStatus: "none", totalPaise: 89900, currency: "INR", createdAt: "2026-10-04T16:40:00.000Z", refundedAt: null },
     { id: "o3", number: "1021", status: "failed", refundStatus: "processed", totalPaise: 159900, currency: "INR", createdAt: "2026-09-12T08:05:00.000Z", refundedAt: "2026-09-12T08:20:00.000Z" },
   ],
@@ -52,6 +73,22 @@ const SAMPLE: ShopCustomerAccount = {
     { id: "c1", productId: "p1", variantId: "v1", productName: "Everyday tee", variantName: "M / Blue", quantity: 2, pricePaise: 99900 },
     { id: "c2", productId: "p2", variantId: "v2", productName: "Canvas tote", variantName: "Natural", quantity: 1, pricePaise: 59900 },
   ],
+};
+
+const SAMPLE_ORDER_DETAIL: ShopOrderDetail = {
+  ...SAMPLE.orders[0]!,
+  items: [
+    { id: "i1", productName: "Everyday tee", variantName: "M / Blue", unitPricePaise: 99900, quantity: 2, lineTotalPaise: 199800 },
+    { id: "i2", productName: "Canvas tote", variantName: "Natural", unitPricePaise: 50100, quantity: 1, lineTotalPaise: 50100 },
+  ],
+  timeline: [
+    { id: "t1", status: "paid", actorType: "SYSTEM", note: "Payment received", createdAt: "2026-10-21T10:12:00.000Z" },
+    { id: "t2", status: "processing", actorType: "CLIENT", note: "Packed at warehouse", createdAt: "2026-10-22T09:00:00.000Z" },
+    { id: "t3", status: "shipped", actorType: "CLIENT", note: "Handed to courier", createdAt: "2026-10-23T14:30:00.000Z" },
+  ],
+  failureReason: null,
+  paidAt: "2026-10-21T10:12:00.000Z",
+  updatedAt: "2026-10-23T14:30:00.000Z",
 };
 
 const LABELS = {
@@ -178,13 +215,225 @@ function RefundBadge({ status }: { status: string }) {
   return <span className={`wb-acct-badge is-refund-${status}`}>{label}</span>;
 }
 
-function OrdersPanel({ data, account, shopHref }: { data: AccountData; account: ShopCustomerAccount; shopHref: string }) {
+function OrderTimeline({
+  order,
+  variant,
+}: {
+  order: Pick<ShopOrderDetail, "status" | "timeline">;
+  variant: AccountOrderDetailVariant;
+}) {
+  const current = fulfillmentIndex(order.status);
+  if (variant === "steps") {
+    return (
+      <div className="wb-acct-steps" data-wb-order-timeline="steps">
+        {FULFILLMENT.map((step, index) => (
+          <div
+            key={step.key}
+            className={`wb-acct-step${index < current ? " is-done" : ""}${index === current ? " is-current" : ""}`}
+          >
+            {step.label}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <ol className={`wb-acct-timeline${variant === "compact" ? " wb-acct-order-compact" : ""}`} data-wb-order-timeline={variant}>
+      {FULFILLMENT.map((step, index) => {
+        const when = eventTime(order.timeline, step.key);
+        const note = [...order.timeline].reverse().find((event) => event.status === step.key)?.note;
+        return (
+          <li
+            key={step.key}
+            className={`wb-acct-timeline-step${index < current ? " is-done" : ""}${index === current ? " is-current" : ""}`}
+          >
+            <span className="wb-acct-timeline-dot" aria-hidden="true" />
+            <div>
+              <span className="wb-acct-timeline-label">{step.label}</span>
+              {when && <span className="wb-acct-timeline-time">{formatDate(when)}</span>}
+              {note && <span className="wb-acct-timeline-note">{note}</span>}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function OrderDetailView({
+  order,
+  variant,
+  onClose,
+}: {
+  order: ShopOrderDetail;
+  variant: AccountOrderDetailVariant;
+  onClose: () => void;
+}) {
+  return (
+    <div className="wb-acct-order-modal" data-wb-account-order-modal>
+      <button type="button" className="wb-acct-order-backdrop" aria-label="Close order" onClick={onClose} />
+      <div className={`wb-acct-order-dialog is-${variant}`} role="dialog" aria-modal="true" aria-label={`Order #${order.number}`}>
+        <div className="wb-acct-order-head">
+          <div>
+            <h3 className="wb-acct-success-title">Order #{order.number}</h3>
+            <p className="wb-acct-success-text">Placed {formatDate(order.createdAt)}</p>
+          </div>
+          <button type="button" className="wb-acct-order-close" aria-label="Close" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        <div className="wb-acct-badges">
+          <StatusBadge status={order.status} />
+          <RefundBadge status={order.refundStatus} />
+        </div>
+        <div className="wb-acct-order-items">
+          {order.items.map((item) => (
+            <div key={item.id} className="wb-acct-order-item">
+              <div>
+                <strong>{item.productName}</strong>
+                <span>
+                  {" "}
+                  · {item.variantName} · Qty {item.quantity}
+                </span>
+              </div>
+              <strong>{formatInr(item.lineTotalPaise)}</strong>
+            </div>
+          ))}
+        </div>
+        <p className="wb-acct-success-meta">
+          <strong>Total {formatInr(order.totalPaise)}</strong>
+        </p>
+        <h4 className="wb-acct-panel-title" style={{ marginTop: 18 }}>
+          Tracking
+        </h4>
+        <OrderTimeline order={order} variant={variant} />
+      </div>
+    </div>
+  );
+}
+
+function SuccessPopup({
+  order,
+  data,
+  onClose,
+  onView,
+}: {
+  order: ShopOrderSummary;
+  data: AccountData;
+  onClose: () => void;
+  onView: () => void;
+}) {
+  const variant: AccountSuccessPopupVariant = data.successPopupVariant ?? "celebration";
+  return (
+    <div className="wb-acct-success-modal" data-wb-account-success-modal>
+      <button type="button" className="wb-acct-success-backdrop" aria-label="Close" onClick={onClose} />
+      <div className={`wb-acct-success-dialog is-${variant}`} role="dialog" aria-modal="true" aria-label="Order confirmed">
+        <p className="wb-acct-success-kicker">Payment successful</p>
+        <h3 className="wb-acct-success-title">{data.successHeading?.trim() || "Order confirmed"}</h3>
+        <p className="wb-acct-success-text">{data.successText?.trim() || "Thanks for your purchase. We'll update you as it moves along."}</p>
+        <div className="wb-acct-success-meta">
+          <strong>Order #{order.number}</strong>
+          <span>{formatInr(order.totalPaise)}</span>
+        </div>
+        <div className="wb-acct-success-actions">
+          <button type="button" className="wb-acct-button is-pay" onClick={onView}>
+            {data.successButtonLabel?.trim() || "View order"}
+          </button>
+          <button type="button" className="wb-acct-button" onClick={onClose} style={{ background: "transparent", color: "inherit", border: "1px solid var(--wb-border)" }}>
+            Continue shopping
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OrdersPanel({
+  data,
+  account,
+  shopHref,
+  websiteId,
+  interactive,
+  openOrderId,
+  onOpenOrder,
+}: {
+  data: AccountData;
+  account: ShopCustomerAccount;
+  shopHref: string;
+  websiteId?: string;
+  interactive: boolean;
+  openOrderId?: string | null;
+  onOpenOrder?: (orderId: string | null) => void;
+}) {
   const empty = data.emptyOrdersText?.trim() || LABELS.emptyOrders;
+  const detailVariant: AccountOrderDetailVariant = data.orderDetailVariant ?? "timeline";
+  const [detail, setDetail] = useState<ShopOrderDetail | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openOrderId || !websiteId || !interactive) return;
+    let cancelled = false;
+    setLoadingId(openOrderId);
+    shopAuthApi
+      .getOrder(websiteId, openOrderId)
+      .then((order) => {
+        if (!cancelled) setDetail(order);
+      })
+      .catch(() => {
+        if (!cancelled) setDetail(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingId(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [openOrderId, websiteId, interactive]);
+
+  async function openOrder(orderId: string) {
+    onOpenOrder?.(orderId);
+    if (!interactive || !websiteId) {
+      const summary = account.orders.find((order) => order.id === orderId);
+      if (summary) {
+        setDetail({
+          ...summary,
+          items: [],
+          timeline: [{ id: "1", status: summary.status, actorType: "SYSTEM", note: null, createdAt: summary.createdAt }],
+          failureReason: null,
+          paidAt: null,
+          updatedAt: summary.createdAt,
+        });
+      }
+      return;
+    }
+    setLoadingId(orderId);
+    try {
+      setDetail(await shopAuthApi.getOrder(websiteId, orderId));
+    } catch {
+      setDetail(null);
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
   return (
     <>
       <ul className="wb-acct-list" data-wb-account-list="orders" hidden={account.orders.length === 0}>
         {account.orders.map((order) => (
-          <li key={order.id} className="wb-acct-row">
+          <li
+            key={order.id}
+            className="wb-acct-row is-clickable"
+            data-wb-order-id={order.id}
+            onClick={() => void openOrder(order.id)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                void openOrder(order.id);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          >
             <div className="wb-acct-row-main">
               <strong>Order #{order.number}</strong>
               <span className="wb-acct-row-sub">{formatDate(order.createdAt)}</span>
@@ -197,12 +446,23 @@ function OrdersPanel({ data, account, shopHref }: { data: AccountData; account: 
           </li>
         ))}
       </ul>
+      {loadingId && <p className="wb-acct-message">Loading order…</p>}
       <div className="wb-acct-empty" data-wb-account-empty="orders" hidden={account.orders.length > 0}>
         <p>{empty}</p>
         <a className="wb-acct-link" href={safeHref(shopHref)}>
           Browse the shop
         </a>
       </div>
+      {detail && (
+        <OrderDetailView
+          order={detail}
+          variant={detailVariant}
+          onClose={() => {
+            setDetail(null);
+            onOpenOrder?.(null);
+          }}
+        />
+      )}
     </>
   );
 }
@@ -222,7 +482,7 @@ function CartPanel({
   websiteId?: string;
   interactive: boolean;
   onCartChange?: (items: ShopCustomerAccount["cartItems"]) => void;
-  onPaid?: () => void;
+  onPaid?: (order: ShopOrderSummary) => void;
 }) {
   const empty = data.emptyCartText?.trim() || LABELS.emptyCart;
   const [items, setItems] = useState(account.cartItems);
@@ -287,11 +547,11 @@ function CartPanel({
         },
         `Order #${checkout.orderNumber}`,
       );
-      await shopAuthApi.confirmCheckout(websiteId, confirmation);
+      const order = await shopAuthApi.confirmCheckout(websiteId, confirmation);
       setItems([]);
       onCartChange?.([]);
       setPayMessage("Payment successful. Your order is confirmed.");
-      onPaid?.();
+      onPaid?.(order);
     } catch (err) {
       if (err instanceof CheckoutDismissedError) {
         setPayMessage("Payment cancelled.");
@@ -660,6 +920,8 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
   });
   const [cartItems, setCartItems] = useState(account.cartItems);
   const [orders, setOrders] = useState(account.orders);
+  const [successOrder, setSuccessOrder] = useState<ShopOrderSummary | null>(null);
+  const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const current = panels.includes(active) ? active : (panels[0] ?? "profile");
   const heading = data.heading?.trim();
   const subheading = data.subheading?.trim();
@@ -676,15 +938,15 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
     window.location.href = siteHref(loginHref);
   }
 
-  async function refreshAfterPay() {
+  async function refreshAfterPay(order: ShopOrderSummary) {
+    setSuccessOrder(order);
     if (!interactive || !websiteId) return;
     try {
       const next = await shopAuthApi.account(websiteId);
       setCartItems(next.cartItems);
       setOrders(next.orders);
-      if (panels.includes("orders")) setActive("orders");
     } catch {
-      if (panels.includes("orders")) setActive("orders");
+      /* keep local cart clear */
     }
   }
 
@@ -726,7 +988,17 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
   const panelBody = (panel: Panel): ReactNode => {
     switch (panel) {
       case "orders":
-        return <OrdersPanel data={data} account={liveAccount} shopHref={shopHref} />;
+        return (
+          <OrdersPanel
+            data={data}
+            account={liveAccount}
+            shopHref={shopHref}
+            websiteId={websiteId}
+            interactive={interactive}
+            openOrderId={openOrderId}
+            onOpenOrder={setOpenOrderId}
+          />
+        );
       case "cart":
         return (
           <CartPanel
@@ -736,7 +1008,7 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
             websiteId={websiteId}
             interactive={interactive}
             onCartChange={setCartItems}
-            onPaid={() => void refreshAfterPay()}
+            onPaid={(order) => void refreshAfterPay(order)}
           />
         );
       case "profile":
@@ -766,6 +1038,20 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
     </div>
   );
 
+  const successModal = successOrder ? (
+    <SuccessPopup
+      order={successOrder}
+      data={data}
+      onClose={() => setSuccessOrder(null)}
+      onView={() => {
+        const id = successOrder.id;
+        setSuccessOrder(null);
+        if (panels.includes("orders")) setActive("orders");
+        setOpenOrderId(id);
+      }}
+    />
+  ) : null;
+
   if (variant === "sidebar-tabs" || variant === "dark-panel") {
     return (
       <div className="wb-acct-member">
@@ -778,6 +1064,7 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
           </aside>
           <div className="wb-acct-main">{sections}</div>
         </div>
+        {successModal}
       </div>
     );
   }
@@ -792,6 +1079,7 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
         </header>
         {tabs}
         <div className="wb-acct-main">{sections}</div>
+        {successModal}
       </div>
     );
   }
@@ -812,6 +1100,7 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
         <Stats account={liveAccount} active={current} onSelect={openPanel} />
         {tabs}
         <div className="wb-acct-main wb-acct-workspace">{sections}</div>
+        {successModal}
       </div>
     );
   }
@@ -827,6 +1116,7 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
         {logoutButton}
       </header>
       <div className="wb-acct-main">{sections}</div>
+      {successModal}
     </div>
   );
 }
@@ -861,7 +1151,15 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
   const shopHref = data.shopHref?.trim() || "/shop";
   const preview = data.preview ?? "member";
 
-  const classes = ["wb-acct-root", `wb-acct-v-${variant}`, variant === "dark-panel" ? "wb-acct-dark" : ""].filter(Boolean).join(" ");
+  const showEditorOverlay = !isStatic && (preview === "success" || preview === "order-detail");
+  const classes = [
+    "wb-acct-root",
+    `wb-acct-v-${variant}`,
+    variant === "dark-panel" ? "wb-acct-dark" : "",
+    showEditorOverlay ? "is-editor-preview" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   if (isStatic) {
     // The published page carries both states; the script shows the right one once the session is known.
@@ -872,6 +1170,11 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
           data-wb-account={websiteId ?? ""}
           data-wb-account-login={loginHref}
           data-wb-account-redirect={data.redirectWhenLoggedOut ? "1" : undefined}
+          data-wb-success-variant={data.successPopupVariant ?? "celebration"}
+          data-wb-order-detail-variant={data.orderDetailVariant ?? "timeline"}
+          data-wb-success-heading={data.successHeading?.trim() || "Order confirmed"}
+          data-wb-success-text={data.successText?.trim() || "Thanks for your purchase. We'll update you as it moves along."}
+          data-wb-success-button={data.successButtonLabel?.trim() || "View order"}
         >
           <div className="wb-acct-state" data-wb-account-state="loading">
             <div className="wb-acct-loading" aria-busy="true">
@@ -899,15 +1202,28 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
   }
 
   // Editor canvas: the owner designs the state they picked, with sample data for the member view.
+  const editorPreview =
+    preview === "guest" ? (
+      <GuestView data={data} loginHref={loginHref} />
+    ) : (
+      <>
+        <MemberView data={data} variant={variant} account={SAMPLE} interactive={false} loginHref={loginHref} shopHref={shopHref} />
+        {preview === "success" && (
+          <SuccessPopup order={SAMPLE.orders[0]!} data={data} onClose={() => undefined} onView={() => undefined} />
+        )}
+        {preview === "order-detail" && (
+          <OrderDetailView
+            order={SAMPLE_ORDER_DETAIL}
+            variant={data.orderDetailVariant ?? "timeline"}
+            onClose={() => undefined}
+          />
+        )}
+      </>
+    );
+
   return (
     <SectionShell sectionId={section.id} settings={section.settings} className="wb-account" label={data.heading || "My account"}>
-      <div className={classes}>
-        {preview === "guest" ? (
-          <GuestView data={data} loginHref={loginHref} />
-        ) : (
-          <MemberView data={data} variant={variant} account={SAMPLE} interactive={false} loginHref={loginHref} shopHref={shopHref} />
-        )}
-      </div>
+      <div className={classes}>{editorPreview}</div>
     </SectionShell>
   );
 }

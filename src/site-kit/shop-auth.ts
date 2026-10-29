@@ -30,6 +30,29 @@ export type ShopOrderSummary = {
   refundedAt: string | null;
 };
 
+export type ShopOrderTimelineEvent = {
+  id: string;
+  status: string;
+  actorType: string;
+  note: string | null;
+  createdAt: string;
+};
+
+export type ShopOrderDetail = ShopOrderSummary & {
+  items: {
+    id: string;
+    productName: string;
+    variantName: string;
+    unitPricePaise: number;
+    quantity: number;
+    lineTotalPaise: number;
+  }[];
+  timeline: ShopOrderTimelineEvent[];
+  failureReason: string | null;
+  paidAt: string | null;
+  updatedAt: string;
+};
+
 export type ShopCheckoutSession = {
   orderId: string;
   orderNumber: string;
@@ -273,6 +296,12 @@ export const shopAuthApi = {
     if (!result.ok) throw asError(result.status, result.body);
     return (result.body as { order: ShopOrderSummary }).order;
   },
+
+  getOrder: async (websiteId: string, orderId: string) => {
+    const result = await shopAuthFetch(websiteId, `/orders/${orderId}`);
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { order: ShopOrderDetail }).order;
+  },
 };
 
 /** A site path as the browser should open it: on the local preview sites live under /live/<subdomain>. */
@@ -417,7 +446,10 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     if(orderList){
       orderList.innerHTML="";
       orders.forEach(function(order){
-        var row=el("li","wb-acct-row");
+        var row=el("li","wb-acct-row is-clickable");
+        row.setAttribute("data-wb-order-id", String(order.id||""));
+        row.setAttribute("role","button");
+        row.tabIndex=0;
         var main=el("div","wb-acct-row-main");
         main.appendChild(el("strong","","Order #"+String(order.number||order.id||"")));
         main.appendChild(el("span","wb-acct-row-sub",day(order.createdAt)));
@@ -724,8 +756,9 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
               return;
             }
             payMessage("Payment successful. Your order is confirmed.", true);
+            var paidOrder=(confirmResult.json&&confirmResult.json.order)||{};
             return refreshAccount().then(function(){
-              activatePanel(root, tabs, "orders");
+              showSuccessModal(root, base, paidOrder);
             });
           });
         }).catch(function(err){
@@ -744,6 +777,119 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         event.preventDefault();
         payNow();
       });
+    });
+    function fulfillmentIndex(status){
+      var steps=["paid","processing","shipped","delivered"];
+      return steps.indexOf(String(status||""));
+    }
+    function timelineHtml(order, variant){
+      var steps=[
+        { key:"paid", label:"Order received" },
+        { key:"processing", label:"Processing" },
+        { key:"shipped", label:"Shipped" },
+        { key:"delivered", label:"Delivered" }
+      ];
+      var timeline=order.timeline||[];
+      var current=fulfillmentIndex(order.status);
+      if(variant==="steps"){
+        return '<div class="wb-acct-steps">'+steps.map(function(step, index){
+          var cls="wb-acct-step"+(index<current?" is-done":"")+(index===current?" is-current":"");
+          return '<div class="'+cls+'">'+step.label+"</div>";
+        }).join("")+"</div>";
+      }
+      return '<ol class="wb-acct-timeline'+(variant==="compact"?" wb-acct-order-compact":"")+'">'+steps.map(function(step, index){
+        var hit=null;
+        for(var i=timeline.length-1;i>=0;i--){ if(timeline[i].status===step.key){ hit=timeline[i]; break; } }
+        var cls="wb-acct-timeline-step"+(index<current?" is-done":"")+(index===current?" is-current":"");
+        return '<li class="'+cls+'"><span class="wb-acct-timeline-dot" aria-hidden="true"></span><div>'+
+          '<span class="wb-acct-timeline-label">'+step.label+"</span>"+
+          (hit&&hit.createdAt?'<span class="wb-acct-timeline-time">'+day(hit.createdAt)+"</span>":"")+
+          (hit&&hit.note?'<span class="wb-acct-timeline-note">'+String(hit.note)+"</span>":"")+
+          "</div></li>";
+      }).join("")+"</ol>";
+    }
+    function themeModal(modal, fromRoot){
+      var site=(fromRoot&&fromRoot.closest&&fromRoot.closest(".wb-site"))||document.querySelector(".wb-site");
+      var styleText=site&&site.getAttribute("style");
+      if(styleText) modal.setAttribute("style", styleText);
+      var cs=site?window.getComputedStyle(site):null;
+      var bg=(cs&&cs.getPropertyValue("--wb-bg").trim())||"#ffffff";
+      var fg=(cs&&cs.getPropertyValue("--wb-text").trim())||"#1a1d23";
+      var dialog=modal.querySelector(".wb-acct-order-dialog, .wb-acct-success-dialog");
+      if(dialog){
+        dialog.style.setProperty("background-color", bg, "important");
+        dialog.style.setProperty("color", fg, "important");
+      }
+    }
+    function openOrderDetail(orderId){
+      if(!orderId) return;
+      request(base, "/orders/"+orderId, "GET").then(function(result){
+        if(!result.ok) return;
+        var order=(result.json&&result.json.order)||{};
+        var variant=root.getAttribute("data-wb-order-detail-variant")||"timeline";
+        var existing=document.querySelector("body > [data-wb-account-order-modal]");
+        if(existing) existing.remove();
+        var modal=document.createElement("div");
+        modal.className="wb-acct-order-modal";
+        modal.setAttribute("data-wb-account-order-modal","");
+        var items=(order.items||[]).map(function(item){
+          return '<div class="wb-acct-order-item"><div><strong>'+String(item.productName||"Item")+"</strong><span> · "+String(item.variantName||"")+" · Qty "+String(item.quantity||1)+'</span></div><strong>'+money(item.lineTotalPaise)+"</strong></div>";
+        }).join("");
+        modal.innerHTML=
+          '<button type="button" class="wb-acct-order-backdrop" aria-label="Close order"></button>'+
+          '<div class="wb-acct-order-dialog is-'+variant+'" role="dialog" aria-modal="true">'+
+            '<div class="wb-acct-order-head"><div><h3 class="wb-acct-success-title">Order #'+String(order.number||"")+'</h3>'+
+            '<p class="wb-acct-success-text">Placed '+day(order.createdAt)+"</p></div>"+
+            '<button type="button" class="wb-acct-order-close" aria-label="Close">×</button></div>'+
+            '<div class="wb-acct-badges"><span class="wb-acct-badge is-'+String(order.status||"pending")+'">'+String(order.status||"pending")+"</span></div>"+
+            '<div class="wb-acct-order-items">'+items+"</div>"+
+            '<p class="wb-acct-success-meta"><strong>Total '+money(order.totalPaise)+"</strong></p>"+
+            '<h4 class="wb-acct-panel-title" style="margin-top:18px">Tracking</h4>'+
+            timelineHtml(order, variant)+
+          "</div>";
+        themeModal(modal, root);
+        function close(){ modal.remove(); }
+        modal.querySelectorAll(".wb-acct-order-backdrop,.wb-acct-order-close").forEach(function(btn){ btn.addEventListener("click", close); });
+        document.body.appendChild(modal);
+      });
+    }
+    function showSuccessModal(rootNode, apiBase, order){
+      var existing=document.querySelector("body > [data-wb-account-success-modal]");
+      if(existing) existing.remove();
+      var variant=rootNode.getAttribute("data-wb-success-variant")||"celebration";
+      var heading=rootNode.getAttribute("data-wb-success-heading")||"Order confirmed";
+      var text=rootNode.getAttribute("data-wb-success-text")||"Thanks for your purchase. We'll update you as it moves along.";
+      var button=rootNode.getAttribute("data-wb-success-button")||"View order";
+      var modal=document.createElement("div");
+      modal.className="wb-acct-success-modal";
+      modal.setAttribute("data-wb-account-success-modal","");
+      modal.innerHTML=
+        '<button type="button" class="wb-acct-success-backdrop" aria-label="Close"></button>'+
+        '<div class="wb-acct-success-dialog is-'+variant+'" role="dialog" aria-modal="true">'+
+          '<p class="wb-acct-success-kicker">Payment successful</p>'+
+          '<h3 class="wb-acct-success-title">'+heading+"</h3>"+
+          '<p class="wb-acct-success-text">'+text+"</p>"+
+          '<div class="wb-acct-success-meta"><strong>Order #'+String(order.number||"")+"</strong><span>"+money(order.totalPaise)+"</span></div>"+
+          '<div class="wb-acct-success-actions">'+
+            '<button type="button" class="wb-acct-button is-pay" data-wb-success-view>'+button+"</button>"+
+            '<button type="button" class="wb-acct-button" data-wb-success-close style="background:transparent;color:inherit;border:1px solid var(--wb-border)">Continue shopping</button>'+
+          "</div></div>";
+      themeModal(modal, rootNode);
+      function close(){ modal.remove(); }
+      modal.querySelectorAll(".wb-acct-success-backdrop,[data-wb-success-close]").forEach(function(btn){ btn.addEventListener("click", close); });
+      var view=modal.querySelector("[data-wb-success-view]");
+      if(view) view.addEventListener("click", function(){
+        close();
+        activatePanel(rootNode, tabs, "orders");
+        openOrderDetail(String(order.id||""));
+      });
+      document.body.appendChild(modal);
+    }
+    root.addEventListener("click", function(event){
+      var row=event.target&&event.target.closest&&event.target.closest("[data-wb-order-id]");
+      if(!row || !root.contains(row)) return;
+      event.preventDefault();
+      openOrderDetail(row.getAttribute("data-wb-order-id")||"");
     });
     try{
       var params=new URLSearchParams(window.location.search||"");
