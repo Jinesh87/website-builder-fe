@@ -57,12 +57,12 @@ export default function TemplateCard({ index, isShortlisted, onToggleShortlist }
       }
       actions={
         <>
+          <Link to={useTemplatePath} className="btn-use" title={`Use template ${t.n}`}>
+            Use template →
+          </Link>
           <Link to={templatePath} className="btn-preview" title={`Preview ${t.n}`}>
             <TemplateCardEyeIcon size={14} />
             Preview
-          </Link>
-          <Link to={useTemplatePath} className="btn-use" title={`Use template ${t.n}`}>
-            Use template →
           </Link>
           <button
             className="btn-fav"

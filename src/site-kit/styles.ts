@@ -1,9 +1,3 @@
-/**
- * Stylesheet for rendered client websites. Every rule is scoped under
- * `.wb-site` so it can't leak into (or be overridden by) the builder UI, and
- * responsive rules use container queries so the editor's tablet/mobile preview
- * frames behave exactly like real devices on the published site.
- */
 import { ACCOUNT_CSS } from "./account-styles.ts";
 import { AUTH_CSS } from "./auth-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";

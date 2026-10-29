@@ -689,9 +689,9 @@
   margin-top: 4px;
 }
 
-.tacts .btn-preview,
+.tacts .btn-use,
 .tacts .btn-details {
-  flex: 1;
+  flex: 1.15;
   min-height: 38px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -704,21 +704,21 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 4px;
   transition: all 0.2s ease;
   white-space: nowrap;
   text-decoration: none;
 }
 
-.tacts .btn-preview:hover,
+.tacts .btn-use:hover,
 .tacts .btn-details:hover {
   background: rgba(255, 255, 255, 0.09);
   border-color: rgba(255, 255, 255, 0.22);
   color: #FFFFFF;
 }
 
-.tacts .btn-use {
-  flex: 1.15;
+.tacts .btn-preview {
+  flex: 1;
   min-height: 38px;
   border-radius: 10px;
   border: 1px solid #3550E8;
@@ -731,14 +731,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   box-shadow: 0 4px 14px rgba(53, 80, 232, 0.35);
   transition: all 0.2s ease;
   white-space: nowrap;
   text-decoration: none;
 }
 
-.tacts .btn-use:hover {
+.tacts .btn-preview:hover {
   background: linear-gradient(135deg, #4360F5 0%, #2E4CE8 100%);
   border-color: #4360F5;
   transform: translateY(-1px);
