@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { safeHref } from "../links.ts";
 import { EmailLink, PhoneLink, SectionHead, SectionShell, SiteIcon } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
@@ -144,7 +145,7 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
                   <span className="wb-contact-hub-label">{ch.label}</span>
                   <strong className="wb-contact-hub-value">{ch.value}</strong>
                   {ch.description && (
-                    <span className="wb-contact-hub-subtext">{ch.description}</span>
+                    <span className="wb-contact-hub-subtext">{parseRichText(ch.description)}</span>
                   )}
                   <span className="wb-contact-hub-action">Send direct email →</span>
                 </EmailLink>
@@ -164,7 +165,7 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
                   <span className="wb-contact-hub-label">{ch.label}</span>
                   <strong className="wb-contact-hub-value">{ch.value}</strong>
                   {ch.description && (
-                    <span className="wb-contact-hub-subtext">{ch.description}</span>
+                    <span className="wb-contact-hub-subtext">{parseRichText(ch.description)}</span>
                   )}
                   <span className="wb-contact-hub-action">One-tap dial →</span>
                 </PhoneLink>
@@ -187,7 +188,7 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
                   <span className="wb-contact-hub-label">{ch.label}</span>
                   <strong className="wb-contact-hub-value">{ch.value}</strong>
                   {ch.description && (
-                    <span className="wb-contact-hub-subtext">{ch.description}</span>
+                    <span className="wb-contact-hub-subtext">{parseRichText(ch.description)}</span>
                   )}
                   <span className="wb-contact-hub-action">Open link →</span>
                 </a>
@@ -205,7 +206,7 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
                 <span className="wb-contact-hub-label">{ch.label}</span>
                 <strong className="wb-contact-hub-value">{ch.value}</strong>
                 {ch.description && (
-                  <span className="wb-contact-hub-subtext">{ch.description}</span>
+                  <span className="wb-contact-hub-subtext">{parseRichText(ch.description)}</span>
                 )}
               </div>
             );
@@ -240,10 +241,10 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
           <div className="wb-contact-editorial-grid">
             <div className="wb-contact-editorial-left">
               {data.eyebrow && (
-                <span className="wb-contact-eyebrow">{data.eyebrow}</span>
+                <span className="wb-contact-eyebrow">{parseRichText(data.eyebrow)}</span>
               )}
-              <h2 className="wb-contact-editorial-heading">{data.heading}</h2>
-              {data.text && <p className="wb-contact-editorial-text">{data.text}</p>}
+              <h2 className="wb-contact-editorial-heading">{parseRichText(data.heading)}</h2>
+              {data.text && <p className="wb-contact-editorial-text">{parseRichText(data.text)}</p>}
 
               {hasStandardDetails && (
                 <div className="wb-contact-editorial-details">
@@ -308,11 +309,11 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
               {data.eyebrow && (
                 <div className="wb-contact-eyebrow-wrap">
                   <span className="wb-contact-pulse-dot" />
-                  <span className="wb-contact-eyebrow">{data.eyebrow}</span>
+                  <span className="wb-contact-eyebrow">{parseRichText(data.eyebrow)}</span>
                 </div>
               )}
-              <h2 className="wb-contact-glass-heading">{data.heading}</h2>
-              {data.text && <p className="wb-contact-glass-text">{data.text}</p>}
+              <h2 className="wb-contact-glass-heading">{parseRichText(data.heading)}</h2>
+              {data.text && <p className="wb-contact-glass-text">{parseRichText(data.text)}</p>}
 
               <div className="wb-contact-glass-channels">
                 <EmailLink value={data.email} className="wb-contact-channel-pill">
@@ -368,11 +369,11 @@ export default function ContactSection({ section }: { section: SectionOf<"contac
           {data.eyebrow && (
             <div className="wb-contact-eyebrow-wrap">
               <span className="wb-contact-pulse-dot" />
-              <span className="wb-contact-eyebrow">{data.eyebrow}</span>
+              <span className="wb-contact-eyebrow">{parseRichText(data.eyebrow)}</span>
             </div>
           )}
-          <h2 className="wb-contact-title">{data.heading}</h2>
-          {data.text && <p className="wb-contact-intro">{data.text}</p>}
+          <h2 className="wb-contact-title">{parseRichText(data.heading)}</h2>
+          {data.text && <p className="wb-contact-intro">{parseRichText(data.text)}</p>}
 
           {hasStandardDetails && (
             <div className="wb-contact-cards-stack">

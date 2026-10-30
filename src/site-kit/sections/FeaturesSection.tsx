@@ -276,7 +276,7 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
 
         <div className="wb-feature-content">
           <div className="wb-feature-header-row">
-            <h3 className="wb-feature-title">{item.title}</h3>
+            <h3 className="wb-feature-title">{parseRichText(item.title)}</h3>
             {item.badge && (
               <span
                 className={`wb-feature-badge ${colorClass}`}
@@ -286,7 +286,7 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
               </span>
             )}
           </div>
-          <p className="wb-feature-desc wb-muted">{item.description}</p>
+          <p className="wb-feature-desc wb-muted">{parseRichText(item.description)}</p>
           {item.link && (
             <SiteLink link={item.link} className="wb-feature-link">
               {item.link.label || "Learn more"} &rarr;
@@ -308,7 +308,7 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
         fullWidth
       >
         <div className="wb-container">
-          {data.eyebrow && <p className="wb-vr-eyebrow">{data.eyebrow}</p>}
+          {data.eyebrow && <p className="wb-vr-eyebrow">{parseRichText(data.eyebrow)}</p>}
           {data.heading && (
             <h2 className="wb-process-heading">{parseRichText(data.heading)}</h2>
           )}
@@ -318,8 +318,8 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
                 <span className="wb-process-num">
                   {item.badge || romanNumerals[index % romanNumerals.length]}
                 </span>
-                <h3 className="wb-process-title">{item.title}</h3>
-                <p className="wb-process-desc">{item.description}</p>
+                <h3 className="wb-process-title">{parseRichText(item.title)}</h3>
+                <p className="wb-process-desc">{parseRichText(item.description)}</p>
               </div>
             ))}
           </div>
@@ -351,8 +351,8 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
                 className={`wb-pillar-card ${pillarClasses[index % pillarClasses.length]}`}
               >
                 {item.badge && <span className="wb-pillar-badge">{item.badge}</span>}
-                <h3 className="wb-pillar-heading">{item.title}</h3>
-                <p className="wb-pillar-text">{item.description}</p>
+                <h3 className="wb-pillar-heading">{parseRichText(item.title)}</h3>
+                <p className="wb-pillar-text">{parseRichText(item.description)}</p>
               </div>
             ))}
           </div>
@@ -385,9 +385,9 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
                     <SiteImage image={item.image} />
                   </div>
                 )}
-                <h3 className="wb-polaroid-grid-title">{item.title}</h3>
+                <h3 className="wb-polaroid-grid-title">{parseRichText(item.title)}</h3>
                 {item.description && (
-                  <p className="wb-polaroid-grid-desc">{item.description}</p>
+                  <p className="wb-polaroid-grid-desc">{parseRichText(item.description)}</p>
                 )}
               </div>
             ))}
@@ -401,9 +401,9 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
   if (isSplit) {
     const heroContent = (
       <div className="wb-features-split-hero">
-        {data.eyebrow && <span className="wb-eyebrow">{data.eyebrow}</span>}
-        <h2 className="wb-features-split-title">{data.heading}</h2>
-        {data.intro && <p className="wb-features-split-intro wb-muted">{data.intro}</p>}
+        {data.eyebrow && <span className="wb-eyebrow">{parseRichText(data.eyebrow)}</span>}
+        <h2 className="wb-features-split-title">{parseRichText(data.heading)}</h2>
+        {data.intro && <p className="wb-features-split-intro wb-muted">{parseRichText(data.intro)}</p>}
 
         {/* Mockup visual or custom uploaded image */}
         <div className="wb-features-split-visual">

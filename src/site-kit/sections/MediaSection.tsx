@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { videoEmbedUrl } from "../links.ts";
 import { SectionShell, SiteImage } from "../primitives.tsx";
 import type { MediaAspect, SectionOf } from "../types.ts";
@@ -50,10 +51,10 @@ export default function MediaSection({ section }: { section: SectionOf<"media"> 
       className={`wb-media wb-media-${data.width} wb-align-${align}`}
       label={data.heading || "Media"}
     >
-      {data.heading && <h2 className={`wb-media-head wb-align-${align}`}>{data.heading}</h2>}
+      {data.heading && <h2 className={`wb-media-head wb-align-${align}`}>{parseRichText(data.heading)}</h2>}
       <figure>
         {media}
-        {data.caption && <figcaption className={`wb-muted wb-align-${align}`}>{data.caption}</figcaption>}
+        {data.caption && <figcaption className={`wb-muted wb-align-${align}`}>{parseRichText(data.caption)}</figcaption>}
       </figure>
     </SectionShell>
   );

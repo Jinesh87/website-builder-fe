@@ -1,3 +1,5 @@
+import { hasRichText } from "../rich-text-core.ts";
+import { toPlainText } from "../rich-text-core.ts";
 import { useState, useMemo, type FormEvent } from "react";
 import { parseRichText, SectionShell, SiteImage } from "../primitives.tsx";
 import type { BlogData, SectionOf } from "../types.ts";
@@ -33,11 +35,11 @@ function renderVintageBlogTitle(title: string, italicTitle?: string) {
     const raw = title.replace(italicTitle, "").trim();
     return (
       <>
-        {raw} <em className="wb-vr-blog-title-accent">{italicTitle}</em>
+        {parseRichText(raw)} <em className="wb-vr-blog-title-accent">{parseRichText(italicTitle)}</em>
       </>
     );
   }
-  if (title.includes("<em>") || title.includes("</em>")) {
+  if (hasRichText(title)) {
     return parseRichText(title);
   }
   const lower = title.toLowerCase();
@@ -165,7 +167,7 @@ export default function VintageBlogSection({
           <a
             href={formatBlogHref(featuredPost.slug)}
             className="wb-vr-blog-featured-card"
-            aria-label={featuredPost.title}
+            aria-label={toPlainText(featuredPost.title)}
           >
             <div className="wb-vr-blog-featured-media">
               {featuredPost.coverImage?.url && (
@@ -181,7 +183,7 @@ export default function VintageBlogSection({
                   FEATURED • {featuredPost.category || "TRENDS"} • {featuredPost.readTime || "4 MIN READ"}
                 </span>
                 <h2 className="wb-vr-blog-featured-title">
-                  {featuredPost.title}
+                  {parseRichText(featuredPost.title)}
                 </h2>
               </div>
             </div>
@@ -194,7 +196,7 @@ export default function VintageBlogSection({
             const href = formatBlogHref(post.slug);
             return (
               <article key={post.id} className="wb-vr-blog-card">
-                <a href={href} className="wb-vr-blog-card-link" aria-label={post.title}>
+                <a href={href} className="wb-vr-blog-card-link" aria-label={toPlainText(post.title)}>
                   <div className="wb-vr-blog-card-media">
                     {post.coverImage?.url ? (
                       <SiteImage
@@ -210,9 +212,9 @@ export default function VintageBlogSection({
                     <span className="wb-vr-blog-card-tag">
                       {post.category || "CRAFT"} • {post.readTime || "4 MIN"}
                     </span>
-                    <h3 className="wb-vr-blog-card-title">{post.title}</h3>
+                    <h3 className="wb-vr-blog-card-title">{parseRichText(post.title)}</h3>
                     {post.excerpt && (
-                      <p className="wb-vr-blog-card-excerpt">{post.excerpt}</p>
+                      <p className="wb-vr-blog-card-excerpt">{parseRichText(post.excerpt)}</p>
                     )}
                   </div>
                 </a>

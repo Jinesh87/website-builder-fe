@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { SectionHead, SectionShell, SiteImage, SiteLink } from "../primitives.tsx";
 import { StaticStates, useStaticRender } from "../render-mode.tsx";
@@ -86,9 +87,9 @@ function CarouselCards({
                 {!slide.image && slide.badge && (
                   <span className="wb-carousel-badge-inline">{slide.badge}</span>
                 )}
-                {slide.subtitle && <p className="wb-carousel-card-sub">{slide.subtitle}</p>}
-                <h3 className="wb-carousel-card-title">{slide.title}</h3>
-                {slide.description && <p className="wb-carousel-card-desc">{slide.description}</p>}
+                {slide.subtitle && <p className="wb-carousel-card-sub">{parseRichText(slide.subtitle)}</p>}
+                <h3 className="wb-carousel-card-title">{parseRichText(slide.title)}</h3>
+                {slide.description && <p className="wb-carousel-card-desc">{parseRichText(slide.description)}</p>}
                 {(slide.button || slide.secondaryButton) && (
                   <div className="wb-carousel-card-actions">
                     {slide.button && <SiteLink link={slide.button} className="wb-btn wb-btn-primary" />}
@@ -217,11 +218,11 @@ function CarouselHeroSlider({
                     <span>{slide.badge}</span>
                   </div>
                 )}
-                {slide.subtitle && <p className="wb-carousel-hero-sub">{slide.subtitle}</p>}
-                <h2 className="wb-carousel-hero-title">{slide.title}</h2>
+                {slide.subtitle && <p className="wb-carousel-hero-sub">{parseRichText(slide.subtitle)}</p>}
+                <h2 className="wb-carousel-hero-title">{parseRichText(slide.title)}</h2>
                 {(slide.description || slide.caption) && (
                   <p className="wb-carousel-hero-desc">
-                    {slide.description || slide.caption}
+                    {parseRichText(slide.description || slide.caption)}
                   </p>
                 )}
 
@@ -349,8 +350,8 @@ function CarouselShowcase({
               )}
               <div className="wb-carousel-showcase-info">
                 {slide.badge && <span className="wb-carousel-badge-inline">{slide.badge}</span>}
-                <h3 className="wb-carousel-showcase-title">{slide.title}</h3>
-                {slide.description && <p className="wb-carousel-showcase-desc">{slide.description}</p>}
+                <h3 className="wb-carousel-showcase-title">{parseRichText(slide.title)}</h3>
+                {slide.description && <p className="wb-carousel-showcase-desc">{parseRichText(slide.description)}</p>}
                 {isCenter && (slide.button || slide.secondaryButton) && (
                   <div className="wb-carousel-showcase-actions" onClick={(e) => e.stopPropagation()}>
                     {slide.button && <SiteLink link={slide.button} className="wb-btn wb-btn-primary" />}
@@ -413,9 +414,9 @@ function CarouselMinimalEditorial({
           </div>
 
           <div className="wb-carousel-editorial-body">
-            {current.subtitle && <p className="wb-carousel-editorial-sub">{current.subtitle}</p>}
-            <h2 className="wb-carousel-editorial-title">{current.title}</h2>
-            {current.description && <p className="wb-carousel-editorial-desc">{current.description}</p>}
+            {current.subtitle && <p className="wb-carousel-editorial-sub">{parseRichText(current.subtitle)}</p>}
+            <h2 className="wb-carousel-editorial-title">{parseRichText(current.title)}</h2>
+            {current.description && <p className="wb-carousel-editorial-desc">{parseRichText(current.description)}</p>}
 
             {(current.button || current.secondaryButton) && (
               <div className="wb-carousel-editorial-actions">
@@ -520,9 +521,9 @@ function CarouselImageGallery({
                 {String(activeIndex + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
               </span>
             </div>
-            {current.title && <h3 className="wb-carousel-gallery-title">{current.title}</h3>}
+            {current.title && <h3 className="wb-carousel-gallery-title">{parseRichText(current.title)}</h3>}
             {(current.caption || current.description) && (
-              <p className="wb-carousel-gallery-desc">{current.caption || current.description}</p>
+              <p className="wb-carousel-gallery-desc">{parseRichText(current.caption || current.description)}</p>
             )}
             {(current.button || current.secondaryButton) && (
               <div className="wb-carousel-gallery-actions">
@@ -655,10 +656,10 @@ function CarouselImageStrip({
                   <div className="wb-carousel-strip-overlay" />
                 </div>
                 <div className="wb-carousel-strip-content">
-                  {slide.subtitle && <p className="wb-carousel-strip-sub">{slide.subtitle}</p>}
-                  <h4 className="wb-carousel-strip-title">{slide.title}</h4>
+                  {slide.subtitle && <p className="wb-carousel-strip-sub">{parseRichText(slide.subtitle)}</p>}
+                  <h4 className="wb-carousel-strip-title">{parseRichText(slide.title)}</h4>
                   {(slide.caption || slide.description) && (
-                    <p className="wb-carousel-strip-desc">{slide.caption || slide.description}</p>
+                    <p className="wb-carousel-strip-desc">{parseRichText(slide.caption || slide.description)}</p>
                   )}
                   {(slide.button || slide.secondaryButton) && (
                     <div className="wb-carousel-strip-actions" onClick={(e) => e.stopPropagation()}>
@@ -766,9 +767,9 @@ function CarouselImageCoverflow({
                 {slide.badge && <span className="wb-carousel-coverflow-badge">{slide.badge}</span>}
               </div>
               <div className="wb-carousel-coverflow-meta">
-                <h4 className="wb-carousel-coverflow-title">{slide.title}</h4>
+                <h4 className="wb-carousel-coverflow-title">{parseRichText(slide.title)}</h4>
                 {(slide.caption || slide.subtitle) && (
-                  <p className="wb-carousel-coverflow-sub">{slide.caption || slide.subtitle}</p>
+                  <p className="wb-carousel-coverflow-sub">{parseRichText(slide.caption || slide.subtitle)}</p>
                 )}
                 {(slide.button || slide.secondaryButton) && (
                   <div className="wb-carousel-coverflow-actions" onClick={(e) => e.stopPropagation()}>
@@ -853,7 +854,7 @@ export default function CarouselSection({ section }: { section: SectionOf<"carou
       >
         {(data.heading || data.intro || data.eyebrow) && variant !== "hero-slider" && (
           <div className={`wb-carousel-header-wrapper wb-align-${align}`}>
-            {data.eyebrow && <span className="wb-carousel-eyebrow">{data.eyebrow}</span>}
+            {data.eyebrow && <span className="wb-carousel-eyebrow">{parseRichText(data.eyebrow)}</span>}
             {data.heading && <SectionHead heading={data.heading} intro={data.intro} align={align} />}
             {data.badge && (
               <div className="wb-carousel-badge-pill">

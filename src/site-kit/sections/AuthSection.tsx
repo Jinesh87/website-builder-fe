@@ -1,3 +1,5 @@
+import { toPlainText } from "../rich-text-core.ts";
+import { parseRichText } from "../rich-text.tsx";
 import {
   useEffect,
   useId,
@@ -646,8 +648,8 @@ function AuthForm({ data, flow, hideSwitch, shopLive }: AuthFormProps & { shopLi
   return (
     <div key={animationKey} className="wb-auth-view">
       <header className="wb-auth-head">
-        <h2 className="wb-auth-title">{content.heading}</h2>
-        {content.subheading && <p className="wb-auth-subtitle">{content.subheading}</p>}
+        <h2 className="wb-auth-title">{parseRichText(content.heading)}</h2>
+        {content.subheading && <p className="wb-auth-subtitle">{parseRichText(content.subheading)}</p>}
       </header>
 
       {socialEnabled && socialTop && (
@@ -657,7 +659,7 @@ function AuthForm({ data, flow, hideSwitch, shopLive }: AuthFormProps & { shopLi
         </>
       )}
 
-      <form className="wb-auth-form" onSubmit={submit} aria-label={content.heading}>
+      <form className="wb-auth-form" onSubmit={submit} aria-label={toPlainText(content.heading)}>
         {view === "otp" ? (
           <OtpInput length={data.otp.length} />
         ) : (
@@ -820,7 +822,7 @@ function Testimonial({ data }: { data: AuthData }) {
   if (!testimonial?.quote) return null;
   return (
     <figure className="wb-auth-quote">
-      <blockquote>“{testimonial.quote}”</blockquote>
+      <blockquote>“{parseRichText(testimonial.quote)}”</blockquote>
       <figcaption>
         {testimonial.avatar?.url ? (
           <SiteImage image={testimonial.avatar} className="wb-auth-avatar" />
@@ -858,8 +860,8 @@ function DiagonalSplit({ data, flow, form }: LayoutProps) {
       <aside className="wb-auth-panel">
         <AuthBrand data={data} />
         <div key={flow.view} className="wb-auth-panel-body">
-          {copy.heading && <h2 className="wb-auth-panel-title">{copy.heading}</h2>}
-          {copy.text && <p>{copy.text}</p>}
+          {copy.heading && <h2 className="wb-auth-panel-title">{parseRichText(copy.heading)}</h2>}
+          {copy.text && <p>{parseRichText(copy.text)}</p>}
           {next && (
             <button type="button" className="wb-auth-ghost-btn" onClick={() => flow.goTo(next.view)} data-wb-go={next.view}>
               {next.label}
@@ -882,9 +884,9 @@ function GradientSpotlight({ data, form }: LayoutProps) {
       <div className="wb-auth-spotlight-inner">
         <div className="wb-auth-spotlight-copy">
           <AuthBrand data={data} />
-          {panel.eyebrow && <p className="wb-auth-eyebrow">{panel.eyebrow}</p>}
-          {panel.heading && <h2 className="wb-auth-display">{panel.heading}</h2>}
-          {panel.text && <p className="wb-auth-lead">{panel.text}</p>}
+          {panel.eyebrow && <p className="wb-auth-eyebrow">{parseRichText(panel.eyebrow)}</p>}
+          {panel.heading && <h2 className="wb-auth-display">{parseRichText(panel.heading)}</h2>}
+          {panel.text && <p className="wb-auth-lead">{parseRichText(panel.text)}</p>}
           <Highlights items={panel.highlights} />
         </div>
         <div className="wb-auth-card wb-auth-card-float">{form}</div>
@@ -910,8 +912,8 @@ function IllustrationFrame({ data, form }: LayoutProps) {
           )}
           {(panel.heading || panel.text) && (
             <div className="wb-auth-frame-caption">
-              {panel.heading && <h2 className="wb-auth-panel-title">{panel.heading}</h2>}
-              {panel.text && <p>{panel.text}</p>}
+              {panel.heading && <h2 className="wb-auth-panel-title">{parseRichText(panel.heading)}</h2>}
+              {panel.text && <p>{parseRichText(panel.text)}</p>}
             </div>
           )}
         </div>
@@ -972,8 +974,8 @@ function ProductShowcase({ data, form }: LayoutProps) {
             <SiteImage image={panel.image} className="wb-auth-cover" />
           </div>
         )}
-        {panel.heading && <h2 className="wb-auth-panel-title">{panel.heading}</h2>}
-        {panel.text && <p>{panel.text}</p>}
+        {panel.heading && <h2 className="wb-auth-panel-title">{parseRichText(panel.heading)}</h2>}
+        {panel.text && <p>{parseRichText(panel.text)}</p>}
         <div className="wb-auth-dots" aria-hidden="true">
           <span className="is-active" />
           <span />
@@ -993,14 +995,14 @@ function MinimalEditorial({ data, flow, form }: LayoutProps) {
       <div className="wb-auth-editorial-top">
         <AuthBrand data={data} />
         <span className="wb-auth-editorial-step">
-          {EDITORIAL_STEP[flow.view]} / {viewContent(data, flow.view).heading}
+          {EDITORIAL_STEP[flow.view]} / {parseRichText(viewContent(data, flow.view).heading)}
         </span>
       </div>
       <div className="wb-auth-editorial-grid">
         <div className="wb-auth-editorial-copy">
-          {panel.eyebrow && <p className="wb-auth-eyebrow">{panel.eyebrow}</p>}
-          {panel.heading && <h2 className="wb-auth-display">{panel.heading}</h2>}
-          {panel.text && <p className="wb-auth-lead">{panel.text}</p>}
+          {panel.eyebrow && <p className="wb-auth-eyebrow">{parseRichText(panel.eyebrow)}</p>}
+          {panel.heading && <h2 className="wb-auth-display">{parseRichText(panel.heading)}</h2>}
+          {panel.text && <p className="wb-auth-lead">{parseRichText(panel.text)}</p>}
         </div>
         <div className="wb-auth-editorial-form">{form}</div>
       </div>
@@ -1019,8 +1021,8 @@ function BentoGrid({ data, form }: LayoutProps) {
       {(panel.heading || panel.text) && (
         <div className="wb-auth-tile wb-auth-tile-hero">
           <Blobs count={2} />
-          {panel.heading && <h2 className="wb-auth-display">{panel.heading}</h2>}
-          {panel.text && <p>{panel.text}</p>}
+          {panel.heading && <h2 className="wb-auth-display">{parseRichText(panel.heading)}</h2>}
+          {panel.text && <p>{parseRichText(panel.text)}</p>}
         </div>
       )}
       {panel.image?.url && (
@@ -1069,8 +1071,8 @@ function TabbedCompact({ data, flow, form }: LayoutProps) {
       <div className="wb-auth-grid-bg" aria-hidden="true" />
       <div className="wb-auth-tabbed-head">
         <AuthBrand data={data} className="wb-auth-brand-stack" />
-        {panel.heading && <h2 className="wb-auth-display wb-auth-gradient-text">{panel.heading}</h2>}
-        {panel.text && <p className="wb-auth-lead">{panel.text}</p>}
+        {panel.heading && <h2 className="wb-auth-display wb-auth-gradient-text">{parseRichText(panel.heading)}</h2>}
+        {panel.text && <p className="wb-auth-lead">{parseRichText(panel.text)}</p>}
       </div>
       <div className="wb-auth-card wb-auth-tabbed-card">
         <AuthTabs data={data} flow={flow} />

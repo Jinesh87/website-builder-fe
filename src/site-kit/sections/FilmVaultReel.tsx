@@ -1,3 +1,5 @@
+import { toPlainText } from "../rich-text-core.ts";
+import { parseRichText } from "../rich-text.tsx";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { SectionShell, SiteImage, SiteLink } from "../primitives.tsx";
@@ -21,7 +23,7 @@ function FilmThumbnail({ item, videoUrl }: { item: CardItem; videoUrl: string })
     return (
       <img
         src={`https://i.ytimg.com/vi/${parsed.videoId}/hqdefault.jpg`}
-        alt={item.title}
+        alt={toPlainText(item.title)}
         className="wb-film-strip-img"
         loading="lazy"
       />
@@ -184,7 +186,7 @@ export default function FilmVaultReel({
       onClick={() => setSelectedFilm(null)}
       role="dialog"
       aria-modal="true"
-      aria-label={selectedFilm.title}
+      aria-label={toPlainText(selectedFilm.title)}
     >
       <div className="wb-film-modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="wb-film-modal-header">
@@ -192,7 +194,7 @@ export default function FilmVaultReel({
             {selectedFilm.badge && (
               <span className="wb-film-modal-badge">{selectedFilm.badge}</span>
             )}
-            <h3 className="wb-film-modal-title">{selectedFilm.title}</h3>
+            <h3 className="wb-film-modal-title">{parseRichText(selectedFilm.title)}</h3>
           </div>
           <button
             type="button"
@@ -207,7 +209,7 @@ export default function FilmVaultReel({
           {parsedVideo && (parsedVideo.type === "youtube" || parsedVideo.type === "vimeo") && parsedVideo.embedUrl ? (
             <iframe
               src={parsedVideo.embedUrl}
-              title={selectedFilm.title}
+              title={toPlainText(selectedFilm.title)}
               className="wb-film-modal-video-frame"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
@@ -232,7 +234,7 @@ export default function FilmVaultReel({
         {(selectedFilm.description || selectedFilm.link) && (
           <div className="wb-film-modal-footer">
             {selectedFilm.description && (
-              <p className="wb-film-modal-desc">{selectedFilm.description}</p>
+              <p className="wb-film-modal-desc">{parseRichText(selectedFilm.description)}</p>
             )}
             {selectedFilm.link && (
               <SiteLink link={selectedFilm.link} className="wb-film-modal-cta">
@@ -256,7 +258,7 @@ export default function FilmVaultReel({
       <div className="wb-container wb-film-vault-container">
         {/* Top meta row */}
         <div className="wb-vr-work-meta-row">
-          <span className="wb-vr-work-meta-left">{data.eyebrow ?? "PORTFOLIO"}</span>
+          <span className="wb-vr-work-meta-left">{parseRichText(data.eyebrow ?? "PORTFOLIO")}</span>
           {showRec && (
             <span className="wb-vr-work-rec">
               <span
@@ -283,8 +285,8 @@ export default function FilmVaultReel({
         {/* Subrow: typewriter paragraph on left, red digital timecode on right */}
         <div className="wb-vr-work-subrow">
           <p className="wb-vr-work-desc">
-            {data.intro ??
-              "Music videos, brand films, weddings and short films. Swipe the strip and press play on any frame."}
+            {parseRichText(data.intro ??
+              "Music videos, brand films, weddings and short films. Swipe the strip and press play on any frame.")}
           </p>
           <div
             className="wb-vr-timecode"
@@ -352,12 +354,12 @@ export default function FilmVaultReel({
                     setSelectedFilm(item);
                   }
                 }}
-                aria-label={itemVideoUrl ? `Play ${item.title}` : item.title}
+                aria-label={itemVideoUrl ? `Play ${toPlainText(item.title)}` : toPlainText(item.title)}
                 {...(itemVideoUrl
                   ? {
                       "data-wb-video-modal": "true",
                       "data-wb-video-url": itemVideoUrl,
-                      "data-wb-video-title": item.title,
+                      "data-wb-video-title": toPlainText(item.title),
                     }
                   : {})}
               >
@@ -373,7 +375,7 @@ export default function FilmVaultReel({
                   <button
                     type="button"
                     className="wb-film-play-btn"
-                    aria-label={`Play ${item.title}`}
+                    aria-label={`Play ${toPlainText(item.title)}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedFilm(item);
@@ -386,7 +388,7 @@ export default function FilmVaultReel({
                 ) : null}
 
                 {/* Film Title bottom-left */}
-                <div className="wb-film-title-label">{item.title}</div>
+                <div className="wb-film-title-label">{parseRichText(item.title)}</div>
               </div>
             );
           })}

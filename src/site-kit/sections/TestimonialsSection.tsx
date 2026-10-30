@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { useState, useEffect, useId } from "react";
 import { SectionHead, SectionShell, SiteImage } from "../primitives.tsx";
 import type { ImageRef, SectionOf, TestimonialItem } from "../types.ts";
@@ -124,7 +125,7 @@ function TestimonialCard({
         {item.highlight && <span className="wb-testimonial-highlight">{item.highlight}</span>}
       </div>
 
-      <p className="wb-testimonial-quote">“{item.quote}”</p>
+      <p className="wb-testimonial-quote">“{parseRichText(item.quote)}”</p>
 
       <div className="wb-testimonial-author">
         {showAvatars && <AuthorAvatar avatar={item.avatar} name={item.name} />}
@@ -222,7 +223,7 @@ export default function TestimonialsSection({
             </div>
 
             <blockquote className="wb-testimonials-slide-text">
-              “{current.quote}”
+              “{parseRichText(current.quote)}”
             </blockquote>
 
             <div className="wb-testimonial-author">
@@ -365,7 +366,7 @@ export default function TestimonialsSection({
               </div>
 
               <blockquote className="wb-testimonials-hero-quote">
-                “{featured.quote}”
+                “{parseRichText(featured.quote)}”
               </blockquote>
 
               <div className="wb-testimonial-author">
@@ -446,7 +447,7 @@ export default function TestimonialsSection({
               </div>
 
               <div>
-                <p className="wb-testimonials-editorial-quote">“{item.quote}”</p>
+                <p className="wb-testimonials-editorial-quote">“{parseRichText(item.quote)}”</p>
                 {item.highlight && (
                   <div className="mt-3">
                     <span className="wb-testimonial-highlight">{item.highlight}</span>

@@ -1,3 +1,4 @@
+import { toPlainText } from "../rich-text-core.ts";
 import { useMemo, useState } from "react";
 import { ArrowRight, User } from "lucide-react";
 import { parseRichText, SectionShell, SiteImage } from "../primitives.tsx";
@@ -80,7 +81,7 @@ export default function BlogSection({ section }: { section: SectionOf<"blog"> })
             const href = formatBlogHref(post.slug);
             return (
               <article key={post.id} className="wb-blog-card" data-href={href}>
-                <a href={href} className="wb-blog-card-media" aria-label={post.title}>
+                <a href={href} className="wb-blog-card-media" aria-label={toPlainText(post.title)}>
                   {post.coverImage?.url ? (
                     <SiteImage image={post.coverImage} className="wb-blog-card-img" />
                   ) : (

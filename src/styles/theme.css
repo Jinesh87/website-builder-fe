@@ -386,3 +386,19 @@ button[role="checkbox"]:focus-visible {
     display: none;
   }
 }
+
+/* Rich text field (editor inspector) */
+.wb-rt-editor {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+.wb-rt-editor p {
+  margin: 0;
+}
+.wb-rt-editor mark.wb-rt-editor-gradient {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}

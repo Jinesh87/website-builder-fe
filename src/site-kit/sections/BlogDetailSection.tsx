@@ -354,7 +354,7 @@ function ArticleProse({
 
       {follow && (
         <div className="wb-blog-share-row">
-          <span className="wb-blog-share-row-label">{follow.title}</span>
+          <span className="wb-blog-share-row-label">{parseRichText(follow.title)}</span>
           <SocialLinks links={follow.links} label={follow.title} />
         </div>
       )}
@@ -594,7 +594,7 @@ export default function BlogDetailSection({ section }: { section: SectionOf<"blo
 
                       {follow && (
                         <div className="wb-blog-side-box">
-                          <div className="wb-blog-side-title">{follow.title}</div>
+                          <div className="wb-blog-side-title">{parseRichText(follow.title)}</div>
                           <SocialLinks links={follow.links} label={follow.title} />
                         </div>
                       )}
@@ -723,7 +723,7 @@ export default function BlogDetailSection({ section }: { section: SectionOf<"blo
                       {(data.content || []).map((sec, i) =>
                         sec.heading ? (
                           <div key={i} className="wb-blog-toc-item">
-                            • {sec.heading}
+                            • {parseRichText(sec.heading)}
                           </div>
                         ) : null,
                       )}
@@ -756,7 +756,7 @@ export default function BlogDetailSection({ section }: { section: SectionOf<"blo
 
                 {follow && (
                   <div className="wb-blog-toc-widget">
-                    <div className="wb-blog-toc-title">{follow.title}</div>
+                    <div className="wb-blog-toc-title">{parseRichText(follow.title)}</div>
                     <SocialLinks links={follow.links} label={follow.title} />
                   </div>
                 )}

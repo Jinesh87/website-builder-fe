@@ -78,7 +78,7 @@ function blockContent(block: ContactBlock, section: ContactSection): ReactNode {
       return block.text?.trim() ? (
         <div className="wb-contact-eyebrow-wrap">
           <span className="wb-contact-pulse-dot" />
-          <span className="wb-contact-eyebrow">{block.text}</span>
+          <span className="wb-contact-eyebrow">{parseRichText(block.text)}</span>
         </div>
       ) : null;
     case "info":
