@@ -1,6 +1,16 @@
+import type { MediaFile } from "../../api/media.ts";
 import type { QuestionnaireAnswers, SubmitQuestionnaireInput } from "./api.ts";
 
 export const DRAFT_STORAGE_KEY = "website_questionnaire_draft_v1";
+const ATTACHMENTS_STORAGE_KEY = "website_questionnaire_attachments_v1";
+
+/** Uploaded files kept with their URLs so previews survive a reload. */
+export type QuestionnaireAttachments = {
+  /** Owner of the files; a draft from another account is discarded. */
+  clientId: string;
+  logo: MediaFile | null;
+  files: MediaFile[];
+};
 
 export const DEFAULT_ANSWERS: QuestionnaireAnswers = {
   businessType: "Restaurant / Café",
@@ -21,6 +31,10 @@ export const DEFAULT_ANSWERS: QuestionnaireAnswers = {
   photos: "My own",
   domain: "I have one",
   needed: "ASAP",
+  themeId: null,
+  templateKey: null,
+  logoMediaId: null,
+  mediaIds: [],
 };
 
 export const INITIAL_FORM_STATE: SubmitQuestionnaireInput = {
@@ -56,8 +70,29 @@ export function saveDraft(data: SubmitQuestionnaireInput): void {
 export function clearSavedDraft(): void {
   try {
     localStorage.removeItem(DRAFT_STORAGE_KEY);
+    localStorage.removeItem(ATTACHMENTS_STORAGE_KEY);
   } catch {
     // Ignore
+  }
+}
+
+export function loadSavedAttachments(clientId: string): QuestionnaireAttachments | null {
+  try {
+    const raw = localStorage.getItem(ATTACHMENTS_STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as QuestionnaireAttachments;
+    if (saved.clientId !== clientId) return null;
+    return { clientId, logo: saved.logo ?? null, files: Array.isArray(saved.files) ? saved.files : [] };
+  } catch {
+    return null;
+  }
+}
+
+export function saveAttachments(data: QuestionnaireAttachments): void {
+  try {
+    localStorage.setItem(ATTACHMENTS_STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Ignore quota or disabled localStorage
   }
 }
 

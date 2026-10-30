@@ -14,6 +14,8 @@ import { adminClientsApi, type Client } from "../../api/admin-clients.ts";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import {
   websitesApi,
+  MAX_BRIEF_IMAGES,
+  MAX_GENERATED_PAGES,
   type CreateWebsiteInput,
   type GenerationTone,
   type ThemeOption,
@@ -180,22 +182,55 @@ function styleToTone(style?: string): GenerationTone | "" {
   }
 }
 
+const QUESTIONNAIRE_WEBSITE_TYPES: Record<string, string> = {
+  "Restaurant / Café": "Restaurant / Café",
+  "Shop / Store": "Retail / Shop",
+  "Services / Agency": "Agency",
+  "Photo / Video / Events": "Portfolio",
+  Portfolio: "Portfolio",
+  Other: "Other",
+};
+
+function questionnaireWebsiteType(businessType?: string): string {
+  if (!businessType) return "";
+  return QUESTIONNAIRE_WEBSITE_TYPES[businessType] ?? "Business / Services";
+}
+
+/** The AI brief and website description share the 2000-character backend limit. */
+const BRIEF_MAX_LENGTH = 2000;
+
+function clip(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+}
+
 function answersToPrompt(q: Questionnaire): string {
+  const a = q.answers;
   const parts: string[] = [];
-  parts.push(`Build a modern website for ${q.businessName}.`);
-  if (q.answers?.businessType) parts.push(`Business type: ${q.answers.businessType}.`);
-  if (q.answers?.look || q.answers?.style || q.answers?.palette) {
-    parts.push(
-      `Design preference: ${q.answers.look || ""} look, ${q.answers.style || ""} style, ${q.answers.palette || ""} color palette.`,
-    );
+  const style = a?.style && a.style !== "You choose" ? `${a.style.toLowerCase()} ` : "";
+  parts.push(`Build a ${style}website for ${q.businessName}.`);
+  if (a?.businessType) parts.push(`Business type: ${a.businessType}.`);
+  if (a?.look || a?.palette) {
+    parts.push(`Design preference: ${a.look ? `${a.look} look` : ""}${a.look && a.palette ? ", " : ""}${a.palette ? `${a.palette} colour palette` : ""}.`);
   }
-  if (q.answers?.features && q.answers.features.length > 0) {
-    parts.push(`Key features needed: ${q.answers.features.join(", ")}.`);
+  if (a?.features && a.features.length > 0) {
+    parts.push(`Key features needed: ${a.features.join(", ")}.`);
   }
-  if (q.notes) {
-    parts.push(`Client notes: ${q.notes}`);
+
+  const contact: string[] = [];
+  if (a?.reach?.call?.enabled) contact.push(`a call button (${a.reach.call.differentContact || q.phone})`);
+  if (a?.reach?.whatsapp?.enabled) contact.push(`a WhatsApp button (${a.reach.whatsapp.differentContact || q.phone})`);
+  if (a?.reach?.enquiryForm?.enabled) contact.push("an enquiry form");
+  if (a?.reach?.mapLocation?.enabled) contact.push("a map with the location");
+  if (contact.length > 0) parts.push(`Visitors should reach the business through ${contact.join(", ")}.`);
+  if (a?.reach?.socialLinks && a.reach.socialLinks.length > 0) {
+    parts.push(`Link to their social profiles: ${a.reach.socialLinks.join(", ")}.`);
   }
-  return parts.join(" ");
+
+  if (a?.text === "You write it") parts.push("Write all the website copy.");
+  if (a?.photos === "Stock") parts.push("Use stock-style imagery.");
+  if (a?.logo === "Use my name") parts.push("Use the business name as a text logo.");
+  if (q.notes) parts.push(`Client notes: ${q.notes}`);
+  return clip(parts.join(" "), BRIEF_MAX_LENGTH);
 }
 
 export default function CreateWebsitePage() {
@@ -267,12 +302,13 @@ export default function CreateWebsitePage() {
             template.key === requestedTemplateKey ||
             (rawRequested && template.key === getTemplateKey(rawRequested)),
         );
-        const resolvedKey =
-          requested?.key ??
-          (loaded.some((candidate) => candidate.key === templateKey)
-            ? templateKey
-            : "");
-        setTemplateKey(resolvedKey);
+        setTemplateKey(
+          (current) =>
+            requested?.key ??
+            (loaded.some((candidate) => candidate.key === current)
+              ? current
+              : ""),
+        );
         if (requestedThemeParam) {
           setThemeId(requestedThemeParam);
         } else if (requested?.themeId && !requested.isCustom) {
@@ -300,6 +336,7 @@ export default function CreateWebsitePage() {
       .then((detail) => {
         if (cancelled) return;
         const q = detail.questionnaire;
+        const { assets } = detail;
         if (q.clientId && !clientId) {
           setClientId(q.clientId);
         }
@@ -307,19 +344,39 @@ export default function CreateWebsitePage() {
           ...prev,
           name: prev.name || q.businessName,
           businessName: prev.businessName || q.businessName,
-          websiteType: prev.websiteType || q.answers?.businessType || "",
+          websiteType: prev.websiteType || questionnaireWebsiteType(q.answers?.businessType),
+          industry: prev.industry || q.answers?.businessType || "",
           contactEmail: prev.contactEmail || q.email || "",
           contactPhone: prev.contactPhone || q.phone || "",
-          description: prev.description || q.notes || "",
+          description: prev.description || clip(q.notes ?? "", MAX_LENGTHS.description),
         }));
+
+        const chosenThemeId = assets.theme?.id ?? "";
+        if (assets.template) {
+          // A chosen template is copied as-is, which only the manual builder does.
+          setMode("MANUAL");
+          setTemplateKey(assets.template.key);
+          setThemeId(chosenThemeId || assets.template.themeId || "");
+          return;
+        }
+
+        if (chosenThemeId) setThemeId(chosenThemeId);
         setAiBrief((prev) => ({
           ...prev,
           prompt: prev.prompt || answersToPrompt(q),
           pages:
             q.answers?.pages && q.answers.pages.length > 0
-              ? q.answers.pages.filter((p) => p.toLowerCase() !== "home")
+              ? q.answers.pages
+                  .filter((p) => p.toLowerCase() !== "home")
+                  .slice(0, MAX_GENERATED_PAGES - 1)
               : prev.pages,
           tone: q.answers?.style ? styleToTone(q.answers.style) : prev.tone,
+          themeId: prev.themeId || chosenThemeId,
+          images:
+            prev.images.length > 0
+              ? prev.images
+              : assets.files.filter((file) => file.kind === "IMAGE").slice(0, MAX_BRIEF_IMAGES),
+          logo: prev.logo ?? assets.logo,
         }));
       })
       .catch((err: unknown) => !cancelled && setLoadError(errorMessage(err)));
