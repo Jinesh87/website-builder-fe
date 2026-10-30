@@ -1,3 +1,5 @@
+import { toPlainText } from "../../site-kit/rich-text-core.ts";
+import { parseRichText } from "../../site-kit/rich-text.tsx";
 import {
   useCallback,
   useEffect,
@@ -444,7 +446,7 @@ export default function CurvedBannerCarousel({
                 <div className="wb-reel-card-inner">
                   <img
                     src={item.image}
-                    alt={item.alt || item.title}
+                    alt={toPlainText(item.alt || item.title)}
                     loading={idx < 8 ? "eager" : "lazy"}
                     decoding="async"
                     draggable={false}
@@ -466,8 +468,8 @@ export default function CurvedBannerCarousel({
                   </span>
 
                   <div className="wb-reel-meta">
-                    {item.author && <p className="wb-reel-author">{item.author}</p>}
-                  <h4 className="wb-reel-title">{item.title}</h4>
+                    {item.author && <p className="wb-reel-author">{parseRichText(item.author)}</p>}
+                  <h4 className="wb-reel-title">{parseRichText(item.title)}</h4>
                 </div>
 
                 <div className="wb-reel-ring" aria-hidden />
@@ -482,7 +484,7 @@ export default function CurvedBannerCarousel({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={activePreview.title}
+          aria-label={toPlainText(activePreview.title)}
           className="wb-reel-modal"
           onClick={() => setActivePreview(null)}
         >
@@ -490,7 +492,7 @@ export default function CurvedBannerCarousel({
             <div className="wb-reel-modal-head">
               <div>
                 <span className="wb-reel-modal-eyebrow">{activePreview.badge || "Video Reel"}</span>
-                <h3 className="wb-reel-modal-title">{activePreview.title}</h3>
+                <h3 className="wb-reel-modal-title">{parseRichText(activePreview.title)}</h3>
               </div>
               <button
                 type="button"
@@ -515,7 +517,7 @@ export default function CurvedBannerCarousel({
               ) : (
                 <img
                   src={activePreview.image}
-                  alt={activePreview.alt || activePreview.title}
+                  alt={toPlainText(activePreview.alt || activePreview.title)}
                   onError={(e) => {
                     const target = e.currentTarget;
                     const fallback = DEFAULT_BANNER_ITEMS[0].image;
@@ -529,8 +531,8 @@ export default function CurvedBannerCarousel({
 
             <div className="wb-reel-modal-foot">
               <div>
-                {activePreview.author && <p className="wb-reel-modal-author">{activePreview.author}</p>}
-                {activePreview.subtitle && <p className="wb-reel-modal-sub">{activePreview.subtitle}</p>}
+                {activePreview.author && <p className="wb-reel-modal-author">{parseRichText(activePreview.author)}</p>}
+                {activePreview.subtitle && <p className="wb-reel-modal-sub">{parseRichText(activePreview.subtitle)}</p>}
               </div>
               <button type="button" onClick={() => setActivePreview(null)} className="wb-reel-modal-done">
                 Done

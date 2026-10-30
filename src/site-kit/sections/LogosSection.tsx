@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { SectionShell, SiteImage } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
 
@@ -11,7 +12,7 @@ export default function LogosSection({ section }: { section: SectionOf<"logos"> 
       className={`wb-logos${data.grayscale ? " wb-logos-gray" : ""} wb-align-${align}`}
       label={data.heading || "Logos"}
     >
-      {data.heading && <p className={`wb-logos-head wb-muted wb-align-${align}`}>{data.heading}</p>}
+      {data.heading && <p className={`wb-logos-head wb-muted wb-align-${align}`}>{parseRichText(data.heading)}</p>}
       {data.logos.length > 0 ? (
         <ul className={`wb-logos-row wb-align-${align}`}>
           {data.logos.map((logo, index) => (

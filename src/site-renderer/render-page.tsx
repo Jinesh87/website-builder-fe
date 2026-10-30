@@ -39,7 +39,7 @@ export function renderLivePage(site: SiteData, slug: string): RenderedPage | nul
     </SiteRenderModeProvider>,
   );
   const preloads = markup.match(LEADING_LINKS)?.[0] ?? "";
-  const fontLinks = googleFontLinks(usedFonts(site.theme, [page as WebsitePage]));
+  const fontLinks = googleFontLinks(usedFonts(site.theme, [page as WebsitePage], [site.header, site.footer]));
   const head = [
     ...(fontLinks.length > 0
       ? [

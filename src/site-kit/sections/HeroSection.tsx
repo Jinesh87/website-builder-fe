@@ -472,7 +472,7 @@ export default function HeroSection({
                   {...alignAttr(alignOf("badge"))}
                 >
                   {data.badgeIcon && <span>{data.badgeIcon}</span>}
-                  {data.eyebrow && <span>{data.eyebrow}</span>}
+                  {data.eyebrow && <span>{parseRichText(data.eyebrow)}</span>}
                 </span>
               </div>
             )}
@@ -777,7 +777,7 @@ export default function HeroSection({
                   className="wb-campaign-eyebrow"
                   {...alignAttr(overrideOf("badge"))}
                 >
-                  {data.eyebrow}
+                  {parseRichText(data.eyebrow)}
                 </span>
               )}
               {headingText && (
@@ -1083,7 +1083,7 @@ export default function HeroSection({
                   <div className="wb-polaroid-img-wrap">
                     <SiteImage image={pol.image} />
                   </div>
-                  {pol.caption && <figcaption className="wb-polaroid-caption">{pol.caption}</figcaption>}
+                  {pol.caption && <figcaption className="wb-polaroid-caption">{parseRichText(pol.caption)}</figcaption>}
                 </figure>
               ))}
             </div>
@@ -1112,7 +1112,7 @@ export default function HeroSection({
             <div className="wb-sunburst-rays" aria-hidden="true" />
             <div className="wb-sunburst-content">
               {data.eyebrow && (
-                <span className="wb-sunburst-badge">{data.eyebrow}</span>
+                <span className="wb-sunburst-badge">{parseRichText(data.eyebrow)}</span>
               )}
               <h1 className="wb-sunburst-heading">
                 {parseRichText(data.heading)}
@@ -1158,7 +1158,7 @@ export default function HeroSection({
       {(data.eyebrow || data.badgeIcon) && (
         <div className="wb-hero-badge" {...alignAttr(alignOf("badge"))}>
           {data.badgeIcon && <span>{data.badgeIcon}</span>}
-          {data.eyebrow && <span>{data.eyebrow}</span>}
+          {data.eyebrow && <span>{parseRichText(data.eyebrow)}</span>}
         </div>
       )}
 
@@ -1286,8 +1286,8 @@ export default function HeroSection({
                   </span>
                 )}
                 <span className="wb-hero-floating-card-text">
-                  <strong>{card.title}</strong>
-                  {card.subtitle && <span>{card.subtitle}</span>}
+                  <strong>{parseRichText(card.title)}</strong>
+                  {card.subtitle && <span>{parseRichText(card.subtitle)}</span>}
                 </span>
                 {card.badge && <span className="wb-hero-floating-card-badge">{card.badge}</span>}
               </li>

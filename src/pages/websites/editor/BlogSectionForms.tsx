@@ -1,3 +1,4 @@
+import { RichTextField } from "./RichTextField.tsx";
 import { useContext, useId } from "react";
 import { Link } from "lucide-react";
 import {
@@ -267,13 +268,13 @@ export function BlogForm({
       </FormGroup>
 
       <FormGroup title="Header & Description">
-        <TextField
+        <RichTextField
           label="Eyebrow text"
           value={data.eyebrow || ""}
           onChange={(v) => update("eyebrow", v)}
           placeholder="e.g. THE VINTAGE REELS BLOG"
         />
-        <TextField
+        <RichTextField
           label="Section Title"
           value={data.title}
           onChange={(v) => update("title", v)}
@@ -286,7 +287,7 @@ export function BlogForm({
           placeholder="e.g. cutting room"
           hint="Word(s) rendered in red italic serif in Vintage Journal"
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Subtitle description"
           value={data.subtitle || ""}
           onChange={(v) => update("subtitle", v)}
@@ -334,7 +335,7 @@ export function BlogForm({
           onChange={(posts) => update("posts", posts)}
           renderItem={(post, onPostChange) => (
             <div className="flex flex-col gap-2 p-1">
-              <TextField
+              <RichTextField
                 label="Post Title"
                 value={post.title}
                 onChange={(title) => onPostChange({ ...post, title })}
@@ -381,7 +382,7 @@ export function BlogForm({
                 dimensionHint={MEDIA_SIZE.blogCover}
                 hint={MEDIA_HINT.cropped}
               />
-              <TextAreaField
+              <RichTextField multiline
                 label="Excerpt summary"
                 value={post.excerpt}
                 onChange={(excerpt) => onPostChange({ ...post, excerpt })}
@@ -472,13 +473,13 @@ export function BlogDetailForm({
           onChange={(v) => update("category", v)}
           placeholder="e.g. DESIGN"
         />
-        <TextField
+        <RichTextField
           label="Article Title"
           value={data.title}
           onChange={(v) => update("title", v)}
           placeholder="e.g. The influence of modern architecture"
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Lead Subtitle / Deck"
           value={data.subtitle || ""}
           onChange={(v) => update("subtitle", v)}
@@ -563,12 +564,12 @@ export function BlogDetailForm({
           onChange={(content) => update("content", content)}
           renderItem={(sec, onSecChange) => (
             <div className="flex flex-col gap-2 p-1">
-              <TextField
+              <RichTextField
                 label="Heading"
                 value={sec.heading || ""}
                 onChange={(heading) => onSecChange({ ...sec, heading })}
               />
-              <TextField
+              <RichTextField
                 label="Subheading"
                 value={sec.subheading || ""}
                 onChange={(subheading) => onSecChange({ ...sec, subheading })}
@@ -584,7 +585,7 @@ export function BlogDetailForm({
                   onSecChange({ ...sec, paragraphs });
                 }}
               />
-              <TextField
+              <RichTextField
                 label="Pull Quote (optional)"
                 value={sec.quote || ""}
                 onChange={(quote) => onSecChange({ ...sec, quote })}

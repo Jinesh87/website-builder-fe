@@ -1,3 +1,5 @@
+import { toPlainText } from "../../../site-kit/index.ts";
+import { RichTextField } from "./RichTextField.tsx";
 import type { CardItem, CardsData, CardsVariant } from "../../../site-kit/index.ts";
 import {
   CheckboxField,
@@ -8,7 +10,6 @@ import {
   ItemList,
   OptionalLinkField,
   SelectField,
-  TextAreaField,
   TextField,
   VideoField,
 } from "./fields.tsx";
@@ -40,7 +41,7 @@ const TIMECODE_MODE_OPTIONS: { value: "live" | "static"; label: string }[] = [
 export default function FilmVaultFields({ data, onChange }: Props) {
   const set = (patch: Partial<CardsData>) => onChange({ ...data, ...patch });
 
-  const headingWords = (data.heading || "OUR WORK").trim().split(/\s+/);
+  const headingWords = (toPlainText(data.heading) || "OUR WORK").trim().split(/\s+/);
   const defaultSolid = headingWords[0] || "OUR";
   const defaultOutline = headingWords.slice(1).join(" ") || "WORK";
 
@@ -59,7 +60,7 @@ export default function FilmVaultFields({ data, onChange }: Props) {
       </FormGroup>
 
       <FormGroup title="Title & Typography">
-        <TextField
+        <RichTextField
           label="Eyebrow"
           value={data.eyebrow ?? "PORTFOLIO"}
           onChange={(eyebrow) => set({ eyebrow: eyebrow || undefined })}
@@ -92,7 +93,7 @@ export default function FilmVaultFields({ data, onChange }: Props) {
             maxLength={60}
           />
         </div>
-        <TextAreaField
+        <RichTextField multiline
           label="Intro description"
           value={
             data.intro ??
@@ -235,7 +236,7 @@ export default function FilmVaultFields({ data, onChange }: Props) {
           addLabel="Add film frame"
           renderItem={(item, update) => (
             <>
-              <TextField
+              <RichTextField
                 label="Film title"
                 value={item.title}
                 onChange={(title) => update({ ...item, title })}
@@ -275,7 +276,7 @@ export default function FilmVaultFields({ data, onChange }: Props) {
                 hint="Leave empty to use a frame from the film's video."
                 dimensionHint={cardImageSize("16:9")}
               />
-              <TextAreaField
+              <RichTextField multiline
                 label="Synopsis / Description"
                 value={item.description ?? ""}
                 onChange={(description) => update({ ...item, description: description || undefined })}

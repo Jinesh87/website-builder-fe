@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { SectionHead, SectionShell, SiteIcon } from "../primitives.tsx";
 import type {
   MarqueeItem,
@@ -50,8 +51,8 @@ function MarqueeTrack({
                 )}
                 <div className="wb-marquee-card-content">
                   {item.badge && <span className="wb-marquee-card-badge">{item.badge}</span>}
-                  <p className="wb-marquee-card-title">{item.text}</p>
-                  {item.subtext && <p className="wb-marquee-card-sub">{item.subtext}</p>}
+                  <p className="wb-marquee-card-title">{parseRichText(item.text)}</p>
+                  {item.subtext && <p className="wb-marquee-card-sub">{parseRichText(item.subtext)}</p>}
                 </div>
               </div>
             ) : variant === "pill-badges" ? (
@@ -61,7 +62,7 @@ function MarqueeTrack({
                     <SiteIcon name={item.icon} image={item.iconImage} />
                   </span>
                 )}
-                <span className="wb-marquee-pill-text">{item.text}</span>
+                <span className="wb-marquee-pill-text">{parseRichText(item.text)}</span>
                 {item.badge && <span className="wb-marquee-pill-badge">{item.badge}</span>}
               </div>
             ) : (
@@ -71,7 +72,7 @@ function MarqueeTrack({
                     <SiteIcon name={item.icon} image={item.iconImage} />
                   </span>
                 )}
-                <span className="wb-marquee-text">{item.text}</span>
+                <span className="wb-marquee-text">{parseRichText(item.text)}</span>
                 {item.badge && <span className="wb-marquee-text-badge">{item.badge}</span>}
                 <StarIcon />
               </div>
@@ -113,7 +114,7 @@ export default function MarqueeSection({ section }: { section: SectionOf<"marque
     >
       {(data.heading || data.intro || data.eyebrow) && (
         <div className="wb-marquee-header-wrapper wb-align-center">
-          {data.eyebrow && <span className="wb-marquee-eyebrow">{data.eyebrow}</span>}
+          {data.eyebrow && <span className="wb-marquee-eyebrow">{parseRichText(data.eyebrow)}</span>}
           {data.heading && <SectionHead heading={data.heading} intro={data.intro} />}
         </div>
       )}

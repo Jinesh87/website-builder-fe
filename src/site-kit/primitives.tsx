@@ -5,6 +5,8 @@ import type { GridColumns, IconName, ImageRef, LinkRef, SectionAlign, SectionSet
 import { isLightColor, normalizeHexColor } from "../utils/colors.ts";
 import { getCuratedFallbackImage, normalizeImageUrl } from "./image-utils.ts";
 import { openVideoModal } from "./VideoModal.tsx";
+import { parseRichText } from "./rich-text.tsx";
+import { toPlainText } from "./rich-text-core.ts";
 
 type SiteLinkProps = {
   link: LinkRef;
@@ -134,11 +136,13 @@ export function SiteImage({
   className = "",
   priority = false,
   contextText,
+  style,
 }: {
   image: ImageRef;
   className?: string;
   priority?: boolean;
   contextText?: string;
+  style?: CSSProperties;
 }) {
   const initialUrl = normalizeImageUrl(image.url, contextText);
   const [currentSrc, setCurrentSrc] = useState(initialUrl);
@@ -200,6 +204,7 @@ export function SiteImage({
       onError={handleError}
       onLoad={() => setIsLoaded(true)}
       style={{
+        ...style,
         opacity: isLoaded ? 1 : 0.85,
         transition: "opacity 0.3s ease-out",
       }}
@@ -764,7 +769,7 @@ export function SectionShell({ sectionId, settings, className, label, children, 
       className={classes}
       id={settings.anchor || undefined}
       data-section-id={sectionId}
-      aria-label={label}
+      aria-label={label ? toPlainText(label) : undefined}
       style={Object.keys(customStyle).length > 0 ? customStyle : undefined}
     >
       <div className={fullWidth || settings.containerWidth === "full" ? "wb-container-full" : "wb-container"}>{children}</div>
@@ -772,76 +777,7 @@ export function SectionShell({ sectionId, settings, className, label, children, 
   );
 }
 
-export function parseRichText(text?: string | null): ReactNode {
-  if (!text) return text ?? null;
-  if (!text.includes("<") && !text.includes("**") && !text.includes("*")) {
-    return text;
-  }
-
-  // Regex to match <span style="..." class="...">...</span>, <strong>, <em>, <mark>, <br>, etc.
-  const tagRegex =
-    /<span(?:\s+style=(['"])(.*?)\1|\s+class=(['"])(.*?)\3|[^>])*>(.*?)<\/span>|<strong>(.*?)<\/strong>|<b>(.*?)<\/b>|<em>(.*?)<\/em>|<i>(.*?)<\/i>|<mark>(.*?)<\/mark>|<br\s*\/?>/gis;
-
-  const elements: ReactNode[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = tagRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      elements.push(text.substring(lastIndex, match.index));
-    }
-
-    const fullMatch = match[0];
-    const styleAttr = match[2];
-    const classAttr = match[4];
-    const spanContent = match[5];
-    const strongContent = match[6] ?? match[7];
-    const emContent = match[8] ?? match[9];
-    const markContent = match[10];
-
-    if (spanContent !== undefined) {
-      const inlineStyle: CSSProperties = {};
-      if (styleAttr) {
-        const styleRules = styleAttr.split(";");
-        for (const rule of styleRules) {
-          const [prop, val] = rule.split(":").map((s) => s.trim());
-          if (prop && val) {
-            if (prop === "color") inlineStyle.color = val;
-            if (prop === "background-color" || prop === "background") inlineStyle.background = val;
-            if (prop === "font-weight") inlineStyle.fontWeight = val as CSSProperties["fontWeight"];
-            if (prop === "font-style") inlineStyle.fontStyle = val as CSSProperties["fontStyle"];
-            if (prop === "text-decoration") inlineStyle.textDecoration = val;
-          }
-        }
-      }
-      elements.push(
-        <span key={elements.length} style={inlineStyle} className={classAttr}>
-          {parseRichText(spanContent)}
-        </span>,
-      );
-    } else if (strongContent !== undefined) {
-      elements.push(<strong key={elements.length}>{parseRichText(strongContent)}</strong>);
-    } else if (emContent !== undefined) {
-      elements.push(<em key={elements.length}>{parseRichText(emContent)}</em>);
-    } else if (markContent !== undefined) {
-      elements.push(
-        <mark key={elements.length} className="wb-text-gradient">
-          {parseRichText(markContent)}
-        </mark>,
-      );
-    } else if (fullMatch.toLowerCase().startsWith("<br")) {
-      elements.push(<br key={elements.length} />);
-    }
-
-    lastIndex = tagRegex.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    elements.push(text.substring(lastIndex));
-  }
-
-  return elements.length > 0 ? <>{elements}</> : text;
-}
+export { parseRichText };
 
 export function SectionHead({
   heading,

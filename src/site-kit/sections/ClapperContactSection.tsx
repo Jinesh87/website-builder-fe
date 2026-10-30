@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { useEffect, useState, type FormEvent } from "react";
 import { EmailLink, PhoneLink, SectionShell } from "../primitives.tsx";
 import { useStaticRender } from "../render-mode.tsx";
@@ -162,7 +163,7 @@ export default function ClapperContactSection({
       <div className="wb-container wb-clapper-container">
         {/* Top meta row */}
         <div className="wb-vr-work-meta-row">
-          <span className="wb-vr-work-meta-left">{data.eyebrow || "CONTACT"}</span>
+          <span className="wb-vr-work-meta-left">{parseRichText(data.eyebrow || "CONTACT")}</span>
           <span className="wb-vr-work-rec">
             <span className="wb-vr-rec-dot" aria-hidden="true" />
             <span className="wb-vr-rec-text">{data.recText || "REC · TAKE 01"}</span>
@@ -178,8 +179,8 @@ export default function ClapperContactSection({
         {/* Subrow: typewriter paragraph on left, red digital timecode on right */}
         <div className="wb-vr-work-subrow">
           <p className="wb-vr-work-desc">
-            {data.text ||
-              "Tell us about your project. We reply within 24 hours with ideas, timing and a quote."}
+            {parseRichText(data.text ||
+              "Tell us about your project. We reply within 24 hours with ideas, timing and a quote.")}
           </p>
           <div className="wb-vr-timecode" aria-label="Digital timecode">
             {timecode}
