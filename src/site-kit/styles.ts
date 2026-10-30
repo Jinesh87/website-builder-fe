@@ -6878,8 +6878,16 @@ details[open] > summary .wb-faq-plus {
 }
 
 /* Gallery */
-.wb-gallery img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--wb-radius); }
+.wb-gallery img { width: 100%; object-fit: cover; }
 .wb-gallery-head { margin-bottom: 32px; text-align: center; }
+.wb-gallery-card { display: flex; flex-direction: column; width: 100%; }
+.wb-gallery-image-wrap { position: relative; width: 100%; overflow: hidden; }
+.wb-gallery-caption { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; width: 100%; }
+.wb-gallery-name { font-weight: 600; font-size: 15px; color: var(--wb-text); line-height: 1.35; }
+.wb-gallery-badge { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--wb-text-muted, #64748b); white-space: nowrap; flex-shrink: 0; }
+.wb-gallery-desc { font-size: 13px; color: var(--wb-text-muted, #64748b); line-height: 1.45; }
+.wb-gallery-surface { background: var(--wb-surface); border: 1px solid var(--wb-border); }
+.wb-gallery-bottom-cta { margin-top: 40px; }
 
 /* Footer Builder Styles */
 .wb-footer {

@@ -922,12 +922,30 @@ export type TextData = {
   maxWidth?: "narrow" | "standard" | "wide" | "full";
 };
 
+export type GalleryAspect = "4:3" | "1:1" | "16:9" | "3:4" | "auto";
+export type GalleryCardStyle = "default" | "surface" | "overlay";
+
+export type GalleryItem = ImageRef & {
+  name?: string;
+  title?: string;
+  badge?: string;
+  description?: string;
+  link?: string;
+};
+
 export type GalleryData = {
+  eyebrow?: string;
   heading?: string;
+  intro?: string;
+  description?: string;
   columns: GridColumns;
   mobileColumns: GridColumns;
-  images: ImageRef[];
+  images: GalleryItem[];
   align?: SectionAlign;
+  imageAspect?: GalleryAspect;
+  cardStyle?: GalleryCardStyle;
+  imageRadius?: "default" | "soft" | "pill" | "sharp";
+  cta?: LinkRef;
 };
 
 export type LogosData = {
