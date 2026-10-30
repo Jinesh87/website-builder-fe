@@ -292,6 +292,12 @@ function OrderDetail({
               <dd className="truncate text-xs text-ink-muted">{order.razorpayRefundId || "—"}</dd>
               {order.failureReason && <dd className="mt-1 text-xs text-rose-700">{order.failureReason}</dd>}
             </div>
+            {order.cancelReason && (
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-medium text-ink-muted">Customer cancel reason</dt>
+                <dd className="mt-0.5 text-sm text-ink">{order.cancelReason}</dd>
+              </div>
+            )}
           </dl>
 
           <div>

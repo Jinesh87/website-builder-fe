@@ -1,5 +1,19 @@
 import { createContext, useContext, type ReactNode } from "react";
-import type { ShopCatalog, ShopCatalogProduct } from "./types.ts";
+import type { ShopCancelUntilStatus, ShopCatalog, ShopCatalogProduct } from "./types.ts";
+
+/** Customer-facing copy for the website's cancel-until policy. */
+export function shopCancelPolicyText(status: ShopCancelUntilStatus | null | undefined): string | null {
+  switch (status) {
+    case "paid":
+      return "You can cancel your order while it is pending or paid. Paid orders are refunded automatically.";
+    case "processing":
+      return "You can cancel your order until it ships. Paid orders are refunded automatically.";
+    case "shipped":
+      return "You can cancel your order until it is delivered. Paid orders are refunded automatically.";
+    default:
+      return null;
+  }
+}
 
 const ShopCatalogContext = createContext<ShopCatalog | null>(null);
 

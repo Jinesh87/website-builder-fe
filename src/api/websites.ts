@@ -57,6 +57,8 @@ export type WebsiteSummary = {
   shopFeatureEnabled: boolean;
   /** Client has turned the shop on for this website. */
   shopEnabled: boolean;
+  /** Inclusive status ceiling for shopper cancels. Null = customers cannot cancel. */
+  shopCancelUntilStatus: "paid" | "processing" | "shipped" | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -224,6 +226,7 @@ export type UpdateWebsiteInput = {
   name?: string;
   seoToolsEnabled?: boolean;
   shopEnabled?: boolean;
+  shopCancelUntilStatus?: "paid" | "processing" | "shipped" | null;
 } & { [K in keyof WebsiteInfo]?: string | null };
 
 export const GENERATION_TONES = ["professional", "friendly", "luxury", "playful", "bold", "minimal"] as const;
