@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -6,6 +7,7 @@ import {
 } from "react";
 import { Spinner } from "@heroui/react";
 import {
+  Check,
   CheckCircle2,
   Lock,
   Mail,
@@ -13,22 +15,32 @@ import {
   MessageCircle,
   Phone,
   ShoppingBag,
-  Upload,
+  X,
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ApiError, errorMessage } from "../../api/http.ts";
+import {
+  templatesApi,
+  websitesApi,
+  type ThemeOption,
+  type WebsiteTemplate,
+} from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import {
   questionnaireApi,
   type QuestionnaireAnswers,
   type SubmitQuestionnaireInput,
 } from "./api.ts";
+import FileUploads, { type Attachments } from "./FileUploads.tsx";
+import TemplateChoice from "./TemplateChoice.tsx";
+import ThemeChoice from "./ThemeChoice.tsx";
 import {
   BUSINESS_TYPES,
   DOMAIN_OPTIONS,
   FEATURE_OPTIONS,
   LOGO_OPTIONS,
   LOOK_OPTIONS,
+  MAX_QUESTIONNAIRE_PAGES,
   NEEDED_OPTIONS,
   PALETTE_OPTIONS,
   PHOTOS_OPTIONS,
@@ -43,9 +55,13 @@ import {
   clearSavedDraft,
   DEFAULT_ANSWERS,
   INITIAL_FORM_STATE,
+  loadSavedAttachments,
   loadSavedDraft,
+  saveAttachments,
   saveDraft,
 } from "./prefill.ts";
+
+const NO_ATTACHMENTS: Attachments = { logo: null, files: [] };
 
 export type QuestionnaireFormProps = {
   onSuccess?: (submissionId?: string) => void;
@@ -56,6 +72,8 @@ export type QuestionnaireFormProps = {
     phone?: string | null;
     email?: string | null;
   };
+  standalone?: boolean;
+  theme?: "light" | "dark";
 };
 
 type FormErrors = Partial<
@@ -130,6 +148,8 @@ export default function QuestionnaireForm({
   onSuccess,
   brandName = "Bytezora",
   prefillClient,
+  standalone = true,
+  theme = "light",
 }: QuestionnaireFormProps) {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -166,6 +186,15 @@ export default function QuestionnaireForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [emailDispatched, setEmailDispatched] = useState(false);
+
+  // Uploads go to the client's media library, so themes, templates and files need a client account.
+  const clientId = user?.role === "CLIENT" ? (user.client?.id ?? null) : null;
+  const [themes, setThemes] = useState<ThemeOption[] | null>(null);
+  const [templates, setTemplates] = useState<WebsiteTemplate[] | null>(null);
+  const [attachments, setAttachments] = useState<Attachments>(NO_ATTACHMENTS);
+  const [uploading, setUploading] = useState(false);
+  const attachmentsOwner = useRef<string | null>(null);
 
   // Field refs for scrolling to first error
   const businessNameRef = useRef<HTMLInputElement>(null);
@@ -181,27 +210,34 @@ export default function QuestionnaireForm({
     }
   }, [searchParams, form.ref]);
 
-  // Prefill from authenticated client if empty
+  // Fills empty contact fields from the signed-in account
+  const prefill = useCallback(
+    (prev: SubmitQuestionnaireInput): SubmitQuestionnaireInput => {
+      const source =
+        prefillClient ??
+        (user
+          ? {
+              businessName: user.client?.businessName,
+              name: user.fullName,
+              phone: user.phone,
+              email: user.email,
+            }
+          : null);
+      if (!source) return prev;
+      return {
+        ...prev,
+        businessName: prev.businessName || source.businessName || "",
+        name: prev.name || source.name || "",
+        phone: prev.phone || source.phone || "",
+        email: prev.email || source.email || "",
+      };
+    },
+    [prefillClient, user],
+  );
+
   useEffect(() => {
-    if (prefillClient) {
-      setForm((prev) => ({
-        ...prev,
-        businessName: prev.businessName || prefillClient.businessName || "",
-        name: prev.name || prefillClient.name || "",
-        phone: prev.phone || prefillClient.phone || "",
-        email: prev.email || prefillClient.email || "",
-      }));
-    } else if (user) {
-      setForm((prev) => ({
-        ...prev,
-        businessName:
-          prev.businessName || user.client?.businessName || prev.businessName,
-        name: prev.name || user.fullName || "",
-        phone: prev.phone || user.phone || "",
-        email: prev.email || user.email || "",
-      }));
-    }
-  }, [prefillClient, user]);
+    setForm(prefill);
+  }, [prefill]);
 
   // Autosave draft to localStorage
   useEffect(() => {
@@ -210,7 +246,36 @@ export default function QuestionnaireForm({
     }
   }, [form, submitted]);
 
+  useEffect(() => {
+    if (!clientId) return;
+    let cancelled = false;
+    websitesApi
+      .themes()
+      .then((loaded) => !cancelled && setThemes(loaded))
+      .catch(() => !cancelled && setThemes([]));
+    templatesApi
+      .list()
+      .then((loaded) => !cancelled && setTemplates(loaded))
+      .catch(() => !cancelled && setTemplates([]));
+    setAttachments(loadSavedAttachments(clientId) ?? NO_ATTACHMENTS);
+    attachmentsOwner.current = clientId;
+    return () => {
+      cancelled = true;
+    };
+  }, [clientId]);
+
+  useEffect(() => {
+    if (clientId && attachmentsOwner.current === clientId && !submitted) {
+      saveAttachments({ clientId, ...attachments });
+    }
+  }, [clientId, attachments, submitted]);
+
   const progress = calculateProgress(form);
+  const pageCount = new Set(["Home", ...form.answers.pages]).size;
+  const pagesFull = pageCount >= MAX_QUESTIONNAIRE_PAGES;
+  const selectedTheme =
+    themes?.find((theme) => theme.id === form.answers.themeId) ?? null;
+  const onBusyChange = useCallback((busy: boolean) => setUploading(busy), []);
 
   function updateField<K extends keyof SubmitQuestionnaireInput>(
     field: K,
@@ -234,12 +299,15 @@ export default function QuestionnaireForm({
 
   function togglePage(page: WebsitePage) {
     if (page === "Home") return; // Home is locked
-    const current = form.answers.pages;
-    const exists = current.includes(page);
-    const next = exists
-      ? current.filter((p) => p !== page)
-      : [...current, page];
-    updateAnswer("pages", next);
+    setForm((prev) => {
+      const current = prev.answers.pages;
+      if (current.includes(page)) {
+        return { ...prev, answers: { ...prev.answers, pages: current.filter((p) => p !== page) } };
+      }
+      if (new Set(["Home", ...current]).size >= MAX_QUESTIONNAIRE_PAGES) return prev;
+      return { ...prev, answers: { ...prev.answers, pages: [...current, page] } };
+    });
+    if (errors.pages) setErrors((prev) => ({ ...prev, pages: undefined }));
   }
 
   function toggleFeature(feature: FeatureOption) {
@@ -282,6 +350,8 @@ export default function QuestionnaireForm({
     }
     if (!form.answers.pages || form.answers.pages.length === 0) {
       nextErrors.pages = "Please select at least one page";
+    } else if (pageCount > MAX_QUESTIONNAIRE_PAGES) {
+      nextErrors.pages = `Choose at most ${MAX_QUESTIONNAIRE_PAGES} pages, Home included`;
     }
     if (!consent) {
       nextErrors.consent = "Please agree to the terms to proceed";
@@ -313,11 +383,28 @@ export default function QuestionnaireForm({
     setSubmitError(null);
 
     if (!validate()) return;
+    if (uploading) {
+      setSubmitError("Wait for your files to finish uploading.");
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const res = await questionnaireApi.submit(form);
+      const res = await questionnaireApi.submit({
+        ...form,
+        answers: {
+          ...form.answers,
+          pages: form.answers.pages.includes("Home")
+            ? form.answers.pages
+            : ["Home", ...form.answers.pages],
+          themeId: clientId ? (form.answers.themeId ?? null) : null,
+          templateKey: clientId ? (form.answers.templateKey ?? null) : null,
+          logoMediaId: clientId ? (attachments.logo?.id ?? null) : null,
+          mediaIds: clientId ? attachments.files.map((file) => file.id) : [],
+        },
+      });
       clearSavedDraft();
+      setEmailDispatched(res.emailDispatched);
       setSubmitted(true);
       if (onSuccess) {
         onSuccess(res.id);
@@ -335,30 +422,40 @@ export default function QuestionnaireForm({
 
   if (submitted) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-20 text-center text-white">
-        <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-emerald-500/20 text-emerald-400">
+      <div className={`mx-auto max-w-2xl px-4 py-20 text-center ${theme === "dark" ? "text-white" : "text-ink"}`}>
+        <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-emerald-500/20 text-emerald-500">
           <CheckCircle2 className="size-10" />
         </div>
-        <h2 className="mt-6 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+        <h2 className={`mt-6 text-2xl font-bold tracking-tight sm:text-3xl ${theme === "dark" ? "text-white" : "text-ink"}`}>
           Questionnaire Submitted!
         </h2>
-        <p className="mt-3 text-base text-slate-300">
+        <p className={`mt-3 text-base ${theme === "dark" ? "text-slate-300" : "text-ink-body"}`}>
           Thank you for sharing your website vision with{" "}
-          <strong className="text-white">{brandName}</strong>. Our team and AI
-          engine have received your brief and started structuring your website.
+          <strong className={theme === "dark" ? "text-white" : "text-ink"}>{brandName}</strong>. Our team
+          will review your brief and get back to you soon.
         </p>
-        <p className="mt-2 text-sm text-slate-400">
-          We have dispatched a confirmation email to{" "}
-          <span className="font-semibold text-white">{form.email}</span>.
-        </p>
+        {emailDispatched && (
+          <p className={`mt-2 text-sm ${theme === "dark" ? "text-slate-400" : "text-ink-muted"}`}>
+            A confirmation email is on its way to{" "}
+            <span className={`font-semibold ${theme === "dark" ? "text-white" : "text-ink"}`}>{form.email}</span>.
+          </p>
+        )}
         <div className="mt-8 flex justify-center gap-4">
           <button
             type="button"
             onClick={() => {
+              setForm(prefill(INITIAL_FORM_STATE));
+              setAttachments(NO_ATTACHMENTS);
+              setDiffCall(false);
+              setDiffWa(false);
+              setDiffEmail(false);
+              setConsent(true);
+              setErrors({});
+              setSubmitError(null);
+              setEmailDispatched(false);
               setSubmitted(false);
-              setForm(INITIAL_FORM_STATE);
             }}
-            className="rounded-xl bg-[#5271ff] px-6 py-3 font-semibold text-white shadow-lg hover:bg-[#4362f0] transition-colors"
+            className="rounded-xl bg-brand px-6 py-3 font-semibold text-white shadow-lg hover:bg-brand-hover transition-colors"
           >
             Submit another brief
           </button>
@@ -367,50 +464,208 @@ export default function QuestionnaireForm({
     );
   }
 
+  const isDark = theme === "dark";
+
+  const cardCls = isDark
+    ? "rounded-2xl border border-[#1e2638] bg-[#121824] p-5 shadow-xl sm:p-6"
+    : "rounded-2xl border border-line bg-surface p-5 sm:p-6 shadow-xs";
+
+  const cardTitleCls = isDark ? "text-base font-bold text-white" : "text-base font-bold text-ink";
+  const sectionLabelCls = isDark
+    ? "block text-[11px] font-bold uppercase tracking-wider text-slate-400"
+    : "block text-[11px] font-bold uppercase tracking-wider text-ink-muted";
+
+  const fieldLabelCls = isDark
+    ? "block text-xs font-semibold text-slate-300"
+    : "block text-xs font-semibold text-ink-body";
+
+  const inputCls = (hasErr: boolean) =>
+    `mt-1.5 h-11 w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition ${
+      isDark
+        ? `bg-[#0b0e17] text-white placeholder-slate-500 focus:border-blue-500 ${
+            hasErr ? "border-red-500 ring-1 ring-red-500" : "border-[#212a3d]"
+          }`
+        : `bg-canvas text-ink placeholder-ink-muted focus:border-brand focus:ring-1 focus:ring-brand ${
+            hasErr ? "border-red-500 ring-1 ring-red-500" : "border-line"
+          }`
+    }`;
+
+  const pillCls = (selected: boolean) =>
+    `rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
+      selected
+        ? "bg-brand border border-brand text-white shadow-xs font-semibold"
+        : isDark
+          ? "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500 hover:text-white"
+          : "border border-line bg-canvas text-ink-body hover:border-brand/40 hover:text-ink"
+    }`;
+
+  const boxCls = isDark
+    ? "rounded-xl border border-[#20293d] bg-[#0b0e17] p-3.5"
+    : "rounded-xl border border-line bg-canvas/70 p-3.5";
+
+  const nestedInputCls = isDark
+    ? "mt-2 w-full rounded-lg border border-[#2a3750] bg-[#121826] px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500"
+    : "mt-2 w-full rounded-lg border border-line bg-surface px-3 py-1.5 text-xs text-ink placeholder-ink-muted outline-none focus:border-brand";
+
+  const toggleTrackCls = isDark ? "bg-[#1e273a]" : "bg-slate-300";
+
   return (
-    <div className="min-h-screen bg-[#0d1117] text-slate-200">
-      {/* Sticky Header with Exact Brand Icon & Progress Bar */}
-      <header className="sticky top-0 z-40 border-b border-[#1b2233] bg-[#0d1117]/95 backdrop-blur-md px-4 py-3 sm:px-8">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            {/* Exact orange rounded square logo from image */}
-            <div className="grid size-9 place-items-center rounded-xl bg-gradient-to-tr from-[#f95738] to-[#ff7a59] font-bold text-white shadow-md">
-              <div className="size-4 rounded-sm border-2 border-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-tight text-white">
-                  [{brandName}]
-                </span>
-                <span className="hidden text-slate-600 sm:inline">|</span>
-                <h1 className="text-sm font-bold text-white sm:text-base">
-                  Website questionnaire
+    <div className={isDark ? "min-h-screen bg-[#0d1117] text-slate-200" : "text-ink"}>
+      {/* Single clean, professional header */}
+      {standalone ? (
+        <header
+          className={`sticky top-0 z-40 border-b px-4 py-3 sm:px-8 ${
+            isDark
+              ? "border-[#1b2233] bg-[#0d1117]/95 backdrop-blur-md text-slate-200"
+              : "border-line bg-surface/95 backdrop-blur-md text-ink shadow-xs"
+          }`}
+        >
+          <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Link
+                to="/"
+                className="inline-flex items-center transition-opacity hover:opacity-85"
+                aria-label="Home"
+              >
+                <img
+                  src={
+                    isDark
+                      ? "/bytezora-webbuilder-logo-white-text.png"
+                      : "/bytezora-webbuilder-logo.png"
+                  }
+                  alt="Bytezora WebBuilder"
+                  className="h-7 w-auto object-contain sm:h-8"
+                />
+              </Link>
+              <span
+                className={`hidden sm:inline text-lg font-light ${
+                  isDark ? "text-slate-700" : "text-line-strong"
+                }`}
+              >
+                |
+              </span>
+              <div>
+                <h1
+                  className={`text-sm font-semibold sm:text-base ${
+                    isDark ? "text-white" : "text-ink"
+                  }`}
+                >
+                  Website Questionnaire
                 </h1>
+                <p
+                  className={`hidden text-xs sm:block ${
+                    isDark ? "text-slate-400" : "text-ink-muted"
+                  }`}
+                >
+                  Design Brief &amp; Requirements · ~3 minutes
+                </p>
               </div>
-              <p className="hidden text-xs text-slate-400 sm:block">
-                About 3 minutes · mostly tick boxes
-              </p>
+            </div>
+
+            <div className="flex items-center gap-3 sm:gap-6">
+              <div
+                className={`hidden sm:flex items-center gap-1.5 text-xs font-medium ${
+                  isDark ? "text-emerald-400/90" : "text-emerald-600"
+                }`}
+              >
+                <Check className="size-3.5" />
+                <span>Auto-saved</span>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`text-xs font-semibold tabular-nums ${
+                    isDark ? "text-slate-300" : "text-ink-muted"
+                  }`}
+                >
+                  {progress}%
+                </span>
+                <div
+                  className={`h-2 w-24 overflow-hidden rounded-full sm:w-36 ${
+                    isDark ? "bg-[#1b2334]" : "bg-slate-200"
+                  }`}
+                >
+                  <div
+                    className="h-full rounded-full bg-brand transition-all duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+
+              <Link
+                to="/"
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  isDark
+                    ? "border-[#1b2334] bg-[#121722] text-slate-400 hover:border-slate-700 hover:text-white"
+                    : "border-line bg-canvas text-ink-muted hover:border-line-strong hover:text-ink"
+                }`}
+                title="Save and exit to home"
+              >
+                <X className="size-3.5" />
+                <span className="hidden sm:inline">Exit</span>
+              </Link>
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
-              {progress}% complete
-            </span>
-            <div className="h-2 w-28 overflow-hidden rounded-full bg-[#1b2334] sm:w-44">
+        </header>
+      ) : (
+        <div className="mx-auto max-w-[1400px]">
+          <div
+            className={`flex items-center justify-between rounded-xl border p-4 ${
+              isDark
+                ? "border-[#1b2334] bg-[#111622]"
+                : "border-line bg-surface shadow-xs"
+            }`}
+          >
+            <div>
+              <h1
+                className={`text-base font-bold ${
+                  isDark ? "text-white" : "text-ink"
+                }`}
+              >
+                Website Questionnaire
+              </h1>
+              <p
+                className={`text-xs ${
+                  isDark ? "text-slate-400" : "text-ink-muted"
+                }`}
+              >
+                Answer a few questions to generate your website brief
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span
+                className={`text-xs font-medium ${
+                  isDark ? "text-slate-400" : "text-ink-muted"
+                }`}
+              >
+                {progress}% complete
+              </span>
               <div
-                className="h-full rounded-full bg-[#3b82f6] transition-all duration-300 ease-out"
-                style={{ width: `${progress}%` }}
-              />
+                className={`h-2 w-28 overflow-hidden rounded-full sm:w-44 ${
+                  isDark ? "bg-[#1b2334]" : "bg-slate-200"
+                }`}
+              >
+                <div
+                  className="h-full rounded-full bg-brand transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </header>
+      )}
 
       {/* Main 3-Column Layout Matching Screenshots Exactly */}
       <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
         {submitError && (
-          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-950/40 p-4 text-sm text-red-200">
+          <div
+            role="alert"
+            className={`mb-6 rounded-xl border p-4 text-sm ${
+              isDark
+                ? "border-red-500/30 bg-red-950/40 text-red-200"
+                : "border-red-200 bg-red-50 text-red-700"
+            }`}
+          >
             {submitError}
           </div>
         )}
@@ -431,26 +686,26 @@ export default function QuestionnaireForm({
             {/* COLUMN 1 */}
             <div className="space-y-5">
               {/* Card 1: Your details */}
-              <section className="rounded-2xl border border-[#1e2638] bg-[#121824] p-5 shadow-xl sm:p-6">
+              <section className={cardCls}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="grid size-6 place-items-center rounded-full bg-[#3b82f6] text-xs font-bold text-white">
+                    <span className="grid size-6 place-items-center rounded-full bg-brand text-xs font-bold text-white">
                       1
                     </span>
-                    <h2 className="text-base font-bold text-white">
+                    <h2 className={cardTitleCls}>
                       Your details
                     </h2>
                   </div>
-                  <span className="text-xs text-slate-400">* required</span>
+                  <span className={isDark ? "text-xs text-slate-400" : "text-xs text-ink-muted"}>* required</span>
                 </div>
 
                 <div className="mt-5 space-y-4">
                   <div>
                     <label
                       htmlFor="businessName"
-                      className="block text-xs font-semibold text-slate-300"
+                      className={fieldLabelCls}
                     >
-                      Business / website name <span className="text-red-400">*</span>
+                      Business / website name <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="businessName"
@@ -460,14 +715,10 @@ export default function QuestionnaireForm({
                       onChange={(e) =>
                         updateField("businessName", e.target.value)
                       }
-                      className={`mt-1.5 h-11 w-full rounded-xl border bg-[#0b0e17] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition focus:border-blue-500 ${
-                        errors.businessName
-                          ? "border-red-500 ring-1 ring-red-500"
-                          : "border-[#212a3d]"
-                      }`}
+                      className={inputCls(Boolean(errors.businessName))}
                     />
                     {errors.businessName && (
-                      <p className="mt-1 text-xs text-red-400">
+                      <p className="mt-1 text-xs text-red-500">
                         {errors.businessName}
                       </p>
                     )}
@@ -477,9 +728,9 @@ export default function QuestionnaireForm({
                     <div>
                       <label
                         htmlFor="name"
-                        className="block text-xs font-semibold text-slate-300"
+                        className={fieldLabelCls}
                       >
-                        Your name <span className="text-red-400">*</span>
+                        Your name <span className="text-red-500">*</span>
                       </label>
                       <input
                         id="name"
@@ -487,14 +738,10 @@ export default function QuestionnaireForm({
                         type="text"
                         value={form.name}
                         onChange={(e) => updateField("name", e.target.value)}
-                        className={`mt-1.5 h-11 w-full rounded-xl border bg-[#0b0e17] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition focus:border-blue-500 ${
-                          errors.name
-                            ? "border-red-500 ring-1 ring-red-500"
-                            : "border-[#212a3d]"
-                        }`}
+                        className={inputCls(Boolean(errors.name))}
                       />
                       {errors.name && (
-                        <p className="mt-1 text-xs text-red-400">
+                        <p className="mt-1 text-xs text-red-500">
                           {errors.name}
                         </p>
                       )}
@@ -503,9 +750,9 @@ export default function QuestionnaireForm({
                     <div>
                       <label
                         htmlFor="phone"
-                        className="block text-xs font-semibold text-slate-300"
+                        className={fieldLabelCls}
                       >
-                        Mobile <span className="text-red-400">*</span>
+                        Mobile <span className="text-red-500">*</span>
                       </label>
                       <input
                         id="phone"
@@ -514,14 +761,10 @@ export default function QuestionnaireForm({
                         value={form.phone}
                         onChange={(e) => updateField("phone", e.target.value)}
                         placeholder="+91 98765 43210"
-                        className={`mt-1.5 h-11 w-full rounded-xl border bg-[#0b0e17] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition focus:border-blue-500 ${
-                          errors.phone
-                            ? "border-red-500 ring-1 ring-red-500"
-                            : "border-[#212a3d]"
-                        }`}
+                        className={inputCls(Boolean(errors.phone))}
                       />
                       {errors.phone && (
-                        <p className="mt-1 text-xs text-red-400">
+                        <p className="mt-1 text-xs text-red-500">
                           {errors.phone}
                         </p>
                       )}
@@ -531,9 +774,9 @@ export default function QuestionnaireForm({
                   <div>
                     <label
                       htmlFor="email"
-                      className="block text-xs font-semibold text-slate-300"
+                      className={fieldLabelCls}
                     >
-                      Email <span className="text-red-400">*</span>
+                      Email <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="email"
@@ -542,14 +785,10 @@ export default function QuestionnaireForm({
                       value={form.email}
                       onChange={(e) => updateField("email", e.target.value)}
                       placeholder="you@business.com"
-                      className={`mt-1.5 h-11 w-full rounded-xl border bg-[#0b0e17] px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition focus:border-blue-500 ${
-                        errors.email
-                          ? "border-red-500 ring-1 ring-red-500"
-                          : "border-[#212a3d]"
-                      }`}
+                      className={inputCls(Boolean(errors.email))}
                     />
                     {errors.email && (
-                      <p className="mt-1 text-xs text-red-400">
+                      <p className="mt-1 text-xs text-red-500">
                         {errors.email}
                       </p>
                     )}
@@ -558,19 +797,19 @@ export default function QuestionnaireForm({
               </section>
 
               {/* Card 2: Your business */}
-              <section className="rounded-2xl border border-[#1e2638] bg-[#121824] p-5 shadow-xl sm:p-6">
+              <section className={cardCls}>
                 <div className="flex items-center gap-2.5">
-                  <span className="grid size-6 place-items-center rounded-full bg-[#f97316] text-xs font-bold text-white">
+                  <span className="grid size-6 place-items-center rounded-full bg-amber-500 text-xs font-bold text-white">
                     2
                   </span>
-                  <h2 className="text-base font-bold text-white">
+                  <h2 className={cardTitleCls}>
                     Your business
                   </h2>
                 </div>
 
                 <div className="mt-5 space-y-5">
                   <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className={sectionLabelCls}>
                       TYPE *
                     </span>
                     <div
@@ -587,11 +826,7 @@ export default function QuestionnaireForm({
                             role="radio"
                             aria-checked={selected}
                             onClick={() => updateAnswer("businessType", type)}
-                            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                              selected
-                                ? "bg-[#2563eb] border border-[#3b82f6] text-white shadow-sm"
-                                : "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500 hover:text-white"
-                            }`}
+                            className={pillCls(selected)}
                           >
                             {type}
                           </button>
@@ -601,9 +836,14 @@ export default function QuestionnaireForm({
                   </div>
 
                   <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      PAGES YOU WANT
-                    </span>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className={sectionLabelCls}>
+                        PAGES YOU WANT
+                      </span>
+                      <span className={`text-[11px] tabular-nums ${isDark ? "text-slate-400" : "text-ink-muted"}`}>
+                        {pageCount}/{MAX_QUESTIONNAIRE_PAGES}
+                      </span>
+                    </div>
                     <div
                       role="group"
                       aria-label="Pages you want"
@@ -613,24 +853,33 @@ export default function QuestionnaireForm({
                         const isHome = page === "Home";
                         const selected =
                           isHome || form.answers.pages.includes(page);
+                        const blocked = !selected && pagesFull;
                         return (
                           <button
                             key={page}
                             type="button"
                             aria-pressed={selected}
-                            disabled={isHome}
+                            disabled={isHome || blocked}
                             onClick={() => togglePage(page)}
-                            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                              selected
-                                ? "bg-[#2563eb] border border-[#3b82f6] text-white shadow-sm"
-                                : "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500 hover:text-white"
-                            } ${isHome ? "cursor-default" : ""}`}
+                            title={blocked ? `Up to ${MAX_QUESTIONNAIRE_PAGES} pages` : undefined}
+                            className={`${pillCls(selected)} ${
+                              isHome ? "cursor-default opacity-85" : ""
+                            } ${blocked ? "cursor-not-allowed opacity-50" : ""}`}
                           >
                             {page}
                           </button>
                         );
                       })}
                     </div>
+                    {errors.pages ? (
+                      <p className="mt-2 text-xs text-red-500">{errors.pages}</p>
+                    ) : (
+                      pagesFull && (
+                        <p className={`mt-2 text-[11px] ${isDark ? "text-slate-400" : "text-ink-muted"}`}>
+                          Up to {MAX_QUESTIONNAIRE_PAGES} pages. Remove one to pick another.
+                        </p>
+                      )
+                    )}
                   </div>
                 </div>
               </section>
@@ -639,13 +888,13 @@ export default function QuestionnaireForm({
             {/* COLUMN 2 */}
             <div className="space-y-5">
               {/* Card 3: Look & colours */}
-              <section className="rounded-2xl border border-[#1e2638] bg-[#121824] p-5 shadow-xl sm:p-6">
+              <section className={cardCls}>
                 <div className="flex items-center gap-2.5">
-                  <span className="grid size-6 place-items-center rounded-full bg-[#10b981] text-xs font-bold text-white">
+                  <span className="grid size-6 place-items-center rounded-full bg-emerald-500 text-xs font-bold text-white">
                     3
                   </span>
-                  <h2 className="text-base font-bold text-white">
-                    Look & colours
+                  <h2 className={cardTitleCls}>
+                    Look &amp; colours
                   </h2>
                 </div>
 
@@ -667,17 +916,21 @@ export default function QuestionnaireForm({
                           onClick={() => updateAnswer("look", look)}
                           className={`flex flex-col items-center rounded-xl p-1.5 transition-all ${
                             selected
-                              ? "ring-2 ring-[#3b82f6] bg-[#162035]"
-                              : "hover:bg-[#161f31]"
+                              ? isDark
+                                ? "ring-2 ring-brand bg-[#162035]"
+                                : "ring-2 ring-brand bg-brand-soft/30 border border-brand/40"
+                              : isDark
+                                ? "hover:bg-[#161f31]"
+                                : "hover:bg-canvas border border-transparent"
                           }`}
                         >
                           <div
                             className={`flex h-14 w-full flex-col justify-between rounded-lg p-2.5 ${
                               look === "Light"
-                                ? "bg-white"
+                                ? "bg-white border border-slate-200"
                                 : look === "Dark"
                                   ? "bg-[#0c101a] border border-[#232d42]"
-                                  : "bg-[#fef3c7]"
+                                  : "bg-[#fef3c7] border border-amber-200"
                             }`}
                           >
                             <span
@@ -693,24 +946,28 @@ export default function QuestionnaireForm({
                               <span
                                 className={`block h-1 w-full rounded-sm ${
                                   look === "Light"
-                                    ? "bg-slate-300"
+                                    ? "bg-slate-200"
                                     : look === "Dark"
                                       ? "bg-slate-600"
-                                      : "bg-amber-400"
+                                      : "bg-amber-300"
                                 }`}
                               />
                               <span
                                 className={`block h-1 w-2/3 rounded-sm ${
                                   look === "Light"
-                                    ? "bg-slate-300"
+                                    ? "bg-slate-200"
                                     : look === "Dark"
                                       ? "bg-slate-600"
-                                      : "bg-amber-400"
+                                      : "bg-amber-300"
                                 }`}
                               />
                             </div>
                           </div>
-                          <span className="mt-2 text-xs font-semibold text-slate-200">
+                          <span
+                            className={`mt-2 text-xs font-semibold ${
+                              isDark ? "text-slate-200" : "text-ink"
+                            }`}
+                          >
                             {look}
                           </span>
                         </button>
@@ -720,7 +977,7 @@ export default function QuestionnaireForm({
 
                   {/* STYLE */}
                   <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className={sectionLabelCls}>
                       STYLE
                     </span>
                     <div
@@ -737,11 +994,7 @@ export default function QuestionnaireForm({
                             role="radio"
                             aria-checked={selected}
                             onClick={() => updateAnswer("style", style)}
-                            className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                              selected
-                                ? "bg-[#2563eb] border border-[#3b82f6] text-white shadow-sm"
-                                : "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500 hover:text-white"
-                            }`}
+                            className={pillCls(selected)}
                           >
                             {style}
                           </button>
@@ -752,7 +1005,7 @@ export default function QuestionnaireForm({
 
                   {/* COLOURS */}
                   <div>
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className={sectionLabelCls}>
                       COLOURS
                     </span>
                     <div
@@ -771,11 +1024,15 @@ export default function QuestionnaireForm({
                             onClick={() => updateAnswer("palette", p.label)}
                             className={`rounded-xl border p-2 text-center transition-all ${
                               selected
-                                ? "border-[#3b82f6] bg-[#162138] ring-1 ring-[#3b82f6]"
-                                : "border-[#222c40] bg-[#0c101a] hover:border-slate-500"
+                                ? isDark
+                                  ? "border-brand bg-[#162138] ring-1 ring-brand"
+                                  : "border-brand bg-brand-soft/30 ring-2 ring-brand/30"
+                                : isDark
+                                  ? "border-[#222c40] bg-[#0c101a] hover:border-slate-500"
+                                  : "border-line bg-canvas hover:border-brand/40"
                             }`}
                           >
-                            <div className="flex h-5 w-full overflow-hidden rounded-md border border-black/30">
+                            <div className="flex h-5 w-full overflow-hidden rounded-md border border-black/10">
                               <span
                                 className="h-full flex-1"
                                 style={{ background: p.colors[0] }}
@@ -789,7 +1046,11 @@ export default function QuestionnaireForm({
                                 style={{ background: p.colors[2] }}
                               />
                             </div>
-                            <span className="mt-1.5 block truncate text-[11px] font-medium text-slate-300">
+                            <span
+                              className={`mt-1.5 block truncate text-[11px] font-medium ${
+                                isDark ? "text-slate-300" : "text-ink-body"
+                              }`}
+                            >
                               {p.label}
                             </span>
                           </button>
@@ -797,33 +1058,82 @@ export default function QuestionnaireForm({
                       })}
                     </div>
                   </div>
+
+                  {clientId && (
+                    <>
+                      <div>
+                        <span className={sectionLabelCls}>
+                          THEME · optional
+                        </span>
+                        <div className="mt-2.5">
+                          <ThemeChoice
+                            themes={themes}
+                            value={form.answers.themeId ?? null}
+                            onChange={(themeId) => updateAnswer("themeId", themeId)}
+                            isDark={isDark}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className={sectionLabelCls}>
+                          TEMPLATE · optional
+                        </span>
+                        <div className="mt-2.5">
+                          <TemplateChoice
+                            templates={templates}
+                            value={form.answers.templateKey ?? null}
+                            onChange={(templateKey) => updateAnswer("templateKey", templateKey)}
+                            theme={selectedTheme}
+                            isDark={isDark}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </section>
 
-              {/* Card 4: How customers reach you (Includes Map Location & Social Links from Image 2!) */}
-              <section className="rounded-2xl border border-[#1e2638] bg-[#121824] p-5 shadow-xl sm:p-6">
+              {/* Card 4: How customers reach you */}
+              <section className={cardCls}>
                 <div className="flex items-center gap-2.5">
-                  <span className="grid size-6 place-items-center rounded-full bg-[#f59e0b] text-xs font-bold text-white">
+                  <span className="grid size-6 place-items-center rounded-full bg-amber-500 text-xs font-bold text-white">
                     4
                   </span>
-                  <h2 className="text-base font-bold text-white">
+                  <h2 className={cardTitleCls}>
                     How customers reach you
                   </h2>
                 </div>
 
                 <div className="mt-5 space-y-4">
                   {/* Call button */}
-                  <div className="rounded-xl border border-[#20293d] bg-[#0b0e17] p-3.5">
+                  <div className={boxCls}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="grid size-9 place-items-center rounded-xl bg-blue-500/10 text-blue-400">
+                        <div
+                          className={`grid size-9 place-items-center rounded-xl ${
+                            isDark
+                              ? "bg-blue-500/10 text-blue-400"
+                              : "bg-blue-50 text-blue-600"
+                          }`}
+                        >
                           <Phone className="size-4" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white">
+                          <p
+                            className={`text-sm font-semibold ${
+                              isDark ? "text-white" : "text-ink"
+                            }`}
+                          >
                             Call button
                           </p>
-                          <p className="text-xs text-slate-400">tel:</p>
+                          <p
+                            className={`text-xs ${
+                              isDark ? "text-slate-400" : "text-ink-muted"
+                            }`}
+                          >
+                            tel:
+                          </p>
                         </div>
                       </div>
                       <label className="relative inline-flex cursor-pointer items-center">
@@ -841,12 +1151,18 @@ export default function QuestionnaireForm({
                           }
                           className="peer sr-only"
                         />
-                        <div className="peer h-6 w-11 rounded-full bg-[#1e273a] peer-checked:bg-[#5b78ff] peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full" />
+                        <div
+                          className={`peer h-6 w-11 rounded-full ${toggleTrackCls} peer-checked:bg-brand peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full`}
+                        />
                       </label>
                     </div>
 
                     <div className="mt-2.5 pl-12">
-                      <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                      <label
+                        className={`flex items-center gap-2 text-xs cursor-pointer ${
+                          isDark ? "text-slate-400" : "text-ink-muted"
+                        }`}
+                      >
                         <input
                           type="checkbox"
                           checked={diffCall}
@@ -862,7 +1178,7 @@ export default function QuestionnaireForm({
                               });
                             }
                           }}
-                          className="rounded border-[#2f3d59] bg-[#121826] text-blue-600 focus:ring-0"
+                          className="rounded border-slate-300 text-brand focus:ring-0"
                         />
                         Different number
                       </label>
@@ -882,24 +1198,40 @@ export default function QuestionnaireForm({
                               },
                             })
                           }
-                          className="mt-2 w-full rounded-lg border border-[#2a3750] bg-[#121826] px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500"
+                          className={nestedInputCls}
                         />
                       )}
                     </div>
                   </div>
 
                   {/* WhatsApp button */}
-                  <div className="rounded-xl border border-[#20293d] bg-[#0b0e17] p-3.5">
+                  <div className={boxCls}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                        <div
+                          className={`grid size-9 place-items-center rounded-xl ${
+                            isDark
+                              ? "bg-emerald-500/10 text-emerald-400"
+                              : "bg-emerald-50 text-emerald-600"
+                          }`}
+                        >
                           <MessageCircle className="size-4" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white">
+                          <p
+                            className={`text-sm font-semibold ${
+                              isDark ? "text-white" : "text-ink"
+                            }`}
+                          >
                             WhatsApp button
                           </p>
-                          <p className="text-xs text-slate-400">wa.me/</p>
+                          <p
+                            className={`text-xs ${
+                              isDark ? "text-slate-400" : "text-ink-muted"
+                            }`}
+                          >
+                            wa.me/
+                          </p>
                         </div>
                       </div>
                       <label className="relative inline-flex cursor-pointer items-center">
@@ -917,12 +1249,18 @@ export default function QuestionnaireForm({
                           }
                           className="peer sr-only"
                         />
-                        <div className="peer h-6 w-11 rounded-full bg-[#1e273a] peer-checked:bg-[#5b78ff] peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full" />
+                        <div
+                          className={`peer h-6 w-11 rounded-full ${toggleTrackCls} peer-checked:bg-brand peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full`}
+                        />
                       </label>
                     </div>
 
                     <div className="mt-2.5 pl-12">
-                      <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                      <label
+                        className={`flex items-center gap-2 text-xs cursor-pointer ${
+                          isDark ? "text-slate-400" : "text-ink-muted"
+                        }`}
+                      >
                         <input
                           type="checkbox"
                           checked={diffWa}
@@ -938,7 +1276,7 @@ export default function QuestionnaireForm({
                               });
                             }
                           }}
-                          className="rounded border-[#2f3d59] bg-[#121826] text-blue-600 focus:ring-0"
+                          className="rounded border-slate-300 text-brand focus:ring-0"
                         />
                         Different number
                       </label>
@@ -958,24 +1296,40 @@ export default function QuestionnaireForm({
                               },
                             })
                           }
-                          className="mt-2 w-full rounded-lg border border-[#2a3750] bg-[#121826] px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500"
+                          className={nestedInputCls}
                         />
                       )}
                     </div>
                   </div>
 
                   {/* Enquiry form */}
-                  <div className="rounded-xl border border-[#20293d] bg-[#0b0e17] p-3.5">
+                  <div className={boxCls}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="grid size-9 place-items-center rounded-xl bg-orange-500/10 text-orange-400">
+                        <div
+                          className={`grid size-9 place-items-center rounded-xl ${
+                            isDark
+                              ? "bg-orange-500/10 text-orange-400"
+                              : "bg-orange-50 text-orange-600"
+                          }`}
+                        >
                           <Mail className="size-4" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white">
+                          <p
+                            className={`text-sm font-semibold ${
+                              isDark ? "text-white" : "text-ink"
+                            }`}
+                          >
                             Enquiry form → email
                           </p>
-                          <p className="text-xs text-slate-400">uses your email</p>
+                          <p
+                            className={`text-xs ${
+                              isDark ? "text-slate-400" : "text-ink-muted"
+                            }`}
+                          >
+                            uses your email
+                          </p>
                         </div>
                       </div>
                       <label className="relative inline-flex cursor-pointer items-center">
@@ -993,12 +1347,18 @@ export default function QuestionnaireForm({
                           }
                           className="peer sr-only"
                         />
-                        <div className="peer h-6 w-11 rounded-full bg-[#1e273a] peer-checked:bg-[#5b78ff] peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full" />
+                        <div
+                          className={`peer h-6 w-11 rounded-full ${toggleTrackCls} peer-checked:bg-brand peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full`}
+                        />
                       </label>
                     </div>
 
                     <div className="mt-2.5 pl-12">
-                      <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                      <label
+                        className={`flex items-center gap-2 text-xs cursor-pointer ${
+                          isDark ? "text-slate-400" : "text-ink-muted"
+                        }`}
+                      >
                         <input
                           type="checkbox"
                           checked={diffEmail}
@@ -1014,7 +1374,7 @@ export default function QuestionnaireForm({
                               });
                             }
                           }}
-                          className="rounded border-[#2f3d59] bg-[#121826] text-blue-600 focus:ring-0"
+                          className="rounded border-slate-300 text-brand focus:ring-0"
                         />
                         Different email
                       </label>
@@ -1034,24 +1394,40 @@ export default function QuestionnaireForm({
                               },
                             })
                           }
-                          className="mt-2 w-full rounded-lg border border-[#2a3750] bg-[#121826] px-3 py-1.5 text-xs text-white placeholder-slate-500 outline-none focus:border-blue-500"
+                          className={nestedInputCls}
                         />
                       )}
                     </div>
                   </div>
 
-                  {/* Map location row (from screenshot 2) */}
-                  <div className="rounded-xl border border-[#20293d] bg-[#0b0e17] p-3.5">
+                  {/* Map location row */}
+                  <div className={boxCls}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="grid size-9 place-items-center rounded-xl bg-amber-500/10 text-amber-400">
+                        <div
+                          className={`grid size-9 place-items-center rounded-xl ${
+                            isDark
+                              ? "bg-amber-500/10 text-amber-400"
+                              : "bg-amber-50 text-amber-600"
+                          }`}
+                        >
                           <MapPin className="size-4" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white">
+                          <p
+                            className={`text-sm font-semibold ${
+                              isDark ? "text-white" : "text-ink"
+                            }`}
+                          >
                             Map location
                           </p>
-                          <p className="text-xs text-slate-400">Shows you on a map</p>
+                          <p
+                            className={`text-xs ${
+                              isDark ? "text-slate-400" : "text-ink-muted"
+                            }`}
+                          >
+                            Shows you on a map
+                          </p>
                         </div>
                       </div>
                       <label className="relative inline-flex cursor-pointer items-center">
@@ -1070,14 +1446,16 @@ export default function QuestionnaireForm({
                           }
                           className="peer sr-only"
                         />
-                        <div className="peer h-6 w-11 rounded-full bg-[#1e273a] peer-checked:bg-[#5b78ff] peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full" />
+                        <div
+                          className={`peer h-6 w-11 rounded-full ${toggleTrackCls} peer-checked:bg-brand peer-focus:outline-none after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full`}
+                        />
                       </label>
                     </div>
                   </div>
 
-                  {/* Social links row (from screenshot 2) */}
+                  {/* Social links row */}
                   <div className="pt-2">
-                    <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <span className={sectionLabelCls}>
                       SOCIAL LINKS · tap the ones you have
                     </span>
                     <div className="mt-2.5 flex items-center gap-2">
@@ -1092,8 +1470,10 @@ export default function QuestionnaireForm({
                             onClick={() => toggleSocial(id)}
                             className={`grid size-9 place-items-center rounded-xl border transition-all ${
                               active
-                                ? "border-[#3b82f6] bg-[#1d273d] text-white shadow-sm"
-                                : "border-[#222c40] bg-[#0c101a] text-slate-400 hover:border-slate-500 hover:text-white"
+                                ? "border-brand bg-brand text-white shadow-xs"
+                                : isDark
+                                  ? "border-[#222c40] bg-[#0c101a] text-slate-400 hover:border-slate-500 hover:text-white"
+                                  : "border-line bg-canvas text-ink-muted hover:border-brand/40 hover:text-ink"
                             }`}
                           >
                             <IconComponent className="size-4" />
@@ -1109,12 +1489,12 @@ export default function QuestionnaireForm({
             {/* COLUMN 3 */}
             <div className="space-y-5">
               {/* Card 5: Extras */}
-              <section className="rounded-2xl border border-[#1e2638] bg-[#121824] p-5 shadow-xl sm:p-6">
+              <section className={cardCls}>
                 <div className="flex items-center gap-2.5">
-                  <span className="grid size-6 place-items-center rounded-full bg-[#3b82f6] text-xs font-bold text-white">
+                  <span className="grid size-6 place-items-center rounded-full bg-brand text-xs font-bold text-white">
                     5
                   </span>
-                  <h2 className="text-base font-bold text-white">Extras</h2>
+                  <h2 className={cardTitleCls}>Extras</h2>
                 </div>
 
                 <div className="mt-5 space-y-5">
@@ -1132,11 +1512,7 @@ export default function QuestionnaireForm({
                           type="button"
                           aria-pressed={selected}
                           onClick={() => toggleFeature(feat)}
-                          className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                            selected
-                              ? "bg-[#2563eb] border border-[#3b82f6] text-white shadow-sm"
-                              : "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500 hover:text-white"
-                          }`}
+                          className={pillCls(selected)}
                         >
                           {feat}
                         </button>
@@ -1148,7 +1524,7 @@ export default function QuestionnaireForm({
                   <div className="space-y-3 pt-2">
                     {/* LOGO */}
                     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-                      <span className="w-20 shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      <span className={`w-20 shrink-0 ${sectionLabelCls}`}>
                         LOGO
                       </span>
                       <div
@@ -1165,11 +1541,7 @@ export default function QuestionnaireForm({
                               role="radio"
                               aria-checked={selected}
                               onClick={() => updateAnswer("logo", opt)}
-                              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                                selected
-                                  ? "bg-[#2563eb] border border-[#3b82f6] text-white shadow-sm"
-                                  : "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500"
-                              }`}
+                              className={pillCls(selected)}
                             >
                               {opt}
                             </button>
@@ -1180,7 +1552,7 @@ export default function QuestionnaireForm({
 
                     {/* TEXT */}
                     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-                      <span className="w-20 shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      <span className={`w-20 shrink-0 ${sectionLabelCls}`}>
                         TEXT
                       </span>
                       <div
@@ -1197,11 +1569,7 @@ export default function QuestionnaireForm({
                               role="radio"
                               aria-checked={selected}
                               onClick={() => updateAnswer("text", opt)}
-                              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                                selected
-                                  ? "bg-[#2563eb] border border-[#3b82f6] text-white shadow-sm"
-                                  : "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500"
-                              }`}
+                              className={pillCls(selected)}
                             >
                               {opt}
                             </button>
@@ -1212,7 +1580,7 @@ export default function QuestionnaireForm({
 
                     {/* PHOTOS */}
                     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-                      <span className="w-20 shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      <span className={`w-20 shrink-0 ${sectionLabelCls}`}>
                         PHOTOS
                       </span>
                       <div
@@ -1229,11 +1597,7 @@ export default function QuestionnaireForm({
                               role="radio"
                               aria-checked={selected}
                               onClick={() => updateAnswer("photos", opt)}
-                              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                                selected
-                                  ? "bg-[#2563eb] border border-[#3b82f6] text-white shadow-sm"
-                                  : "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500"
-                              }`}
+                              className={pillCls(selected)}
                             >
                               {opt}
                             </button>
@@ -1244,7 +1608,7 @@ export default function QuestionnaireForm({
 
                     {/* DOMAIN */}
                     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-                      <span className="w-20 shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      <span className={`w-20 shrink-0 ${sectionLabelCls}`}>
                         DOMAIN
                       </span>
                       <div
@@ -1261,11 +1625,7 @@ export default function QuestionnaireForm({
                               role="radio"
                               aria-checked={selected}
                               onClick={() => updateAnswer("domain", opt)}
-                              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                                selected
-                                  ? "bg-[#2563eb] border border-[#3b82f6] text-white shadow-sm"
-                                  : "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500"
-                              }`}
+                              className={pillCls(selected)}
                             >
                               {opt}
                             </button>
@@ -1276,7 +1636,7 @@ export default function QuestionnaireForm({
 
                     {/* NEEDED */}
                     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-                      <span className="w-20 shrink-0 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      <span className={`w-20 shrink-0 ${sectionLabelCls}`}>
                         NEEDED
                       </span>
                       <div
@@ -1293,11 +1653,7 @@ export default function QuestionnaireForm({
                               role="radio"
                               aria-checked={selected}
                               onClick={() => updateAnswer("needed", opt)}
-                              className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                                selected
-                                  ? "bg-[#2563eb] border border-[#3b82f6] text-white shadow-sm"
-                                  : "border border-[#222c40] bg-[#0c101a] text-slate-300 hover:border-slate-500"
-                              }`}
+                              className={pillCls(selected)}
                             >
                               {opt}
                             </button>
@@ -1310,58 +1666,50 @@ export default function QuestionnaireForm({
               </section>
 
               {/* Card 6: Your files */}
-              <section className="rounded-2xl border border-[#1e2638] bg-[#121824] p-5 shadow-xl sm:p-6">
+              <section className={cardCls}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="grid size-6 place-items-center rounded-full bg-[#ef4444] text-xs font-bold text-white">
+                    <span className="grid size-6 place-items-center rounded-full bg-rose-500 text-xs font-bold text-white">
                       6
                     </span>
-                    <h2 className="text-base font-bold text-white">
+                    <h2 className={cardTitleCls}>
                       Your files
                     </h2>
                   </div>
-                  <span className="text-xs text-slate-400">one ZIP</span>
+                  <span className={isDark ? "text-xs text-slate-400" : "text-xs text-ink-muted"}>optional</span>
                 </div>
 
                 <div className="mt-5 space-y-4">
-                  {/* Drop zone box matching screenshot */}
-                  <div className="flex items-center justify-between rounded-xl border border-dashed border-[#242f44] bg-[#0b0e17] p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="grid size-9 place-items-center rounded-xl bg-blue-500/10 text-blue-400">
-                        <Upload className="size-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white">
-                          Drop your ZIP here
-                        </p>
-                        <p className="text-[11px] text-slate-400">
-                          Logo, photos, videos in one folder
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const linkInput = document.getElementById("filesLink");
-                        linkInput?.focus();
-                      }}
-                      className="rounded-lg bg-white px-3.5 py-1 text-xs font-bold text-slate-900 shadow hover:bg-slate-100 transition-colors"
+                  {clientId ? (
+                    <FileUploads
+                      value={attachments}
+                      onChange={setAttachments}
+                      onBusyChange={onBusyChange}
+                      isDark={isDark}
+                    />
+                  ) : (
+                    <p
+                      className={`text-[11px] leading-relaxed ${
+                        isDark ? "text-slate-400" : "text-ink-muted"
+                      }`}
                     >
-                      Choose
-                    </button>
-                  </div>
-
-                  <p className="text-[11px] leading-relaxed text-slate-400">
-                    Make a ZIP: right-click your folder → Compress (Mac) or Send
-                    to → Compressed folder (Windows).
-                  </p>
+                      Share your logo, photos and videos with a Drive or
+                      WeTransfer link.{" "}
+                      <Link to="/login" className="font-semibold text-brand hover:underline">
+                        Sign in
+                      </Link>{" "}
+                      to upload files and pick a theme or template here.
+                    </p>
+                  )}
 
                   <div>
                     <label
                       htmlFor="filesLink"
-                      className="block text-xs font-semibold text-slate-300"
+                      className={fieldLabelCls}
                     >
-                      Or a Drive / WeTransfer link
+                      {clientId
+                        ? "Or a Drive / WeTransfer link (ZIPs, large files)"
+                        : "Drive / WeTransfer link"}
                     </label>
                     <input
                       id="filesLink"
@@ -1369,14 +1717,14 @@ export default function QuestionnaireForm({
                       value={form.filesLink || ""}
                       onChange={(e) => updateField("filesLink", e.target.value)}
                       placeholder="https://"
-                      className="mt-1.5 h-10 w-full rounded-xl border border-[#212a3d] bg-[#0b0e17] px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition focus:border-blue-500"
+                      className={inputCls(false)}
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="notes"
-                      className="block text-xs font-semibold text-slate-300"
+                      className={fieldLabelCls}
                     >
                       Notes (optional)
                     </label>
@@ -1386,22 +1734,36 @@ export default function QuestionnaireForm({
                       value={form.notes || ""}
                       onChange={(e) => updateField("notes", e.target.value)}
                       placeholder="Websites you like, anything else"
-                      className="mt-1.5 w-full resize-none rounded-xl border border-[#212a3d] bg-[#0b0e17] px-3.5 py-2 text-sm text-white placeholder-slate-500 outline-none transition focus:border-blue-500"
+                      className={`mt-1.5 w-full resize-none rounded-xl border px-3.5 py-2 text-sm outline-none transition focus:border-brand ${
+                        isDark
+                          ? "border-[#212a3d] bg-[#0b0e17] text-white placeholder-slate-500"
+                          : "border-line bg-canvas text-ink placeholder-ink-muted focus:ring-1 focus:ring-brand"
+                      }`}
                     />
                   </div>
                 </div>
               </section>
 
-              {/* Card 7: White Submit Card from Screenshot 2! */}
-              <section className="rounded-2xl bg-white p-5 text-slate-900 shadow-2xl space-y-4">
+              {/* Card 7: Submit Card */}
+              <section
+                className={`rounded-2xl p-5 shadow-xs space-y-4 ${
+                  isDark
+                    ? "bg-white text-slate-900 shadow-2xl"
+                    : "border border-line bg-surface text-ink"
+                }`}
+              >
                 <label className="flex items-start gap-2.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={consent}
                     onChange={(e) => setConsent(e.target.checked)}
-                    className="mt-0.5 size-4 rounded border-slate-300 text-blue-600 focus:ring-0"
+                    className="mt-0.5 size-4 rounded border-slate-300 text-brand focus:ring-0"
                   />
-                  <span className="text-xs font-medium text-slate-700 leading-snug">
+                  <span
+                    className={`text-xs font-medium leading-snug ${
+                      isDark ? "text-slate-700" : "text-ink-body"
+                    }`}
+                  >
                     I agree that [{brandName}] may use these details and files to
                     build my website.
                   </span>
@@ -1412,20 +1774,28 @@ export default function QuestionnaireForm({
 
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="w-full rounded-xl bg-[#617bfb] hover:bg-[#526eef] text-white font-semibold py-3 text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  disabled={submitting || uploading}
+                  className="w-full rounded-xl bg-brand hover:bg-brand-hover text-white font-semibold py-3 text-sm shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
                       <Spinner size="sm" color="current" /> Submitting...
+                    </>
+                  ) : uploading ? (
+                    <>
+                      <Spinner size="sm" color="current" /> Uploading files...
                     </>
                   ) : (
                     <>Send my answers →</>
                   )}
                 </button>
 
-                <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 pt-0.5">
-                  <Lock className="size-3.5 text-slate-400" />
+                <div
+                  className={`flex items-center justify-center gap-1.5 text-xs pt-0.5 ${
+                    isDark ? "text-slate-500" : "text-ink-muted"
+                  }`}
+                >
+                  <Lock className="size-3.5" />
                   <span>Your details are used only to build your website.</span>
                 </div>
               </section>

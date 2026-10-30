@@ -2,9 +2,8 @@ import QuestionnaireForm from "../../features/questionnaire/QuestionnaireForm.ts
 
 export default function StartQuestionnairePage() {
   return (
-    <div className="min-h-screen bg-[#0a0d14]">
-      <QuestionnaireForm brandName="Bytezora" />
+    <div className="min-h-screen bg-canvas">
+      <QuestionnaireForm brandName="Bytezora" theme="light" />
     </div>
   );
 }
-
