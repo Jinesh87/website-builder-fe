@@ -1,3 +1,4 @@
+import { RichTextField } from "./RichTextField.tsx";
 import type {
   CarouselCardStyle,
   CarouselData,
@@ -1037,7 +1038,7 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             />
           </div>
           <div className="col-span-2">
-            <TextField
+            <RichTextField
               label="Badge / Eyebrow"
               value={data.eyebrow ?? ""}
               onChange={(eyebrow) =>
@@ -1049,7 +1050,7 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
           </div>
         </div>
 
-        <TextField
+        <RichTextField
           label="Main heading (optional)"
           value={data.heading ?? ""}
           onChange={(heading) => onChange({ ...data, heading })}
@@ -1065,7 +1066,7 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
           hint="Matching word in heading will render with a colorful vibrant gradient."
           placeholder="faster"
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Subheading / Summary"
           value={data.subheading ?? ""}
           onChange={(subheading) =>
@@ -1074,7 +1075,7 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
           maxLength={500}
           rows={2}
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Extended description (optional)"
           value={data.description ?? ""}
           onChange={(description) =>
@@ -1144,14 +1145,14 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                   onChange={(image) => update({ ...slide, image })}
                   dimensionHint={MEDIA_SIZE.reelCard}
                 />
-                <TextField
+                <RichTextField
                   label="Card Title"
                   value={slide.title}
                   onChange={(title) => update({ ...slide, title })}
                   maxLength={120}
                   required
                 />
-                <TextField
+                <RichTextField
                   label="Creator / Handle"
                   value={slide.subtitle || ""}
                   onChange={(subtitle) => update({ ...slide, subtitle })}
@@ -1702,7 +1703,7 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
       </FormGroup>
 
       <FormGroup title="Headings & copy">
-        <TextField
+        <RichTextField
           label="Badge / Eyebrow (optional)"
           value={data.eyebrow ?? ""}
           onChange={(eyebrow) =>
@@ -1711,13 +1712,13 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
           maxLength={100}
           placeholder="Capabilities"
         />
-        <TextField
+        <RichTextField
           label="Main heading (optional)"
           value={data.heading ?? ""}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro description (optional)"
           value={data.intro ?? ""}
           onChange={(intro) => onChange({ ...data, intro: intro || undefined })}
@@ -1851,14 +1852,14 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
                   placeholder="#ffffff"
                 />
               </div>
-              <TextField
+              <RichTextField
                 label="Title"
                 value={item.title}
                 onChange={(title) => update({ ...item, title })}
                 maxLength={120}
                 required
               />
-              <TextAreaField
+              <RichTextField multiline
                 label="Description"
                 value={item.description}
                 onChange={(description) => update({ ...item, description })}
@@ -2000,7 +2001,7 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
       </FormGroup>
 
       <FormGroup title="Header content">
-        <TextField
+        <RichTextField
           label="Eyebrow (optional)"
           value={data.eyebrow ?? ""}
           onChange={(eyebrow) =>
@@ -2009,14 +2010,14 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
           maxLength={100}
           placeholder="WHAT WE OFFER"
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
           required
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro"
           value={data.intro}
           onChange={(intro) => onChange({ ...data, intro })}
@@ -2148,7 +2149,7 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
                 )}
               </div>
 
-              <TextField
+              <RichTextField
                 label="Title"
                 value={item.title}
                 onChange={(title) => update({ ...item, title })}
@@ -2156,7 +2157,7 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
                 required
               />
 
-              <TextAreaField
+              <RichTextField multiline
                 label="Description"
                 value={item.description}
                 onChange={(description) => update({ ...item, description })}
@@ -2382,21 +2383,21 @@ function TestimonialsForm({ data, onChange }: DataFormProps<TestimonialsData>) {
       </FormGroup>
 
       <FormGroup title="Header & Proof Metric">
-        <TextField
+        <RichTextField
           label="Eyebrow text"
           value={data.eyebrow}
           onChange={(eyebrow) => onChange({ ...data, eyebrow })}
           maxLength={80}
           placeholder="e.g. TRUSTED BY 10,000+ CUSTOMERS"
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
           required
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro description"
           value={data.intro}
           onChange={(intro) => onChange({ ...data, intro })}
@@ -2481,7 +2482,7 @@ function TestimonialsForm({ data, onChange }: DataFormProps<TestimonialsData>) {
           addLabel="Add testimonial"
           renderItem={(item, update) => (
             <>
-              <TextAreaField
+              <RichTextField multiline
                 label="Quote"
                 value={item.quote}
                 onChange={(quote) => update({ ...item, quote })}
@@ -2601,21 +2602,21 @@ function FaqForm({ data, onChange }: DataFormProps<FaqData>) {
       </FormGroup>
 
       <FormGroup title="Content">
-        <TextField
+        <RichTextField
           label="Eyebrow"
           value={data.eyebrow}
           onChange={(eyebrow) => onChange({ ...data, eyebrow })}
           maxLength={80}
           placeholder="e.g. HELP CENTER"
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
           required
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro"
           value={data.intro}
           onChange={(intro) => onChange({ ...data, intro })}
@@ -2637,7 +2638,7 @@ function FaqForm({ data, onChange }: DataFormProps<FaqData>) {
           addLabel="Add question"
           renderItem={(item, update) => (
             <>
-              <TextField
+              <RichTextField
                 label="Question"
                 value={item.question}
                 onChange={(question) => update({ ...item, question })}
@@ -2660,7 +2661,7 @@ function FaqForm({ data, onChange }: DataFormProps<FaqData>) {
                   placeholder="e.g. Popular, New"
                 />
               </div>
-              <TextAreaField
+              <RichTextField multiline
                 label="Answer"
                 value={item.answer}
                 onChange={(answer) => update({ ...item, answer })}
@@ -2679,7 +2680,7 @@ function FaqForm({ data, onChange }: DataFormProps<FaqData>) {
       </FormGroup>
 
       <FormGroup title="Support / Contact Box (Optional)">
-        <TextField
+        <RichTextField
           label="Support title"
           value={data.supportCta?.title}
           onChange={(title) =>
@@ -2691,7 +2692,7 @@ function FaqForm({ data, onChange }: DataFormProps<FaqData>) {
           maxLength={100}
           placeholder="e.g. Still have questions?"
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Support description"
           value={data.supportCta?.description}
           onChange={(description) =>
@@ -2773,21 +2774,21 @@ function CtaForm({ data, onChange }: DataFormProps<CtaData>) {
       </FormGroup>
 
       <FormGroup title="Content">
-        <TextField
+        <RichTextField
           label="Eyebrow"
           value={data.eyebrow}
           onChange={(eyebrow) => onChange({ ...data, eyebrow })}
           maxLength={80}
           placeholder="e.g. GET STARTED TODAY"
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
           required
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Description text"
           value={data.text}
           onChange={(text) => onChange({ ...data, text })}
@@ -2855,7 +2856,7 @@ function CtaForm({ data, onChange }: DataFormProps<CtaData>) {
             placeholder="e.g. Uptime SLA"
           />
         </div>
-        <TextField
+        <RichTextField
           label="Metric subtext"
           value={data.highlightMetric?.subtext}
           onChange={(subtext) =>
@@ -2939,21 +2940,21 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
       {isCustom && <ContactLayoutEditor data={data} onChange={onChange} />}
 
       <FormGroup title="Header & Meta">
-        <TextField
+        <RichTextField
           label="Eyebrow / Badge"
           value={data.eyebrow || ""}
           onChange={(eyebrow) => onChange({ ...data, eyebrow })}
           maxLength={80}
           placeholder="e.g. GET IN TOUCH • FAST RESPONSE"
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
           required
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Subheading / Text"
           value={data.text}
           onChange={(text) => onChange({ ...data, text })}
@@ -3032,7 +3033,7 @@ function ContactForm({ data, onChange }: DataFormProps<ContactData>) {
                 placeholder="e.g. hello@company.com or +1 (555) 000-0000"
                 required
               />
-              <TextField
+              <RichTextField
                 label="Description / Context"
                 value={channel.description || ""}
                 onChange={(description) =>
@@ -3131,9 +3132,9 @@ function ProductsForm({ data, onChange }: DataFormProps<ProductsData>) {
           { value: "showcase", label: "Marketplace" },
         ]}
       />
-      <TextField label="Eyebrow" value={data.eyebrow ?? ""} onChange={(eyebrow) => onChange({ ...data, eyebrow })} maxLength={120} />
-      <TextField label="Heading" value={data.title} onChange={(title) => onChange({ ...data, title })} maxLength={160} />
-      <TextAreaField label="Intro" value={data.subtitle ?? ""} onChange={(subtitle) => onChange({ ...data, subtitle })} rows={3} maxLength={320} />
+      <RichTextField label="Eyebrow" value={data.eyebrow ?? ""} onChange={(eyebrow) => onChange({ ...data, eyebrow })} maxLength={120} />
+      <RichTextField label="Heading" value={data.title} onChange={(title) => onChange({ ...data, title })} maxLength={160} />
+      <RichTextField multiline label="Intro" value={data.subtitle ?? ""} onChange={(subtitle) => onChange({ ...data, subtitle })} rows={3} maxLength={320} />
       <SelectField
         label="Columns"
         value={data.layout ?? "grid-3"}
@@ -3215,8 +3216,8 @@ function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
           ]}
           hint="Only changes what you see here. Visitors always get the state that matches their session."
         />
-        <TextField label="Heading" value={data.heading ?? ""} onChange={(heading) => set({ heading })} maxLength={160} />
-        <TextAreaField label="Intro" value={data.subheading ?? ""} onChange={(subheading) => set({ subheading })} rows={2} maxLength={320} />
+        <RichTextField label="Heading" value={data.heading ?? ""} onChange={(heading) => set({ heading })} maxLength={160} />
+        <RichTextField multiline label="Intro" value={data.subheading ?? ""} onChange={(subheading) => set({ subheading })} rows={2} maxLength={320} />
       </FormGroup>
       <FormGroup title="Panels">
         <CheckboxField label="Orders" checked={data.showOrders !== false} onChange={(showOrders) => set({ showOrders })} />
@@ -3337,21 +3338,21 @@ function TextForm({ data, onChange }: DataFormProps<TextData>) {
           onChange({ ...data, maxWidth: maxWidth as TextData["maxWidth"] })
         }
       />
-      <TextField
+      <RichTextField
         label="Small text above heading (optional)"
         value={data.eyebrow ?? ""}
         onChange={(eyebrow) => onChange({ ...data, eyebrow })}
         maxLength={120}
         placeholder="e.g. About us / Director's statement"
       />
-      <TextField
+      <RichTextField
         label={isPullQuote ? "Heading (optional)" : "Heading"}
         value={data.heading ?? ""}
         onChange={(heading) => onChange({ ...data, heading })}
         maxLength={200}
         placeholder={isPullQuote ? "Optional title above quote" : "About us"}
       />
-      <TextAreaField
+      <RichTextField multiline
         label={isPullQuote ? "Quote text" : "Text"}
         value={data.body}
         onChange={(body) => onChange({ ...data, body })}
@@ -3382,7 +3383,7 @@ function GalleryForm({ data, onChange }: DataFormProps<GalleryData>) {
   return (
     <>
       <FormGroup title="Content">
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
@@ -3417,7 +3418,7 @@ function LogosForm({ data, onChange }: DataFormProps<LogosData>) {
   return (
     <>
       <FormGroup title="Content">
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
@@ -3457,20 +3458,20 @@ function SplitForm({ data, onChange }: DataFormProps<SplitData>) {
   return (
     <>
       <FormGroup title="Content">
-        <TextField
+        <RichTextField
           label="Small text above heading"
           value={data.eyebrow}
           onChange={(eyebrow) => onChange({ ...data, eyebrow })}
           maxLength={200}
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
           required
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Text"
           value={data.body}
           onChange={(body) => onChange({ ...data, body })}
@@ -3538,13 +3539,13 @@ function StatsForm({ data, onChange }: DataFormProps<StatsData>) {
   return (
     <>
       <FormGroup title="Content">
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro"
           value={data.intro}
           onChange={(intro) => onChange({ ...data, intro })}
@@ -3643,21 +3644,21 @@ function PricingForm({ data, onChange }: DataFormProps<PricingData>) {
       </FormGroup>
 
       <FormGroup title="Content">
-        <TextField
+        <RichTextField
           label="Eyebrow"
           value={data.eyebrow}
           onChange={(eyebrow) => onChange({ ...data, eyebrow })}
           maxLength={80}
           placeholder="e.g. PRICING PLANS"
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
           required
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro"
           value={data.intro}
           onChange={(intro) => onChange({ ...data, intro })}
@@ -3751,7 +3752,7 @@ function PricingForm({ data, onChange }: DataFormProps<PricingData>) {
                 />
               </div>
 
-              <TextAreaField
+              <RichTextField multiline
                 label="Description"
                 value={plan.description}
                 onChange={(description) => update({ ...plan, description })}
@@ -3818,7 +3819,7 @@ function MediaForm({ data, onChange }: DataFormProps<MediaData>) {
           ]}
           onChange={(kind) => onChange({ ...data, kind })}
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
@@ -3844,7 +3845,7 @@ function MediaForm({ data, onChange }: DataFormProps<MediaData>) {
             hint="Plays with privacy-enhanced embedding or direct MP4 streaming."
           />
         )}
-        <TextField
+        <RichTextField
           label="Caption"
           value={data.caption}
           onChange={(caption) => onChange({ ...data, caption })}
@@ -3938,21 +3939,21 @@ function TeamForm({ data, onChange }: DataFormProps<TeamData>) {
       </FormGroup>
 
       <FormGroup title="Header & Meta">
-        <TextField
+        <RichTextField
           label="Eyebrow / Badge"
           value={data.eyebrow || ""}
           onChange={(eyebrow) => onChange({ ...data, eyebrow })}
           maxLength={80}
           placeholder="e.g. OUR PEOPLE • WORLD-CLASS LEADERSHIP"
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
           required
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro"
           value={data.intro}
           onChange={(intro) => onChange({ ...data, intro })}
@@ -4196,20 +4197,20 @@ function CarouselForm({ data, onChange }: DataFormProps<CarouselData>) {
 
       {currentVariant !== "hero-slider" && (
         <FormGroup title="Header & Meta">
-          <TextField
+          <RichTextField
             label="Eyebrow / Badge"
             value={data.eyebrow || ""}
             onChange={(eyebrow) => onChange({ ...data, eyebrow })}
             maxLength={80}
             placeholder="e.g. VISUAL GALLERY"
           />
-          <TextField
+          <RichTextField
             label="Heading"
             value={data.heading || ""}
             onChange={(heading) => onChange({ ...data, heading })}
             maxLength={200}
           />
-          <TextAreaField
+          <RichTextField multiline
             label="Intro / Subheading"
             value={data.intro || ""}
             onChange={(intro) => onChange({ ...data, intro })}
@@ -4297,14 +4298,14 @@ function CarouselForm({ data, onChange }: DataFormProps<CarouselData>) {
                 optional
                 dimensionHint={slideImageSize}
               />
-              <TextField
+              <RichTextField
                 label="Slide Title / Headline"
                 value={slide.title}
                 onChange={(title) => update({ ...slide, title })}
                 maxLength={120}
                 required
               />
-              <TextField
+              <RichTextField
                 label="Subtitle / Category"
                 value={slide.subtitle || ""}
                 onChange={(subtitle) => update({ ...slide, subtitle })}
@@ -4318,7 +4319,7 @@ function CarouselForm({ data, onChange }: DataFormProps<CarouselData>) {
                 maxLength={60}
                 placeholder="e.g. 2026 ARCHIVE"
               />
-              <TextAreaField
+              <RichTextField multiline
                 label="Caption / Description"
                 value={slide.caption || slide.description || ""}
                 onChange={(text) =>
@@ -4440,20 +4441,20 @@ function MarqueeForm({ data, onChange }: DataFormProps<MarqueeData>) {
       </FormGroup>
 
       <FormGroup title="Optional Header">
-        <TextField
+        <RichTextField
           label="Eyebrow"
           value={data.eyebrow || ""}
           onChange={(eyebrow) => onChange({ ...data, eyebrow })}
           maxLength={80}
           placeholder="e.g. LIVE NETWORK ACTIVITY"
         />
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading || ""}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro"
           value={data.intro || ""}
           onChange={(intro) => onChange({ ...data, intro })}
@@ -4476,7 +4477,7 @@ function MarqueeForm({ data, onChange }: DataFormProps<MarqueeData>) {
           addLabel="Add Marquee Item"
           renderItem={(item, update) => (
             <>
-              <TextField
+              <RichTextField
                 label="Primary Text"
                 value={item.text}
                 onChange={(text) => update({ ...item, text })}
@@ -4491,7 +4492,7 @@ function MarqueeForm({ data, onChange }: DataFormProps<MarqueeData>) {
                 placeholder="e.g. NEW or 99.9%"
               />
               {currentVariant === "cards-stream" && (
-                <TextField
+                <RichTextField
                   label="Subtext / Description"
                   value={item.subtext || ""}
                   onChange={(subtext) => update({ ...item, subtext })}
@@ -4528,7 +4529,7 @@ function MarqueeForm({ data, onChange }: DataFormProps<MarqueeData>) {
             addLabel="Add Secondary Item"
             renderItem={(item, update) => (
               <>
-                <TextField
+                <RichTextField
                   label="Primary Text"
                   value={item.text}
                   onChange={(text) => update({ ...item, text })}

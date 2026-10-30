@@ -1,9 +1,10 @@
+import { toPlainText } from "../../../site-kit/index.ts";
+import { RichTextField } from "./RichTextField.tsx";
 import type { ContactData, ContactVariant } from "../../../site-kit/index.ts";
 import {
   CommaListField,
   FormGroup,
   SelectField,
-  TextAreaField,
   TextField,
 } from "./fields.tsx";
 
@@ -29,7 +30,7 @@ const TIMECODE_MODE_OPTIONS: { value: "live" | "static"; label: string }[] = [
 export default function ClapperContactFields({ data, onChange }: Props) {
   const set = (patch: Partial<ContactData>) => onChange({ ...data, ...patch });
 
-  const headingWords = (data.heading || "ROLL CAMERA").trim().split(/\s+/);
+  const headingWords = (toPlainText(data.heading) || "ROLL CAMERA").trim().split(/\s+/);
   const defaultSolid = headingWords[0] || "ROLL";
   const defaultOutline = headingWords.slice(1).join(" ") || "CAMERA";
 
@@ -48,7 +49,7 @@ export default function ClapperContactFields({ data, onChange }: Props) {
       </FormGroup>
 
       <FormGroup title="Title & Typography">
-        <TextField
+        <RichTextField
           label="Eyebrow"
           value={data.eyebrow ?? "CONTACT"}
           onChange={(eyebrow) => set({ eyebrow: eyebrow || undefined })}
@@ -81,7 +82,7 @@ export default function ClapperContactFields({ data, onChange }: Props) {
             maxLength={60}
           />
         </div>
-        <TextAreaField
+        <RichTextField multiline
           label="Subheading / Text"
           value={
             data.text ??

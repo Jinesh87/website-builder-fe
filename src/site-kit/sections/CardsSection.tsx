@@ -1,3 +1,4 @@
+import { toPlainText } from "../rich-text-core.ts";
 import type { ReactNode } from "react";
 import FilmVaultReel from "./FilmVaultReel.tsx";
 import {
@@ -279,7 +280,7 @@ function CardView({ item, index, ctx }: { item: CardItem; index: number; ctx: Ca
               <p className="wb-cardset-desc">{parseRichText(item.description)}</p>
             )}
             {checklist.length > 0 && (
-              <ul className="wb-cardset-checklist" aria-label={item.title}>
+              <ul className="wb-cardset-checklist" aria-label={toPlainText(item.title)}>
                 {checklist.map((checkItem, checkIdx) => {
                   const itemIsCross =
                     checkItem.icon === "cross" ||
@@ -511,9 +512,9 @@ export default function CardsSection({ section }: { section: SectionOf<"cards"> 
                     <SiteImage image={item.image} />
                   </div>
                 )}
-                <h3 className="wb-polaroid-grid-title">{item.title}</h3>
+                <h3 className="wb-polaroid-grid-title">{parseRichText(item.title)}</h3>
                 {item.description && (
-                  <p className="wb-polaroid-grid-desc">{item.description}</p>
+                  <p className="wb-polaroid-grid-desc">{parseRichText(item.description)}</p>
                 )}
               </div>
             ))}
@@ -585,7 +586,7 @@ export default function CardsSection({ section }: { section: SectionOf<"cards"> 
       <ul
         className="wb-cardset-grid"
         style={gridStyle(data.columns, data.mobileColumns, data.tabletColumns)}
-        {...(mobileScroll ? { tabIndex: 0, "aria-label": data.heading || "Cards" } : {})}
+        {...(mobileScroll ? { tabIndex: 0, "aria-label": toPlainText(data.heading) || "Cards" } : {})}
       >
         {items.map((item, index) => (
           <li

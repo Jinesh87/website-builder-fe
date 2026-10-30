@@ -1,3 +1,4 @@
+import { RichTextField } from "./RichTextField.tsx";
 import type {
   ContactBlock,
   ContactBlockType,
@@ -222,7 +223,7 @@ function BlockEditor({
     <>
       {block.type === "heading" && (
         <>
-          <TextField label="Heading" value={block.text} onChange={(text) => onChange({ ...block, text })} maxLength={200} required />
+          <RichTextField label="Heading" value={block.text} onChange={(text) => onChange({ ...block, text })} maxLength={200} required />
           <SelectField
             label="Size"
             value={block.level ?? 3}
@@ -235,10 +236,10 @@ function BlockEditor({
         </>
       )}
       {block.type === "text" && (
-        <TextAreaField label="Text" value={block.text} onChange={(text) => onChange({ ...block, text })} maxLength={1200} />
+        <RichTextField multiline label="Text" value={block.text} onChange={(text) => onChange({ ...block, text })} maxLength={1200} />
       )}
       {block.type === "badge" && (
-        <TextField label="Badge text" value={block.text} onChange={(text) => onChange({ ...block, text })} maxLength={80} />
+        <RichTextField label="Badge text" value={block.text} onChange={(text) => onChange({ ...block, text })} maxLength={80} />
       )}
       {block.type === "info" && (
         <>

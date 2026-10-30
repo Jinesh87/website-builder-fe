@@ -105,6 +105,9 @@ export type HeaderData = {
   siteName: string;
   logo?: ImageRef;
   logoDisplay?: BrandDisplayMode;
+  /** Custom logo height in pixels. Default is 38px. */
+  logoHeight?: number;
+  logoSize?: number;
   menu: HeaderMenuItem[];
   /** Desktop position of the main navigation; falls back to settings.align, then the design's own layout. */
   navAlign?: SectionAlign;
@@ -201,6 +204,9 @@ export type FooterData = {
   siteName: string;
   logo?: ImageRef;
   logoDisplay?: BrandDisplayMode;
+  /** Custom logo height in pixels. Default is 38px. */
+  logoHeight?: number;
+  logoSize?: number;
   tagline?: string;
   description?: string;
   columns: { title: string; links: LinkRef[] }[];
@@ -908,7 +914,7 @@ export type TextData = {
   variant?: "default" | "standard" | "pull-quote" | "columns-2" | "lead";
   eyebrow?: string;
   heading?: string;
-  /** Plain text; blank lines separate paragraphs. Never rendered as HTML. */
+  /** Blank lines separate paragraphs. Allowlisted inline formatting only (rich-text-core.ts), never raw HTML. */
   body: string;
   align?: SectionAlign;
   quoteAuthor?: string;
@@ -934,7 +940,7 @@ export type LogosData = {
 export type SplitData = {
   eyebrow?: string;
   heading: string;
-  /** Plain text; blank lines separate paragraphs. */
+  /** Blank lines separate paragraphs. Allowlisted inline formatting only (rich-text-core.ts). */
   body: string;
   bullets: string[];
   image?: ImageRef;

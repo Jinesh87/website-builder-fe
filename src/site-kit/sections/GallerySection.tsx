@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { gridStyle, SectionShell, SiteImage } from "../primitives.tsx";
 import type { SectionOf } from "../types.ts";
 
@@ -8,7 +9,7 @@ export default function GallerySection({ section }: { section: SectionOf<"galler
     <SectionShell sectionId={section.id} settings={section.settings} className={`wb-gallery wb-align-${align}`} label={data.heading}>
       {data.heading && (
         <div className={`wb-gallery-head wb-align-${align}`}>
-          <h2>{data.heading}</h2>
+          <h2>{parseRichText(data.heading)}</h2>
         </div>
       )}
       <div className="wb-grid" style={gridStyle(data.columns, data.mobileColumns)}>

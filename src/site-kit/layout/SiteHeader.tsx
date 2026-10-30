@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react";
+import { parseRichText } from "../rich-text.tsx";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { useIsCurrentPage } from "../current-page.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import {
@@ -44,48 +45,64 @@ export function SiteBrand({
   logo,
   displayMode = "auto",
   className = "",
+  logoHeight,
 }: {
   siteName: string;
   logo?: ImageRef;
   displayMode?: BrandDisplayMode;
   className?: string;
+  logoHeight?: number;
 }) {
   const hasLogo = Boolean(logo?.url);
   const mode = displayMode ?? "auto";
+
+  const resolvedHeight = typeof logoHeight === "number" && logoHeight > 0 ? logoHeight : undefined;
+  const imageStyle: CSSProperties | undefined = resolvedHeight
+    ? {
+        height: `${resolvedHeight}px`,
+        maxHeight: `${resolvedHeight}px`,
+        width: "auto",
+        objectFit: "contain",
+      }
+    : undefined;
 
   let content: ReactNode = null;
 
   if (mode === "text_only" || (!hasLogo && mode !== "logo_only")) {
     content = <span className="wb-brand-text">{siteName}</span>;
   } else if (mode === "logo_only") {
-    content = hasLogo ? <SiteImage image={logo!} /> : <span className="wb-brand-text">{siteName}</span>;
+    content = hasLogo ? <SiteImage image={logo!} style={imageStyle} /> : <span className="wb-brand-text">{siteName}</span>;
   } else if (mode === "logo_right") {
     content = (
       <span className="wb-brand-combo wb-brand-logo-right">
         {siteName && <span className="wb-brand-text">{siteName}</span>}
-        {hasLogo && <SiteImage image={logo!} />}
+        {hasLogo && <SiteImage image={logo!} style={imageStyle} />}
       </span>
     );
   } else if (mode === "logo_top") {
     content = (
       <span className="wb-brand-combo wb-brand-logo-top">
-        {hasLogo && <SiteImage image={logo!} />}
+        {hasLogo && <SiteImage image={logo!} style={imageStyle} />}
         {siteName && <span className="wb-brand-text">{siteName}</span>}
       </span>
     );
   } else if (mode === "logo_left") {
     content = (
       <span className="wb-brand-combo wb-brand-logo-left">
-        {hasLogo && <SiteImage image={logo!} />}
+        {hasLogo && <SiteImage image={logo!} style={imageStyle} />}
         {siteName && <span className="wb-brand-text">{siteName}</span>}
       </span>
     );
   } else {
-    content = hasLogo ? <SiteImage image={logo!} /> : <span className="wb-brand-text">{siteName}</span>;
+    content = hasLogo ? <SiteImage image={logo!} style={imageStyle} /> : <span className="wb-brand-text">{siteName}</span>;
   }
 
   return (
-    <a href="/" className={`wb-brand ${className}`.trim()}>
+    <a
+      href="/"
+      className={`wb-brand ${className}`.trim()}
+      style={resolvedHeight ? ({ "--wb-logo-height": `${resolvedHeight}px` } as CSSProperties) : undefined}
+    >
       {content}
     </a>
   );
@@ -108,7 +125,7 @@ function NavItem({ item }: { item: HeaderMenuItem }) {
                 <span>{sub.label}</span>
                 {sub.badge && <span className="wb-badge">{sub.badge}</span>}
               </span>
-              {sub.description && <span className="wb-dropdown-desc">{sub.description}</span>}
+              {sub.description && <span className="wb-dropdown-desc">{parseRichText(sub.description)}</span>}
             </a>
           ))}
         </div>
@@ -147,7 +164,7 @@ function MegaNavItem({ item }: { item: HeaderMenuItem }) {
                     <span>{sub.label}</span>
                     {sub.badge && <span className="wb-badge">{sub.badge}</span>}
                   </div>
-                  {sub.description && <div className="wb-mega-link-desc">{sub.description}</div>}
+                  {sub.description && <div className="wb-mega-link-desc">{parseRichText(sub.description)}</div>}
                 </a>
               ))}
             </div>
@@ -160,7 +177,7 @@ function MegaNavItem({ item }: { item: HeaderMenuItem }) {
                       <span>{sub.label}</span>
                       {sub.badge && <span className="wb-badge">{sub.badge}</span>}
                     </div>
-                    {sub.description && <div className="wb-mega-link-desc">{sub.description}</div>}
+                    {sub.description && <div className="wb-mega-link-desc">{parseRichText(sub.description)}</div>}
                   </a>
                 ))
               ) : (
@@ -225,6 +242,7 @@ function MobileDrawer({
             siteName={header.siteName}
             logo={header.logo}
             displayMode={header.logoDisplay}
+            logoHeight={header.logoHeight ?? header.logoSize}
           />
           <button
             type="button"
@@ -264,7 +282,7 @@ function MobileDrawer({
                           {sub.badge && <span className="wb-badge ml-1.5">{sub.badge}</span>}
                         </span>
                         {sub.description && (
-                          <span className="wb-drawer-sublink-desc">{sub.description}</span>
+                          <span className="wb-drawer-sublink-desc">{parseRichText(sub.description)}</span>
                         )}
                       </a>
                     ))}
@@ -316,6 +334,7 @@ function EditorialCurtainDrawer({
             siteName={header.siteName}
             logo={header.logo}
             displayMode={header.logoDisplay}
+            logoHeight={header.logoHeight ?? header.logoSize}
           />
           <button
             type="button"
@@ -404,6 +423,7 @@ export default function SiteHeader({ header, settings }: { header: HeaderData; s
       siteName={header.siteName}
       logo={header.logo}
       displayMode={header.logoDisplay}
+      logoHeight={header.logoHeight ?? header.logoSize}
     />
   );
 
@@ -623,7 +643,7 @@ export default function SiteHeader({ header, settings }: { header: HeaderData; s
             <div className="wb-container wb-stacked-inner wb-header-inner wb-stacked-main-inner">
               <div className="wb-stacked-brand wb-stacked-brand-group">
                 {brand}
-                {header.tagline && <span className="wb-utility-tagline wb-header-tagline-sub wb-stacked-tagline">{header.tagline}</span>}
+                {header.tagline && <span className="wb-utility-tagline wb-header-tagline-sub wb-stacked-tagline">{parseRichText(header.tagline)}</span>}
               </div>
               {header.menu.length > 0 && (
                 <nav className="wb-nav wb-stacked-nav" aria-label="Main">
@@ -692,7 +712,7 @@ export default function SiteHeader({ header, settings }: { header: HeaderData; s
             <div className="wb-side-brand">{brand}</div>
             <div className="wb-side-summary-pill wb-side-tagline">
               <span className="wb-pulse-dot wb-side-indicator-dot" />
-              <span className="wb-side-summary-text">{header.tagline || "Digital Studio & Platform"}</span>
+              <span className="wb-side-summary-text">{parseRichText(header.tagline || "Digital Studio & Platform")}</span>
             </div>
             <div className="wb-side-actions">
               {header.cta && <HeaderCtaButton link={header.cta} tone="primary" />}

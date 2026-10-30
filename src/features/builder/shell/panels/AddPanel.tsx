@@ -564,13 +564,22 @@ export default function AddPanel() {
       if (created.type === "header" || created.type === "footer") {
         // A new design replaces the header/footer this page shows: the site-wide one or the page's own.
         const type = created.type;
-        const mode = pageChromeMode(latestPage.sections, type);
+        const isHome = latestPage.slug === "/" || latestPage.pageType === "HOME";
+        const mode = isHome ? "site" : pageChromeMode(latestPage.sections, type);
         if (mode === "none") {
           editDraft((current) =>
             updatePage(current, latestPage.id, (p) => ({ ...p, sections: setPageChrome(p.sections, type, "page", current, created) })),
           );
           notify(`${preset.label} added to this page`);
           return;
+        }
+        if (isHome && latestPage.sections.some((s) => s.type === type)) {
+          editDraft((current) =>
+            updatePage(current, latestPage.id, (p) => ({
+              ...p,
+              sections: p.sections.filter((s) => s.type !== type),
+            })),
+          );
         }
         const ids = mode === "site" ? { header: SITE_HEADER_ID, footer: SITE_FOOTER_ID } : { header: PAGE_HEADER_ID, footer: PAGE_FOOTER_ID };
         const item = sectionToItem({ ...created, id: ids[type] });

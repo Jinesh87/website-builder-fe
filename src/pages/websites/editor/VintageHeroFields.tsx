@@ -1,6 +1,7 @@
+import { RichTextField } from "./RichTextField.tsx";
 import type { HeroData } from "../../../site-kit/index.ts";
 import { type VintagePolaroid, vintageHeroPolaroids } from "../../../site-kit/hero-layout.ts";
-import { FormGroup, ImageField, OptionalLinkField, SelectField, TextAreaField, TextField } from "./fields.tsx";
+import { FormGroup, ImageField, OptionalLinkField, SelectField, TextField } from "./fields.tsx";
 import { MEDIA_SIZE } from "./media-dimensions.ts";
 
 type HeroFieldsProps = { data: HeroData; onChange: (data: HeroData) => void };
@@ -47,7 +48,7 @@ function PolaroidFields({
         onChange={(image) => onChange({ ...value, image: image ?? { url: "", alt: "" } })}
         dimensionHint={dimensionHint}
       />
-      <TextField
+      <RichTextField
         label="Caption"
         value={value.caption ?? ""}
         onChange={(caption) => onChange({ ...value, caption: caption || undefined })}
@@ -117,14 +118,14 @@ function EditorialFields({ data, onChange }: HeroFieldsProps) {
       </FormGroup>
 
       <FormGroup title="Headline & copy">
-        <TextField
+        <RichTextField
           label="Heading"
           value={data.heading ?? ""}
           onChange={(heading) => onChange({ ...data, heading })}
           maxLength={200}
           hint={RICH_HEADING_HINT}
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro paragraph"
           value={data.subheading ?? ""}
           onChange={(subheading) => onChange({ ...data, subheading: subheading || undefined })}
@@ -170,14 +171,14 @@ function SunburstFields({ data, onChange }: HeroFieldsProps) {
   return (
     <>
       <FormGroup title="Headline & copy">
-        <TextField
+        <RichTextField
           label="Badge"
           value={data.eyebrow ?? ""}
           onChange={(eyebrow) => onChange({ ...data, eyebrow: eyebrow || undefined })}
           maxLength={200}
           placeholder="ABOUT US"
         />
-        <TextField
+        <RichTextField
           label="Heading (dark lines)"
           value={data.heading ?? ""}
           onChange={(heading) => onChange({ ...data, heading })}
@@ -193,7 +194,7 @@ function SunburstFields({ data, onChange }: HeroFieldsProps) {
           maxLength={100}
           placeholder="Nostalgia!"
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Intro paragraph"
           value={data.subheading ?? ""}
           onChange={(subheading) => onChange({ ...data, subheading: subheading || undefined })}

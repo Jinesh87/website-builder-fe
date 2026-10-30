@@ -1,3 +1,4 @@
+import { RichTextField } from "./RichTextField.tsx";
 import type {
   ButtonShape,
   CardItem,
@@ -602,14 +603,14 @@ export default function CardsSectionForm({ data, onChange }: Props) {
           options={HEADER_OPTIONS}
           onChange={(headerLayout) => set({ headerLayout })}
         />
-        <TextField
+        <RichTextField
           label="Eyebrow (optional)"
           value={data.eyebrow ?? ""}
           onChange={(eyebrow) => set({ eyebrow: eyebrow || undefined })}
           maxLength={100}
         />
-        <TextField label="Heading" value={data.heading} onChange={(heading) => set({ heading })} maxLength={200} />
-        <TextAreaField
+        <RichTextField label="Heading" value={data.heading} onChange={(heading) => set({ heading })} maxLength={200} />
+        <RichTextField multiline
           label="Intro (optional)"
           value={data.intro ?? ""}
           onChange={(intro) => set({ intro: intro || undefined })}
@@ -672,20 +673,20 @@ export default function CardsSectionForm({ data, onChange }: Props) {
                 onChange={(featured) => update({ ...item, featured: featured || undefined })}
                 hint={variant === "floating-panel" ? "Spans two columns when the grid has 3 or more." : undefined}
               />
-              <TextField
+              <RichTextField
                 label="Title"
                 value={item.title}
                 onChange={(title) => update({ ...item, title })}
                 maxLength={120}
                 required
               />
-              <TextField
+              <RichTextField
                 label="Subtitle (optional)"
                 value={item.subtitle ?? ""}
                 onChange={(subtitle) => update({ ...item, subtitle: subtitle || undefined })}
                 maxLength={120}
               />
-              <TextAreaField
+              <RichTextField multiline
                 label="Description"
                 value={item.description ?? ""}
                 onChange={(description) => update({ ...item, description: description || undefined })}

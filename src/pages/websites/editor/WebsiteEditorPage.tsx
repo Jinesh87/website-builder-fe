@@ -1,3 +1,4 @@
+import { toPlainText } from "../../../site-kit/index.ts";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { Button, Spinner } from "@heroui/react";
 import {
@@ -67,7 +68,7 @@ type SaveState = { status: "idle" } | { status: "saving" } | { status: "error"; 
 
 function sectionTitle(section: Section): string {
   const heading = "heading" in section.data ? section.data.heading : undefined;
-  return heading?.trim() || SECTION_DEFINITIONS[section.type].label;
+  return toPlainText(heading).trim() || SECTION_DEFINITIONS[section.type].label;
 }
 
 export default function WebsiteEditorPage() {

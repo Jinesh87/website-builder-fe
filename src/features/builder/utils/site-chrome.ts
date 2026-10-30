@@ -69,6 +69,7 @@ export function withSiteBrand(section: Section, chrome: Chrome): Section {
   if (brand.logo && !data.logo) {
     data.logo = brand.logo;
     data.logoDisplay = brand.logoDisplay ?? "logo_only";
+    if (brand.logoHeight !== undefined) data.logoHeight = brand.logoHeight;
   }
   if (brand.siteName) data.siteName = brand.siteName;
   return { ...section, data } as Section;
@@ -110,6 +111,7 @@ export function splitSiteChrome(
   sections: readonly Section[],
   current: Chrome,
   pageSections: readonly Section[] = [],
+  isHome = false,
 ): Chrome & { body: Section[] } {
   let { header, footer } = current;
   const own: Partial<Record<ChromeType, Section>> = {};
@@ -118,15 +120,17 @@ export function splitSiteChrome(
     const dropped = droppedChrome(sections, type);
     if (dropped) {
       const design = withSiteBrand(dropped, current);
-      if (stored) own[type] = { ...design, id: PAGE_IDS[type], hidden: false } as Section;
+      if (stored && !isHome) own[type] = { ...design, id: PAGE_IDS[type], hidden: false } as Section;
       else if (type === "header") header = fromChromeSection<HeaderData>(design);
       else footer = fromChromeSection<FooterData>(design);
       continue;
     }
     const shown = sections.find((section) => section.type === type && section.id === (stored ? PAGE_IDS[type] : SITE_IDS[type]));
-    if (stored) {
-      own[type] = !stored.hidden && shown?.id === PAGE_IDS[type] ? shown : stored;
-    } else if (shown?.id === SITE_IDS[type]) {
+    if (stored && stored.hidden) {
+      own[type] = stored;
+    } else if (stored && !isHome) {
+      own[type] = shown?.id === PAGE_IDS[type] ? shown : stored;
+    } else if (shown) {
       if (type === "header") header = fromChromeSection<HeaderData>(shown);
       else footer = fromChromeSection<FooterData>(shown);
     }
@@ -143,14 +147,15 @@ export function splitSiteChrome(
  * edits go where that page keeps them. Returns `draft` itself when nothing changed. Pass the latest draft:
  * the page's header/footer mode is read from it, so a stale copy would undo a header just removed.
  */
-export function applyCanvasSections<D extends Chrome & { pages: readonly { id: string; sections: Section[] }[] }>(
+export function applyCanvasSections<D extends Chrome & { pages: readonly { id: string; sections: Section[]; slug?: string; pageType?: string }[] }>(
   draft: D,
   pageId: string,
   canvas: readonly Section[],
 ): D {
   const page = draft.pages.find((candidate) => candidate.id === pageId);
   if (!page) return draft;
-  const { body, header, footer } = splitSiteChrome(canvas, draft, page.sections);
+  const isHome = page.slug === "/" || page.pageType === "HOME";
+  const { body, header, footer } = splitSiteChrome(canvas, draft, page.sections, isHome);
   if (
     stableJson(page.sections) === stableJson(body) &&
     stableJson(draft.header) === stableJson(header) &&

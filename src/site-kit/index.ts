@@ -39,6 +39,22 @@ export {
 } from "./fonts.ts";
 export type { FontCategory, FontDefinition } from "./fonts.ts";
 export { SITE_CSS } from "./styles.ts";
+export { parseRichText } from "./rich-text.tsx";
+export {
+  cleanColor,
+  cleanFontSize,
+  cleanRichTextStyle,
+  hasRichText,
+  parseRichTextTree,
+  richTextFonts,
+  richTextSpanAttributeMap,
+  richTextSpanAttributes,
+  richTextStyleFromAttributes,
+  sanitizeRichText,
+  serializeRichTextTree,
+  toPlainText,
+} from "./rich-text-core.ts";
+export type { RichTextElement, RichTextNode, RichTextStyle, RichTextTag } from "./rich-text-core.ts";
 export { usesVintageStyles, VINTAGE_FONTS } from "./vintage-styles.ts";
 export { SiteRenderModeProvider } from "./render-mode.tsx";
 export type { SiteRenderMode } from "./render-mode.tsx";

@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { gridStyle, SectionHead, SectionShell, SiteButton } from "../primitives.tsx";
 import type { GridColumns, SectionOf } from "../types.ts";
 
@@ -116,7 +117,7 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
                   </div>
                   <h3 className="wb-pricing-plan-name">{plan.name}</h3>
                   {plan.description && (
-                    <p className="wb-pricing-plan-desc">{plan.description}</p>
+                    <p className="wb-pricing-plan-desc">{parseRichText(plan.description)}</p>
                   )}
                 </div>
 
@@ -211,7 +212,7 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
                   )}
                   <h3 className="wb-pricing-plan-name">{plan.name}</h3>
                   {plan.description && (
-                    <p className="wb-pricing-plan-desc">{plan.description}</p>
+                    <p className="wb-pricing-plan-desc">{parseRichText(plan.description)}</p>
                   )}
                 </div>
 
@@ -302,7 +303,7 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
                     <h3 className="wb-pricing-plan-name">{plan.name}</h3>
                   </div>
                   {plan.description && (
-                    <p className="wb-pricing-plan-desc">{plan.description}</p>
+                    <p className="wb-pricing-plan-desc">{parseRichText(plan.description)}</p>
                   )}
                 </div>
 
@@ -398,7 +399,7 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
                 )}
                 <h3 className="wb-pricing-plan-name">{plan.name}</h3>
                 {plan.description && (
-                  <p className="wb-pricing-plan-desc">{plan.description}</p>
+                  <p className="wb-pricing-plan-desc">{parseRichText(plan.description)}</p>
                 )}
               </div>
 

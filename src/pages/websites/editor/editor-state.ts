@@ -297,8 +297,45 @@ function removeNavLinks(draft: EditorDraft, href: string): EditorDraft {
   };
 }
 
+export function getHomeEffectiveChrome(draft: EditorDraft): {
+  header: HeaderData;
+  footer: FooterData;
+} {
+  const home = homePage(draft.pages);
+  let effectiveHeader = draft.header;
+  let effectiveFooter = draft.footer;
+
+  if (home) {
+    const homeHeaderSection = home.sections.find((s) => s.type === "header" && !s.hidden);
+    if (homeHeaderSection) {
+      const { settings: _settings, hidden: _hidden, ...data } = homeHeaderSection.data as HeaderData;
+      effectiveHeader = {
+        ...effectiveHeader,
+        ...data,
+        settings: homeHeaderSection.settings ?? effectiveHeader.settings,
+      };
+      delete effectiveHeader.hidden;
+    }
+
+    const homeFooterSection = home.sections.find((s) => s.type === "footer" && !s.hidden);
+    if (homeFooterSection) {
+      const { settings: _settings, hidden: _hidden, ...data } = homeFooterSection.data as FooterData;
+      effectiveFooter = {
+        ...effectiveFooter,
+        ...data,
+        settings: homeFooterSection.settings ?? effectiveFooter.settings,
+      };
+      delete effectiveFooter.hidden;
+    }
+  }
+
+  return { header: effectiveHeader, footer: effectiveFooter };
+}
+
 export function addPage(draft: EditorDraft, name: string): { draft: EditorDraft; pageId: string } {
   const trimmed = name.trim() || "New page";
+  const { header: homeHeader, footer: homeFooter } = getHomeEffectiveChrome(draft);
+
   const page: WebsitePage = {
     id: crypto.randomUUID(),
     name: trimmed,
@@ -311,11 +348,32 @@ export function addPage(draft: EditorDraft, name: string): { draft: EditorDraft;
     seoKeywords: [],
     sections: [],
   };
+
+  let nextFooter = homeFooter;
+  if (page.showInNav && nextFooter.columns?.length) {
+    nextFooter = {
+      ...nextFooter,
+      columns: nextFooter.columns.map((col) => {
+        if (col.title.toLowerCase() === "pages" && !col.links.some((l) => l.href === page.slug)) {
+          return {
+            ...col,
+            links: [...col.links, { label: page.name, href: page.slug }],
+          };
+        }
+        return col;
+      }),
+    };
+  }
+
   const draftWithPage: EditorDraft = {
     ...draft,
+    header: homeHeader,
+    footer: nextFooter,
     pages: [...draft.pages, page],
   };
+
   const finalDraft = syncHeaderAcrossDraft(draftWithPage, (h) => syncHeaderMenu(h, page, "add"));
+
   return {
     pageId: page.id,
     draft: finalDraft,

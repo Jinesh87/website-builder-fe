@@ -395,7 +395,7 @@ export const PREMIUM_HEADER_CSS = `
   min-height: 60px;
   gap: 24px;
 }
-.wb-header-vintage-editorial .wb-brand img { max-height: 46px; }
+.wb-header-vintage-editorial .wb-brand img { max-height: var(--wb-logo-height, 46px); }
 .wb-header-vintage-editorial .wb-nav {
   position: absolute;
   left: 50%;

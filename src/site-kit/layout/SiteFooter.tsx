@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { safeHref } from "../links.ts";
 import { SiteBrand } from "./SiteHeader.tsx";
@@ -30,7 +31,7 @@ function ContactBlock({ contact }: { contact: NonNullable<FooterData["contact"]>
   if (!hasDetails) return null;
   return (
     <div className="wb-footer-contact-block">
-      {contact.title && <h4 className="wb-footer-col-title">{contact.title}</h4>}
+      {contact.title && <h4 className="wb-footer-col-title">{parseRichText(contact.title)}</h4>}
       {contact.address && <div className="wb-footer-contact-item">{contact.address}</div>}
       {contact.phone && (
         <div className="wb-footer-contact-item">
@@ -68,8 +69,8 @@ function NewsletterBox({
 
   return (
     <div className="wb-newsletter-box">
-      {newsletter.title && <h4 className="wb-footer-col-title">{newsletter.title}</h4>}
-      {newsletter.description && <p className="wb-muted">{newsletter.description}</p>}
+      {newsletter.title && <h4 className="wb-footer-col-title">{parseRichText(newsletter.title)}</h4>}
+      {newsletter.description && <p className="wb-muted">{parseRichText(newsletter.description)}</p>}
       {subscribed ? (
         <p className="text-xs font-semibold text-emerald-500">Thank you for subscribing!</p>
       ) : (
@@ -96,8 +97,8 @@ function CtaBanner({ banner }: { banner?: FooterData["ctaBanner"] }) {
   return (
     <div className="wb-footer-cta-card">
       <div>
-        {banner.heading && <h3>{banner.heading}</h3>}
-        {banner.subheading && <p className="wb-muted">{banner.subheading}</p>}
+        {banner.heading && <h3>{parseRichText(banner.heading)}</h3>}
+        {banner.subheading && <p className="wb-muted">{parseRichText(banner.subheading)}</p>}
       </div>
       <div className="wb-actions">
         {banner.primaryCta && <SiteLink link={banner.primaryCta} className="wb-btn wb-btn-primary" />}
@@ -157,7 +158,7 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
         <div className="wb-container">
           <CtaBanner banner={ctaBanner} />
           <div className="wb-footer-inline-bar">
-            <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} />
+            <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} logoHeight={footer.logoHeight ?? footer.logoSize} />
             {menu.length > 0 && (
               <ul className="wb-footer-nav-row">
                 {menu.map((item, idx) => (
@@ -188,8 +189,8 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
         <div className="wb-container">
           <CtaBanner banner={ctaBanner} />
           <div className="wb-footer-centered-wrap">
-            <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} />
-            {footer.tagline && <span className="wb-footer-tagline">{footer.tagline}</span>}
+            <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} logoHeight={footer.logoHeight ?? footer.logoSize} />
+            {footer.tagline && <span className="wb-footer-tagline">{parseRichText(footer.tagline)}</span>}
             {menu.length > 0 && (
               <ul className="wb-footer-nav-row justify-center">
                 {menu.map((item, idx) => (
@@ -226,9 +227,9 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
           <CtaBanner banner={ctaBanner} />
           <div className="wb-footer-newsletter-grid">
             <div className="wb-footer-about">
-              <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} />
-              {footer.tagline && <span className="wb-footer-tagline">{footer.tagline}</span>}
-              {footer.description && <p className="wb-muted">{footer.description}</p>}
+              <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} logoHeight={footer.logoHeight ?? footer.logoSize} />
+              {footer.tagline && <span className="wb-footer-tagline">{parseRichText(footer.tagline)}</span>}
+              {footer.description && <p className="wb-muted">{parseRichText(footer.description)}</p>}
               <SocialCircleLinks social={footer.social} />
             </div>
 
@@ -271,8 +272,8 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
           <CtaBanner banner={ctaBanner} />
           <div className="wb-footer-split-grid">
             <div className="wb-footer-about">
-              <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} />
-              {footer.tagline && <span className="wb-footer-tagline">{footer.tagline}</span>}
+              <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} logoHeight={footer.logoHeight ?? footer.logoSize} />
+              {footer.tagline && <span className="wb-footer-tagline">{parseRichText(footer.tagline)}</span>}
               <SocialCircleLinks social={footer.social} />
               <span className="wb-footer-copyright wb-muted text-xs mt-2">{footer.copyright}</span>
             </div>
@@ -290,8 +291,8 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
               {footer.columns.length > 0 && (
                 <div className="wb-footer-grid mt-6" style={{ "--wb-footer-cols": footer.columns.length } as CSSProperties}>
                   {footer.columns.map((col) => (
-                    <div key={col.title}>
-                      <h4>{col.title}</h4>
+                    <div key={col.title} className="wb-footer-col">
+                      <h4>{parseRichText(col.title)}</h4>
                       <ul>
                         {col.links.map((link) => (
                           <li key={`${link.label}-${link.href}`}>
@@ -334,16 +335,16 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
         >
           {/* Brand Col */}
           <div className="wb-footer-about">
-            <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} />
-            {footer.tagline && <span className="wb-footer-tagline">{footer.tagline}</span>}
-            {footer.description && <p className="wb-muted">{footer.description}</p>}
+            <SiteBrand siteName={footer.siteName} logo={footer.logo} displayMode={footer.logoDisplay} logoHeight={footer.logoHeight ?? footer.logoSize} />
+            {footer.tagline && <span className="wb-footer-tagline">{parseRichText(footer.tagline)}</span>}
+            {footer.description && <p className="wb-muted">{parseRichText(footer.description)}</p>}
             <SocialCircleLinks social={footer.social} />
           </div>
 
           {/* Dynamic Link Columns */}
           {footer.columns.map((column) => (
-            <div key={column.title}>
-              <h4>{column.title}</h4>
+            <div key={column.title} className="wb-footer-col">
+              <h4>{parseRichText(column.title)}</h4>
               <ul>
                 {column.links.map((link) => (
                   <li key={`${link.label}-${link.href}`}>
@@ -356,15 +357,15 @@ export default function SiteFooter({ footer, settings }: { footer: FooterData; s
 
           {/* Contact Col */}
           {hasContact && contact && (
-            <div>
-              <h4>{contact.title || "Contact Us"}</h4>
+            <div className="wb-footer-col wb-footer-contact-col">
+              <h4>{parseRichText(contact.title || "Contact Us")}</h4>
               <ContactBlock contact={contact} />
             </div>
           )}
 
           {/* Newsletter Box (if enabled and not already top banner) */}
           {isMega && newsletter?.enabled && (
-            <div>
+            <div className="wb-footer-col wb-footer-newsletter-col">
               <NewsletterBox newsletter={newsletter} />
             </div>
           )}

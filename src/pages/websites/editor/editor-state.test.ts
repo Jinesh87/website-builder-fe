@@ -5,7 +5,7 @@ import {
   updatePageMeta,
   type EditorDraft,
 } from "./editor-state.ts";
-import { DEFAULT_THEME, type HeaderData, type Section } from "../../../site-kit/index.ts";
+import { DEFAULT_SECTION_SETTINGS, DEFAULT_THEME, type FooterData, type HeaderData, type Section } from "../../../site-kit/index.ts";
 
 describe("editor-state header navigation sync", () => {
   const initialHeader: HeaderData = {
@@ -227,5 +227,141 @@ describe("editor-state header navigation sync", () => {
     expect(draft.pages[0]?.sections.some((s) => s.type === "header")).toBe(false);
     expect(draft.header.design).toBe("logo-left");
     expect(draft.header.siteName).toBe("Accounting Firm · Classic");
+  });
+
+  it("pre-populates the same header and footer design from the home page when creating new pages", () => {
+    const customHeader: HeaderData = {
+      design: "glass-dock",
+      siteName: "Bytezora Studio",
+      sticky: true,
+      logo: { url: "https://example.com/logo.png", alt: "Bytezora" },
+      logoDisplay: "logo_left",
+      cta: { label: "Contact Us", href: "/contact" },
+      menu: [{ label: "Home", href: "/" }],
+      settings: { ...DEFAULT_SECTION_SETTINGS, customColors: { background: "#0a0a0a" } },
+    };
+
+    const customFooter: FooterData = {
+      design: "columns",
+      siteName: "Bytezora Studio",
+      copyright: "© 2026 Bytezora Studio",
+      columns: [
+        {
+          title: "Pages",
+          links: [{ label: "Home", href: "/" }],
+        },
+      ],
+      social: [{ label: "Twitter", href: "https://twitter.com/bytezora" }],
+      settings: { ...DEFAULT_SECTION_SETTINGS, customColors: { text: "#ffffff" } },
+    };
+
+    const draftWithHomeChrome: EditorDraft = {
+      theme: DEFAULT_THEME,
+      header: customHeader,
+      footer: customFooter,
+      pages: [
+        {
+          id: "page-home",
+          name: "Home",
+          slug: "/",
+          pageType: "HOME",
+          visible: true,
+          showInNav: true,
+          seoTitle: "Home Page",
+          seoDescription: null,
+          seoKeywords: [],
+          sections: [],
+        },
+      ],
+    };
+
+    // Create a new page
+    const result = addPage(draftWithHomeChrome, "About Us");
+
+    // Header design, logo, cta, and custom settings must match the home page
+    expect(result.draft.header.design).toBe("glass-dock");
+    expect(result.draft.header.logo).toEqual(customHeader.logo);
+    expect(result.draft.header.logoDisplay).toBe("logo_left");
+    expect(result.draft.header.cta).toEqual(customHeader.cta);
+    expect(result.draft.header.settings?.customColors?.background).toBe("#0a0a0a");
+
+    // Header menu should include the new page while keeping existing items
+    expect(result.draft.header.menu).toEqual([
+      { label: "Home", href: "/" },
+      { label: "About Us", href: "/about-us" },
+    ]);
+
+    // Footer design, columns, copyright, and custom settings must match the home page
+    expect(result.draft.footer.design).toBe("columns");
+    expect(result.draft.footer.copyright).toBe("© 2026 Bytezora Studio");
+    expect(result.draft.footer.social).toEqual(customFooter.social);
+    expect(result.draft.footer.settings?.customColors?.text).toBe("#ffffff");
+    expect(result.draft.footer.columns[0]?.links).toContainEqual({ label: "About Us", href: "/about-us" });
+  });
+
+  it("pre-populates header and footer design when home page has custom page-level chrome sections", () => {
+    const homeCustomHeader: HeaderData = {
+      design: "split-stacked",
+      siteName: "Custom Home Brand",
+      sticky: false,
+      logo: { url: "https://example.com/custom-logo.svg", alt: "Brand" },
+      cta: { label: "Get Started", href: "/pricing" },
+      menu: [{ label: "Home", href: "/" }],
+    };
+
+    const homeCustomFooter: FooterData = {
+      design: "centered",
+      siteName: "Custom Home Brand",
+      copyright: "Custom 2026",
+      columns: [],
+      social: [],
+    };
+
+    const draftWithHomeSection: EditorDraft = {
+      theme: DEFAULT_THEME,
+      header: { design: "logo-left", siteName: "Old", menu: [], sticky: true },
+      footer: { design: "simple", siteName: "Old", columns: [], social: [], copyright: "2026 Old" },
+      pages: [
+        {
+          id: "page-home",
+          name: "Home",
+          slug: "/",
+          pageType: "HOME",
+          visible: true,
+          showInNav: true,
+          seoTitle: null,
+          seoDescription: null,
+          seoKeywords: [],
+          sections: [
+            {
+              id: "page-header",
+              type: "header",
+              hidden: false,
+              settings: { ...DEFAULT_SECTION_SETTINGS, customColors: { primary: "#ff0000" } },
+              data: homeCustomHeader,
+            } as Section,
+            {
+              id: "page-footer",
+              type: "footer",
+              hidden: false,
+              settings: { ...DEFAULT_SECTION_SETTINGS },
+              data: homeCustomFooter,
+            } as Section,
+          ],
+        },
+      ],
+    };
+
+    const result = addPage(draftWithHomeSection, "Services");
+
+    // The new page pre-populates the design that was on the home page
+    expect(result.draft.header.design).toBe("split-stacked");
+    expect(result.draft.header.logo).toEqual(homeCustomHeader.logo);
+    expect(result.draft.header.cta).toEqual(homeCustomHeader.cta);
+    expect(result.draft.header.settings?.customColors?.primary).toBe("#ff0000");
+    expect(result.draft.header.menu.some((it) => it.href === "/services" && it.label === "Services")).toBe(true);
+
+    expect(result.draft.footer.design).toBe("centered");
+    expect(result.draft.footer.copyright).toBe("Custom 2026");
   });
 });

@@ -1,6 +1,7 @@
 import {
   FONTS,
   isFontKey,
+  richTextFonts,
   usesVintageStyles,
   VINTAGE_FONTS,
   type FontDefinition,
@@ -9,16 +10,25 @@ import {
 } from "../../site-kit/index.ts";
 import type { WebsitePage } from "../../api/websites.ts";
 
-/** Theme fonts, per-section overrides and fonts that section styles set directly. */
-export function usedFonts(theme: ThemeSettings, pages: WebsitePage[]): FontKey[] {
+/** Fonts picked on individual words anywhere in the given content. */
+function collectRichTextFonts(value: unknown, keys: Set<FontKey>) {
+  if (typeof value === "string") richTextFonts(value, keys);
+  else if (Array.isArray(value)) for (const item of value) collectRichTextFonts(item, keys);
+  else if (value && typeof value === "object") for (const item of Object.values(value)) collectRichTextFonts(item, keys);
+}
+
+/** Theme fonts, per-section overrides, fonts that section styles set directly and fonts used on individual words. */
+export function usedFonts(theme: ThemeSettings, pages: WebsitePage[], chrome: unknown[] = []): FontKey[] {
   const keys = new Set<FontKey>();
   for (const key of [theme.fonts.heading, theme.fonts.body]) if (isFontKey(key)) keys.add(key);
   for (const page of pages) {
     for (const section of page.sections) {
       if (isFontKey(section.settings?.font)) keys.add(section.settings.font);
       if (usesVintageStyles(section)) for (const key of VINTAGE_FONTS) keys.add(key);
+      collectRichTextFonts(section.data, keys);
     }
   }
+  for (const part of chrome) collectRichTextFonts(part, keys);
   return [...keys];
 }
 
