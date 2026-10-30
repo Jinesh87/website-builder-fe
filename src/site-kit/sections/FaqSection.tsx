@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { SectionHead, SectionShell, SiteButton } from "../primitives.tsx";
 import type { FaqData, SectionOf } from "../types.ts";
 
@@ -47,8 +48,8 @@ function SupportCtaCard({ data }: { data: FaqData }) {
   return (
     <div className="wb-faq-support-card">
       <div className="wb-faq-support-text">
-        {title && <h4 className="wb-faq-support-title">{title}</h4>}
-        {description && <p className="wb-faq-support-desc">{description}</p>}
+        {title && <h4 className="wb-faq-support-title">{parseRichText(title)}</h4>}
+        {description && <p className="wb-faq-support-desc">{parseRichText(description)}</p>}
       </div>
       {link && (
         <div className="wb-faq-support-action">
@@ -100,12 +101,12 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
                       )}
                     </div>
                   )}
-                  <span className="wb-faq-question-text">{item.question}</span>
+                  <span className="wb-faq-question-text">{parseRichText(item.question)}</span>
                 </div>
                 <ChevronDown />
               </summary>
               <div className="wb-faq-answer-body">
-                <p>{item.answer}</p>
+                <p>{parseRichText(item.answer)}</p>
               </div>
             </details>
           ))}
@@ -128,17 +129,17 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
         <div className="wb-faq-split-layout">
           <div className="wb-faq-split-sidebar">
             <div className="wb-faq-sidebar-sticky">
-              {data.eyebrow && <span className="wb-eyebrow">{data.eyebrow}</span>}
-              <h2 className="wb-faq-split-heading">{data.heading}</h2>
-              {data.intro && <p className="wb-faq-split-intro">{data.intro}</p>}
+              {data.eyebrow && <span className="wb-eyebrow">{parseRichText(data.eyebrow)}</span>}
+              <h2 className="wb-faq-split-heading">{parseRichText(data.heading)}</h2>
+              {data.intro && <p className="wb-faq-split-intro">{parseRichText(data.intro)}</p>}
 
               {data.supportCta && (
                 <div className="wb-faq-split-support-box">
                   {data.supportCta.title && (
-                    <h4 className="wb-faq-support-title">{data.supportCta.title}</h4>
+                    <h4 className="wb-faq-support-title">{parseRichText(data.supportCta.title)}</h4>
                   )}
                   {data.supportCta.description && (
-                    <p className="wb-faq-support-desc">{data.supportCta.description}</p>
+                    <p className="wb-faq-support-desc">{parseRichText(data.supportCta.description)}</p>
                   )}
                   {data.supportCta.link && (
                     <div className="wb-faq-support-action">
@@ -170,12 +171,12 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
                           )}
                         </div>
                       )}
-                      <span className="wb-faq-question-text">{item.question}</span>
+                      <span className="wb-faq-question-text">{parseRichText(item.question)}</span>
                     </div>
                     <PlusIcon />
                   </summary>
                   <div className="wb-faq-answer-body">
-                    <p>{item.answer}</p>
+                    <p>{parseRichText(item.answer)}</p>
                   </div>
                 </details>
               ))}
@@ -224,12 +225,12 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
                         )}
                       </div>
                     )}
-                    <span className="wb-faq-minimal-question">{item.question}</span>
+                    <span className="wb-faq-minimal-question">{parseRichText(item.question)}</span>
                   </div>
                   <PlusIcon />
                 </summary>
                 <div className="wb-faq-minimal-answer">
-                  <p>{item.answer}</p>
+                  <p>{parseRichText(item.answer)}</p>
                 </div>
               </details>
             );
@@ -272,10 +273,10 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
                     <span className="wb-faq-badge-pill">{item.badge}</span>
                   )}
                 </div>
-                <h3 className="wb-faq-boxed-question">{item.question}</h3>
+                <h3 className="wb-faq-boxed-question">{parseRichText(item.question)}</h3>
               </div>
               <div className="wb-faq-boxed-answer">
-                <p>{item.answer}</p>
+                <p>{parseRichText(item.answer)}</p>
               </div>
             </div>
           ))}
@@ -321,12 +322,12 @@ export default function FaqSection({ section }: { section: SectionOf<"faq"> }) {
                       )}
                     </div>
                   )}
-                  <span className="wb-faq-question-text">{item.question}</span>
+                  <span className="wb-faq-question-text">{parseRichText(item.question)}</span>
                 </div>
                 <ChevronDown />
               </summary>
               <div className="wb-faq-answer-body">
-                <p>{item.answer}</p>
+                <p>{parseRichText(item.answer)}</p>
               </div>
             </details>
           ))}

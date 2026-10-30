@@ -16,6 +16,7 @@ import {
   type BlogDetailData,
   type BlogDetailDesign,
 } from "../../../../site-kit/index.ts";
+import { getHomeEffectiveChrome } from "../../../../pages/websites/editor/editor-state.ts";
 import { useEditor } from "../../editor-context.ts";
 import { insertSections, useBuilderPuck } from "../../puck/puck-api.ts";
 import { PanelHeader, SearchField, ToolButton } from "../ui.tsx";
@@ -219,10 +220,15 @@ export default function BlogPanel() {
       sections: [detailSection],
     };
 
-    editDraft((d) => ({
-      ...d,
-      pages: [...d.pages, newPage],
-    }));
+    editDraft((d) => {
+      const { header: homeHeader, footer: homeFooter } = getHomeEffectiveChrome(d);
+      return {
+        ...d,
+        header: homeHeader,
+        footer: homeFooter,
+        pages: [...d.pages, newPage],
+      };
+    });
 
     // Reset and select
     setTitle("");

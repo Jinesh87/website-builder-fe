@@ -93,11 +93,11 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
             {data.eyebrow && (
               <div className="wb-cta-eyebrow-wrap">
                 <span className="wb-cta-pulse-dot" />
-                <span className="wb-cta-eyebrow">{data.eyebrow}</span>
+                <span className="wb-cta-eyebrow">{parseRichText(data.eyebrow)}</span>
               </div>
             )}
-            <h2 className="wb-cta-split-heading">{data.heading}</h2>
-            {data.text && <p className="wb-cta-split-text">{data.text}</p>}
+            <h2 className="wb-cta-split-heading">{parseRichText(data.heading)}</h2>
+            {data.text && <p className="wb-cta-split-text">{parseRichText(data.text)}</p>}
 
             <div className="wb-cta-actions">
               <SiteButton link={data.button} tone="primary" />
@@ -131,7 +131,7 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
                 </div>
                 {data.highlightMetric?.subtext && (
                   <p className="wb-cta-metric-subtext">
-                    {data.highlightMetric.subtext}
+                    {parseRichText(data.highlightMetric.subtext)}
                   </p>
                 )}
                 <div className="wb-cta-metric-footer">
@@ -161,11 +161,11 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
             {data.eyebrow && (
               <div className="wb-cta-eyebrow-wrap">
                 <span className="wb-cta-pulse-dot" />
-                <span className="wb-cta-eyebrow">{data.eyebrow}</span>
+                <span className="wb-cta-eyebrow">{parseRichText(data.eyebrow)}</span>
               </div>
             )}
-            <h2 className="wb-cta-floating-heading">{data.heading}</h2>
-            {data.text && <p className="wb-cta-floating-text">{data.text}</p>}
+            <h2 className="wb-cta-floating-heading">{parseRichText(data.heading)}</h2>
+            {data.text && <p className="wb-cta-floating-text">{parseRichText(data.text)}</p>}
 
             <div className={`wb-cta-actions wb-align-${align}`}>
               <SiteButton link={data.button} tone="primary" />
@@ -202,16 +202,16 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
         <div className="wb-cta-editorial-frame">
           <div className="wb-cta-editorial-topline">
             {data.eyebrow && (
-              <span className="wb-cta-eyebrow">{data.eyebrow}</span>
+              <span className="wb-cta-eyebrow">{parseRichText(data.eyebrow)}</span>
             )}
           </div>
 
           <div className="wb-cta-editorial-grid">
             <div className="wb-cta-editorial-title-col">
-              <h2 className="wb-cta-editorial-heading">{data.heading}</h2>
+              <h2 className="wb-cta-editorial-heading">{parseRichText(data.heading)}</h2>
             </div>
             <div className="wb-cta-editorial-actions-col">
-              {data.text && <p className="wb-cta-editorial-text">{data.text}</p>}
+              {data.text && <p className="wb-cta-editorial-text">{parseRichText(data.text)}</p>}
               <div className="wb-cta-editorial-buttons">
                 <SiteButton link={data.button} tone="primary" />
                 {data.secondaryButton && (
@@ -247,11 +247,11 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
         {data.eyebrow && (
           <div className="wb-cta-eyebrow-wrap">
             <span className="wb-cta-pulse-dot" />
-            <span className="wb-cta-eyebrow">{data.eyebrow}</span>
+            <span className="wb-cta-eyebrow">{parseRichText(data.eyebrow)}</span>
           </div>
         )}
-        <h2 className="wb-cta-centered-heading">{data.heading}</h2>
-        {data.text && <p className="wb-cta-centered-text">{data.text}</p>}
+        <h2 className="wb-cta-centered-heading">{parseRichText(data.heading)}</h2>
+        {data.text && <p className="wb-cta-centered-text">{parseRichText(data.text)}</p>}
 
         <div className={`wb-cta-actions wb-align-${align}`}>
           <SiteButton link={data.button} tone="primary" />

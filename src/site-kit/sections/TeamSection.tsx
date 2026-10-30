@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { safeHref } from "../links.ts";
 import { gridStyle, SectionHead, SectionShell, SiteImage, SiteLink } from "../primitives.tsx";
 import type {
@@ -455,7 +456,7 @@ export default function TeamSection({ section }: { section: SectionOf<"team"> })
       label={data.heading}
     >
       <div className={`wb-team-header-wrapper wb-align-${data.align || section.settings.align || "center"}`}>
-        {data.eyebrow && <span className="wb-team-eyebrow">{data.eyebrow}</span>}
+        {data.eyebrow && <span className="wb-team-eyebrow">{parseRichText(data.eyebrow)}</span>}
         <SectionHead heading={data.heading} intro={data.intro} align={data.align || section.settings.align || "center"} />
         {data.badge && (
           <div className="wb-team-badge-pill">

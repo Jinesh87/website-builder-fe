@@ -105,7 +105,12 @@ export type HeaderData = {
   siteName: string;
   logo?: ImageRef;
   logoDisplay?: BrandDisplayMode;
+  /** Custom logo height in pixels. Default is 38px. */
+  logoHeight?: number;
+  logoSize?: number;
   menu: HeaderMenuItem[];
+  /** Desktop position of the main navigation; falls back to settings.align, then the design's own layout. */
+  navAlign?: SectionAlign;
   cta?: LinkRef;
   secondaryCta?: LinkRef;
   announcement?: string;
@@ -199,6 +204,9 @@ export type FooterData = {
   siteName: string;
   logo?: ImageRef;
   logoDisplay?: BrandDisplayMode;
+  /** Custom logo height in pixels. Default is 38px. */
+  logoHeight?: number;
+  logoSize?: number;
   tagline?: string;
   description?: string;
   columns: { title: string; links: LinkRef[] }[];
@@ -906,7 +914,7 @@ export type TextData = {
   variant?: "default" | "standard" | "pull-quote" | "columns-2" | "lead";
   eyebrow?: string;
   heading?: string;
-  /** Plain text; blank lines separate paragraphs. Never rendered as HTML. */
+  /** Blank lines separate paragraphs. Allowlisted inline formatting only (rich-text-core.ts), never raw HTML. */
   body: string;
   align?: SectionAlign;
   quoteAuthor?: string;
@@ -914,12 +922,30 @@ export type TextData = {
   maxWidth?: "narrow" | "standard" | "wide" | "full";
 };
 
+export type GalleryAspect = "4:3" | "1:1" | "16:9" | "3:4" | "auto";
+export type GalleryCardStyle = "default" | "surface" | "overlay";
+
+export type GalleryItem = ImageRef & {
+  name?: string;
+  title?: string;
+  badge?: string;
+  description?: string;
+  link?: string;
+};
+
 export type GalleryData = {
+  eyebrow?: string;
   heading?: string;
+  intro?: string;
+  description?: string;
   columns: GridColumns;
   mobileColumns: GridColumns;
-  images: ImageRef[];
+  images: GalleryItem[];
   align?: SectionAlign;
+  imageAspect?: GalleryAspect;
+  cardStyle?: GalleryCardStyle;
+  imageRadius?: "default" | "soft" | "pill" | "sharp";
+  cta?: LinkRef;
 };
 
 export type LogosData = {
@@ -932,7 +958,7 @@ export type LogosData = {
 export type SplitData = {
   eyebrow?: string;
   heading: string;
-  /** Plain text; blank lines separate paragraphs. */
+  /** Blank lines separate paragraphs. Allowlisted inline formatting only (rich-text-core.ts). */
   body: string;
   bullets: string[];
   image?: ImageRef;

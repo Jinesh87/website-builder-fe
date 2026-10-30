@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { useState } from "react";
 import EditorialSpecsSection from "./EditorialSpecsSection.tsx";
 import {
@@ -203,7 +204,7 @@ export default function ServicesSection({
 
           {/* Title & Duration */}
           <div className="wb-service-title-group">
-            <h3 className="wb-service-title">{item.title}</h3>
+            <h3 className="wb-service-title">{parseRichText(item.title)}</h3>
             {item.duration && (
               <span className="wb-service-duration">⏱ {item.duration}</span>
             )}
@@ -211,7 +212,7 @@ export default function ServicesSection({
 
           {/* Description */}
           {item.description && (
-            <p className="wb-service-desc">{item.description}</p>
+            <p className="wb-service-desc">{parseRichText(item.description)}</p>
           )}
 
           {/* Feature highlights checklist */}
@@ -306,10 +307,10 @@ export default function ServicesSection({
     const isRight = data.splitPosition === "right";
     const heroContent = (
       <div className="wb-services-split-hero">
-        {data.eyebrow && <span className="wb-eyebrow">{data.eyebrow}</span>}
-        <h2 className="wb-services-split-title">{data.heading}</h2>
+        {data.eyebrow && <span className="wb-eyebrow">{parseRichText(data.eyebrow)}</span>}
+        <h2 className="wb-services-split-title">{parseRichText(data.heading)}</h2>
         {data.intro && (
-          <p className="wb-services-split-intro">{data.intro}</p>
+          <p className="wb-services-split-intro">{parseRichText(data.intro)}</p>
         )}
         {data.splitTagline && (
           <p className="wb-services-split-tagline">{data.splitTagline}</p>
@@ -408,7 +409,7 @@ export default function ServicesSection({
                         <SiteIcon name={item.icon} image={item.iconImage} />
                       </div>
                     )}
-                    <h3 className="wb-interactive-title">{item.title}</h3>
+                    <h3 className="wb-interactive-title">{parseRichText(item.title)}</h3>
                   </div>
 
                   <div className="wb-interactive-right">
@@ -458,10 +459,10 @@ export default function ServicesSection({
                   )}
                 </div>
                 <h4 className="wb-interactive-preview-title">
-                  {activeItem.title}
+                  {parseRichText(activeItem.title)}
                 </h4>
                 <p className="wb-interactive-preview-desc">
-                  {activeItem.description}
+                  {parseRichText(activeItem.description)}
                 </p>
                 {activeItem.features && activeItem.features.length > 0 && (
                   <ul className="wb-service-features-list">
@@ -589,8 +590,8 @@ export default function ServicesSection({
                   )}
                 </div>
 
-                <h3 className="wb-service-title">{item.title}</h3>
-                <p className="wb-service-desc">{item.description}</p>
+                <h3 className="wb-service-title">{parseRichText(item.title)}</h3>
+                <p className="wb-service-desc">{parseRichText(item.description)}</p>
 
                 {showBullets && item.features && item.features.length > 0 && (
                   <ul className="wb-service-features-list">

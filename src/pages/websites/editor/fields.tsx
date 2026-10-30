@@ -8,23 +8,49 @@ import {
   type ReactNode,
 } from "react";
 import { Button, Checkbox, Dropdown, Label } from "@heroui/react";
-import { Check, ChevronDown, ChevronUp, Download, Eye, FileText, Film, Globe, GripVertical, Images, Play, Plus, Trash2, Upload } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  Eye,
+  FileText,
+  Film,
+  Globe,
+  GripVertical,
+  Images,
+  Minus,
+  Play,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { errorMessage } from "../../../api/http.ts";
-import { ACCEPT_BY_KIND, formatBytes, mediaApi, uploadProblem, type MediaFile } from "../../../api/media.ts";
+import {
+  ACCEPT_BY_KIND,
+  formatBytes,
+  mediaApi,
+  uploadProblem,
+  type MediaFile,
+} from "../../../api/media.ts";
 import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
 
 const MediaPickerDialog = lazyWithRetry(
   () => import("../../../components/media/MediaPickerDialog.tsx"),
   { reloadKey: "fields_media_picker" },
 );
-const IconPickerField = lazyWithRetry(
-  () => import("./IconPicker.tsx"),
-  { reloadKey: "fields_icon_picker" },
-);
+const IconPickerField = lazyWithRetry(() => import("./IconPicker.tsx"), {
+  reloadKey: "fields_icon_picker",
+});
 import { CellColorPicker } from "../../../components/ui/CellColorPicker.tsx";
 import { Lightbox } from "../../../components/ui/Lightbox.tsx";
 import { optimizeImageToWebP } from "../../../utils/image-optimizer.ts";
-import { openVideoModal, type ImageRef, type LinkRef } from "../../../site-kit/index.ts";
+import {
+  openVideoModal,
+  type ImageRef,
+  type LinkRef,
+} from "../../../site-kit/index.ts";
 
 const SAFE_HREF =
   /^(https?:\/\/\S+|mailto:\S+|tel:[+0-9() -]+|\/(?!\/)\S*|#\S*)$/i;
@@ -39,7 +65,6 @@ function normalizeYouTubeUrl(url: string): string | null {
   if (!YOUTUBE_URL.test(trimmed)) return null;
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
-
 
 const inputClass =
   "h-8 w-full rounded-ed border border-ed-border bg-ed-panel px-2.5 text-ed-sm text-ed-text placeholder:text-ed-faint shadow-ed-xs transition-all duration-150 hover:border-ed-border-strong focus:border-ed-accent focus:bg-ed-panel focus:outline-none focus:ring-2 focus:ring-ed-accent/15 aria-invalid:border-ed-danger aria-invalid:focus:ring-ed-danger/15 disabled:bg-ed-subtle disabled:text-ed-muted disabled:cursor-not-allowed";
@@ -222,7 +247,8 @@ export function SelectField<T extends string | number>({
   hint,
 }: SelectFieldProps<T>) {
   const id = useId();
-  const selectedOption = options.find((candidate) => candidate.value === value) ?? options[0];
+  const selectedOption =
+    options.find((candidate) => candidate.value === value) ?? options[0];
 
   return (
     <FieldShell id={id} label={label} hint={hint}>
@@ -233,7 +259,9 @@ export function SelectField<T extends string | number>({
           variant="secondary"
           className="flex h-8 w-full items-center justify-between rounded-ed border border-ed-border bg-ed-panel px-2.5 text-left text-ed-sm font-normal text-ed-text shadow-ed-xs transition-all duration-150 hover:border-ed-border-strong hover:bg-ed-subtle/50 focus-visible:border-ed-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ed-accent/15"
         >
-          <span className="truncate">{selectedOption?.label ?? String(value)}</span>
+          <span className="truncate">
+            {selectedOption?.label ?? String(value)}
+          </span>
           <ChevronDown className="size-3.5 shrink-0 text-ed-muted" />
         </Button>
         <Dropdown.Popover className="min-w-(--trigger-width) rounded-ed-lg border border-ed-border bg-ed-panel p-1 shadow-ed-pop z-(--z-ed-popover)">
@@ -241,7 +269,9 @@ export function SelectField<T extends string | number>({
             selectionMode="single"
             selectedKeys={new Set([String(value)])}
             onAction={(key) => {
-              const option = options.find((candidate) => String(candidate.value) === String(key));
+              const option = options.find(
+                (candidate) => String(candidate.value) === String(key),
+              );
               if (option) onChange(option.value);
             }}
             className="flex flex-col gap-0.5 outline-none"
@@ -318,7 +348,11 @@ export function CheckboxField({
           <Label className="block text-ed-sm font-medium text-ed-text cursor-pointer leading-tight">
             {label}
           </Label>
-          {hint && <p className="text-ed-2xs text-ed-muted leading-normal mt-0.5">{hint}</p>}
+          {hint && (
+            <p className="text-ed-2xs text-ed-muted leading-normal mt-0.5">
+              {hint}
+            </p>
+          )}
         </div>
       </Checkbox.Content>
     </Checkbox>
@@ -359,7 +393,9 @@ export function ColorField({
           <CellColorPicker.Swatch />
         </CellColorPicker.Popover>
       </CellColorPicker>
-      {hint && <p className="text-ed-2xs text-ed-muted leading-normal">{hint}</p>}
+      {hint && (
+        <p className="text-ed-2xs text-ed-muted leading-normal">{hint}</p>
+      )}
     </div>
   );
 }
@@ -391,7 +427,7 @@ export function CompactColorField({
           <button
             type="button"
             onClick={() => onChange(undefined)}
-            className="text-[11px] font-medium text-ed-muted hover:text-ed-danger transition-colors cursor-pointer shrink-0"
+            className="text-ed-2xs font-medium text-ed-muted hover:text-ed-danger transition-colors cursor-pointer shrink-0"
             title="Reset to default"
           >
             Reset
@@ -406,11 +442,11 @@ export function CompactColorField({
         className="w-full"
       >
         <div className="flex items-center gap-1.5 h-8 w-full min-w-0">
-          <CellColorPicker.Trigger className="!size-8 rounded-ed shrink-0 cursor-pointer" />
+          <CellColorPicker.Trigger className="size-8! rounded-ed shrink-0 cursor-pointer" />
           <div className="flex-1 min-w-0">
             <CellColorPicker.ValueDisplay
               placeholder={placeholder}
-              className="!h-8 rounded-ed text-ed-xs font-mono w-full"
+              className="h-8! rounded-ed text-ed-xs font-mono w-full"
             />
           </div>
         </div>
@@ -418,7 +454,9 @@ export function CompactColorField({
           <CellColorPicker.Swatch />
         </CellColorPicker.Popover>
       </CellColorPicker>
-      {hint && <p className="text-ed-2xs text-ed-muted leading-normal">{hint}</p>}
+      {hint && (
+        <p className="text-ed-2xs text-ed-muted leading-normal">{hint}</p>
+      )}
     </div>
   );
 }
@@ -447,9 +485,11 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
   const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
 
   const isVideo = value.actionType === "video";
-  const isDownload = !isVideo && (value.actionType === "download"
-    ? true
-    : Boolean(value.href && /\.pdf($|\?)/i.test(value.href)));
+  const isDownload =
+    !isVideo &&
+    (value.actionType === "download"
+      ? true
+      : Boolean(value.href && /\.pdf($|\?)/i.test(value.href)));
 
   const hrefError =
     !isDownload && !isVideo && value.href && !SAFE_HREF.test(value.href.trim())
@@ -487,9 +527,15 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
     if (problem) return;
 
     setVideoUploading(true);
-    setVideoUploadProgress({ percent: 30, statusText: "Preparing video upload…" });
+    setVideoUploadProgress({
+      percent: 30,
+      statusText: "Preparing video upload…",
+    });
     try {
-      setVideoUploadProgress({ percent: 70, statusText: "Uploading to storage…" });
+      setVideoUploadProgress({
+        percent: 70,
+        statusText: "Uploading to storage…",
+      });
       const uploaded = await mediaApi.upload({
         file,
         clientId: media.clientId,
@@ -518,30 +564,60 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
 
   const setActionType = (type: "link" | "download" | "video") => {
     if (type === "video") {
-      const existingVideo = value.videoUrl || (value.href.startsWith("http") || value.href.endsWith(".mp4") ? value.href : "");
+      const existingVideo =
+        value.videoUrl ||
+        (value.href.startsWith("http") || value.href.endsWith(".mp4")
+          ? value.href
+          : "");
       onChange({
         ...value,
         actionType: "video",
         icon: value.icon || "play",
-        label: value.label === "Contact us" || value.label === "Download Brochure" || value.label === "Link" ? "Watch demo" : value.label,
+        label:
+          value.label === "Contact us" ||
+          value.label === "Download Brochure" ||
+          value.label === "Link"
+            ? "Watch demo"
+            : value.label,
         videoUrl: existingVideo || undefined,
-        href: existingVideo || (value.href && value.href !== "/" && value.href !== "/contact" ? value.href : "#demo"),
+        href:
+          existingVideo ||
+          (value.href && value.href !== "/" && value.href !== "/contact"
+            ? value.href
+            : "#demo"),
       });
     } else if (type === "download") {
       onChange({
         ...value,
         actionType: "download",
-        icon: value.icon === "play" ? "download" : (value.icon || "download"),
-        label: value.label === "Contact us" || value.label === "Watch demo" || value.label === "Link" ? "Download Brochure" : value.label,
-        href: value.href === "/contact" || value.href === "/" || value.href === "#demo" ? "" : value.href,
+        icon: value.icon === "play" ? "download" : value.icon || "download",
+        label:
+          value.label === "Contact us" ||
+          value.label === "Watch demo" ||
+          value.label === "Link"
+            ? "Download Brochure"
+            : value.label,
+        href:
+          value.href === "/contact" ||
+          value.href === "/" ||
+          value.href === "#demo"
+            ? ""
+            : value.href,
       });
     } else {
       onChange({
         ...value,
         actionType: "link",
-        icon: value.icon === "download" || value.icon === "play" ? undefined : value.icon,
-        label: value.label === "Download Brochure" || value.label === "Watch demo" ? "Contact us" : value.label,
-        href: value.href === "" || value.href === "#demo" ? "/contact" : value.href,
+        icon:
+          value.icon === "download" || value.icon === "play"
+            ? undefined
+            : value.icon,
+        label:
+          value.label === "Download Brochure" || value.label === "Watch demo"
+            ? "Contact us"
+            : value.label,
+        href:
+          value.href === "" || value.href === "#demo" ? "/contact" : value.href,
       });
     }
   };
@@ -553,9 +629,13 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
         <div className="flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="size-1.5 rounded-full bg-ed-accent shrink-0" />
-            <span className="text-ed-xs font-semibold text-ed-text truncate">{label}</span>
+            <span className="text-ed-xs font-semibold text-ed-text truncate">
+              {label}
+            </span>
           </div>
-          <span className="text-[10px] text-ed-muted font-medium uppercase tracking-wider">Action</span>
+          <span className="text-[10px] text-ed-muted font-medium uppercase tracking-wider">
+            Action
+          </span>
         </div>
 
         {/* Compact, Single-Row Segmented Switcher */}
@@ -604,7 +684,13 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
         label="Button / Link text"
         value={value.label}
         onChange={(text) => onChange({ ...value, label: text })}
-        placeholder={isVideo ? "e.g. Watch 2-min demo" : isDownload ? "e.g. Download Brochure" : "e.g. Contact Us"}
+        placeholder={
+          isVideo
+            ? "e.g. Watch 2-min demo"
+            : isDownload
+              ? "e.g. Download Brochure"
+              : "e.g. Contact Us"
+        }
         maxLength={80}
         required
       />
@@ -630,11 +716,13 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
             ))}
           </datalist>
 
-          <label className="flex items-center gap-2 cursor-pointer select-none text-[12px] text-ed-muted hover:text-ed-text transition mt-0.5">
+          <label className="flex items-center gap-2 cursor-pointer select-none text-ed-xs text-ed-muted hover:text-ed-text transition mt-0.5">
             <input
               type="checkbox"
               checked={Boolean(value.openInNewTab)}
-              onChange={(e) => onChange({ ...value, openInNewTab: e.target.checked })}
+              onChange={(e) =>
+                onChange({ ...value, openInNewTab: e.target.checked })
+              }
               className="rounded border-ed-border text-brand focus:ring-brand/30"
             />
             <span>Open in new tab</span>
@@ -646,7 +734,7 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
       {isVideo && (
         <div className="flex flex-col gap-2.5 rounded-ed border border-dashed border-ed-accent/40 bg-ed-accent-soft/20 p-2.5">
           <div className="flex items-center justify-between gap-1 flex-wrap">
-            <span className="text-[11px] font-semibold text-ed-accent flex items-center gap-1">
+            <span className="text-ed-2xs font-semibold text-ed-accent flex items-center gap-1">
               <Play className="size-3 fill-ed-accent" />
               <span>Demo Video (Popup Modal)</span>
             </span>
@@ -668,15 +756,17 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
                     type="button"
                     disabled={videoUploading}
                     onClick={() => videoFileInputRef.current?.click()}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-ed-2xs font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer disabled:opacity-50"
                   >
                     <Upload className="size-3" />
-                    <span>{videoUploading ? "Uploading…" : "Upload Video"}</span>
+                    <span>
+                      {videoUploading ? "Uploading…" : "Upload Video"}
+                    </span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setPickingVideo(true)}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-ed-2xs font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer"
                   >
                     <Film className="size-3" />
                     <span>Media Library</span>
@@ -687,7 +777,7 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
           </div>
 
           {videoUploadProgress && (
-            <div className="rounded bg-brand/10 p-2 text-[11px] text-brand flex flex-col gap-1">
+            <div className="rounded bg-brand/10 p-2 text-ed-2xs text-brand flex flex-col gap-1">
               <div className="flex items-center justify-between font-medium">
                 <span>{videoUploadProgress.statusText}</span>
                 <span>{videoUploadProgress.percent}%</span>
@@ -702,12 +792,19 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
           )}
 
           {videoUploadError && (
-            <p className="text-[11px] text-ed-danger font-medium">{videoUploadError}</p>
+            <p className="text-ed-2xs text-ed-danger font-medium">
+              {videoUploadError}
+            </p>
           )}
 
           <TextField
             label="Video URL (YouTube, Vimeo, MP4, WebM)"
-            value={value.videoUrl ?? (value.href.startsWith("http") || value.href.endsWith(".mp4") ? value.href : "")}
+            value={
+              value.videoUrl ??
+              (value.href.startsWith("http") || value.href.endsWith(".mp4")
+                ? value.href
+                : "")
+            }
             onChange={(url) => {
               const trimmed = url.trim();
               onChange({
@@ -726,21 +823,27 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
           <TextField
             label="Video modal title (optional)"
             value={value.videoTitle || ""}
-            onChange={(title) => onChange({ ...value, videoTitle: title || undefined })}
+            onChange={(title) =>
+              onChange({ ...value, videoTitle: title || undefined })
+            }
             placeholder="e.g. 2-Min Product Demo"
             maxLength={120}
             hint="Shown at the top of the video player modal"
           />
 
           {/* Video Preview and Test Popup Button */}
-          {Boolean(value.videoUrl || (value.href && (value.href.startsWith("http") || value.href.endsWith(".mp4")))) && (
+          {Boolean(
+            value.videoUrl ||
+            (value.href &&
+              (value.href.startsWith("http") || value.href.endsWith(".mp4"))),
+          ) && (
             <div className="flex items-center justify-between rounded bg-ed-panel border border-ed-border p-2 mt-1">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="size-6 rounded-full bg-ed-accent/15 text-ed-accent flex items-center justify-center shrink-0">
                   <Play className="size-3 fill-current" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium text-ed-text truncate">
+                  <p className="text-ed-2xs font-medium text-ed-text truncate">
                     {value.videoTitle || value.label || "Video Demo"}
                   </p>
                   <p className="text-[10px] text-ed-muted truncate">
@@ -752,9 +855,10 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
                 type="button"
                 onClick={() => {
                   const targetUrl = value.videoUrl || value.href;
-                  if (targetUrl) openVideoModal(targetUrl, value.videoTitle || value.label);
+                  if (targetUrl)
+                    openVideoModal(targetUrl, value.videoTitle || value.label);
                 }}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold rounded bg-ed-accent text-white hover:bg-ed-accent/90 cursor-pointer shrink-0 shadow-xs"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-ed-2xs font-semibold rounded bg-ed-accent text-white hover:bg-ed-accent/90 cursor-pointer shrink-0 shadow-xs"
               >
                 <Play className="size-3 fill-current" />
                 <span>Test Popup</span>
@@ -768,7 +872,7 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
       {isDownload && (
         <div className="flex flex-col gap-2.5 rounded-ed border border-dashed border-ed-accent/30 bg-ed-accent-soft/20 p-2.5">
           <div className="flex items-center justify-between gap-1 flex-wrap">
-            <span className="text-[11px] font-semibold text-ed-accent flex items-center gap-1">
+            <span className="text-ed-2xs font-semibold text-ed-accent flex items-center gap-1">
               <Download className="size-3" />
               <span>Brochure / File to Download</span>
             </span>
@@ -790,7 +894,7 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
                     type="button"
                     disabled={uploading}
                     onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-ed-2xs font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer disabled:opacity-50"
                   >
                     <Upload className="size-3" />
                     <span>{uploading ? "Uploading…" : "Upload File"}</span>
@@ -798,7 +902,7 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
                   <button
                     type="button"
                     onClick={() => setPickingDoc(true)}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-ed-2xs font-medium rounded border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-subtle cursor-pointer"
                   >
                     <FileText className="size-3" />
                     <span>Media Library</span>
@@ -809,7 +913,9 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
           </div>
 
           {uploadError && (
-            <p className="text-[11px] text-ed-danger font-medium">{uploadError}</p>
+            <p className="text-ed-2xs text-ed-danger font-medium">
+              {uploadError}
+            </p>
           )}
 
           <TextField
@@ -825,7 +931,9 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
           <TextField
             label="Download filename (optional)"
             value={value.downloadFileName || ""}
-            onChange={(name) => onChange({ ...value, downloadFileName: name || undefined })}
+            onChange={(name) =>
+              onChange({ ...value, downloadFileName: name || undefined })
+            }
             placeholder="e.g. Brochure.pdf"
             maxLength={100}
             hint="Browser saves the file with this name"
@@ -836,11 +944,15 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
       {/* Button Icon & Placement */}
       <div className="flex flex-col gap-2 pt-1 border-t border-ed-border/60">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-medium text-ed-muted">Button Icon (Optional)</span>
+          <span className="text-ed-2xs font-medium text-ed-muted">
+            Button Icon (Optional)
+          </span>
           {Boolean(value.icon || value.iconImage?.url) && (
             <button
               type="button"
-              onClick={() => onChange({ ...value, icon: "", iconImage: undefined })}
+              onClick={() =>
+                onChange({ ...value, icon: "", iconImage: undefined })
+              }
               className="text-[10px] text-ed-danger hover:underline cursor-pointer"
             >
               Remove icon
@@ -849,7 +961,11 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
         </div>
 
         <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
-          <Suspense fallback={<div className="h-8 rounded-ed bg-ed-subtle animate-pulse" />}>
+          <Suspense
+            fallback={
+              <div className="h-8 rounded-ed bg-ed-subtle animate-pulse" />
+            }
+          >
             <IconPickerField
               label=""
               value={value.icon}
@@ -865,7 +981,7 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
           </Suspense>
 
           {Boolean(value.icon || value.iconImage?.url || isVideo) && (
-            <div className="inline-flex rounded-ed border border-ed-border bg-ed-panel p-0.5 text-[11px] font-medium h-8 items-center shadow-2xs">
+            <div className="inline-flex rounded-ed border border-ed-border bg-ed-panel p-0.5 text-ed-2xs font-medium h-8 items-center shadow-2xs">
               <button
                 type="button"
                 onClick={() => onChange({ ...value, iconPosition: "left" })}
@@ -930,7 +1046,8 @@ export function LinkField({ label, value, onChange }: LinkFieldProps) {
                 actionType: "video",
                 href: file.url,
                 videoUrl: file.url,
-                videoTitle: value.videoTitle || file.fileName.replace(/\.[^/.]+$/, ""),
+                videoTitle:
+                  value.videoTitle || file.fileName.replace(/\.[^/.]+$/, ""),
                 icon: value.icon || "play",
               });
               setPickingVideo(false);
@@ -1007,7 +1124,8 @@ export function ImageField({
     const next = { ...image, ...patch };
     onChange(optional && !next.url && !next.alt ? undefined : next);
   };
-  const applyFile = (file: MediaFile) => update({ url: file.url, alt: file.altText || image.alt });
+  const applyFile = (file: MediaFile) =>
+    update({ url: file.url, alt: file.altText || image.alt });
 
   async function upload(rawFile: File) {
     if (!media) return;
@@ -1019,15 +1137,18 @@ export function ImageField({
 
     try {
       // 1. Convert & optimize to ultra-crisp WebP with 0-50% stage progress
-      const { file: optimizedFile, savedPercent } = await optimizeImageToWebP(rawFile, {
-        quality: 0.88,
-        onProgress: (pct, msg) => {
-          setUploadProgress({
-            percent: Math.min(50, Math.round(pct * 0.5)),
-            statusText: msg,
-          });
+      const { file: optimizedFile, savedPercent } = await optimizeImageToWebP(
+        rawFile,
+        {
+          quality: 0.88,
+          onProgress: (pct, msg) => {
+            setUploadProgress({
+              percent: Math.min(50, Math.round(pct * 0.5)),
+              statusText: msg,
+            });
+          },
         },
-      });
+      );
 
       // 2. Upload to backend & Linode Object Storage with 50-100% stage
       setUploadProgress({
@@ -1046,7 +1167,10 @@ export function ImageField({
 
       setUploadProgress({
         percent: 100,
-        statusText: savedPercent > 0 ? `Saved as WebP (${savedPercent}% lighter)` : "Saved to Linode!",
+        statusText:
+          savedPercent > 0
+            ? `Saved as WebP (${savedPercent}% lighter)`
+            : "Saved to Linode!",
         savedPercent,
       });
 
@@ -1078,13 +1202,15 @@ export function ImageField({
             <button
               type="button"
               onClick={() => onChange(undefined)}
-              className="text-[11px] font-medium text-ed-danger hover:underline cursor-pointer"
+              className="text-ed-2xs font-medium text-ed-danger hover:underline cursor-pointer"
             >
               Remove image
             </button>
           )}
         </div>
-        {hint && <p className="text-[11px] text-ed-muted leading-tight">{hint}</p>}
+        {hint && (
+          <p className="text-ed-2xs text-ed-muted leading-tight">{hint}</p>
+        )}
       </div>
 
       {/* Image Thumbnail with Click-to-Lightbox & Action Overlay */}
@@ -1157,7 +1283,9 @@ export function ImageField({
               className="flex h-8 items-center justify-center gap-1.5 rounded-ed border border-ed-border bg-ed-panel px-2 text-ed-xs font-medium text-ed-text shadow-ed-xs transition hover:bg-ed-hover hover:border-ed-border-strong disabled:cursor-wait disabled:opacity-60 truncate"
             >
               <Upload className="size-3.5 shrink-0" aria-hidden />
-              <span className="truncate">{uploading ? "Optimizing…" : "Upload"}</span>
+              <span className="truncate">
+                {uploading ? "Optimizing…" : "Upload"}
+              </span>
             </button>
             <button
               type="button"
@@ -1176,7 +1304,9 @@ export function ImageField({
           {uploadProgress && (
             <div className="flex flex-col gap-1 rounded-ed border border-emerald-500/25 bg-emerald-950/20 p-2 text-ed-2xs shadow-ed-xs animate-in fade-in duration-150">
               <div className="flex items-center justify-between font-medium text-emerald-400">
-                <span className="truncate text-[11px]">{uploadProgress.statusText}</span>
+                <span className="truncate text-ed-2xs">
+                  {uploadProgress.statusText}
+                </span>
                 <span className="font-semibold">{uploadProgress.percent}%</span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
@@ -1214,18 +1344,23 @@ export function ImageField({
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 font-medium text-brand">
               <Check className="size-3.5" />
-              <span>{image.url.includes("svg") ? "Vector SVG Logo (Template asset)" : "Embedded Image"}</span>
+              <span>
+                {image.url.includes("svg")
+                  ? "Vector SVG Logo (Template asset)"
+                  : "Embedded Image"}
+              </span>
             </span>
             <button
               type="button"
               onClick={() => update({ url: "" })}
-              className="text-[11px] font-medium text-ed-danger hover:underline cursor-pointer"
+              className="text-ed-2xs font-medium text-ed-danger hover:underline cursor-pointer"
             >
               Change / Clear
             </button>
           </div>
-          <p className="text-[11px] leading-relaxed text-ed-muted">
-            This is an integrated vector asset from the template. You can upload a new image or paste a link to replace it.
+          <p className="text-ed-2xs leading-relaxed text-ed-muted">
+            This is an integrated vector asset from the template. You can upload
+            a new image or paste a link to replace it.
           </p>
         </div>
       ) : (
@@ -1235,7 +1370,11 @@ export function ImageField({
           value={image.url}
           onChange={(url) => update({ url })}
           placeholder="https://…"
-          hint={media ? "Upload, choose from your library, or paste a link." : "Paste a link to an image."}
+          hint={
+            media
+              ? "Upload, choose from your library, or paste a link."
+              : "Paste a link to an image."
+          }
           error={urlError}
           required={!optional}
           maxLength={65536}
@@ -1330,7 +1469,10 @@ export function VideoField({
     setUploadProgress({ percent: 20, statusText: "Preparing video upload…" });
 
     try {
-      setUploadProgress({ percent: 60, statusText: "Uploading to Linode Storage…" });
+      setUploadProgress({
+        percent: 60,
+        statusText: "Uploading to Linode Storage…",
+      });
 
       const uploaded = await mediaApi.upload({
         file: rawFile,
@@ -1374,7 +1516,7 @@ export function VideoField({
           <button
             type="button"
             onClick={clearVideo}
-            className="text-[11px] font-medium text-ed-danger hover:underline cursor-pointer"
+            className="text-ed-2xs font-medium text-ed-danger hover:underline cursor-pointer"
           >
             Remove video
           </button>
@@ -1404,7 +1546,9 @@ export function VideoField({
                 <Film className="size-4" />
               </div>
               <div className="min-w-0 flex-1 text-left">
-                <p className="font-semibold text-white truncate text-ed-xs">Embedded Web Video</p>
+                <p className="font-semibold text-white truncate text-ed-xs">
+                  Embedded Web Video
+                </p>
                 <p className="truncate text-ed-2xs text-zinc-400">{videoUrl}</p>
               </div>
             </div>
@@ -1413,7 +1557,9 @@ export function VideoField({
               <div className="flex size-8 shrink-0 items-center justify-center rounded-ed bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
                 <Film className="size-4" />
               </div>
-              <span className="truncate text-ed-2xs text-zinc-300 flex-1">{videoUrl}</span>
+              <span className="truncate text-ed-2xs text-zinc-300 flex-1">
+                {videoUrl}
+              </span>
             </div>
           )}
 
@@ -1434,7 +1580,11 @@ export function VideoField({
       {/* Upload and Media Library Action Bar */}
       {media && (
         <div className="flex flex-col gap-1.5">
-          <div className={youtubeOnly ? "grid grid-cols-1 gap-2" : "grid grid-cols-2 gap-2"}>
+          <div
+            className={
+              youtubeOnly ? "grid grid-cols-1 gap-2" : "grid grid-cols-2 gap-2"
+            }
+          >
             <input
               ref={inputRef}
               type="file"
@@ -1455,7 +1605,9 @@ export function VideoField({
               className="flex h-8 items-center justify-center gap-1.5 rounded-ed border border-ed-border bg-ed-panel px-2 text-ed-xs font-medium text-ed-text shadow-ed-xs transition hover:bg-ed-hover hover:border-ed-border-strong disabled:cursor-wait disabled:opacity-60 truncate"
             >
               <Upload className="size-3.5 shrink-0" aria-hidden />
-              <span className="truncate">{uploading ? "Uploading…" : "Upload Video"}</span>
+              <span className="truncate">
+                {uploading ? "Uploading…" : "Upload Video"}
+              </span>
             </button>
             {youtubeOnly ? null : (
               <button
@@ -1476,7 +1628,9 @@ export function VideoField({
           {uploadProgress && (
             <div className="flex flex-col gap-1 rounded-ed border border-indigo-500/25 bg-indigo-950/20 p-2 text-ed-2xs shadow-ed-xs animate-in fade-in duration-150">
               <div className="flex items-center justify-between font-medium text-indigo-400">
-                <span className="truncate text-[11px]">{uploadProgress.statusText}</span>
+                <span className="truncate text-ed-2xs">
+                  {uploadProgress.statusText}
+                </span>
                 <span className="font-semibold">{uploadProgress.percent}%</span>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
@@ -1512,11 +1666,16 @@ export function VideoField({
               setYoutubeError(null);
               if (next !== videoUrl) onChange(next);
             } else {
-              setYoutubeError("Paste a YouTube link, like https://www.youtube.com/watch?v=…");
+              setYoutubeError(
+                "Paste a YouTube link, like https://www.youtube.com/watch?v=…",
+              );
             }
           }}
           placeholder={urlPlaceholder}
-          hint={hint ?? "Upload a video file, or paste a YouTube link. Remove it to leave this frame without a video."}
+          hint={
+            hint ??
+            "Upload a video file, or paste a YouTube link. Remove it to leave this frame without a video."
+          }
           error={youtubeError ?? undefined}
         />
       ) : (
@@ -1525,7 +1684,9 @@ export function VideoField({
           value={value}
           onChange={(url) => onChange(url || undefined)}
           placeholder={urlPlaceholder}
-          hint={hint ?? "Upload MP4/WebM (max 50 MB) or paste YouTube / Vimeo link."}
+          hint={
+            hint ?? "Upload MP4/WebM (max 50 MB) or paste YouTube / Vimeo link."
+          }
         />
       )}
 
@@ -1710,15 +1871,15 @@ export function ItemList<T>({
       {renderAdd ? (
         renderAdd(add, items.length >= max)
       ) : (
-      <button
-        type="button"
-        disabled={items.length >= max}
-        onClick={() => add(create())}
-        className="inline-flex items-center justify-center gap-1.5 rounded-ed border border-dashed border-ed-border-strong py-1.5 text-ed-sm font-medium text-ed-accent hover:bg-ed-accent-soft/60 hover:border-ed-accent transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <Plus className="size-3.5" aria-hidden />{" "}
-        {items.length >= max ? `Maximum ${max}` : addLabel}
-      </button>
+        <button
+          type="button"
+          disabled={items.length >= max}
+          onClick={() => add(create())}
+          className="inline-flex items-center justify-center gap-1.5 rounded-ed border border-dashed border-ed-border-strong py-1.5 text-ed-sm font-medium text-ed-accent hover:bg-ed-accent-soft/60 hover:border-ed-accent transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Plus className="size-3.5" aria-hidden />{" "}
+          {items.length >= max ? `Maximum ${max}` : addLabel}
+        </button>
       )}
     </div>
   );
@@ -1791,12 +1952,165 @@ export function FormGroup({
           {description}
         </p>
       )}
-      <div className="flex flex-col gap-3 pl-1">
-        {children}
+      <div className="flex flex-col gap-3 pl-1">{children}</div>
+    </div>
+  );
+}
+
+const LOGO_SIZE_PRESETS = [
+  { label: "Small", size: 24 },
+  { label: "Default", size: 38 },
+  { label: "Medium", size: 50 },
+  { label: "Large", size: 68 },
+  { label: "XL", size: 90 },
+] as const;
+
+export type LogoSizeFieldProps = {
+  label?: string;
+  value: number | undefined;
+  onChange: (value: number | undefined) => void;
+  hint?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  defaultSize?: number;
+};
+
+export function LogoSizeField({
+  label = "Logo size",
+  value,
+  onChange,
+  hint,
+  min = 16,
+  max = 140,
+  step = 2,
+  defaultSize = 38,
+}: LogoSizeFieldProps) {
+  const current = typeof value === "number" && value > 0 ? value : defaultSize;
+  const isDefault = value === undefined || value === defaultSize;
+
+  const handleDecrease = () => {
+    const next = Math.max(min, current - step);
+    onChange(next === defaultSize ? undefined : next);
+  };
+
+  const handleIncrease = () => {
+    const next = Math.min(max, current + step);
+    onChange(next === defaultSize ? undefined : next);
+  };
+
+  const handleSlider = (raw: number) => {
+    const clamped = Math.max(min, Math.min(max, raw));
+    onChange(clamped === defaultSize ? undefined : clamped);
+  };
+
+  const handleNumberInput = (raw: string) => {
+    const parsed = Number.parseInt(raw, 10);
+    if (Number.isNaN(parsed)) return;
+    const clamped = Math.max(min, Math.min(max, parsed));
+    onChange(clamped === defaultSize ? undefined : clamped);
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-ed border border-ed-border bg-ed-panel/60 p-3 shadow-ed-xs">
+      <div className="flex items-center justify-between">
+        <span className="text-ed-xs font-semibold text-ed-text">{label}</span>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 rounded bg-ed-subtle px-2 py-0.5 text-ed-2xs font-semibold text-ed-text">
+            {current}px
+            {isDefault && (
+              <span className="text-[10px] text-ed-muted font-normal">
+                (Default)
+              </span>
+            )}
+          </span>
+          {!isDefault && (
+            <button
+              type="button"
+              onClick={() => onChange(undefined)}
+              title="Reset to default (38px)"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-ed-2xs text-ed-muted transition-colors hover:bg-ed-subtle hover:text-ed-text"
+            >
+              <RotateCcw className="size-3" />
+              <span>Reset</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      <div className="flex items-center gap-2 pt-0.5">
+        <button
+          type="button"
+          onClick={handleDecrease}
+          disabled={current <= min}
+          title="Decrease logo size (-2px)"
+          className="flex size-7 shrink-0 items-center justify-center rounded-ed border border-ed-border bg-ed-panel text-ed-text transition-all hover:border-ed-border-strong hover:bg-ed-subtle active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Minus className="size-3.5" />
+        </button>
+
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={current}
+          onChange={(e) => handleSlider(Number(e.target.value))}
+          className="h-1.5 flex-1 cursor-pointer accent-brand rounded-lg bg-ed-border appearance-none transition-all"
+          aria-label={label}
+        />
+
+        <button
+          type="button"
+          onClick={handleIncrease}
+          disabled={current >= max}
+          title="Increase logo size (+2px)"
+          className="flex size-7 shrink-0 items-center justify-center rounded-ed border border-ed-border bg-ed-panel text-ed-text transition-all hover:border-ed-border-strong hover:bg-ed-subtle active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Plus className="size-3.5" />
+        </button>
+
+        <div className="flex items-center gap-1 shrink-0 pl-1">
+          <input
+            type="number"
+            min={min}
+            max={max}
+            value={current}
+            onChange={(e) => handleNumberInput(e.target.value)}
+            className="h-7 w-12 rounded-ed border border-ed-border bg-ed-panel px-1 text-center text-ed-xs font-semibold text-ed-text shadow-ed-xs transition-all hover:border-ed-border-strong focus:border-ed-accent focus:outline-none"
+            aria-label="Logo height in pixels"
+          />
+          <span className="text-ed-2xs font-medium text-ed-muted">px</span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        {LOGO_SIZE_PRESETS.map((preset) => {
+          const active = current === preset.size;
+          return (
+            <button
+              key={preset.label}
+              type="button"
+              onClick={() =>
+                onChange(preset.size === defaultSize ? undefined : preset.size)
+              }
+              className={`rounded px-2 py-1 text-ed-2xs transition-all ${
+                active
+                  ? "border border-brand/40 bg-brand/10 font-semibold text-brand shadow-xs"
+                  : "border border-ed-border/70 bg-ed-panel text-ed-muted hover:border-ed-border-strong hover:text-ed-text hover:bg-ed-subtle/50"
+              }`}
+            >
+              {preset.label} ({preset.size}px)
+            </button>
+          );
+        })}
+      </div>
+
+      {hint && (
+        <p className="text-ed-2xs text-ed-muted leading-relaxed">{hint}</p>
+      )}
     </div>
   );
 }
 
 export { CellColorPicker } from "../../../components/ui/CellColorPicker.tsx";
-

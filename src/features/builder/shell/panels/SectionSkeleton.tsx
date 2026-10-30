@@ -811,29 +811,41 @@ export function SectionSkeleton({ preset }: { preset: SectionPreset }) {
 
     case "gallery-3":
       return (
-        <div className="grid h-full w-full grid-cols-3 items-center gap-1.5 p-2">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="flex h-9 w-full items-center justify-center rounded-sm bg-zinc-200 dark:bg-zinc-700"
-            >
-              <div className="size-2 rounded-xs bg-zinc-300 dark:bg-zinc-600" />
-            </div>
-          ))}
+        <div className="flex h-full w-full flex-col justify-center gap-1.5 p-2">
+          <div className="h-2 w-16 mx-auto rounded-xs bg-zinc-300 dark:bg-zinc-600" />
+          <div className="grid w-full grid-cols-3 gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex flex-col gap-1">
+                <div className="flex h-9 w-full items-center justify-center rounded-sm bg-zinc-200 dark:bg-zinc-700">
+                  <div className="size-2 rounded-xs bg-zinc-300 dark:bg-zinc-600" />
+                </div>
+                <div className="flex items-center justify-between gap-1">
+                  <div className="h-1 w-8 rounded-xs bg-zinc-300 dark:bg-zinc-600" />
+                  <div className="h-1 w-3 rounded-xs bg-zinc-200 dark:bg-zinc-700" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       );
 
     case "gallery-4":
       return (
-        <div className="grid h-full w-full grid-cols-4 items-center gap-1 p-2">
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex h-8 w-full items-center justify-center rounded-sm bg-zinc-200 dark:bg-zinc-700"
-            >
-              <div className="size-1.5 rounded-xs bg-zinc-300 dark:bg-zinc-600" />
-            </div>
-          ))}
+        <div className="flex h-full w-full flex-col justify-center gap-1 p-2">
+          <div className="h-2 w-16 mx-auto rounded-xs bg-zinc-300 dark:bg-zinc-600" />
+          <div className="grid w-full grid-cols-4 gap-1">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-col gap-0.5">
+                <div className="flex h-8 w-full items-center justify-center rounded-sm bg-zinc-200 dark:bg-zinc-700">
+                  <div className="size-1.5 rounded-xs bg-zinc-300 dark:bg-zinc-600" />
+                </div>
+                <div className="flex items-center justify-between gap-1">
+                  <div className="h-1 w-5 rounded-xs bg-zinc-300 dark:bg-zinc-600" />
+                  <div className="h-1 w-2 rounded-xs bg-zinc-200 dark:bg-zinc-700" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       );
 

@@ -75,9 +75,10 @@ export default function App() {
               <Route path="pricing" element={<PricingPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
-              <Route path="start" element={<StartQuestionnairePage />} />
               <Route path="legal" element={<LegalPage />} />
             </Route>
+
+            <Route path="start" element={<StartQuestionnairePage />} />
             <Route element={<PublicLayout />}>
               <Route path="*" element={<NotFoundPage />} />
             </Route>

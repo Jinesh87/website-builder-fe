@@ -52,7 +52,7 @@ function BlockView({ block }: { block: CustomBlock }) {
         </p>
       );
     case "badge":
-      return <span className="wb-cb-badge">{block.text}</span>;
+      return <span className="wb-cb-badge">{parseRichText(block.text)}</span>;
     case "button":
       return <SiteButton link={{ label: block.label, href: block.href }} tone={block.tone ?? "primary"} />;
     case "image":

@@ -1,4 +1,6 @@
 import { request } from "../../api/http.ts";
+import type { MediaFile } from "../../api/media.ts";
+import type { ThemeSettings } from "../../site-kit/index.ts";
 import type {
   BusinessType,
   DomainOption,
@@ -51,6 +53,30 @@ export type QuestionnaireAnswers = {
   photos: PhotosOption;
   domain: DomainOption;
   needed: NeededOption;
+  /** Platform theme; null = let the team choose. */
+  themeId?: string | null;
+  /** Platform template; null = no starting template. */
+  templateKey?: string | null;
+  logoMediaId?: string | null;
+  mediaIds?: string[];
+};
+
+export type QuestionnaireMediaRef = Pick<
+  MediaFile,
+  "id" | "kind" | "fileName" | "mimeType" | "sizeBytes" | "width" | "height" | "altText" | "url"
+>;
+
+export type QuestionnaireAssets = {
+  theme: { id: string; name: string; settings: ThemeSettings } | null;
+  template: {
+    key: string;
+    name: string;
+    category: string;
+    thumbnailUrl: string | null;
+    themeId: string | null;
+  } | null;
+  logo: QuestionnaireMediaRef | null;
+  files: QuestionnaireMediaRef[];
 };
 
 export type SubmitQuestionnaireInput = {
@@ -99,6 +125,7 @@ export type QuestionnaireActivity = {
 export type QuestionnaireDetail = {
   questionnaire: Questionnaire;
   activity: QuestionnaireActivity[];
+  assets: QuestionnaireAssets;
 };
 
 export type QuestionnaireListParams = {

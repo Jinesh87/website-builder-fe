@@ -1,3 +1,5 @@
+import { toPlainText } from "../../../site-kit/index.ts";
+import { RichTextField } from "./RichTextField.tsx";
 import { useState } from "react";
 import { Modal } from "@heroui/react";
 import { AlertCircle, Check, ChevronRight, Coins, Copy, Eye, Globe, Plus, X } from "lucide-react";
@@ -39,6 +41,7 @@ import {
   ImageField,
   ItemList,
   LinkField,
+  LogoSizeField,
   OptionalLinkField,
   SelectField,
   TextAreaField,
@@ -129,7 +132,7 @@ function MenuItemEditor({
         value={item}
         onChange={(patch) => onChange({ ...item, ...patch })}
       />
-      <TextField
+      <RichTextField
         label="Description (optional)"
         value={item.description ?? ""}
         onChange={(description) =>
@@ -180,7 +183,7 @@ function MenuItemEditor({
                   value={sub}
                   onChange={(patch) => update({ ...sub, ...patch })}
                 />
-                <TextField
+                <RichTextField
                   label="Description (optional)"
                   value={sub.description ?? ""}
                   onChange={(description) =>
@@ -312,6 +315,24 @@ export function HeaderForm({
             })
           }
         />
+        {design !== "side-drawer" && (
+          <SelectField
+            label="Navigation alignment"
+            value={header.navAlign ?? "default"}
+            options={[
+              { value: "default", label: "Same as Style tab" },
+              { value: "left", label: "Left aligned" },
+              { value: "center", label: "Centered" },
+              { value: "right", label: "Right aligned" },
+            ]}
+            onChange={(navAlign) =>
+              onChange({
+                ...header,
+                navAlign: navAlign === "default" ? undefined : navAlign,
+              })
+            }
+          />
+        )}
         <TextField
           label="Site name / Brand"
           value={header.siteName}
@@ -319,7 +340,7 @@ export function HeaderForm({
           maxLength={120}
           required
         />
-        <TextField
+        <RichTextField
           label="Tagline / Sub-label"
           value={header.tagline ?? ""}
           onChange={(tagline) =>
@@ -506,14 +527,14 @@ export function HeaderForm({
                     maxLength={30}
                     placeholder="New"
                   />
-                  <TextField
+                  <RichTextField
                     label="Featured title"
                     value={featured.title}
                     onChange={(title) => updateFeatured({ title })}
                     maxLength={80}
                     required
                   />
-                  <TextAreaField
+                  <RichTextField multiline
                     label="Featured description"
                     value={featured.description ?? ""}
                     onChange={(description) =>
@@ -583,6 +604,14 @@ export function HeaderForm({
           hint="Horizontal transparent PNG, SVG, or WebP recommended"
           optional
         />
+        {header.logoDisplay !== "text_only" && (
+          <LogoSizeField
+            label="Logo size"
+            value={header.logoHeight}
+            onChange={(logoHeight) => onChange({ ...header, logoHeight })}
+            hint="Increase or decrease header logo size. Current default is 38px."
+          />
+        )}
       </FormGroup>
 
       <FormGroup title="Navigation menu & dropdowns">
@@ -741,7 +770,7 @@ export function FooterForm({
           maxLength={120}
           required
         />
-        <TextField
+        <RichTextField
           label="Tagline / Brand subtext (optional)"
           value={footer.tagline ?? ""}
           onChange={(tagline) =>
@@ -750,7 +779,7 @@ export function FooterForm({
           maxLength={200}
           placeholder="Online Store"
         />
-        <TextAreaField
+        <RichTextField multiline
           label="Short description"
           value={footer.description ?? ""}
           onChange={(description) =>
@@ -809,6 +838,14 @@ export function FooterForm({
           hint="Horizontal transparent PNG, SVG, or WebP recommended"
           optional
         />
+        {footer.logoDisplay !== "text_only" && (
+          <LogoSizeField
+            label="Footer logo size"
+            value={footer.logoHeight}
+            onChange={(logoHeight) => onChange({ ...footer, logoHeight })}
+            hint="Increase or decrease footer logo size. Current default is 38px."
+          />
+        )}
       </FormGroup>
 
       <FormGroup title="Call to action (CTA) top banner">
@@ -819,7 +856,7 @@ export function FooterForm({
         />
         {footer.ctaBanner?.enabled && (
           <div className="flex flex-col gap-2.5 pt-2">
-            <TextField
+            <RichTextField
               label="Banner headline"
               value={ctaBanner.heading ?? ""}
               onChange={(heading) =>
@@ -828,7 +865,7 @@ export function FooterForm({
               maxLength={200}
               placeholder="Ready to get started?"
             />
-            <TextField
+            <RichTextField
               label="Banner subtext"
               value={ctaBanner.subheading ?? ""}
               onChange={(subheading) =>
@@ -887,7 +924,7 @@ export function FooterForm({
             addLabel="Add column"
             renderItem={(column, update) => (
               <div className="flex flex-col gap-2.5">
-                <TextField
+                <RichTextField
                   label="Column title"
                   value={column.title}
                   onChange={(title) => update({ ...column, title })}
@@ -919,14 +956,14 @@ export function FooterForm({
           )}
           onChange={(enabled) => updateNewsletter({ enabled })}
         />
-        <TextField
+        <RichTextField
           label="Newsletter title"
           value={newsletter.title ?? ""}
           onChange={(title) => updateNewsletter({ title: title || undefined })}
           maxLength={100}
           placeholder="Subscribe to News"
         />
-        <TextField
+        <RichTextField
           label="Newsletter description"
           value={newsletter.description ?? ""}
           onChange={(description) =>
@@ -956,7 +993,7 @@ export function FooterForm({
       </FormGroup>
 
       <FormGroup title="Contact details">
-        <TextField
+        <RichTextField
           label="Contact column title"
           value={contact.title ?? ""}
           onChange={(title) => updateContact({ title: title || undefined })}
@@ -1448,7 +1485,11 @@ Sitemap: ${dom}/sitemap.xml`;
           const text = [d.text, d.description, d.body].find(
             (v) => typeof v === "string",
           );
-          return [h, sub, typeof text === "string" ? text.slice(0, 100) : ""]
+          return [
+            typeof h === "string" ? toPlainText(h) : h,
+            typeof sub === "string" ? toPlainText(sub) : sub,
+            typeof text === "string" ? toPlainText(text).slice(0, 100) : "",
+          ]
             .filter(Boolean)
             .join(" - ");
         })

@@ -1,3 +1,4 @@
+import { toPlainText } from "../rich-text-core.ts";
 import type { SectionOf } from "../types.ts";
 import { parseRichText, SectionShell, SiteButton } from "../primitives.tsx";
 
@@ -19,7 +20,7 @@ export default function EditorialSpecsSection({ section }: Props) {
       fullWidth
     >
       <div className="wb-container">
-        {data.eyebrow && <p className="wb-vr-eyebrow">{data.eyebrow}</p>}
+        {data.eyebrow && <p className="wb-vr-eyebrow">{parseRichText(data.eyebrow)}</p>}
         {data.heading && (
           <h2
             className={
@@ -37,8 +38,8 @@ export default function EditorialSpecsSection({ section }: Props) {
               return (
                 <div key={index} className="wb-specs-grid-cell">
                   <span className="wb-specs-grid-num">[{num}]</span>
-                  <h3 className="wb-specs-grid-title">{item.title}</h3>
-                  <p className="wb-specs-grid-desc">{item.description}</p>
+                  <h3 className="wb-specs-grid-title">{parseRichText(item.title)}</h3>
+                  <p className="wb-specs-grid-desc">{parseRichText(item.description)}</p>
                 </div>
               );
             })}
@@ -53,11 +54,11 @@ export default function EditorialSpecsSection({ section }: Props) {
                   <span className="wb-specs-num">{num}</span>
                   <h3
                     className={`wb-specs-title ${isStamp ? "wb-specs-stamp" : ""}`}
-                    data-text={item.title}
+                    data-text={toPlainText(item.title)}
                   >
-                    {item.title}
+                    {parseRichText(item.title)}
                   </h3>
-                  <p className="wb-specs-desc">{item.description}</p>
+                  <p className="wb-specs-desc">{parseRichText(item.description)}</p>
                 </div>
               );
             })}

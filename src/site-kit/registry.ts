@@ -2,6 +2,7 @@ import { AUTH_PRESETS, createAuthData } from "./auth-defaults.ts";
 import { CARDS_PRESETS, createCardsData } from "./cards-defaults.ts";
 import type {
   AccountData,
+  GalleryItem,
   Section,
   SectionDataMap,
   SectionOf,
@@ -40,6 +41,51 @@ export type SectionDefinition<T extends SectionType> = {
   /** Starter content used when a section is added in the editor. */
   createData: () => SectionDataMap[T];
 };
+
+export const DEFAULT_GALLERY_IMAGES: GalleryItem[] = [
+  {
+    url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1200&q=80",
+    alt: "Print Factory brand poster",
+    name: "Print Factory brand poster",
+    badge: "BRANDING",
+    description: "Embossed art print on heavy textured cotton paper.",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=1200&q=80",
+    alt: "Visiting cards",
+    name: "Visiting cards",
+    badge: "STATIONERY",
+    description: "Minimalist corporate business cards with silver edge gilding.",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1542744094-3a31f272c490?auto=format&fit=crop&w=1200&q=80",
+    alt: "Shop opening flex banner",
+    name: "Shop opening flex banner",
+    badge: "LARGE FORMAT",
+    description: "UV-resistant outdoor flex display for retail storefronts.",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1626785774573-4b799315345d?auto=format&fit=crop&w=1200&q=80",
+    alt: "Corporate brochure suite",
+    name: "Corporate brochure suite",
+    badge: "EDITORIAL",
+    description: "Multi-fold annual company showcase on silk coated stock.",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1634942537034-2531766767d1?auto=format&fit=crop&w=1200&q=80",
+    alt: "Packaging & merchandise",
+    name: "Packaging & merchandise",
+    badge: "PACKAGING",
+    description: "Custom corrugated mailer box with interior spot varnish.",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=1200&q=80",
+    alt: "Exhibition signage board",
+    name: "Exhibition signage board",
+    badge: "SIGNAGE",
+    description: "Rigid foam-board installation with vivid architectural graphics.",
+  },
+];
 
 export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
   {
@@ -341,10 +387,13 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
       category: "Portfolio",
       description: "Grid of images for work samples or photos.",
       createData: () => ({
-        heading: "Our work",
+        eyebrow: "OUR WORK",
+        heading: "Featured projects & craft",
+        intro: "Explore our recent work samples, custom prints, and client showcases.",
         columns: 3,
         mobileColumns: 1,
-        images: [],
+        images: [...DEFAULT_GALLERY_IMAGES],
+        cta: { label: "View all projects", href: "/contact" },
       }),
     },
     logos: {
@@ -3616,7 +3665,33 @@ export const SECTION_PRESETS: SectionPreset[] = [
     category: "Portfolio",
     description: "Denser photo grid, 2 per row on mobile.",
     create: () =>
-      createSection("gallery", { data: { columns: 4, mobileColumns: 2 } }),
+      createSection("gallery", {
+        data: {
+          eyebrow: "PORTFOLIO",
+          heading: "Our work gallery",
+          intro: "Explore our latest projects, design prints, and brand showcases.",
+          columns: 4,
+          mobileColumns: 2,
+          images: [
+            ...DEFAULT_GALLERY_IMAGES,
+            {
+              url: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80",
+              alt: "Stickers & die-cut labels",
+              name: "Stickers & die-cut labels",
+              badge: "MERCH",
+              description: "Waterproof vinyl stickers for brand packaging.",
+            },
+            {
+              url: "https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1200&q=80",
+              alt: "Promotional flyers",
+              name: "Promotional flyers",
+              badge: "PROMO",
+              description: "High-volume offset color flyers on recycled gloss.",
+            },
+          ],
+          cta: { label: "Browse full gallery", href: "/contact" },
+        },
+      }),
   },
   {
     key: "logos",

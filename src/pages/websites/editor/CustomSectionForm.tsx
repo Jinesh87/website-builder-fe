@@ -1,6 +1,7 @@
+import { RichTextField } from "./RichTextField.tsx";
 import type { ReactNode } from "react";
 import type { CustomBlock, CustomData } from "../../../site-kit/index.ts";
-import { FormGroup, ImageField, ItemList, LinkField, SelectField, TextAreaField, TextField } from "./fields.tsx";
+import { FormGroup, ImageField, ItemList, LinkField, SelectField, TextField } from "./fields.tsx";
 import { blockImageSize } from "./media-dimensions.ts";
 
 type Path = number[];
@@ -38,7 +39,7 @@ function BlockFields({ block, onChange }: { block: CustomBlock; onChange: (block
   switch (block.type) {
     case "heading":
       return (
-        <TextField
+        <RichTextField
           label={`Heading (H${block.level ?? 2})`}
           value={block.text}
           onChange={(text) => onChange({ ...block, text })}
@@ -48,7 +49,7 @@ function BlockFields({ block, onChange }: { block: CustomBlock; onChange: (block
       );
     case "text":
       return (
-        <TextAreaField
+        <RichTextField multiline
           label="Text"
           value={block.text}
           onChange={(text) => onChange({ ...block, text })}
@@ -58,7 +59,7 @@ function BlockFields({ block, onChange }: { block: CustomBlock; onChange: (block
       );
     case "badge":
       return (
-        <TextField label="Badge" value={block.text} onChange={(text) => onChange({ ...block, text })} maxLength={60} required />
+        <RichTextField label="Badge" value={block.text} onChange={(text) => onChange({ ...block, text })} maxLength={60} required />
       );
     case "button":
       return (

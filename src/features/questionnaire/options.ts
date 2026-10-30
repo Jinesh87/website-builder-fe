@@ -28,6 +28,10 @@ export const WEBSITE_PAGES = [
 ] as const;
 export type WebsitePage = (typeof WEBSITE_PAGES)[number];
 
+/** Home included; matches the AI builder's page limit. */
+export const MAX_QUESTIONNAIRE_PAGES = 8;
+export const MAX_QUESTIONNAIRE_FILES = 12;
+
 export const LOOK_OPTIONS = ["Light", "Dark", "Colourful"] as const;
 export type LookOption = (typeof LOOK_OPTIONS)[number];
 

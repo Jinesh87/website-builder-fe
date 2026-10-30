@@ -110,7 +110,7 @@ export async function buildStaticSite(site: ExportSite, onProgress: ExportProgre
   const taken = new Set<string>();
   const fileBySlug = new Map(site.pages.map((page) => [page.slug.replace(/\/+$/, "") || "/", fileNameFor(page.slug, taken)]));
 
-  const fontLinks = googleFontLinks(usedFonts(site.theme, site.pages));
+  const fontLinks = googleFontLinks(usedFonts(site.theme, site.pages, [site.header, site.footer]));
   const files: ExportFile[] = [];
   const pageList: { file: string; name: string }[] = [];
 

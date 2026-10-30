@@ -241,7 +241,7 @@ export async function buildReactProject(site: ExportSite, onProgress: ExportProg
     .sort()
     .map((path) => ({ path, data: allSources.get(path)! }));
 
-  const fonts = fontsourcePackages(usedFonts(site.theme, site.pages));
+  const fonts = fontsourcePackages(usedFonts(site.theme, site.pages, [site.header, site.footer]));
   const { name, theme, header, footer, pages } = site;
   const content = { name, theme, header, footer, pages };
 

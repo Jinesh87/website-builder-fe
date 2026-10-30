@@ -1,3 +1,4 @@
+import { parseRichText } from "../rich-text.tsx";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { safeHref } from "../links.ts";
@@ -863,7 +864,7 @@ function ProfilePanel({
         <input className="wb-acct-input" name="phone" value={phone} onChange={(event) => setPhone(event.target.value)} autoComplete="tel" />
       </label>
       <p className={`wb-acct-message${message ? (message.ok ? " is-ok" : " is-error") : ""}`} role="status" data-wb-account-message hidden={!message}>
-        {message?.text ?? ""}
+        {parseRichText(message?.text ?? "")}
       </p>
       <div className="wb-acct-actions">
         <button type="submit" className="wb-acct-button" disabled={busy}>
@@ -920,7 +921,7 @@ function PasswordPanel({ websiteId, interactive }: { websiteId?: string; interac
         </label>
       </div>
       <p className={`wb-acct-message${message ? (message.ok ? " is-ok" : " is-error") : ""}`} role="status" data-wb-account-message hidden={!message}>
-        {message?.text ?? ""}
+        {parseRichText(message?.text ?? "")}
       </p>
       <div className="wb-acct-actions">
         <button type="submit" className="wb-acct-button" disabled={busy}>
@@ -1136,8 +1137,8 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
 
   const titles = (heading || subheading) && (
     <div className="wb-acct-heading">
-      {heading && <h2 className="wb-acct-title">{heading}</h2>}
-      {subheading && <p className="wb-acct-subtitle">{subheading}</p>}
+      {heading && <h2 className="wb-acct-title">{parseRichText(heading)}</h2>}
+      {subheading && <p className="wb-acct-subtitle">{parseRichText(subheading)}</p>}
     </div>
   );
 

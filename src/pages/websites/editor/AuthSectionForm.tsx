@@ -1,3 +1,4 @@
+import { RichTextField } from "./RichTextField.tsx";
 import type {
   AuthAnimation,
   AuthColors,
@@ -206,9 +207,9 @@ function PanelEditor({ panel, onChange }: { panel: AuthPanel; onChange: (panel: 
   const testimonial = panel.testimonial;
   return (
     <>
-      <TextField label="Eyebrow" value={panel.eyebrow} onChange={(eyebrow) => onChange({ ...panel, eyebrow })} maxLength={80} />
-      <TextField label="Heading" value={panel.heading} onChange={(heading) => onChange({ ...panel, heading })} maxLength={160} />
-      <TextAreaField label="Text" value={panel.text} onChange={(text) => onChange({ ...panel, text })} maxLength={400} rows={2} />
+      <RichTextField label="Eyebrow" value={panel.eyebrow} onChange={(eyebrow) => onChange({ ...panel, eyebrow })} maxLength={80} />
+      <RichTextField label="Heading" value={panel.heading} onChange={(heading) => onChange({ ...panel, heading })} maxLength={160} />
+      <RichTextField multiline label="Text" value={panel.text} onChange={(text) => onChange({ ...panel, text })} maxLength={400} rows={2} />
       <TextField
         label="Heading while registering"
         value={panel.registerHeading}
@@ -265,7 +266,7 @@ function PanelEditor({ panel, onChange }: { panel: AuthPanel; onChange: (panel: 
       />
       {testimonial && (
         <>
-          <TextAreaField
+          <RichTextField multiline
             label="Quote"
             value={testimonial.quote}
             onChange={(quote) => onChange({ ...panel, testimonial: { ...testimonial, quote } })}
