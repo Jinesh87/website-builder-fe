@@ -19,6 +19,8 @@ import FormAlert from "../ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../ui/SelectInput.tsx";
 import TextAreaInput from "../ui/TextAreaInput.tsx";
 
+export type BriefMedia = Pick<MediaFile, "id" | "url" | "fileName" | "altText">;
+
 export type AiBrief = {
   prompt: string;
   /** Extra pages after Home, in nav order. */
@@ -26,8 +28,8 @@ export type AiBrief = {
   tone: GenerationTone | "";
   /** Empty = let the AI pick the colours. */
   themeId: string;
-  images: MediaFile[];
-  logo: MediaFile | null;
+  images: BriefMedia[];
+  logo: BriefMedia | null;
 };
 
 export type AiBriefErrors = Partial<Record<"prompt" | "pages", string>>;
