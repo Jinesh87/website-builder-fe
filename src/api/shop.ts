@@ -43,6 +43,7 @@ export type ShopOptionSet = {
   pricePaise: number;
   options: ShopOption[];
   overrides?: { key: string; pricePaise: number }[];
+  skus?: { key: string; sku: string }[];
   images?: { key: string; images: ShopImage[] }[];
 };
 
@@ -60,6 +61,7 @@ export type ShopProductInput = {
     pricePaise: number;
     options: ShopOption[];
     overrides?: { key: string; pricePaise: number }[];
+    skus?: { key: string; sku: string }[];
     images?: { key: string; images: { mediaId: string; alt?: string }[] }[];
   }[];
   images?: { mediaId: string; alt?: string }[];
@@ -80,6 +82,51 @@ export type ShopPaymentInput = {
   razorpayKeyId: string;
   razorpayKeySecret?: string;
   razorpayWebhookSecret?: string;
+};
+
+export type ShopOrderEmailStatus = "paid" | "processing" | "shipped" | "delivered" | "failed" | "cancelled";
+
+export type ShopOrderEmailLayout = "classic" | "bold" | "minimal" | "banner" | "postcard";
+
+export type ShopOrderEmailLayoutOption = {
+  id: ShopOrderEmailLayout;
+  label: string;
+  description: string;
+  defaultAccent: string;
+};
+
+export type ShopOrderEmailDesign = {
+  layout: ShopOrderEmailLayout;
+  accentColor: string;
+  showLogo: boolean;
+  logoMediaId: string | null;
+  logoUrl: string | null;
+  websiteLogoUrl: string | null;
+};
+
+export type ShopOrderEmailDesignInput = {
+  layout: ShopOrderEmailLayout;
+  accentColor: string;
+  showLogo: boolean;
+  logoMediaId?: string | null;
+};
+
+export type ShopOrderEmailTemplate = {
+  status: ShopOrderEmailStatus;
+  statusLabel: string;
+  enabled: boolean;
+  subject: string;
+  heading: string;
+  message: string;
+  isDefault: boolean;
+  updatedAt: string | null;
+};
+
+export type ShopOrderEmailTemplateInput = {
+  enabled: boolean;
+  subject: string;
+  heading: string;
+  message: string;
 };
 
 export type InventoryItem = {
@@ -310,4 +357,29 @@ export const shopApi = {
       method: "PATCH",
       body: { status },
     }).then((data) => data.order),
+
+  orderEmailTemplates: (websiteId: string) =>
+    request<{
+      templates: ShopOrderEmailTemplate[];
+      design: ShopOrderEmailDesign;
+      layouts: ShopOrderEmailLayoutOption[];
+      placeholders: string[];
+    }>(`${base(websiteId)}/order-emails`),
+
+  updateOrderEmailDesign: (websiteId: string, input: ShopOrderEmailDesignInput) =>
+    request<{ design: ShopOrderEmailDesign }>(`${base(websiteId)}/order-emails/design`, {
+      method: "PUT",
+      body: input,
+    }).then((data) => data.design),
+
+  updateOrderEmailTemplate: (websiteId: string, status: ShopOrderEmailStatus, input: ShopOrderEmailTemplateInput) =>
+    request<{ template: ShopOrderEmailTemplate }>(`${base(websiteId)}/order-emails/${status}`, {
+      method: "PUT",
+      body: input,
+    }).then((data) => data.template),
+
+  resetOrderEmailTemplate: (websiteId: string, status: ShopOrderEmailStatus) =>
+    request<{ template: ShopOrderEmailTemplate }>(`${base(websiteId)}/order-emails/${status}/reset`, {
+      method: "POST",
+    }).then((data) => data.template),
 };

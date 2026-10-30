@@ -8,6 +8,7 @@ import { formatPaise } from "../../api/wallet.ts";
 import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
 import ShopCustomersPanel from "./ShopCustomersPanel.tsx";
 import { ShopInventoryLogPanel, ShopInventoryPanel } from "./ShopInventoryPanel.tsx";
+import ShopOrderEmailsPanel from "./ShopOrderEmailsPanel.tsx";
 import ShopOrdersPanel from "./ShopOrdersPanel.tsx";
 import ShopRazorpayPanel from "./ShopRazorpayPanel.tsx";
 import CommonModal from "../ui/CommonModal.tsx";
@@ -23,6 +24,8 @@ type SetDraft = {
   options: OptionDraft[];
   /** Combination key → rupee price, only when it differs from the set price. */
   overrides: Record<string, string>;
+  /** Combination key → SKU. */
+  skus: Record<string, string>;
   /** Combination key → photos for that variant. */
   images: Record<string, ShopImage[]>;
   showPrices: boolean;
@@ -42,7 +45,7 @@ function blankOption(): OptionDraft {
 }
 
 function blankSet(): SetDraft {
-  return { key: crypto.randomUUID(), price: "", options: [blankOption()], overrides: {}, images: {}, showPrices: false };
+  return { key: crypto.randomUUID(), price: "", options: [blankOption()], overrides: {}, skus: {}, images: {}, showPrices: false };
 }
 
 function blankProduct(categoryId = ""): ProductDraft {
@@ -146,6 +149,7 @@ function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: st
     const combos = options.length === 0 ? [[]] : combinations(options);
     if (combos.length === 0) return { error: "Add option values, or remove the empty option" };
     const overrides = [];
+    const skus = [];
     const imageGroups = [];
     for (const values of combos) {
       const key = variantKey(values);
@@ -157,6 +161,11 @@ function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: st
         const customPaise = rupeesToPaise(custom);
         if (customPaise === null) return { error: `Enter a valid price for ${label}` };
         if (customPaise !== pricePaise) overrides.push({ key, pricePaise: customPaise });
+      }
+      const sku = (set.skus[key] ?? "").trim();
+      if (sku) {
+        if (sku.length > 64) return { error: `SKU for ${label} must be 64 characters or less` };
+        skus.push({ key, sku });
       }
       const photos = set.images[key] ?? [];
       if (photos.length > 0) {
@@ -179,6 +188,7 @@ function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: st
         };
       }),
       ...(overrides.length > 0 ? { overrides } : {}),
+      ...(skus.length > 0 ? { skus } : {}),
       ...(imageGroups.length > 0 ? { images: imageGroups } : {}),
     });
   }
@@ -195,10 +205,10 @@ function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: st
 
 function setsFromProduct(product: ShopProduct): SetDraft[] {
   if ((product.optionSets ?? []).length > 0) {
-    return product.optionSets.map((set) => ({
-      key: crypto.randomUUID(),
-      price: paiseToRupees(set.pricePaise),
-      options:
+    const skuByName = new Map(product.variants.map((variant) => [variant.name.toLowerCase(), variant.sku ?? ""]));
+    return product.optionSets.map((set) => {
+      const skusFromSet = Object.fromEntries((set.skus ?? []).map((row) => [row.key, row.sku]));
+      const options =
         set.options.length > 0
           ? set.options.map((option) => ({
               key: crypto.randomUUID(),
@@ -212,16 +222,47 @@ function setsFromProduct(product: ShopProduct): SetDraft[] {
                 }),
               ),
             }))
-          : [],
-      overrides: Object.fromEntries((set.overrides ?? []).map((override) => [override.key, paiseToRupees(override.pricePaise)])),
-      images: Object.fromEntries((set.images ?? []).map((group) => [group.key, group.images])),
-      showPrices: (set.overrides ?? []).length > 0,
-    }));
+          : [];
+      const filled = options.filter((option) => option.values.length > 0);
+      const combos =
+        filled.length === 0
+          ? [[]]
+          : filled.reduce<string[][]>(
+              (sets, option) => sets.flatMap((prefix) => option.values.map((value) => [...prefix, value])),
+              [[]],
+            );
+      const skus: Record<string, string> = { ...skusFromSet };
+      for (const values of combos) {
+        const key = variantKey(values);
+        if (skus[key]) continue;
+        const label = values.length > 0 ? values.join(" / ") : "Standard";
+        const fromVariant = skuByName.get(label.toLowerCase());
+        if (fromVariant) skus[key] = fromVariant;
+      }
+      return {
+        key: crypto.randomUUID(),
+        price: paiseToRupees(set.pricePaise),
+        options,
+        overrides: Object.fromEntries((set.overrides ?? []).map((override) => [override.key, paiseToRupees(override.pricePaise)])),
+        skus,
+        images: Object.fromEntries((set.images ?? []).map((group) => [group.key, group.images])),
+        showPrices: (set.overrides ?? []).length > 0,
+      };
+    });
   }
   return [blankSet()];
 }
 
-type ShopSection = "category" | "settings" | "products" | "customers" | "orders" | "inventory" | "inventory-log" | "razorpay";
+type ShopSection =
+  | "category"
+  | "settings"
+  | "products"
+  | "customers"
+  | "orders"
+  | "order-emails"
+  | "inventory"
+  | "inventory-log"
+  | "razorpay";
 
 const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "category", label: "Category" },
@@ -229,6 +270,7 @@ const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "products", label: "Products" },
   { id: "customers", label: "Customers" },
   { id: "orders", label: "Orders" },
+  { id: "order-emails", label: "Order emails" },
   { id: "inventory", label: "Inventory" },
   { id: "inventory-log", label: "Inventory log" },
   { id: "razorpay", label: "Razorpay" },
@@ -319,6 +361,7 @@ export default function ShopPanel({
         section === "products" ||
         section === "customers" ||
         section === "orders" ||
+        section === "order-emails" ||
         section === "inventory" ||
         section === "inventory-log") &&
         !website.shopEnabled && (
@@ -332,6 +375,9 @@ export default function ShopPanel({
 
       {section === "customers" && website.shopEnabled && <ShopCustomersPanel websiteId={website.id} />}
       {section === "orders" && website.shopEnabled && <ShopOrdersPanel websiteId={website.id} />}
+      {section === "order-emails" && website.shopEnabled && (
+        <ShopOrderEmailsPanel websiteId={website.id} clientId={website.clientId} />
+      )}
       {section === "inventory" && website.shopEnabled && <ShopInventoryPanel websiteId={website.id} />}
       {section === "inventory-log" && website.shopEnabled && <ShopInventoryLogPanel websiteId={website.id} />}
 
@@ -752,6 +798,7 @@ function ProductVariants({ product, onBack, onEdit }: { product: ShopProduct; on
                 <p className="mt-1 text-sm text-ink">
                   {formatPaise(variant.pricePaise)}
                   <span className="text-ink-muted"> · {variant.quantity} on hand</span>
+                  {variant.sku ? <span className="text-ink-muted"> · SKU {variant.sku}</span> : null}
                 </p>
               </div>
             </li>
@@ -964,8 +1011,9 @@ function OptionSetCard({
   onChange: (patch: Partial<SetDraft> | ((current: SetDraft) => Partial<SetDraft>)) => void;
   onRemove: () => void;
 }) {
-  const combos = set.options.some((option) => option.values.length > 0) ? combinations(set.options) : [];
-  const preview = combos.slice(0, 6).map((values) => values.join(" / "));
+  const hasValues = set.options.some((option) => option.values.length > 0);
+  const combos = hasValues ? combinations(set.options) : [[]];
+  const preview = hasValues ? combos.slice(0, 6).map((values) => values.join(" / ")) : [];
   const counts = set.options.filter((option) => option.values.length > 0).map((option) => option.values.length);
 
   function updateOption(key: string, patch: Partial<OptionDraft>) {
@@ -1057,7 +1105,7 @@ function OptionSetCard({
         </Button>
       </div>
 
-      {combos.length > 0 && (
+      {hasValues && (
         <p className="mt-3 text-xs text-ink-muted">
           {counts.length > 1 ? `${counts.join(" × ")} = ` : ""}
           {combos.length} {combos.length === 1 ? "variant" : "variants"}
@@ -1078,24 +1126,34 @@ function OptionSetCard({
         </div>
       )}
 
-      {combos.length > 0 && (
-        <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
+      <ul className="mt-3 max-h-80 space-y-2 overflow-y-auto">
           {combos.map((values) => {
             const key = variantKey(values);
             const label = values.join(" / ");
             return (
-              <li key={key} className="rounded-lg border border-line bg-surface p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="min-w-0 truncate text-sm font-medium text-ink">{label}</span>
-                  {set.showPrices && (
+              <li key={key || "standard"} className="rounded-lg border border-line bg-surface p-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="min-w-0 truncate text-sm font-medium text-ink">{label || "Standard"}</span>
+                  <div className="flex flex-wrap items-center gap-2">
                     <input
-                      value={set.overrides[key] ?? set.price}
-                      onChange={(event) => onChange({ overrides: { ...set.overrides, [key]: event.target.value } })}
-                      aria-label={`Price for ${label}`}
-                      className="h-8 w-28 rounded-lg border border-ed-border bg-surface px-2 text-sm text-ink"
+                      value={set.skus[key] ?? ""}
+                      onChange={(event) => onChange({ skus: { ...set.skus, [key]: event.target.value } })}
+                      placeholder="SKU"
+                      aria-label={`SKU for ${label || "Standard"}`}
+                      maxLength={64}
+                      className="h-8 w-36 rounded-lg border border-ed-border bg-surface px-2 text-sm text-ink"
                     />
-                  )}
+                    {set.showPrices && (
+                      <input
+                        value={set.overrides[key] ?? set.price}
+                        onChange={(event) => onChange({ overrides: { ...set.overrides, [key]: event.target.value } })}
+                        aria-label={`Price for ${label || "Standard"}`}
+                        className="h-8 w-28 rounded-lg border border-ed-border bg-surface px-2 text-sm text-ink"
+                      />
+                    )}
+                  </div>
                 </div>
+                {hasValues && (
                 <div className="mt-2">
                   {key in set.images ? (
                     <>
@@ -1134,11 +1192,11 @@ function OptionSetCard({
                     </button>
                   )}
                 </div>
+                )}
               </li>
             );
           })}
         </ul>
-      )}
     </section>
   );
 }

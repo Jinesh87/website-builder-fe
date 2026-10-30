@@ -3230,7 +3230,7 @@ function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
       <FormGroup title="After payment">
         <SelectField
           label="Success popup style"
-          value="celebration"
+          value={data.successPopupVariant ?? "celebration"}
           onChange={(successPopupVariant) =>
             set({
               successPopupVariant: successPopupVariant as AccountData["successPopupVariant"],
@@ -3239,7 +3239,8 @@ function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
           }
           options={[
             { value: "celebration", label: "Celebration" },
-            // Hidden for now — re-enable tomorrow: simple, receipt
+            { value: "simple", label: "Simple" },
+            { value: "receipt", label: "Receipt" },
           ]}
           hint="Shown right after a successful checkout. Changing this opens the popup preview on the canvas."
         />
@@ -3248,7 +3249,7 @@ function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
         <TextField label="View order button" value={data.successButtonLabel ?? ""} onChange={(successButtonLabel) => set({ successButtonLabel, preview: "success" })} maxLength={40} />
         <SelectField
           label="Order detail style"
-          value="timeline"
+          value={data.orderDetailVariant ?? "timeline"}
           onChange={(orderDetailVariant) =>
             set({
               orderDetailVariant: orderDetailVariant as AccountData["orderDetailVariant"],
@@ -3257,7 +3258,8 @@ function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
           }
           options={[
             { value: "timeline", label: "Vertical timeline" },
-            // Hidden for now — re-enable tomorrow: steps, compact
+            { value: "steps", label: "Step strip" },
+            { value: "compact", label: "Compact list" },
           ]}
           hint="Tracking layout when a customer opens an order. Changing this opens the order detail preview."
         />
