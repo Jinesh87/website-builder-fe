@@ -227,48 +227,103 @@
     return fields;
   }
 
-  async function submitContact(form, url) {
+  const SEND_FAILED = "Your message couldn't be sent. Please try again.";
+
+  function contactPayload(form) {
     const data = new FormData(form);
     const services = data.getAll("service").map(String).filter(Boolean);
+    const budget = String(data.get("budget") || "").trim();
     const message = String(data.get("message") || "").trim();
     const honeypot = String(data.get("_wb_hp") || "");
     const sectionId = form.getAttribute("data-wb-section");
-    const payload = sectionId
-      ? { sectionId, fields: customFields(form, data), _wb_hp: honeypot }
-      : {
-          name: String(data.get("name") || "").trim(),
-          email: String(data.get("email") || "").trim(),
-          phone: String(data.get("phone") || "").trim(),
-          message: services.length ? `Interested in: ${services.join(", ")}\n\n${message}` : message,
-          _wb_hp: honeypot,
-        };
+    if (sectionId) return { sectionId, fields: customFields(form, data), _wb_hp: honeypot };
+    const details = [services.length ? `Interested in: ${services.join(", ")}` : "", budget ? `Budget: ${budget}` : ""]
+      .filter(Boolean)
+      .join("\n");
+    return {
+      name: String(data.get("name") || "").trim(),
+      email: String(data.get("email") || "").trim(),
+      phone: String(data.get("phone") || "").trim(),
+      message: details ? `${details}\n\n${message}` : message,
+      _wb_hp: honeypot,
+    };
+  }
+
+  async function postContact(url, payload) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const reason = typeof result.error === "string" ? result.error : result.error && result.error.message;
+      throw new Error(reason || SEND_FAILED);
+    }
+    return result;
+  }
+
+  async function submitContact(form, url) {
     const button = form.querySelector('[type="submit"]');
     if (button) button.disabled = true;
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const reason = typeof result.error === "string" ? result.error : result.error && result.error.message;
-        throw new Error(reason || "Your message couldn't be sent. Please try again.");
-      }
+      const result = await postContact(url, contactPayload(form));
       form.reset();
       formStatus(form, result.message || "Thank you! Your message has been received.", true);
     } catch (error) {
-      formStatus(form, error instanceof Error ? error.message : "Your message couldn't be sent. Please try again.", false);
+      formStatus(form, error instanceof Error ? error.message : SEND_FAILED, false);
     } finally {
       if (button) button.disabled = false;
     }
   }
+
+  /** The clapper slate swaps to its "scene recorded" card instead of a status line. */
+  async function submitClapper(form, url) {
+    const card = form.closest(".wb-clapper-card");
+    const success = card && card.querySelector("[data-wb-clapper-success]");
+    const status = form.querySelector("[data-wb-clapper-status]");
+    const button = form.querySelector('[type="submit"]');
+    const name = String(new FormData(form).get("name") || "").trim();
+    if (status) status.hidden = true;
+    if (button) button.disabled = true;
+    try {
+      await postContact(url, contactPayload(form));
+      form.reset();
+      if (success) {
+        const nameSlot = success.querySelector("[data-wb-clapper-name]");
+        if (nameSlot) nameSlot.textContent = name || "there";
+        form.hidden = true;
+        success.hidden = false;
+      }
+    } catch (error) {
+      if (status) {
+        status.textContent = error instanceof Error ? error.message : SEND_FAILED;
+        status.hidden = false;
+      }
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    const reset = event.target instanceof Element && event.target.closest("[data-wb-clapper-reset]");
+    const card = reset && reset.closest(".wb-clapper-card");
+    if (!card) return;
+    const form = card.querySelector("[data-wb-clapper-contact]");
+    const success = card.querySelector("[data-wb-clapper-success]");
+    if (form) form.hidden = false;
+    if (success) success.hidden = true;
+  });
 
   document.addEventListener("submit", (event) => {
     const form = event.target;
     if (!(form instanceof HTMLFormElement) || form.hasAttribute("action")) return;
     event.preventDefault();
     const contactUrl = document.body.getAttribute("data-wb-contact");
+    if (contactUrl && form.hasAttribute("data-wb-clapper-contact")) {
+      void submitClapper(form, contactUrl);
+      return;
+    }
     if (contactUrl && form.classList.contains("wb-contact-form")) {
       void submitContact(form, contactUrl);
       return;

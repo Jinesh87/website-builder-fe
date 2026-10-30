@@ -1,8 +1,32 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { EmailLink, PhoneLink, SectionShell } from "../primitives.tsx";
 import { useStaticRender } from "../render-mode.tsx";
+import { useContactEndpoint } from "../contact-endpoint.tsx";
+import { fieldMaxLength } from "../contact-builder.ts";
 import type { ContactData, SectionOf } from "../types.ts";
 import { safeHref } from "../links.ts";
+
+/** Hidden spam trap; the server drops submissions that fill it in. */
+const HONEYPOT_FIELD = "_wb_hp";
+/** A leading "Choose a range" budget option is a placeholder, not an answer. */
+const BUDGET_PLACEHOLDER = /^choose\b/i;
+const SEND_FAILED = "Your message couldn't be sent. Please try again.";
+
+function errorFromBody(body: unknown): string | undefined {
+  if (!body || typeof body !== "object") return undefined;
+  const error = (body as { error?: unknown }).error;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") return error.message;
+  return undefined;
+}
+
+/** Matches the message static-runtime.js builds on the published site. */
+function briefMessage(projectType: string, budget: string, story: string): string {
+  const details = [projectType ? `Interested in: ${projectType}` : "", budget ? `Budget: ${budget}` : ""]
+    .filter(Boolean)
+    .join("\n");
+  return details ? `${details}\n\n${story}` : story;
+}
 
 export default function ClapperContactSection({
   section,
@@ -48,13 +72,11 @@ export default function ClapperContactSection({
   }, [isStatic, timecodeMode, initialTimecode]);
 
   // Form state
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [budget, setBudget] = useState("Choose a range");
-  const [projectType, setProjectType] = useState<string>("");
-  const [story, setStory] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const endpoint = useContactEndpoint();
+  const fieldId = `clapper-${section.id}`;
+  const [submittedName, setSubmittedName] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const headingWords = (data.heading || "ROLL CAMERA").trim().split(/\s+/);
   const solidWord = data.solidHeading || headingWords[0] || "ROLL";
@@ -86,9 +108,47 @@ export default function ClapperContactSection({
       ? data.budgetOptions
       : defaultBudgetOptions;
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const url =
+      endpoint || (typeof document !== "undefined" ? document.body.getAttribute("data-wb-contact") : null);
+    if (!url) {
+      setError("Messages are sent from the published site.");
+      return;
+    }
+
+    const formData = new FormData(form);
+    const name = String(formData.get("name") || "").trim();
+    const payload = {
+      name,
+      email: String(formData.get("email") || "").trim(),
+      phone: String(formData.get("phone") || "").trim(),
+      message: briefMessage(
+        String(formData.get("service") || "").trim(),
+        String(formData.get("budget") || "").trim(),
+        String(formData.get("message") || "").trim(),
+      ),
+      [HONEYPOT_FIELD]: String(formData.get(HONEYPOT_FIELD) || ""),
+    };
+
+    setPending(true);
+    setError(null);
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result: unknown = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(errorFromBody(result) || SEND_FAILED);
+      form.reset();
+      setSubmittedName(name);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : SEND_FAILED);
+    } finally {
+      setPending(false);
+    }
   };
 
   return (
@@ -133,144 +193,159 @@ export default function ClapperContactSection({
             {/* Top black & white chevron zebra stripes */}
             <div className="wb-clapper-stripes" aria-hidden="true" />
 
-            {submitted ? (
-              <div className="wb-clapper-success">
-                <span className="wb-clapper-success-icon">🎬</span>
-                <h3 className="wb-clapper-success-title">SCENE RECORDED!</h3>
-                <p className="wb-clapper-success-desc">
-                  Thanks {name || "there"}! We've received your brief and will review your project
-                  details. You'll hear back within 1 business day.
-                </p>
-                <button
-                  type="button"
-                  className="wb-clapper-reset-btn"
-                  onClick={() => {
-                    setSubmitted(false);
-                    setName("");
-                    setEmail("");
-                    setPhone("");
-                    setStory("");
-                  }}
-                >
-                  Send another brief
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="wb-clapper-form">
-                {/* Row 1: Name and Email */}
-                <div className="wb-clapper-row wb-clapper-cols-2">
-                  <div className="wb-clapper-field wb-clapper-field-border-r">
-                    <label htmlFor="clapper-name" className="wb-clapper-label">
-                      NAME *
-                    </label>
-                    <input
-                      id="clapper-name"
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="wb-clapper-input"
-                    />
-                  </div>
-                  <div className="wb-clapper-field">
-                    <label htmlFor="clapper-email" className="wb-clapper-label">
-                      EMAIL *
-                    </label>
-                    <input
-                      id="clapper-email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="wb-clapper-input"
-                    />
-                  </div>
-                </div>
+            {/* Published pages are static: both views are in the markup and static-runtime.js swaps them. */}
+            <div className="wb-clapper-success" data-wb-clapper-success hidden={submittedName === null}>
+              <span className="wb-clapper-success-icon">🎬</span>
+              <h3 className="wb-clapper-success-title">SCENE RECORDED!</h3>
+              <p className="wb-clapper-success-desc">
+                Thanks <span data-wb-clapper-name>{submittedName || "there"}</span>! We've received your
+                brief and will review your project details. You'll hear back within 1 business day.
+              </p>
+              <button
+                type="button"
+                className="wb-clapper-reset-btn"
+                data-wb-clapper-reset
+                onClick={() => setSubmittedName(null)}
+              >
+                Send another brief
+              </button>
+            </div>
 
-                {/* Row 2: Phone and Budget */}
-                <div className="wb-clapper-row wb-clapper-cols-2">
-                  <div className="wb-clapper-field wb-clapper-field-border-r">
-                    <label htmlFor="clapper-phone" className="wb-clapper-label">
-                      PHONE
-                    </label>
-                    <input
-                      id="clapper-phone"
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="wb-clapper-input"
-                    />
-                  </div>
-                  <div className="wb-clapper-field">
-                    <label htmlFor="clapper-budget" className="wb-clapper-label">
-                      BUDGET
-                    </label>
-                    <div className="wb-clapper-select-wrap">
-                      <select
-                        id="clapper-budget"
-                        value={budget}
-                        onChange={(e) => setBudget(e.target.value)}
-                        className="wb-clapper-select"
-                      >
-                        {budgetOptions.map((opt, idx) => (
-                          <option key={idx} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="wb-clapper-select-arrow" aria-hidden="true">
-                        ⌄
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 3: Project Type Selection Pills */}
-                <div className="wb-clapper-row wb-clapper-pill-row">
-                  <span className="wb-clapper-label">PROJECT TYPE *</span>
-                  <div className="wb-clapper-pills" role="radiogroup" aria-label="Project Type">
-                    {serviceOptions.map((opt) => (
-                      <button
-                        key={opt}
-                        type="button"
-                        className={`wb-clapper-pill-btn ${projectType === opt ? "active" : ""}`}
-                        onClick={() => setProjectType((prev) => (prev === opt ? "" : opt))}
-                        role="radio"
-                        aria-checked={projectType === opt}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Row 4: Your Story Textarea */}
-                <div className="wb-clapper-row wb-clapper-textarea-row">
-                  <label htmlFor="clapper-story" className="wb-clapper-label">
-                    YOUR STORY *
+            <form
+              className="wb-clapper-form"
+              data-wb-clapper-contact
+              hidden={submittedName !== null}
+              onSubmit={(event) => void handleSubmit(event)}
+            >
+              {/* Row 1: Name and Email */}
+              <div className="wb-clapper-row wb-clapper-cols-2">
+                <div className="wb-clapper-field wb-clapper-field-border-r">
+                  <label htmlFor={`${fieldId}-name`} className="wb-clapper-label">
+                    NAME *
                   </label>
-                  <textarea
-                    id="clapper-story"
+                  <input
+                    id={`${fieldId}-name`}
+                    type="text"
+                    name="name"
+                    autoComplete="name"
                     required
-                    rows={4}
-                    value={story}
-                    onChange={(e) => setStory(e.target.value)}
-                    placeholder="Idea, date, location and where the video will be shown"
-                    className="wb-clapper-textarea"
+                    maxLength={fieldMaxLength("text")}
+                    className="wb-clapper-input"
                   />
                 </div>
-
-                {/* Row 5: Action Bottom Bar */}
-                <div className="wb-clapper-action-bar">
-                  <span className="wb-clapper-scene-tag">
-                    {data.sceneTakeLabel || "SCENE 01 · TAKE 01"}
-                  </span>
-                  <button type="submit" className="wb-clapper-submit-btn">
-                    {data.submitLabel || "SEND IT ●"}
-                  </button>
+                <div className="wb-clapper-field">
+                  <label htmlFor={`${fieldId}-email`} className="wb-clapper-label">
+                    EMAIL *
+                  </label>
+                  <input
+                    id={`${fieldId}-email`}
+                    type="email"
+                    name="email"
+                    autoComplete="email"
+                    required
+                    maxLength={fieldMaxLength("email")}
+                    className="wb-clapper-input"
+                  />
                 </div>
-              </form>
-            )}
+              </div>
+
+              {/* Row 2: Phone and Budget */}
+              <div className="wb-clapper-row wb-clapper-cols-2">
+                <div className="wb-clapper-field wb-clapper-field-border-r">
+                  <label htmlFor={`${fieldId}-phone`} className="wb-clapper-label">
+                    PHONE
+                  </label>
+                  <input
+                    id={`${fieldId}-phone`}
+                    type="tel"
+                    name="phone"
+                    autoComplete="tel"
+                    maxLength={fieldMaxLength("tel")}
+                    className="wb-clapper-input"
+                  />
+                </div>
+                <div className="wb-clapper-field">
+                  <label htmlFor={`${fieldId}-budget`} className="wb-clapper-label">
+                    BUDGET
+                  </label>
+                  <div className="wb-clapper-select-wrap">
+                    <select
+                      id={`${fieldId}-budget`}
+                      name="budget"
+                      defaultValue=""
+                      className="wb-clapper-select"
+                    >
+                      {budgetOptions.map((opt, idx) => (
+                        <option key={idx} value={idx === 0 && BUDGET_PLACEHOLDER.test(opt) ? "" : opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="wb-clapper-select-arrow" aria-hidden="true">
+                      ⌄
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: Project Type Selection Pills */}
+              <div className="wb-clapper-row wb-clapper-pill-row">
+                <span className="wb-clapper-label" id={`${fieldId}-type`}>
+                  PROJECT TYPE *
+                </span>
+                <div className="wb-clapper-pills" role="radiogroup" aria-labelledby={`${fieldId}-type`}>
+                  {serviceOptions.map((opt, idx) => (
+                    <label key={`${opt}-${idx}`} className="wb-clapper-pill-btn">
+                      <input
+                        type="radio"
+                        name="service"
+                        value={opt}
+                        required={idx === 0}
+                        className="wb-clapper-pill-input"
+                      />
+                      {opt}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Row 4: Your Story Textarea */}
+              <div className="wb-clapper-row wb-clapper-textarea-row">
+                <label htmlFor={`${fieldId}-story`} className="wb-clapper-label">
+                  YOUR STORY *
+                </label>
+                <textarea
+                  id={`${fieldId}-story`}
+                  name="message"
+                  required
+                  rows={4}
+                  maxLength={fieldMaxLength("textarea")}
+                  placeholder="Idea, date, location and where the video will be shown"
+                  className="wb-clapper-textarea"
+                />
+              </div>
+
+              <div className="wb-contact-hp" aria-hidden="true">
+                <label>
+                  Leave this field empty
+                  <input type="text" name={HONEYPOT_FIELD} tabIndex={-1} autoComplete="off" defaultValue="" />
+                </label>
+              </div>
+
+              <p className="wb-clapper-status" role="status" data-wb-clapper-status hidden={!error}>
+                {error}
+              </p>
+
+              {/* Row 5: Action Bottom Bar */}
+              <div className="wb-clapper-action-bar">
+                <span className="wb-clapper-scene-tag">
+                  {data.sceneTakeLabel || "SCENE 01 · TAKE 01"}
+                </span>
+                <button type="submit" className="wb-clapper-submit-btn" disabled={pending}>
+                  {pending ? "SENDING…" : data.submitLabel || "SEND IT ●"}
+                </button>
+              </div>
+            </form>
           </div>
 
           {/* RIGHT: Production Details Stack */}
