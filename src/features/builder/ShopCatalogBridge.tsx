@@ -106,7 +106,15 @@ export default function ShopCatalogBridge({
   }, [website.id, website.shopEnabled, website.shopFeatureEnabled]);
 
   const catalog = products
-    ? { websiteId: website.id, authHref: "/login", products, productSlug, selection, live: true as const }
+    ? {
+        websiteId: website.id,
+        authHref: "/login",
+        cancelUntilStatus: website.shopCancelUntilStatus,
+        products,
+        productSlug,
+        selection,
+        live: true as const,
+      }
     : null;
   return <ShopCatalogProvider value={catalog}>{children}</ShopCatalogProvider>;
 }

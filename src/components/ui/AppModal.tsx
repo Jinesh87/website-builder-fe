@@ -223,10 +223,13 @@ export function CommonModal({
             </div>
           )}
 
-          {/* 2. SEPARATED BODY */}
+          {/* 2. SEPARATED BODY
+              Use flex-auto (basis: auto), not flex-1 (basis: 0%). With only max-height on the
+              dialog, flex-1 collapses the body to ~0 so tall forms (e.g. product edit) look empty.
+              -mx-6 counters HeroUI Dialog's p-6 so the scrollport can go edge-to-edge. */}
           {bodyContent && (
             <div
-              className={`-mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4 text-sm leading-relaxed text-ink-body text-left bg-surface ${bodyWrapperBaseClass} ${bodyWrapperClass} ${bodyClassName}`}
+              className={`-mx-6 min-h-0 flex-auto overflow-y-auto overscroll-contain px-6 py-4 text-sm leading-relaxed text-ink-body text-left bg-surface ${bodyWrapperBaseClass} ${bodyWrapperClass} ${bodyClassName}`}
             >
               {bodyContent}
             </div>

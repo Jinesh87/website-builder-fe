@@ -330,6 +330,18 @@ export const SHOP_CSS = `
   margin: 0; font-family: var(--wb-font-body); font-size: 0.75rem !important; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--wb-text);
 }
+.wb-product-policy {
+  display: grid; gap: 4px; margin: 0; padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--wb-text) 12%, transparent);
+  border-radius: 12px; background: color-mix(in srgb, var(--wb-text) 3%, var(--wb-bg));
+}
+.wb-product-details .wb-product-policy,
+.wb-product-band-card .wb-product-policy { margin-top: 4px; }
+.wb-product-policy-label {
+  margin: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--wb-text);
+}
+.wb-product-policy-text { margin: 0; font-size: 0.88rem; line-height: 1.55; color: var(--wb-muted); }
 .wb-product-price { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
 .wb-product-stock {
   display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 0.85rem; font-weight: 600; color: #15803d;

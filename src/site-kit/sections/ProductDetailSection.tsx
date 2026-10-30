@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
 import ShopCartActions from "../ShopCartActions.tsx";
-import { coverImage, formatInr, SHOP_DETAIL_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
+import { coverImage, formatInr, shopCancelPolicyText, SHOP_DETAIL_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
 import { SHOP_CART_SCRIPT } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ProductDetailData, SectionOf, ShopCatalogProduct, ShopCatalogVariant } from "../types.ts";
@@ -111,6 +111,11 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
   const selectionKey = JSON.stringify(catalog?.selection ?? {});
   const showStock = data.showStock !== false;
   const showDescription = data.showDescription !== false;
+  const showCancellationPolicy = data.showCancellationPolicy !== false;
+  const cancelPolicy =
+    showCancellationPolicy
+      ? shopCancelPolicyText(catalog?.cancelUntilStatus ?? (!live ? "paid" : null))
+      : null;
   const selected = product?.variants.find((variant) => variant.id === variantId) ?? product?.variants[0];
   const groups = product ? optionGroups(product.variants) : [];
   const photos = selected && selected.images.length > 0 ? selected.images : (product?.images ?? []);
@@ -249,6 +254,19 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
         </div>
       ) : null;
     const description = hasDescription ? <p className="wb-product-desc">{product.description}</p> : null;
+    const policy = cancelPolicy ? (
+      <aside className="wb-product-policy" aria-label="Cancellation policy">
+        <p className="wb-product-policy-label">Cancellation</p>
+        <p className="wb-product-policy-text">{cancelPolicy}</p>
+      </aside>
+    ) : null;
+    const detailsBody = (
+      <>
+        {description}
+        {policy}
+      </>
+    );
+    const hasDetails = hasDescription || !!cancelPolicy;
 
     let layout;
     if (design === "gallery-focus") {
@@ -260,10 +278,10 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
             {buy}
             {options}
           </aside>
-          {description && (
+          {hasDetails && (
             <section className="wb-product-details">
               <h3 className="wb-product-details-title">Details</h3>
-              {description}
+              {detailsBody}
             </section>
           )}
         </>
@@ -278,10 +296,10 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
           {gallery}
           <div className="wb-product-band">
             {options && <div className="wb-product-band-card">{options}</div>}
-            {description && (
+            {hasDetails && (
               <div className="wb-product-band-card">
                 <h3 className="wb-product-details-title">About this product</h3>
-                {description}
+                {detailsBody}
               </div>
             )}
           </div>
@@ -294,6 +312,7 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
           <div className="wb-product-copy">
             {heading}
             {description}
+            {policy}
             {buy}
             {options}
           </div>
@@ -307,10 +326,10 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
             {heading}
             {buy}
             {options}
-            {description && (
+            {hasDetails && (
               <div className="wb-product-details">
                 <h3 className="wb-product-details-title">Description</h3>
-                {description}
+                {detailsBody}
               </div>
             )}
           </div>
