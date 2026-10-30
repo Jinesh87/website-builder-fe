@@ -1,4 +1,5 @@
 import { useRef, useState, useSyncExternalStore, type ChangeEvent, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { errorMessage, request } from "../../api/http.ts";
 import Icon, { type IconName } from "./Icon.tsx";
 import { prefersReducedMotion, useMarketing } from "./marketing-context.ts";
@@ -124,6 +125,29 @@ export default function ContactPage() {
           <p className="lead">
             Questions about the platform, plans or getting started? Pick a topic or send a message. We reply by email.
           </p>
+          <div style={{ marginTop: "16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px" }}>
+            <Link
+              to="/start"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "linear-gradient(135deg, #2563eb, #4f46e5)",
+                color: "#ffffff",
+                padding: "8px 18px",
+                borderRadius: "9999px",
+                fontWeight: 600,
+                fontSize: "13px",
+                textDecoration: "none",
+                boxShadow: "0 2px 8px rgba(37, 99, 235, 0.3)",
+              }}
+            >
+              Get your website →
+            </Link>
+            <span style={{ fontSize: "13px", color: "var(--muted)" }}>
+              Prefer an AI-built site? Complete our 3-minute questionnaire
+            </span>
+          </div>
         </div>
       </div>
       <section style={{ paddingBottom: "0" }}>

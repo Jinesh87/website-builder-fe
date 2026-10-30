@@ -15,9 +15,14 @@ import { ApiError, errorMessage } from "../../api/http.ts";
 import {
   websitesApi,
   type CreateWebsiteInput,
+  type GenerationTone,
   type ThemeOption,
   type WebsiteTemplate,
 } from "../../api/websites.ts";
+import {
+  adminQuestionnairesApi,
+  type Questionnaire,
+} from "../../features/questionnaire/api.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { validateEmail } from "../../auth/validation.ts";
 import { AiSparklesIcon } from "../../components/icons/AiSparklesIcon.tsx";
@@ -158,6 +163,41 @@ function optional(value: string): string | undefined {
   return value.trim() || undefined;
 }
 
+function styleToTone(style?: string): GenerationTone | "" {
+  switch (style) {
+    case "Modern":
+      return "minimal";
+    case "Corporate":
+    case "Classic":
+      return "professional";
+    case "Bold":
+      return "bold";
+    case "Vintage":
+      return "luxury";
+    case "You choose":
+    default:
+      return "";
+  }
+}
+
+function answersToPrompt(q: Questionnaire): string {
+  const parts: string[] = [];
+  parts.push(`Build a modern website for ${q.businessName}.`);
+  if (q.answers?.businessType) parts.push(`Business type: ${q.answers.businessType}.`);
+  if (q.answers?.look || q.answers?.style || q.answers?.palette) {
+    parts.push(
+      `Design preference: ${q.answers.look || ""} look, ${q.answers.style || ""} style, ${q.answers.palette || ""} color palette.`,
+    );
+  }
+  if (q.answers?.features && q.answers.features.length > 0) {
+    parts.push(`Key features needed: ${q.answers.features.join(", ")}.`);
+  }
+  if (q.notes) {
+    parts.push(`Client notes: ${q.notes}`);
+  }
+  return parts.join(" ");
+}
+
 export default function CreateWebsitePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -167,14 +207,19 @@ export default function CreateWebsitePage() {
 
   const rawRequested = searchParams.get("templateKey") ?? "";
   const requestedThemeParam = searchParams.get("themeId") ?? "";
+  const questionnaireId = searchParams.get("questionnaireId");
   const [requestedTemplateKey] = useState(
     () => getTemplateKey(rawRequested) ?? rawRequested,
   );
   const [step, setStep] = useState<Step>(() =>
-    searchParams.get("templateKey") ? 2 : 1,
+    searchParams.get("templateKey") || questionnaireId ? 2 : 1,
   );
   const [mode, setMode] = useState<BuilderMode>(
-    searchParams.get("builder") === "ai" ? "AI" : "MANUAL",
+    searchParams.get("builder") === "ai" ||
+      searchParams.get("mode") === "ai" ||
+      Boolean(questionnaireId)
+      ? "AI"
+      : "MANUAL",
   );
   const [aiBrief, setAiBrief] = useState<AiBrief>(EMPTY_AI_BRIEF);
   const [aiErrors, setAiErrors] = useState<AiBriefErrors>({});
@@ -246,6 +291,42 @@ export default function CreateWebsitePage() {
       cancelled = true;
     };
   }, [templateOwner, requestedTemplateKey, rawRequested]);
+
+  useEffect(() => {
+    if (!questionnaireId) return;
+    let cancelled = false;
+    adminQuestionnairesApi
+      .get(questionnaireId)
+      .then((detail) => {
+        if (cancelled) return;
+        const q = detail.questionnaire;
+        if (q.clientId && !clientId) {
+          setClientId(q.clientId);
+        }
+        setForm((prev) => ({
+          ...prev,
+          name: prev.name || q.businessName,
+          businessName: prev.businessName || q.businessName,
+          websiteType: prev.websiteType || q.answers?.businessType || "",
+          contactEmail: prev.contactEmail || q.email || "",
+          contactPhone: prev.contactPhone || q.phone || "",
+          description: prev.description || q.notes || "",
+        }));
+        setAiBrief((prev) => ({
+          ...prev,
+          prompt: prev.prompt || answersToPrompt(q),
+          pages:
+            q.answers?.pages && q.answers.pages.length > 0
+              ? q.answers.pages.filter((p) => p.toLowerCase() !== "home")
+              : prev.pages,
+          tone: q.answers?.style ? styleToTone(q.answers.style) : prev.tone,
+        }));
+      })
+      .catch((err: unknown) => !cancelled && setLoadError(errorMessage(err)));
+    return () => {
+      cancelled = true;
+    };
+  }, [questionnaireId, clientId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -406,6 +487,16 @@ export default function CreateWebsitePage() {
     setSubmitError(null);
     try {
       const website = await create();
+      if (questionnaireId) {
+        try {
+          await adminQuestionnairesApi.update(questionnaireId, {
+            websiteId: website.id,
+            status: "WEBSITE_CREATED",
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
       navigate(`/websites/${website.id}/edit`, {
         replace: true,
         state: { created: true } satisfies CreatedState,

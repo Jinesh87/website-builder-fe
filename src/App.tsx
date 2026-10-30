@@ -19,6 +19,7 @@ const PricingPage = lazy(() => marketing().then((m) => ({ default: m.PricingPage
 const AboutPage = lazy(() => marketing().then((m) => ({ default: m.AboutPage })));
 const ContactPage = lazy(() => marketing().then((m) => ({ default: m.ContactPage })));
 const LegalPage = lazy(() => marketing().then((m) => ({ default: m.LegalPage })));
+const StartQuestionnairePage = lazy(() => import("./pages/public/StartQuestionnairePage.tsx"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage.tsx"));
 const TemplateDetailPage = lazy(() => import("./pages/public/TemplateDetailPage.tsx"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage.tsx"));
@@ -27,6 +28,7 @@ const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage.ts
 const VerifyEmailPage = lazy(() => import("./pages/auth/VerifyEmailPage.tsx"));
 const ResetPasswordPage = lazy(() => import("./pages/auth/ResetPasswordPage.tsx"));
 const DashboardPage = lazy(() => import("./pages/client/DashboardPage.tsx"));
+const ClientQuestionnairePage = lazy(() => import("./pages/client/ClientQuestionnairePage.tsx"));
 const MyWebsitesPage = lazy(() => import("./pages/client/MyWebsitesPage.tsx"));
 const AccountSettingsPage = lazy(() => import("./pages/client/AccountSettingsPage.tsx"));
 const ConnectsPage = lazy(() => import("./pages/client/ConnectsPage.tsx"));
@@ -39,6 +41,7 @@ const BuilderRoute = lazy(() => import("./features/builder/BuilderRoute.tsx"));
 // Admin pages
 const ClientsPage = lazy(() => import("./pages/admin/ClientsPage.tsx"));
 const EnquiriesPage = lazy(() => import("./pages/admin/EnquiriesPage.tsx"));
+const QuestionnairesPage = lazy(() => import("./pages/admin/QuestionnairesPage.tsx"));
 const ClientFormPage = lazy(() => import("./pages/admin/ClientFormPage.tsx"));
 const AllWebsitesPage = lazy(() => import("./pages/admin/AllWebsitesPage.tsx"));
 const ClientWebsitesPage = lazy(() => import("./pages/admin/ClientWebsitesPage.tsx"));
@@ -72,6 +75,7 @@ export default function App() {
               <Route path="pricing" element={<PricingPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
+              <Route path="start" element={<StartQuestionnairePage />} />
               <Route path="legal" element={<LegalPage />} />
             </Route>
             <Route element={<PublicLayout />}>
@@ -89,6 +93,7 @@ export default function App() {
             <Route element={<RequireAuth roles={["CLIENT"]} />}>
               <Route element={<ClientLayout />}>
                 <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="questionnaire" element={<ClientQuestionnairePage />} />
                 <Route path="websites" element={<MyWebsitesPage />} />
                 <Route path="media" element={<MediaLibraryPage />} />
                 <Route path="account" element={<AccountSettingsPage />} />
@@ -110,6 +115,7 @@ export default function App() {
               <Route path="admin" element={<AdminLayout />}>
                 <Route index element={<ClientsPage />} />
                 <Route path="enquiries" element={<EnquiriesPage />} />
+                <Route path="questionnaires" element={<QuestionnairesPage />} />
                 <Route path="clients/new" element={<ClientFormPage />} />
                 <Route path="clients/:id" element={<ClientFormPage />} />
                 <Route path="websites" element={<AllWebsitesPage />} />

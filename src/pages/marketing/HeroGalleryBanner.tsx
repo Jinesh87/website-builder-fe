@@ -1,5 +1,5 @@
 import { useState, useRef, useLayoutEffect, useMemo, type ReactNode, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useGalleryTemplates } from "./use-gallery-templates.ts";
 import "./hero-gallery.css";
 
@@ -69,6 +69,30 @@ export default function HeroGalleryBanner() {
             <b>{templateCountLabel}</b> professionally designed templates for every kind of business. Open any one to see every page on
             desktop, tablet and mobile, then start with it for free.
           </p>
+
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "12px", margin: "16px 0 20px" }}>
+            <Link
+              to="/start"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "linear-gradient(135deg, #2563eb, #4f46e5)",
+                color: "#ffffff",
+                padding: "10px 22px",
+                borderRadius: "9999px",
+                fontWeight: 700,
+                fontSize: "14px",
+                textDecoration: "none",
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.35)",
+              }}
+            >
+              Get your website →
+            </Link>
+            <span style={{ fontSize: "13px", color: "var(--muted)" }}>
+              Takes 3 minutes · mostly tick boxes
+            </span>
+          </div>
 
           <form className="search" onSubmit={handleSearchSubmit}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">

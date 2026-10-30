@@ -1,5 +1,6 @@
 import {
   CalendarClock,
+  ClipboardList,
   Globe,
   Image,
   Inbox,
@@ -14,11 +15,13 @@ import {
 import AppShell, { type ShellNavItem } from "./AppShell.tsx";
 import AiSparklesIcon from "../components/icons/AiSparklesIcon.tsx";
 import { useNewEnquiryCount } from "../hooks/use-new-enquiry-count.ts";
+import { useNewQuestionnaireCount } from "../hooks/use-new-questionnaire-count.ts";
 
-function adminNav(newEnquiries: number): ShellNavItem[] {
+function adminNav(newEnquiries: number, newQuestionnaires: number): ShellNavItem[] {
   return [
     { label: "Clients", icon: Users, to: "/admin", end: true, activePrefixes: ["/admin/clients"] },
     { label: "Enquiries", icon: Inbox, to: "/admin/enquiries", badge: newEnquiries },
+    { label: "Questionnaires", icon: ClipboardList, to: "/admin/questionnaires", badge: newQuestionnaires },
     { label: "All websites", icon: Globe, to: "/admin/websites", activePrefixes: ["/websites/"] },
     { label: "AI Usage", icon: AiSparklesIcon, to: "/admin/ai-usage" },
     { label: "Transactions", icon: Wallet, to: "/admin/transactions" },
@@ -34,5 +37,13 @@ function adminNav(newEnquiries: number): ShellNavItem[] {
 
 export default function AdminLayout() {
   const newEnquiries = useNewEnquiryCount();
-  return <AppShell tone="dark" nav={adminNav(newEnquiries)} roleLabel="Super Admin" caption="Super Admin" />;
+  const newQuestionnaires = useNewQuestionnaireCount();
+  return (
+    <AppShell
+      tone="dark"
+      nav={adminNav(newEnquiries, newQuestionnaires)}
+      roleLabel="Super Admin"
+      caption="Super Admin"
+    />
+  );
 }

@@ -29,6 +29,40 @@ export const CONTACT_BUILDER_CSS = `
   height: 1px;
   overflow: hidden;
 }
+.wb-clapper-pill-btn { position: relative; display: inline-flex; align-items: center; }
+.wb-clapper-pill-input {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.wb-clapper-pill-btn:has(.wb-clapper-pill-input:checked) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.55);
+  font-weight: 700;
+}
+.wb-clapper-pill-btn:has(.wb-clapper-pill-input:focus-visible) {
+  outline: 2px solid #E8402F;
+  outline-offset: 2px;
+}
+.wb-clapper-form[hidden],
+.wb-clapper-success[hidden],
+.wb-clapper-status[hidden] { display: none !important; }
+.wb-clapper-status {
+  margin: 0;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--vr-mono, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  color: #FF6B5B;
+}
+.wb-clapper-form .wb-clapper-submit-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
 @container wb-site (max-width: 640px) {
   .wb-contact-fields-grid { grid-template-columns: minmax(0, 1fr); }
 }
