@@ -199,6 +199,11 @@ const ALIGN_OPTIONS: { value: SectionAlign; label: string }[] = [
   { value: "right", label: "Right aligned" },
 ];
 
+const NAV_ALIGN_OPTIONS: { value: SectionAlign | "default"; label: string }[] = [
+  { value: "default", label: "Layout default" },
+  ...ALIGN_OPTIONS,
+];
+
 const CONTAINER_WIDTH_OPTIONS: { value: string; label: string }[] = [
   { value: "default", label: "Default (Theme container ~1200px)" },
   { value: "narrow", label: "Narrow / Compact (768px)" },
@@ -4641,8 +4646,19 @@ export function SectionStyleForm({
             }}
           />
         )}
+        {sectionType === "header" && (
+          <SelectField
+            label="Navigation alignment"
+            value={settings.align ?? "default"}
+            options={NAV_ALIGN_OPTIONS}
+            onChange={(align) => {
+              const { align: _previous, ...rest } = settings;
+              onChange(align === "default" ? rest : { ...rest, align });
+            }}
+          />
+        )}
         {(!sectionType ||
-          !["hero", "marquee", "auth", "product_detail"].includes(
+          !["hero", "marquee", "auth", "product_detail", "header"].includes(
             sectionType,
           )) && (
           <SelectField

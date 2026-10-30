@@ -388,7 +388,16 @@ export default function SiteHeader({ header, settings }: { header: HeaderData; s
   const isTransparent = position === "static" && (header.design === "transparent" || header.overlay);
   const designClass = isTransparent ? "wb-header-transparent" : `wb-header-${header.design}`;
   const chrome = chromeStyle(settings);
-  const classes = ["wb-header", designClass, posClass, chrome.className].filter(Boolean).join(" ");
+  const navAlign = header.navAlign ?? settings?.align;
+  const classes = [
+    "wb-header",
+    designClass,
+    posClass,
+    navAlign && `wb-nav-align-${navAlign}`,
+    chrome.className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const brand = (
     <SiteBrand

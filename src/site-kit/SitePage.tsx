@@ -138,7 +138,7 @@ export function SiteFrame({ theme, header, footer, children, shopWebsiteId, navA
 }
 
 export function SiteHeaderView({ header }: { header: HeaderData }) {
-  return <SiteHeader header={header} />;
+  return <SiteHeader header={header} settings={header.settings} />;
 }
 
 export function SiteFooterView({ footer }: { footer: FooterData }) {

@@ -442,4 +442,37 @@ export const PREMIUM_HEADER_CSS = `
 @media (max-width: 960px) {
   .wb-header-vintage-editorial .wb-nav { position: static; transform: none; }
 }
+
+/* Navigation alignment (header navAlign, else settings.align). Without a wb-nav-align-* class every
+   design keeps its own layout. Desktop only: at 900px and below the nav collapses into the menu button. */
+@container wb-site (min-width: 901px) {
+  .wb-header[class*="wb-nav-align-"]:not(.wb-header-centered) .wb-nav {
+    position: static; transform: none; margin-left: 0; margin-right: 0; min-width: 0;
+  }
+  .wb-header[class*="wb-nav-align-"]:not(.wb-header-centered):has(.wb-nav) :is(.wb-header-actions, .wb-dock-actions) { margin-left: 0; }
+  .wb-header[class*="wb-nav-align-"] .wb-dock-bar:has(> .wb-nav) { width: 100%; }
+
+  /* Left / right: auto margins move the nav without stretching pill backgrounds */
+  .wb-header.wb-nav-align-left:not(.wb-header-centered) .wb-nav { margin-right: auto; }
+  .wb-header.wb-nav-align-right:not(.wb-header-centered) :is(.wb-nav, .wb-nav-left) { margin-left: auto; }
+  .wb-header:is(.wb-nav-align-center, .wb-nav-align-right) .wb-dock-divider { display: none; }
+
+  /* Center: equal side columns keep the nav at the true center whatever the logo and button widths */
+  .wb-header.wb-nav-align-center:not(.wb-header-centered) :is(.wb-header-inner, .wb-header-floating-pill, .wb-dock-bar):has(> .wb-nav, > .wb-nav-left) {
+    display: grid;
+    grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+  }
+  .wb-header.wb-nav-align-center:not(.wb-header-centered) :is(.wb-header-inner, .wb-header-floating-pill, .wb-dock-bar) > :is(.wb-brand, .wb-dock-brand, .wb-stacked-brand, .wb-mega-brand-col, .wb-brand-center) { justify-self: start; }
+  .wb-header.wb-nav-align-center:not(.wb-header-centered) :is(.wb-header-inner, .wb-header-floating-pill, .wb-dock-bar) > :is(.wb-nav, .wb-nav-left) { justify-self: center; }
+  .wb-header.wb-nav-align-center:not(.wb-header-centered) :is(.wb-header-inner, .wb-header-floating-pill, .wb-dock-bar) > :is(.wb-header-actions, .wb-dock-actions, .wb-actions-right) { grid-column: 3; justify-self: end; }
+
+  /* Minimalist: the logo leaves the middle so the nav can take the requested spot */
+  .wb-header:is(.wb-nav-align-center, .wb-nav-align-right) .wb-brand-center { order: -1; }
+
+  /* Centered: aligns the whole stacked logo / nav / buttons column */
+  .wb-header-centered.wb-nav-align-left .wb-header-inner { align-items: flex-start; }
+  .wb-header-centered.wb-nav-align-center .wb-header-inner { align-items: center; }
+  .wb-header-centered.wb-nav-align-right .wb-header-inner { align-items: flex-end; }
+  .wb-header-centered[class*="wb-nav-align-"] .wb-header-actions { margin-left: 0; }
+}
 `;

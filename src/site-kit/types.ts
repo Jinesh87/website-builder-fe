@@ -106,6 +106,8 @@ export type HeaderData = {
   logo?: ImageRef;
   logoDisplay?: BrandDisplayMode;
   menu: HeaderMenuItem[];
+  /** Desktop position of the main navigation; falls back to settings.align, then the design's own layout. */
+  navAlign?: SectionAlign;
   cta?: LinkRef;
   secondaryCta?: LinkRef;
   announcement?: string;

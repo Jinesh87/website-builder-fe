@@ -312,6 +312,24 @@ export function HeaderForm({
             })
           }
         />
+        {design !== "side-drawer" && (
+          <SelectField
+            label="Navigation alignment"
+            value={header.navAlign ?? "default"}
+            options={[
+              { value: "default", label: "Same as Style tab" },
+              { value: "left", label: "Left aligned" },
+              { value: "center", label: "Centered" },
+              { value: "right", label: "Right aligned" },
+            ]}
+            onChange={(navAlign) =>
+              onChange({
+                ...header,
+                navAlign: navAlign === "default" ? undefined : navAlign,
+              })
+            }
+          />
+        )}
         <TextField
           label="Site name / Brand"
           value={header.siteName}
