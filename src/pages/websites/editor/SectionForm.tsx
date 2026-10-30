@@ -3177,6 +3177,12 @@ function ProductDetailForm({ data, onChange }: DataFormProps<ProductDetailData>)
       />
       <CheckboxField label="Show description" checked={data.showDescription !== false} onChange={(showDescription) => onChange({ ...data, showDescription })} />
       <CheckboxField label="Show stock" checked={data.showStock !== false} onChange={(showStock) => onChange({ ...data, showStock })} />
+      <CheckboxField
+        label="Show cancellation policy"
+        checked={data.showCancellationPolicy !== false}
+        onChange={(showCancellationPolicy) => onChange({ ...data, showCancellationPolicy })}
+        hint="Uses the cancel-until setting from Shop → Shop settings."
+      />
     </FormGroup>
   );
 }

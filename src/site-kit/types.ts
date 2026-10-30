@@ -1706,6 +1706,8 @@ export type ShopCatalogProduct = {
 };
 
 /** Real shop catalogue. `live` means empty is "no products", not "show samples". */
+export type ShopCancelUntilStatus = "paid" | "processing" | "shipped";
+
 export type ShopCatalog = {
   /** Present when the live shop (or editor bridge) can call shopper auth APIs. */
   websiteId?: string;
@@ -1713,6 +1715,8 @@ export type ShopCatalog = {
   authHref?: string;
   /** Page that holds the account section, such as "/account". */
   accountHref?: string;
+  /** Inclusive status ceiling for shopper cancels. Null/omitted = cancels disabled. */
+  cancelUntilStatus?: ShopCancelUntilStatus | null;
   products: ShopCatalogProduct[];
   productSlug?: string;
   /** Option values to preselect, from the shop-card link. */
@@ -1752,6 +1756,8 @@ export type ProductDetailData = {
   backHref?: string;
   showDescription?: boolean;
   showStock?: boolean;
+  /** Shows the shop's order cancellation policy under the description. */
+  showCancellationPolicy?: boolean;
 };
 
 /** Mirrors backend ACCOUNT_VARIANTS. Stored in site data, so values are only ever appended. */
