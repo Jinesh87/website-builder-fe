@@ -292,6 +292,16 @@ export default function ShopPanel({
   const [section, setSection] = useState<ShopSection>(website.shopEnabled ? "products" : "settings");
   const [turning, setTurning] = useState(false);
   const [turnError, setTurnError] = useState<string | null>(null);
+  const [savingCancelPolicy, setSavingCancelPolicy] = useState(false);
+  const [cancelPolicyError, setCancelPolicyError] = useState<string | null>(null);
+  const [cancelPolicyMessage, setCancelPolicyMessage] = useState<string | null>(null);
+  const [cancelUntilDraft, setCancelUntilDraft] = useState<"" | "paid" | "processing" | "shipped">(
+    website.shopCancelUntilStatus ?? "",
+  );
+
+  useEffect(() => {
+    setCancelUntilDraft(website.shopCancelUntilStatus ?? "");
+  }, [website.shopCancelUntilStatus]);
 
   async function setShopEnabled(shopEnabled: boolean) {
     setTurning(true);
@@ -304,6 +314,26 @@ export default function ShopPanel({
       setTurning(false);
     }
   }
+
+  async function saveCancelPolicy() {
+    setSavingCancelPolicy(true);
+    setCancelPolicyError(null);
+    setCancelPolicyMessage(null);
+    try {
+      onChange(
+        await websitesApi.update(website.id, {
+          shopCancelUntilStatus: cancelUntilDraft === "" ? null : cancelUntilDraft,
+        }),
+      );
+      setCancelPolicyMessage("Cancellation policy saved.");
+    } catch (err) {
+      setCancelPolicyError(errorMessage(err));
+    } finally {
+      setSavingCancelPolicy(false);
+    }
+  }
+
+  const cancelPolicyDirty = (website.shopCancelUntilStatus ?? "") !== cancelUntilDraft;
 
   return (
     <div className="space-y-4">
@@ -328,31 +358,80 @@ export default function ShopPanel({
       </div>
 
       {section === "settings" && (
-        <section className="rounded-xl border border-line bg-surface p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-2xl">
-              <h2 className="text-base font-semibold text-ink">Shop settings</h2>
-              <p className="mt-1 text-sm text-ink-body">
-                {website.shopEnabled
-                  ? "Products and categories stay saved if you turn the shop off. Turn it back on to keep editing them."
-                  : "Turn the shop on for this website, then add categories and products."}
-              </p>
+        <div className="space-y-4">
+          <section className="rounded-xl border border-line bg-surface p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-2xl">
+                <h2 className="text-base font-semibold text-ink">Shop settings</h2>
+                <p className="mt-1 text-sm text-ink-body">
+                  {website.shopEnabled
+                    ? "Products and categories stay saved if you turn the shop off. Turn it back on to keep editing them."
+                    : "Turn the shop on for this website, then add categories and products."}
+                </p>
+              </div>
+              <Switch isSelected={website.shopEnabled} onChange={setShopEnabled} isDisabled={turning}>
+                <Switch.Content>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                  <Label className="text-sm text-ink">{website.shopEnabled ? "Shop on" : "Shop off"}</Label>
+                </Switch.Content>
+              </Switch>
             </div>
-            <Switch isSelected={website.shopEnabled} onChange={setShopEnabled} isDisabled={turning}>
-              <Switch.Content>
-                <Switch.Control>
-                  <Switch.Thumb />
-                </Switch.Control>
-                <Label className="text-sm text-ink">{website.shopEnabled ? "Shop on" : "Shop off"}</Label>
-              </Switch.Content>
-            </Switch>
-          </div>
-          {turnError && (
-            <div className="mt-4">
-              <FormAlert status="danger">{turnError}</FormAlert>
-            </div>
+            {turnError && (
+              <div className="mt-4">
+                <FormAlert status="danger">{turnError}</FormAlert>
+              </div>
+            )}
+          </section>
+
+          {website.shopEnabled && (
+            <section className="rounded-xl border border-line bg-surface p-6">
+              <div className="max-w-2xl">
+                <h2 className="text-base font-semibold text-ink">Order cancellation</h2>
+                <p className="mt-1 text-sm text-ink-body">
+                  Choose how far along an order can be before shoppers may cancel it themselves. Cancelled paid
+                  orders are refunded automatically, and stock is put back.
+                </p>
+              </div>
+              <div className="mt-5 max-w-md space-y-4">
+                <label className="grid gap-1 text-sm font-medium text-ink">
+                  Customers can cancel up to
+                  <select
+                    value={cancelUntilDraft}
+                    onChange={(event) =>
+                      setCancelUntilDraft(event.target.value as "" | "paid" | "processing" | "shipped")
+                    }
+                    className="h-10 rounded-lg border border-ed-border bg-surface px-3 text-sm font-normal text-ink"
+                  >
+                    <option value="">Customers cannot cancel</option>
+                    <option value="paid">Paid (before processing)</option>
+                    <option value="processing">Processing</option>
+                    <option value="shipped">Shipped</option>
+                  </select>
+                </label>
+                <p className="text-xs text-ink-muted">
+                  {cancelUntilDraft === ""
+                    ? "Only you can cancel orders from the Orders tab."
+                    : cancelUntilDraft === "paid"
+                      ? "Shoppers can cancel while the order is pending payment or paid."
+                      : cancelUntilDraft === "processing"
+                        ? "Shoppers can cancel until you mark the order as shipped."
+                        : "Shoppers can cancel until the order is marked delivered."}
+                </p>
+                {cancelPolicyError && <FormAlert status="danger">{cancelPolicyError}</FormAlert>}
+                {cancelPolicyMessage && <FormAlert status="success">{cancelPolicyMessage}</FormAlert>}
+                <Button
+                  size="sm"
+                  onPress={() => void saveCancelPolicy()}
+                  isDisabled={savingCancelPolicy || !cancelPolicyDirty}
+                >
+                  {savingCancelPolicy ? "Saving…" : "Save policy"}
+                </Button>
+              </div>
+            </section>
           )}
-        </section>
+        </div>
       )}
 
       {section === "razorpay" && <ShopRazorpayPanel websiteId={website.id} />}

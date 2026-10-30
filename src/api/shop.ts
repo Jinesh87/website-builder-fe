@@ -227,6 +227,7 @@ export type ShopOrder = {
   paidAt: string | null;
   refundedAt: string | null;
   failureReason: string | null;
+  cancelReason: string | null;
   timeline: ShopOrderTimelineEvent[];
   createdAt: string;
   updatedAt: string;

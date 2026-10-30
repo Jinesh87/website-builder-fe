@@ -87,6 +87,7 @@ const SAMPLE_ORDER_DETAIL: ShopOrderDetail = {
     { id: "t3", status: "shipped", actorType: "CLIENT", note: "Handed to courier", createdAt: "2026-10-23T14:30:00.000Z" },
   ],
   failureReason: null,
+  cancelReason: null,
   paidAt: "2026-10-21T10:12:00.000Z",
   updatedAt: "2026-10-23T14:30:00.000Z",
 };
@@ -264,11 +265,42 @@ function OrderDetailView({
   order,
   variant,
   onClose,
+  onCancelled,
+  websiteId,
 }: {
   order: ShopOrderDetail;
   variant: AccountOrderDetailVariant;
   onClose: () => void;
+  onCancelled?: (order: ShopOrderDetail) => void;
+  websiteId?: string;
 }) {
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [reason, setReason] = useState("");
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelNotice, setCancelNotice] = useState<string | null>(null);
+
+  async function submitCancel(event: FormEvent) {
+    event.preventDefault();
+    if (!websiteId || !order.canCancel || cancelling) return;
+    const trimmed = reason.trim();
+    if (trimmed.length < 3) {
+      setCancelError("Please share a short reason.");
+      return;
+    }
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      const next = await shopAuthApi.cancelOrder(websiteId, order.id, trimmed);
+      setCancelNotice(next.failureReason || "Order cancelled.");
+      onCancelled?.(next);
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : "Could not cancel this order.");
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   return (
     <div className="wb-acct-order-modal" data-wb-account-order-modal>
       <button type="button" className="wb-acct-order-backdrop" aria-label="Close order" onClick={onClose} />
@@ -282,6 +314,7 @@ function OrderDetailView({
             ×
           </button>
         </div>
+        {cancelNotice && <p className="wb-acct-form-msg is-ok">{cancelNotice}</p>}
         <div className="wb-acct-badges">
           <StatusBadge status={order.status} />
           <RefundBadge status={order.refundStatus} />
@@ -303,10 +336,62 @@ function OrderDetailView({
         <p className="wb-acct-success-meta">
           <strong>Total {formatInr(order.totalPaise)}</strong>
         </p>
-        <h4 className="wb-acct-panel-title" style={{ marginTop: 18 }}>
-          Tracking
-        </h4>
-        <OrderTimeline order={order} variant={variant} />
+        {order.canCancel && websiteId && (
+          <div className="wb-acct-cancel">
+            {!showCancelForm ? (
+              <button type="button" className="wb-acct-cancel-open" onClick={() => setShowCancelForm(true)}>
+                Cancel this order
+              </button>
+            ) : (
+              <form className="wb-acct-cancel-form" onSubmit={(event) => void submitCancel(event)}>
+                <p className="wb-acct-cancel-title">Cancel order</p>
+                <label className="wb-acct-cancel-label">
+                  Reason
+                  <textarea
+                    name="reason"
+                    rows={2}
+                    maxLength={500}
+                    required
+                    placeholder="e.g. Ordered by mistake"
+                    className="wb-acct-cancel-reason"
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                  />
+                </label>
+                <p className="wb-acct-cancel-hint">Paid orders are refunded automatically.</p>
+                {cancelError && <p className="wb-acct-form-msg is-error">{cancelError}</p>}
+                <div className="wb-acct-cancel-actions">
+                  <button
+                    type="button"
+                    className="wb-acct-cancel-keep"
+                    onClick={() => {
+                      setShowCancelForm(false);
+                      setCancelError(null);
+                    }}
+                  >
+                    Keep order
+                  </button>
+                  <button type="submit" className="wb-acct-cancel-confirm" disabled={cancelling}>
+                    {cancelling ? "Cancelling…" : "Confirm"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+        {order.cancelReason && !order.canCancel && (
+          <p className="wb-acct-cancel-reason-view">
+            <strong>Cancel reason:</strong> {order.cancelReason}
+          </p>
+        )}
+        {!showCancelForm && (
+          <div className="wb-acct-order-tracking">
+            <h4 className="wb-acct-panel-title" style={{ marginTop: 18 }}>
+              Tracking
+            </h4>
+            <OrderTimeline order={order} variant={variant} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -400,6 +485,7 @@ function OrdersPanel({
           items: [],
           timeline: [{ id: "1", status: summary.status, actorType: "SYSTEM", note: null, createdAt: summary.createdAt }],
           failureReason: null,
+          cancelReason: null,
           paidAt: null,
           updatedAt: summary.createdAt,
         });
@@ -441,6 +527,18 @@ function OrdersPanel({
             <div className="wb-acct-badges">
               <StatusBadge status={order.status} />
               <RefundBadge status={order.refundStatus} />
+              {order.canCancel && interactive && websiteId && (
+                <button
+                  type="button"
+                  className="wb-acct-row-cancel"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void openOrder(order.id);
+                  }}
+                >
+                  Cancel
+                </button>
+              )}
             </div>
             <strong className="wb-acct-row-amount">{formatInr(order.totalPaise)}</strong>
           </li>
@@ -457,9 +555,14 @@ function OrdersPanel({
         <OrderDetailView
           order={detail}
           variant={detailVariant}
+          websiteId={interactive ? websiteId : undefined}
           onClose={() => {
             setDetail(null);
             onOpenOrder?.(null);
+          }}
+          onCancelled={(next) => {
+            setDetail(next);
+            onOpenOrder?.(next.id);
           }}
         />
       )}

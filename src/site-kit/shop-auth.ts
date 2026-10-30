@@ -28,6 +28,7 @@ export type ShopOrderSummary = {
   currency: "INR";
   createdAt: string;
   refundedAt: string | null;
+  canCancel?: boolean;
 };
 
 export type ShopOrderTimelineEvent = {
@@ -49,6 +50,7 @@ export type ShopOrderDetail = ShopOrderSummary & {
   }[];
   timeline: ShopOrderTimelineEvent[];
   failureReason: string | null;
+  cancelReason: string | null;
   paidAt: string | null;
   updatedAt: string;
 };
@@ -79,6 +81,7 @@ export type ShopCustomerAccount = {
   customer: ShopCustomer;
   orders: ShopOrderSummary[];
   cartItems: ShopCartItemSummary[];
+  cancelUntilStatus?: "paid" | "processing" | "shipped" | null;
 };
 
 export type ShopAuthError = {
@@ -302,6 +305,15 @@ export const shopAuthApi = {
     if (!result.ok) throw asError(result.status, result.body);
     return (result.body as { order: ShopOrderDetail }).order;
   },
+
+  cancelOrder: async (websiteId: string, orderId: string, reason: string) => {
+    const result = await shopAuthFetch(websiteId, `/orders/${orderId}/cancel`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { order: ShopOrderDetail }).order;
+  },
 };
 
 /** A site path as the browser should open it: on the local preview sites live under /live/<subdomain>. */
@@ -462,6 +474,12 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         if(refund==="pending") badges.appendChild(el("span","wb-acct-badge is-refund-pending","Refund pending"));
         else if(refund==="processed") badges.appendChild(el("span","wb-acct-badge is-refund-processed","Refunded"));
         else if(refund==="failed") badges.appendChild(el("span","wb-acct-badge is-refund-failed","Refund failed"));
+        if(order.canCancel){
+          var cancelBtn=el("button","wb-acct-row-cancel","Cancel");
+          cancelBtn.setAttribute("type","button");
+          cancelBtn.setAttribute("data-wb-order-cancel", String(order.id||""));
+          badges.appendChild(cancelBtn);
+        }
         row.appendChild(badges);
         row.appendChild(el("strong","wb-acct-row-amount",money(order.totalPaise)));
         orderList.appendChild(row);
@@ -821,8 +839,9 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         dialog.style.setProperty("color", fg, "important");
       }
     }
-    function openOrderDetail(orderId){
+    function openOrderDetail(orderId, opts){
       if(!orderId) return;
+      var startCancel=!!(opts&&opts.startCancel);
       request(base, "/orders/"+orderId, "GET").then(function(result){
         if(!result.ok) return;
         var order=(result.json&&result.json.order)||{};
@@ -835,21 +854,121 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         var items=(order.items||[]).map(function(item){
           return '<div class="wb-acct-order-item"><div><strong>'+String(item.productName||"Item")+"</strong><span> · "+String(item.variantName||"")+" · Qty "+String(item.quantity||1)+'</span></div><strong>'+money(item.lineTotalPaise)+"</strong></div>";
         }).join("");
+        var status=String(order.status||"pending");
+        var badgesHtml='<div class="wb-acct-badges"><span class="wb-acct-badge is-'+status+'">'+status+"</span>";
+        var refund=String(order.refundStatus||"none");
+        if(refund==="pending") badgesHtml+='<span class="wb-acct-badge is-refund-pending">Refund pending</span>';
+        else if(refund==="processed") badgesHtml+='<span class="wb-acct-badge is-refund-processed">Refunded</span>';
+        else if(refund==="failed") badgesHtml+='<span class="wb-acct-badge is-refund-failed">Refund failed</span>';
+        badgesHtml+="</div>";
+        var cancelBlock="";
+        if(order.canCancel){
+          cancelBlock=
+            '<div class="wb-acct-cancel" data-wb-cancel-box>'+
+              '<button type="button" class="wb-acct-cancel-open" data-wb-cancel-open'+(startCancel?" hidden":"")+'>Cancel this order</button>'+
+              '<form class="wb-acct-cancel-form" data-wb-cancel-form'+(startCancel?"":" hidden")+'>'+
+                '<p class="wb-acct-cancel-title">Cancel order</p>'+
+                '<label class="wb-acct-cancel-label">Reason'+
+                  '<textarea name="reason" rows="2" maxlength="500" required placeholder="e.g. Ordered by mistake" class="wb-acct-cancel-reason"></textarea>'+
+                "</label>"+
+                '<p class="wb-acct-cancel-hint">Paid orders are refunded automatically.</p>'+
+                '<p class="wb-acct-form-msg" data-wb-cancel-msg hidden></p>'+
+                '<div class="wb-acct-cancel-actions">'+
+                  '<button type="button" class="wb-acct-cancel-keep" data-wb-cancel-back>Keep order</button>'+
+                  '<button type="submit" class="wb-acct-cancel-confirm" data-wb-cancel-submit>Confirm</button>'+
+                "</div>"+
+              "</form>"+
+            "</div>";
+        } else if(order.cancelReason){
+          cancelBlock='<p class="wb-acct-cancel-reason-view"><strong>Cancel reason:</strong> '+String(order.cancelReason)+"</p>";
+        }
         modal.innerHTML=
           '<button type="button" class="wb-acct-order-backdrop" aria-label="Close order"></button>'+
           '<div class="wb-acct-order-dialog is-'+variant+'" role="dialog" aria-modal="true">'+
             '<div class="wb-acct-order-head"><div><h3 class="wb-acct-success-title">Order #'+String(order.number||"")+'</h3>'+
             '<p class="wb-acct-success-text">Placed '+day(order.createdAt)+"</p></div>"+
             '<button type="button" class="wb-acct-order-close" aria-label="Close">×</button></div>'+
-            '<div class="wb-acct-badges"><span class="wb-acct-badge is-'+String(order.status||"pending")+'">'+String(order.status||"pending")+"</span></div>"+
+            badgesHtml+
             '<div class="wb-acct-order-items">'+items+"</div>"+
             '<p class="wb-acct-success-meta"><strong>Total '+money(order.totalPaise)+"</strong></p>"+
-            '<h4 class="wb-acct-panel-title" style="margin-top:18px">Tracking</h4>'+
-            timelineHtml(order, variant)+
+            cancelBlock+
+            '<div class="wb-acct-order-tracking" data-wb-order-tracking'+(startCancel?" hidden":"")+'>'+
+              '<h4 class="wb-acct-panel-title" style="margin-top:18px">Tracking</h4>'+
+              timelineHtml(order, variant)+
+            "</div>"+
           "</div>";
         themeModal(modal, root);
         function close(){ modal.remove(); }
         modal.querySelectorAll(".wb-acct-order-backdrop,.wb-acct-order-close").forEach(function(btn){ btn.addEventListener("click", close); });
+        var openBtn=modal.querySelector("[data-wb-cancel-open]");
+        var form=modal.querySelector("[data-wb-cancel-form]");
+        var backBtn=modal.querySelector("[data-wb-cancel-back]");
+        var msgEl=modal.querySelector("[data-wb-cancel-msg]");
+        var tracking=modal.querySelector("[data-wb-order-tracking]");
+        if(openBtn&&form){
+          openBtn.addEventListener("click", function(){
+            openBtn.hidden=true;
+            form.hidden=false;
+            if(tracking) tracking.hidden=true;
+            var area=form.querySelector("textarea");
+            if(area) area.focus();
+          });
+          if(startCancel){
+            var area=form.querySelector("textarea");
+            if(area) setTimeout(function(){ area.focus(); }, 40);
+          }
+        }
+        if(backBtn&&form&&openBtn){
+          backBtn.addEventListener("click", function(){
+            form.hidden=true;
+            openBtn.hidden=false;
+            if(tracking) tracking.hidden=false;
+            if(msgEl){ msgEl.hidden=true; msgEl.textContent=""; }
+          });
+        }
+        if(form){
+          form.addEventListener("submit", function(event){
+            event.preventDefault();
+            var reason=((form.querySelector('textarea[name="reason"]')||{}).value||"").trim();
+            if(reason.length<3){
+              if(msgEl){ msgEl.hidden=false; msgEl.textContent="Please share a short reason."; msgEl.className="wb-acct-form-msg is-error"; }
+              return;
+            }
+            var submit=form.querySelector("[data-wb-cancel-submit]");
+            if(submit) submit.disabled=true;
+            if(msgEl){ msgEl.hidden=true; msgEl.textContent=""; }
+            request(base, "/orders/"+orderId+"/cancel", "POST", { reason:reason }).then(function(cancelResult){
+              if(submit) submit.disabled=false;
+              if(!cancelResult.ok){
+                if(msgEl){
+                  msgEl.hidden=false;
+                  msgEl.className="wb-acct-form-msg is-error";
+                  msgEl.textContent=(cancelResult.json&&cancelResult.json.error&&cancelResult.json.error.message)||"Could not cancel this order.";
+                }
+                return;
+              }
+              var cancelled=(cancelResult.json&&cancelResult.json.order)||{};
+              var notice=cancelled.failureReason||"Order cancelled.";
+              refreshAccount().then(function(){
+                close();
+                openOrderDetail(orderId);
+                setTimeout(function(){
+                  var next=document.querySelector("body > [data-wb-account-order-modal] .wb-acct-order-dialog");
+                  if(!next) return;
+                  var flash=document.createElement("p");
+                  flash.className="wb-acct-form-msg is-ok";
+                  flash.textContent=notice;
+                  var head=next.querySelector(".wb-acct-order-head");
+                  if(head&&head.nextSibling) next.insertBefore(flash, head.nextSibling);
+                  else next.appendChild(flash);
+                }, 120);
+              });
+            }).catch(function(){
+              if(submit) submit.disabled=false;
+              if(msgEl){ msgEl.hidden=false; msgEl.className="wb-acct-form-msg is-error"; msgEl.textContent="Can't reach the server. Try again."; }
+            });
+          });
+        }
         document.body.appendChild(modal);
       });
     }
@@ -886,6 +1005,13 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       document.body.appendChild(modal);
     }
     root.addEventListener("click", function(event){
+      var cancelBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-order-cancel]");
+      if(cancelBtn && root.contains(cancelBtn)){
+        event.preventDefault();
+        event.stopPropagation();
+        openOrderDetail(cancelBtn.getAttribute("data-wb-order-cancel")||"", { startCancel:true });
+        return;
+      }
       var row=event.target&&event.target.closest&&event.target.closest("[data-wb-order-id]");
       if(!row || !root.contains(row)) return;
       event.preventDefault();
