@@ -322,6 +322,13 @@
 .mk footer:where(:not(.wb-site *)) {background:var(--foot);color:var(--foot-fg);padding-block:56px 28px}
 .mk footer:where(:not(.wb-site *)) .cols4 {display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px}
 .mk footer:where(:not(.wb-site *)) .cols5 {display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr 1.6fr;gap:32px}
+.mk footer:where(:not(.wb-site *)) .cols6 {display:flex;justify-content:space-between;align-items:flex-start;gap:32px}
+.mk footer:where(:not(.wb-site *)) .cols6>.col {flex:0 0 auto}
+.mk footer:where(:not(.wb-site *)) .cols6>.brand-col {flex:0 0 280px;max-width:280px}
+.mk footer:where(:not(.wb-site *)) .cols6>.contact-col {flex:0 0 230px;max-width:230px}
+.mk footer:where(:not(.wb-site *)) .cols6 a {white-space:nowrap}
+.mk footer:where(:not(.wb-site *)) .cols6 .foot-contact-link,
+.mk footer:where(:not(.wb-site *)) .cols6 .foot-email-badge {white-space:normal}
 .mk footer:where(:not(.wb-site *)) .foot-contact-block {display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5;color:var(--foot-fg)}
 .mk footer:where(:not(.wb-site *)) .foot-contact-title {color:#FFFFFF;font-size:13px;font-weight:600;letter-spacing:-0.01em}
 .mk footer:where(:not(.wb-site *)) .foot-contact-address {margin:0;font-size:13px;line-height:1.5;color:var(--foot-fg)}
@@ -331,11 +338,16 @@
   .mk footer:where(:not(.wb-site *)) .cols4 {grid-template-columns:repeat(2,minmax(0,1fr))}
   .mk footer:where(:not(.wb-site *)) .cols4>.col:first-child {grid-column:1/-1}
   .mk footer:where(:not(.wb-site *)) .cols5 {grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
-  .mk footer:where(:not(.wb-site *)) .cols5>.col:first-child {grid-column:1/-1}
+  .mk footer:where(:not(.wb-site *)) .cols5>.col:first-child,
   .mk footer:where(:not(.wb-site *)) .cols5>.contact-col {grid-column:1/-1}
+  .mk footer:where(:not(.wb-site *)) .cols6 {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px}
+  .mk footer:where(:not(.wb-site *)) .cols6>.brand-col,
+  .mk footer:where(:not(.wb-site *)) .cols6>.col:first-child,
+  .mk footer:where(:not(.wb-site *)) .cols6>.contact-col {grid-column:1/-1;max-width:100%}
 }
 @media (max-width:600px) {
-  .mk footer:where(:not(.wb-site *)) .cols5 {grid-template-columns:1fr;gap:24px}
+  .mk footer:where(:not(.wb-site *)) .cols5,
+  .mk footer:where(:not(.wb-site *)) .cols6 {grid-template-columns:1fr;gap:24px}
 }
 .mk footer:where(:not(.wb-site *)) a {color:var(--foot-fg);text-decoration:none;font-size:14px}
 .mk footer:where(:not(.wb-site *)) a:hover {color:#FFFFFF;text-decoration:underline}

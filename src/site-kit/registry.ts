@@ -2030,6 +2030,8 @@ export const SECTION_PRESETS: SectionPreset[] = [
           heading: "Empower Your Next Breakthrough 2026",
           subheading:
             "Join over 25,000 innovators, creators, and teams scaling high-impact digital experiences worldwide.",
+          primaryCta: { label: "Get Started Free →", href: "#start" },
+          secondaryCta: { label: "Explore Platform", href: "#explore" },
           minHeight: "screen",
           backgroundVideoUrl: "/bannervid.mp4",
           backgroundImage: {

@@ -854,39 +854,6 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             )}
           </FormGroup>
 
-          <FormGroup title="Hero Action Buttons">
-            <OptionalLinkField
-              label="Primary CTA button"
-              value={data.primaryCta ?? data.campaignProgress?.registerButton}
-              onChange={(primaryCta) =>
-                onChange({
-                  ...data,
-                  primaryCta,
-                  campaignProgress: {
-                    ...(data.campaignProgress ?? {}),
-                    registerButton: primaryCta,
-                  },
-                })
-              }
-              fallback={{ label: "Get Started Free →", href: "#start" }}
-            />
-            <OptionalLinkField
-              label="Secondary CTA button"
-              value={data.secondaryCta ?? data.campaignProgress?.donateButton}
-              onChange={(secondaryCta) =>
-                onChange({
-                  ...data,
-                  secondaryCta,
-                  campaignProgress: {
-                    ...(data.campaignProgress ?? {}),
-                    donateButton: secondaryCta,
-                  },
-                })
-              }
-              fallback={{ label: "Explore Platform", href: "#explore" }}
-            />
-          </FormGroup>
-
           <FormGroup title="Optional Stat & Milestone Cards">
             <CheckboxField
               label="Show floating milestone & stat cards (Keep off for clean buttons)"
@@ -968,6 +935,28 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                     placeholder="of $300,000 milestone"
                   />
                 </div>
+                <OptionalLinkField
+                  label="Card secondary button"
+                  value={data.campaignProgress?.donateButton}
+                  onChange={(donateButton) =>
+                    onChange({
+                      ...data,
+                      campaignProgress: { ...(data.campaignProgress ?? {}), donateButton },
+                    })
+                  }
+                  fallback={{ label: "Learn more", href: "#explore" }}
+                />
+                <OptionalLinkField
+                  label="Card primary button"
+                  value={data.campaignProgress?.registerButton}
+                  onChange={(registerButton) =>
+                    onChange({
+                      ...data,
+                      campaignProgress: { ...(data.campaignProgress ?? {}), registerButton },
+                    })
+                  }
+                  fallback={{ label: "Get started", href: "#start" }}
+                />
               </FormGroup>
 
               <FormGroup title="Stat & Metric Cards">

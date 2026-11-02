@@ -7,9 +7,10 @@ import { validateEmail, validatePassword } from "../../auth/validation.ts";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import AuthSplitLayout from "../../layouts/AuthSplitLayout.tsx";
+import { getReferralCode } from "../../utils/referral.ts";
 import type { VerifyEmailState } from "./VerifyEmailPage.tsx";
 
-type SignupForm = Required<SignupInput>;
+type SignupForm = Required<Omit<SignupInput, "referralCode">> & { referralCode?: string };
 type SignupErrors = Partial<Record<keyof SignupForm, string>>;
 
 const INITIAL_FORM: SignupForm = {
@@ -18,6 +19,7 @@ const INITIAL_FORM: SignupForm = {
   email: "",
   password: "",
   phone: "",
+  referralCode: "",
   acceptTerms: false,
 };
 
@@ -82,12 +84,14 @@ export default function SignupPage() {
 
     setSubmitting(true);
     try {
+      const refCode = getReferralCode();
       const result = await authApi.signup({
         ...form,
         fullName: form.fullName.trim(),
         businessName: form.businessName.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || undefined,
+        referralCode: refCode || undefined,
       });
       const state: VerifyEmailState = {
         email: result.email,
