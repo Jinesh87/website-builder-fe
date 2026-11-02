@@ -255,7 +255,12 @@ function useAuthFlow(data: AuthData, websiteId?: string, accountHref = "/account
       form.querySelector<HTMLInputElement>('input[name="password"], input[data-auth-type="password"]')?.value ?? "";
     const rememberInput = form.querySelector<HTMLInputElement>('input[name="remember"]');
     const remember = rememberInput ? rememberInput.checked : true;
-    const code = form.querySelector<HTMLInputElement>('input[name="code"]')?.value.trim() ?? "";
+    const otpCells = form.querySelectorAll<HTMLInputElement>(".wb-auth-otp-cell");
+    const codeFromCells = Array.from(otpCells)
+      .map((cell) => cell.value.replace(/\D/g, "").slice(-1))
+      .join("");
+    const code =
+      codeFromCells || form.querySelector<HTMLInputElement>('input[name="code"]')?.value.trim() || "";
 
     setBusy(true);
     setError(null);
@@ -447,6 +452,10 @@ function OtpInput({ length }: { length: number }) {
     setDigits(Array.from({ length }, () => ""));
   }, [length]);
 
+  useEffect(() => {
+    refs.current[0]?.focus();
+  }, [length]);
+
   function setDigit(index: number, value: string) {
     const digit = value.replace(/\D/g, "").slice(-1);
     setDigits((current) => current.map((d, i) => (i === index ? digit : d)));
@@ -454,9 +463,30 @@ function OtpInput({ length }: { length: number }) {
   }
 
   function onKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Backspace" && !digits[index] && index > 0) refs.current[index - 1]?.focus();
-    if (event.key === "ArrowLeft" && index > 0) refs.current[index - 1]?.focus();
-    if (event.key === "ArrowRight" && index < length - 1) refs.current[index + 1]?.focus();
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key >= "0" && event.key <= "9") {
+      event.preventDefault();
+      setDigit(index, event.key);
+      return;
+    }
+    if (event.key === "Backspace") {
+      event.preventDefault();
+      if (digits[index]) {
+        setDigits((current) => current.map((d, i) => (i === index ? "" : d)));
+      } else if (index > 0) {
+        setDigits((current) => current.map((d, i) => (i === index - 1 ? "" : d)));
+        refs.current[index - 1]?.focus();
+      }
+      return;
+    }
+    if (event.key === "ArrowLeft" && index > 0) {
+      event.preventDefault();
+      refs.current[index - 1]?.focus();
+    }
+    if (event.key === "ArrowRight" && index < length - 1) {
+      event.preventDefault();
+      refs.current[index + 1]?.focus();
+    }
   }
 
   function onPaste(event: ClipboardEvent<HTMLInputElement>) {
@@ -487,6 +517,7 @@ function OtpInput({ length }: { length: number }) {
           onChange={(event) => setDigit(index, event.target.value)}
           onKeyDown={(event) => onKeyDown(index, event)}
           onPaste={onPaste}
+          onFocus={(event) => event.currentTarget.select()}
         />
       ))}
       <input type="hidden" name="code" value={digits.join("")} />
