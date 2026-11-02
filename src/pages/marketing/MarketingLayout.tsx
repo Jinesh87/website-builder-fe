@@ -6,6 +6,7 @@ import { MiniSite, TemplateFrame } from "./MiniSite.tsx";
 import Tabs from "./Tabs.tsx";
 import { Mail, Phone } from "lucide-react";
 import { env } from "../../config/env.ts";
+import { captureReferralCodeFromUrl } from "../../utils/referral.ts";
 import "./marketing.css";
 
 const FONTS_HREF =
@@ -22,11 +23,12 @@ const NAV = [
   ["/features", "Features"],
   ["/templates", "Templates"],
   ["/pricing", "Pricing"],
+  ["/partner", "Become a Partner"],
   ["/about", "About"],
   ["/contact", "Contact"],
 ] as const;
 
-const NO_CTA = ["/contact", "/legal", "/templates"];
+const NO_CTA = ["/contact", "/legal", "/templates", "/partner"];
 const SITE_TITLE = "Website Builder";
 
 export function MarketingHeader({
@@ -185,8 +187,8 @@ export function MarketingFooter() {
   return (
     <footer>
       <div className="wrap">
-        <div className="cols5">
-          <div className="col" style={{ maxWidth: "300px" }}>
+        <div className="cols6">
+          <div className="col brand-col" style={{ maxWidth: "280px" }}>
             <Link to="/" className="brand" aria-label={`${env.appName} home`}>
               <img
                 className="brand-logo foot-logo"
@@ -212,6 +214,11 @@ export function MarketingFooter() {
             <Link to="/templates">Templates</Link>
             <Link to="/pricing">Pricing</Link>
             <Link to="/signup">Sign up</Link>
+          </div>
+          <div className="col">
+            <h4>Get Started</h4>
+            <Link to="/start">Questionnaire</Link>
+            <Link to="/partner">Partner Form</Link>
           </div>
           <div className="col">
             <h4>Company</h4>
@@ -551,6 +558,10 @@ export default function MarketingLayout() {
   const [showShortlistModal, setShowShortlistModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    captureReferralCodeFromUrl();
+  }, []);
 
   const [shortlist, setShortlist] = useState<number[]>(() => {
     try {

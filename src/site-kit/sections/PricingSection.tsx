@@ -151,10 +151,9 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
                 </div>
 
                 <div className="wb-pricing-action-wrap">
-                  <SiteButton
-                    link={plan.cta || { label: "Get started", href: "/contact" }}
-                    tone={isFeatured ? "primary" : "secondary"}
-                  />
+                  {plan.cta && (
+                    <SiteButton link={plan.cta} tone={isFeatured ? "primary" : "secondary"} />
+                  )}
                   {plan.highlightNote && (
                     <span className="wb-pricing-highlight-note">{plan.highlightNote}</span>
                   )}
@@ -249,10 +248,9 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
                 </div>
 
                 <div className="wb-pricing-action-wrap">
-                  <SiteButton
-                    link={plan.cta || { label: "Choose plan", href: "/contact" }}
-                    tone={isFeatured ? "primary" : "secondary"}
-                  />
+                  {plan.cta && (
+                    <SiteButton link={plan.cta} tone={isFeatured ? "primary" : "secondary"} />
+                  )}
                   {plan.highlightNote && (
                     <span className="wb-pricing-highlight-note">{plan.highlightNote}</span>
                   )}
@@ -338,10 +336,9 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
                   </div>
 
                   <div className="wb-pricing-action-wrap">
-                    <SiteButton
-                      link={plan.cta || { label: "Select plan", href: "/contact" }}
-                      tone={isFeatured ? "primary" : "secondary"}
-                    />
+                    {plan.cta && (
+                      <SiteButton link={plan.cta} tone={isFeatured ? "primary" : "secondary"} />
+                    )}
                     {plan.highlightNote && (
                       <span className="wb-pricing-highlight-note">{plan.highlightNote}</span>
                     )}
@@ -435,10 +432,9 @@ export default function PricingSection({ section }: { section: SectionOf<"pricin
               </div>
 
               <div className="wb-pricing-action-wrap">
-                <SiteButton
-                  link={plan.cta || { label: "Get started", href: "/contact" }}
-                  tone={isFeatured ? "primary" : "secondary"}
-                />
+                {plan.cta && (
+                  <SiteButton link={plan.cta} tone={isFeatured ? "primary" : "secondary"} />
+                )}
                 {plan.highlightNote && (
                   <span className="wb-pricing-highlight-note">{plan.highlightNote}</span>
                 )}

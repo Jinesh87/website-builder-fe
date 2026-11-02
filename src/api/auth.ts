@@ -1,6 +1,6 @@
 import { request } from "./http.ts";
 
-export type UserRole = "SUPER_ADMIN" | "CLIENT";
+export type UserRole = "SUPER_ADMIN" | "CLIENT" | "PARTNER";
 export type UserStatus = "PENDING_VERIFICATION" | "ACTIVE" | "SUSPENDED";
 
 export type AuthUser = {
@@ -30,6 +30,7 @@ export type SignupInput = {
   email: string;
   password: string;
   phone?: string;
+  referralCode?: string;
   acceptTerms: boolean;
 };
 

@@ -1,7 +1,8 @@
 import type { SaveDraftInput, WebsiteDetail, WebsitePage } from "../../../api/websites.ts";
-import type { ContactData, FooterData, HeaderData, HeaderMenuItem, LinkRef, Section, ThemeSettings } from "../../../site-kit/index.ts";
+import type { ContactData, FooterData, HeaderData, HeaderMenuItem, HeroData, LinkRef, Section, ThemeSettings } from "../../../site-kit/index.ts";
 import { getTemplateSite } from "../../../site-kit/templates/index.ts";
 import { liftSiteChrome } from "../../../features/builder/utils/site-chrome.ts";
+import { liftLegacyHeroButtons } from "../../../site-kit/hero-layout.ts";
 
 export type EditorDraft = {
   theme: ThemeSettings;
@@ -96,6 +97,9 @@ export function draftFromWebsite(website: WebsiteDetail): EditorDraft {
   pages = pages.map((page) => ({
     ...page,
     sections: page.sections.map((sec) => {
+      if (sec.type === "hero" && sec.data) {
+        return { ...sec, data: liftLegacyHeroButtons(sec.data as HeroData) };
+      }
       if (sec.type === "contact" && sec.data) {
         const cData = sec.data as ContactData;
         const cleanField = (val: string | undefined) => (typeof val === "string" ? val.replace(/^\[(.*)\]$/, "$1") : val);

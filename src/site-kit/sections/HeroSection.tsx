@@ -24,10 +24,11 @@ import {
   alignAttr,
   heroBaseAlign,
   heroButtonShapeProps,
+  heroCtas,
   heroElementAlign,
   vintageHeroPolaroids,
 } from "../hero-layout.ts";
-import type { HeroAlign, HeroAlignElement, HeroData, LinkRef, SectionOf } from "../types.ts";
+import type { HeroAlign, HeroAlignElement, HeroData, SectionOf } from "../types.ts";
 import CurvedBannerCarousel, {
   DEFAULT_BANNER_ITEMS,
   type CurvedBannerItem,
@@ -400,36 +401,19 @@ export default function HeroSection({
           ? "wb-hero-min-compact"
           : "";
 
-  const allButtons = data.buttons?.length
-    ? data.buttons
-    : [data.primaryCta, data.secondaryCta].filter(Boolean);
+  const ctas = heroCtas(data);
+  const hasActions = Boolean(ctas.primary || ctas.secondary || ctas.video);
+  const actionButtons = (
+    <>
+      {ctas.primary && <SiteButton link={ctas.primary} tone="primary" />}
+      {ctas.secondary && <SiteButton link={ctas.secondary} tone="secondary" />}
+      {ctas.video && <SiteLink link={ctas.video} className="wb-btn-video-play" />}
+    </>
+  );
 
-  const actions = (allButtons.length > 0 || data.tertiaryCta) && (
+  const actions = hasActions && (
     <div className="wb-hero-actions" {...alignAttr(alignOf("actions"))}>
-      {allButtons.map((btn, idx) =>
-        btn ? (
-          <SiteButton
-            key={`${btn.label}-${btn.href}-${idx}`}
-            link={btn}
-            tone={idx === 0 ? "primary" : "secondary"}
-          />
-        ) : null,
-      )}
-      {data.tertiaryCta && (() => {
-        const isExplicitLink = data.tertiaryCta.actionType === "link";
-        const isExplicitDownload = data.tertiaryCta.actionType === "download";
-        const defaultVideoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-        const resolvedLink: LinkRef = isExplicitLink || isExplicitDownload
-          ? data.tertiaryCta
-          : {
-              ...data.tertiaryCta,
-              actionType: "video",
-              videoUrl: data.tertiaryCta.videoUrl || (data.tertiaryCta.href && data.tertiaryCta.href !== "#demo" && data.tertiaryCta.href !== "#" ? data.tertiaryCta.href : defaultVideoUrl),
-            };
-        return (
-          <SiteLink link={resolvedLink} className="wb-btn-video-play" />
-        );
-      })()}
+      {actionButtons}
     </div>
   );
 
@@ -519,20 +503,12 @@ export default function HeroSection({
           </div>
 
           {/* Action CTAs */}
-          {allButtons.length > 0 && (
+          {hasActions && (
             <div
               className="wb-hero-curved-actions"
               {...alignAttr(alignOf("actions"))}
             >
-              {allButtons.map((btn, idx) =>
-                btn ? (
-                  <SiteButton
-                    key={`${btn.label}-${btn.href}-${idx}`}
-                    link={btn}
-                    tone={idx === 0 ? "primary" : "secondary"}
-                  />
-                ) : null,
-              )}
+              {actionButtons}
             </div>
           )}
         </div>
@@ -597,16 +573,14 @@ export default function HeroSection({
     const overrideOf = (element: HeroAlignElement) =>
       heroElementAlign(data, element, undefined);
 
-    // Sanitize legacy "Swim in Pink" and "Donate" texts for clean dummy presentation
-    const headingText =
-      !data.heading || data.heading.toLowerCase().includes("swim in pink")
-        ? "Empower Your Next Breakthrough 2026"
-        : data.heading;
+    // Replace legacy "Swim in Pink" placeholder copy; cleared fields stay empty.
+    const headingText = data.heading?.toLowerCase().includes("swim in pink")
+      ? "Empower Your Next Breakthrough 2026"
+      : data.heading;
 
     const subheadingText =
-      !data.subheading ||
-      data.subheading.toLowerCase().includes("making waves") ||
-      data.subheading.toLowerCase().includes("vital research")
+      data.subheading?.toLowerCase().includes("making waves") ||
+      data.subheading?.toLowerCase().includes("vital research")
         ? "Join over 25,000 innovators, creators, and teams scaling high-impact digital experiences worldwide."
         : data.subheading;
 
@@ -636,8 +610,6 @@ export default function HeroSection({
       raisedLabel: "funded",
       targetLabel: "of $300,000 milestone",
       percentage: 95,
-      donateButton: { label: "Explore Platform", href: "#explore" },
-      registerButton: { label: "Get Started Free →", href: "#start" },
     };
 
     const progress = {
@@ -652,49 +624,7 @@ export default function HeroSection({
       targetLabel: rawProgress.targetLabel?.toLowerCase().includes("target")
         ? "of $300,000 milestone"
         : (rawProgress.targetLabel ?? "of $300,000 milestone"),
-      donateButton: rawProgress.donateButton?.label
-        ?.toLowerCase()
-        .includes("donate")
-        ? { ...rawProgress.donateButton, label: "Explore Platform" }
-        : (rawProgress.donateButton ?? {
-            label: "Explore Platform",
-            href: "#explore",
-          }),
-      registerButton: rawProgress.registerButton?.label
-        ?.toLowerCase()
-        .includes("register")
-        ? { ...rawProgress.registerButton, label: "Get Started Free →" }
-        : (rawProgress.registerButton ?? {
-            label: "Get Started Free →",
-            href: "#start",
-          }),
     };
-
-    const primaryAction =
-      data.primaryCta ??
-      data.buttons?.[0] ??
-      (progress.registerButton
-        ? {
-            label: progress.registerButton.label
-              ?.toLowerCase()
-              .includes("register")
-              ? "Get Started Free →"
-              : progress.registerButton.label,
-            href: progress.registerButton.href ?? "#start",
-          }
-        : { label: "Get Started Free →", href: "#start" });
-
-    const secondaryAction =
-      data.secondaryCta ??
-      data.buttons?.[1] ??
-      (progress.donateButton
-        ? {
-            label: progress.donateButton.label?.toLowerCase().includes("donate")
-              ? "Explore Platform"
-              : progress.donateButton.label,
-            href: progress.donateButton.href ?? "#explore",
-          }
-        : { label: "Explore Platform", href: "#explore" });
 
     const percentage =
       typeof progress.percentage === "number"
@@ -769,8 +699,7 @@ export default function HeroSection({
           {(headingText ||
             subheadingText ||
             data.eyebrow ||
-            primaryAction ||
-            secondaryAction) && (
+            hasActions) && (
             <div className={`wb-campaign-copy-wrap wb-align-${contentAlign}`}>
               {data.eyebrow && (
                 <span
@@ -804,27 +733,19 @@ export default function HeroSection({
                 </p>
               )}
 
-              {/* Simple CTA Buttons Design (Replaces bulky cards with clean modern hero buttons) */}
-              {(primaryAction || secondaryAction) && (
+              {hasActions && (
                 <div
                   className={`wb-campaign-actions wb-align-${contentAlign}`}
                   {...alignAttr(overrideOf("actions"))}
                 >
-                  {primaryAction && (
-                    <SiteLink
-                      link={primaryAction}
-                      className="wb-campaign-btn-primary"
-                    >
-                      <span>{primaryAction.label}</span>
-                    </SiteLink>
+                  {ctas.primary && (
+                    <SiteLink link={ctas.primary} className="wb-campaign-btn-primary" />
                   )}
-                  {secondaryAction && (
-                    <SiteLink
-                      link={secondaryAction}
-                      className="wb-campaign-btn-secondary"
-                    >
-                      <span>{secondaryAction.label}</span>
-                    </SiteLink>
+                  {ctas.secondary && (
+                    <SiteLink link={ctas.secondary} className="wb-campaign-btn-secondary" />
+                  )}
+                  {ctas.video && (
+                    <SiteLink link={ctas.video} className="wb-campaign-btn-secondary" />
                   )}
                 </div>
               )}
@@ -923,25 +844,26 @@ export default function HeroSection({
                   />
                 </div>
 
-                {/* Action Buttons Row */}
-                <div className="wb-campaign-progress-actions">
-                  {progress.donateButton && (
-                    <SiteLink
-                      link={progress.donateButton}
-                      className="wb-campaign-btn-donate"
-                    >
-                      <span>{progress.donateButton.label}</span>
-                    </SiteLink>
-                  )}
-                  {progress.registerButton && (
-                    <SiteLink
-                      link={progress.registerButton}
-                      className="wb-campaign-btn-register"
-                    >
-                      <span>{progress.registerButton.label}</span>
-                    </SiteLink>
-                  )}
-                </div>
+                {(progress.donateButton || progress.registerButton) && (
+                  <div className="wb-campaign-progress-actions">
+                    {progress.donateButton && (
+                      <SiteLink
+                        link={progress.donateButton}
+                        className="wb-campaign-btn-donate"
+                      >
+                        <span>{progress.donateButton.label}</span>
+                      </SiteLink>
+                    )}
+                    {progress.registerButton && (
+                      <SiteLink
+                        link={progress.registerButton}
+                        className="wb-campaign-btn-register"
+                      >
+                        <span>{progress.registerButton.label}</span>
+                      </SiteLink>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

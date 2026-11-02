@@ -30,6 +30,27 @@ export function curatedTemplateIndex(key: string): number | null {
   return CURATED_INDEX_BY_KEY.get(key) ?? null;
 }
 
+/** Deterministic fallback number for any template lacking a sequential number or curated id. */
+export function fallbackTemplateNumber(keyOrId: string): number {
+  let hash = 0;
+  for (let i = 0; i < keyOrId.length; i++) {
+    hash = (hash * 31 + keyOrId.charCodeAt(i)) >>> 0;
+  }
+  return 3000 + (hash % 6999) + 1;
+}
+
+/** Resolves the display unique ID for any template: marketing number (#2134…) or platform sequence number (#3001…). */
+export function getTemplateDisplayId(template: { key: string; number?: number | null }): string {
+  const curatedIndex = curatedTemplateIndex(template.key);
+  if (curatedIndex !== null && TPLS[curatedIndex]?.id) {
+    return TPLS[curatedIndex].id;
+  }
+  if (template.number != null) {
+    return String(template.number);
+  }
+  return String(fallbackTemplateNumber(template.key));
+}
+
 let platformTemplates: Promise<WebsiteTemplate[]> | null = null;
 
 /** One request per page load, shared by every gallery consumer; a failure is retried on next use. */
@@ -52,18 +73,27 @@ function mergeGalleryTemplates(platform: readonly WebsiteTemplate[]): GalleryTem
   const others = platform
     .filter((template) => !template.isCustom && !curatedKeys.has(template.key))
     .map(
-      (template): GalleryTemplate => ({
-        kind: "platform",
-        template,
-        key: template.key,
-        name: template.name,
-        category: template.category,
-        style: null,
-        searchText: [template.key, template.name, template.category, template.description]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase(),
-      }),
+      (template): GalleryTemplate => {
+        const displayId = getTemplateDisplayId(template);
+        return {
+          kind: "platform",
+          template,
+          key: template.key,
+          name: template.name,
+          category: template.category,
+          style: null,
+          searchText: [
+            template.key,
+            template.name,
+            template.category,
+            template.description,
+            displayId ? `#${displayId} ${displayId}` : "",
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase(),
+        };
+      },
     );
   return [...curated, ...others];
 }

@@ -36,6 +36,9 @@ function toEmailForm(config: EmailConfig): EmailConfigInput {
     fromEmail: config.fromEmail ?? "",
     fromName: config.fromName ?? "",
     enabled: config.configured ? config.enabled : true,
+    contactSalesEmail: config.contactSalesEmail ?? "",
+    questionnaireSalesEmail: config.questionnaireSalesEmail ?? "",
+    partnerSalesEmail: config.partnerSalesEmail ?? "",
   };
 }
 
@@ -65,6 +68,9 @@ export default function SettingsPage() {
     fromEmail: "",
     fromName: "",
     enabled: true,
+    contactSalesEmail: "",
+    questionnaireSalesEmail: "",
+    partnerSalesEmail: "",
   });
   const [emailErrors, setEmailErrors] = useState<EmailConfigErrors>({});
   const [emailSaving, setEmailSaving] = useState(false);
@@ -124,6 +130,11 @@ export default function SettingsPage() {
     return (value: EmailConfigInput[K]) => setEmailForm((current) => ({ ...current, [key]: value }));
   }
 
+  function validateOptionalEmail(val?: string) {
+    if (!val || !val.trim()) return undefined;
+    return validateEmail(val.trim());
+  }
+
   async function handleEmailSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextErrors: EmailConfigErrors = {
@@ -133,6 +144,9 @@ export default function SettingsPage() {
           : undefined,
       fromEmail: validateEmail(emailForm.fromEmail),
       fromName: emailForm.fromName.trim() ? undefined : "From name is required",
+      contactSalesEmail: validateOptionalEmail(emailForm.contactSalesEmail),
+      questionnaireSalesEmail: validateOptionalEmail(emailForm.questionnaireSalesEmail),
+      partnerSalesEmail: validateOptionalEmail(emailForm.partnerSalesEmail),
     };
     setEmailErrors(nextErrors);
     setEmailSaveFeedback(null);
@@ -145,6 +159,9 @@ export default function SettingsPage() {
         fromEmail: emailForm.fromEmail.trim(),
         fromName: emailForm.fromName.trim(),
         enabled: emailForm.enabled,
+        contactSalesEmail: emailForm.contactSalesEmail?.trim() || "",
+        questionnaireSalesEmail: emailForm.questionnaireSalesEmail?.trim() || "",
+        partnerSalesEmail: emailForm.partnerSalesEmail?.trim() || "",
       });
       setEmailConfig(saved);
       setEmailForm(toEmailForm(saved));
@@ -366,6 +383,48 @@ export default function SettingsPage() {
                       <Label className="text-sm text-ink">Send platform emails</Label>
                     </Switch.Content>
                   </Switch>
+
+                  <div className="border-t border-line pt-5">
+                    <h3 className="text-sm font-semibold text-ink">Notification & Sales Inboxes</h3>
+                    <p className="mt-1 text-xs text-ink-body">
+                      Configure where submission notifications and leads are sent. Leave blank to use the default inbox (support@bytezoracoders.com).
+                    </p>
+
+                    <div className="mt-4 flex flex-col gap-4">
+                      <TextInput
+                        label="Contact form sales email"
+                        name="contactSalesEmail"
+                        type="email"
+                        placeholder="support@bytezoracoders.com"
+                        description="Receives inquiries submitted through the contact page."
+                        value={emailForm.contactSalesEmail ?? ""}
+                        onChange={updateEmail("contactSalesEmail")}
+                        error={emailErrors.contactSalesEmail}
+                      />
+
+                      <TextInput
+                        label="Website questionnaire sales email"
+                        name="questionnaireSalesEmail"
+                        type="email"
+                        placeholder="support@bytezoracoders.com"
+                        description="Receives client website project questionnaires."
+                        value={emailForm.questionnaireSalesEmail ?? ""}
+                        onChange={updateEmail("questionnaireSalesEmail")}
+                        error={emailErrors.questionnaireSalesEmail}
+                      />
+
+                      <TextInput
+                        label="Partner application sales email"
+                        name="partnerSalesEmail"
+                        type="email"
+                        placeholder="support@bytezoracoders.com"
+                        description="Receives partner & agency applications."
+                        value={emailForm.partnerSalesEmail ?? ""}
+                        onChange={updateEmail("partnerSalesEmail")}
+                        error={emailErrors.partnerSalesEmail}
+                      />
+                    </div>
+                  </div>
 
                   {emailSaveFeedback && (
                     <FormAlert status={emailSaveFeedback.status}>

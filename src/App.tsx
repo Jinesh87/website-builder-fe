@@ -37,11 +37,15 @@ const CreateWebsitePage = lazy(() => import("./pages/websites/CreateWebsitePage.
 const WebsitePreviewPage = lazy(() => import("./pages/websites/WebsitePreviewPage.tsx"));
 const ProjectDashboardPage = lazy(() => import("./pages/websites/ProjectDashboardPage.tsx"));
 const BuilderRoute = lazy(() => import("./features/builder/BuilderRoute.tsx"));
+const BecomePartnerPage = lazy(() => import("./pages/marketing/BecomePartnerPage.tsx"));
+// Partner dashboard hidden for presentation:
+// const PartnerDashboardPage = lazy(() => import("./pages/partner/PartnerDashboardPage.tsx"));
 
 // Admin pages
 const ClientsPage = lazy(() => import("./pages/admin/ClientsPage.tsx"));
 const EnquiriesPage = lazy(() => import("./pages/admin/EnquiriesPage.tsx"));
 const QuestionnairesPage = lazy(() => import("./pages/admin/QuestionnairesPage.tsx"));
+const PartnersAdminPage = lazy(() => import("./pages/admin/PartnersPage.tsx"));
 const ClientFormPage = lazy(() => import("./pages/admin/ClientFormPage.tsx"));
 const AllWebsitesPage = lazy(() => import("./pages/admin/AllWebsitesPage.tsx"));
 const ClientWebsitesPage = lazy(() => import("./pages/admin/ClientWebsitesPage.tsx"));
@@ -73,11 +77,14 @@ export default function App() {
               <Route path="templates" element={<TemplatesPage />} />
               <Route path="templates/:templateKey" element={<TemplateDetailPage />} />
               <Route path="pricing" element={<PricingPage />} />
+              <Route path="partner" element={<BecomePartnerPage />} />
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
               <Route path="legal" element={<LegalPage />} />
             </Route>
 
+            <Route path="become-a-partner" element={<Navigate to="/partner" replace />} />
+            <Route path="partner/dashboard" element={<Navigate to="/dashboard" replace />} />
             <Route path="start" element={<StartQuestionnairePage />} />
             <Route element={<PublicLayout />}>
               <Route path="*" element={<NotFoundPage />} />
@@ -91,7 +98,7 @@ export default function App() {
             <Route path="verify-email" element={<VerifyEmailPage />} />
             <Route path="reset-password" element={<ResetPasswordPage />} />
 
-            <Route element={<RequireAuth roles={["CLIENT"]} />}>
+            <Route element={<RequireAuth roles={["CLIENT", "PARTNER"]} />}>
               <Route element={<ClientLayout />}>
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="questionnaire" element={<ClientQuestionnairePage />} />
@@ -99,11 +106,13 @@ export default function App() {
                 <Route path="media" element={<MediaLibraryPage />} />
                 <Route path="account" element={<AccountSettingsPage />} />
                 <Route path="connects" element={<ConnectsPage />} />
+                {/* Partnership program hidden from client portal for presentation */}
+                <Route path="partnership" element={<Navigate to="/dashboard" replace />} />
                 <Route path="wallet" element={<Navigate to="/connects" replace />} />
               </Route>
             </Route>
 
-            <Route element={<RequireAuth roles={["CLIENT", "SUPER_ADMIN"]} />}>
+            <Route element={<RequireAuth roles={["CLIENT", "SUPER_ADMIN", "PARTNER"]} />}>
               <Route path="websites/new" element={<CreateWebsitePage />} />
               <Route element={<RoleLayout />}>
                 <Route path="websites/:id" element={<ProjectDashboardPage />} />
@@ -117,6 +126,7 @@ export default function App() {
                 <Route index element={<ClientsPage />} />
                 <Route path="enquiries" element={<EnquiriesPage />} />
                 <Route path="questionnaires" element={<QuestionnairesPage />} />
+                <Route path="partners" element={<PartnersAdminPage />} />
                 <Route path="clients/new" element={<ClientFormPage />} />
                 <Route path="clients/:id" element={<ClientFormPage />} />
                 <Route path="websites" element={<AllWebsitesPage />} />
