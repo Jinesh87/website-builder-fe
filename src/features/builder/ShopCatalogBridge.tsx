@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { shopApi, type ShopProduct } from "../../api/shop.ts";
 import { ShopCatalogProvider } from "../../site-kit/shop-catalog.tsx";
-import type { ShopCatalogProduct } from "../../site-kit/index.ts";
+import type { ShopCancelUntilStatus, ShopCatalogProduct } from "../../site-kit/index.ts";
 import { useEditor } from "./editor-context.ts";
 
 function variantOptions(product: ShopProduct, variantName: string): { name: string; value: string }[] {
@@ -66,21 +66,29 @@ function toCatalogProduct(product: ShopProduct): ShopCatalogProduct {
   };
 }
 
-/** Loads this website’s shop so product sections on the canvas show the real catalogue. */
-export default function ShopCatalogBridge({
+type ShopWebsite = {
+  id: string;
+  shopEnabled: boolean;
+  shopFeatureEnabled: boolean;
+  shopCancelUntilStatus?: ShopCancelUntilStatus | null;
+};
+
+/** Loads a website’s shop catalogue for editor canvas and draft preview. */
+export function WebsiteShopCatalogProvider({
+  website,
   productSlug,
   selection,
   children,
 }: {
+  website: ShopWebsite | null | undefined;
   productSlug?: string;
   selection?: Record<string, string>;
   children: ReactNode;
 }) {
-  const { website } = useEditor();
   const [products, setProducts] = useState<ShopCatalogProduct[] | null>(null);
 
   useEffect(() => {
-    if (!website.shopFeatureEnabled || !website.shopEnabled) {
+    if (!website?.shopFeatureEnabled || !website.shopEnabled) {
       setProducts(null);
       return;
     }
@@ -98,23 +106,44 @@ export default function ShopCatalogBridge({
         if (!cancel) setProducts(loaded.map(toCatalogProduct));
       })
       .catch(() => {
-        if (!cancel) setProducts(null);
+        if (!cancel) setProducts([]);
       });
     return () => {
       cancel = true;
     };
-  }, [website.id, website.shopEnabled, website.shopFeatureEnabled]);
+  }, [website?.id, website?.shopEnabled, website?.shopFeatureEnabled]);
 
-  const catalog = products
-    ? {
-        websiteId: website.id,
-        authHref: "/login",
-        cancelUntilStatus: website.shopCancelUntilStatus,
-        products,
-        productSlug,
-        selection,
-        live: true as const,
-      }
-    : null;
+  const catalog =
+    website?.shopFeatureEnabled && website.shopEnabled && products
+      ? {
+          websiteId: website.id,
+          authHref: "/login",
+          accountHref: "/account",
+          cancelUntilStatus: website.shopCancelUntilStatus,
+          products,
+          productSlug,
+          selection,
+          live: true as const,
+        }
+      : null;
+
   return <ShopCatalogProvider value={catalog}>{children}</ShopCatalogProvider>;
+}
+
+/** Loads this website’s shop so product sections on the canvas show the real catalogue. */
+export default function ShopCatalogBridge({
+  productSlug,
+  selection,
+  children,
+}: {
+  productSlug?: string;
+  selection?: Record<string, string>;
+  children: ReactNode;
+}) {
+  const { website } = useEditor();
+  return (
+    <WebsiteShopCatalogProvider website={website} productSlug={productSlug} selection={selection}>
+      {children}
+    </WebsiteShopCatalogProvider>
+  );
 }

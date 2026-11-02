@@ -6,6 +6,7 @@ import { errorMessage } from "../../api/http.ts";
 import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { DeviceToggle, PreviewFrame, type Device } from "../../components/websites/DevicePreview.tsx";
+import { WebsiteShopCatalogProvider } from "../../features/builder/ShopCatalogBridge.tsx";
 import { contactEndpointFor, ContactEndpointProvider } from "../../site-kit/contact-endpoint.tsx";
 import { SitePage, type SiteData } from "../../site-kit/index.ts";
 import { resolvePageLink } from "../../site-kit/links.ts";
@@ -240,7 +241,9 @@ export default function WebsitePreviewPage() {
               theme={site?.theme}
             >
               <ContactEndpointProvider endpoint={contactEndpointFor(website?.subdomain)}>
-                <SitePage site={site} page={page} />
+                <WebsiteShopCatalogProvider website={website}>
+                  <SitePage site={site} page={page} />
+                </WebsiteShopCatalogProvider>
               </ContactEndpointProvider>
             </PreviewFrame>
           </main>
