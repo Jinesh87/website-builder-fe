@@ -5,6 +5,9 @@ import { errorMessage } from "../../api/http.ts";
 import { shopApi, type ShopOrder, type ShopOrderPage, type ShopOrderStatus, type ShopRefundStatus } from "../../api/shop.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 
+/** Flip to true when shipping the manual refund UI. */
+const SHOW_MANUAL_REFUND = false;
+
 const STATUS_OPTIONS: { value: ShopOrderStatus | ""; label: string }[] = [
   { value: "", label: "All statuses" },
   { value: "pending", label: "Pending" },
@@ -301,7 +304,7 @@ function OrderDetail({
             </div>
           </div>
 
-          {canRetryRefund && (
+          {SHOW_MANUAL_REFUND && canRetryRefund && (
             <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
               <p className="text-sm font-medium text-rose-900">Automatic refund failed</p>
               <p className="mt-1 text-xs text-rose-800">
@@ -315,7 +318,7 @@ function OrderDetail({
               </div>
             </div>
           )}
-          {!canRetryRefund && refundMessage && (
+          {SHOW_MANUAL_REFUND && !canRetryRefund && refundMessage && (
             <FormAlert status="success">{refundMessage}</FormAlert>
           )}
 
