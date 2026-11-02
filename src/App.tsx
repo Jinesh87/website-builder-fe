@@ -81,11 +81,11 @@ export default function App() {
               <Route path="about" element={<AboutPage />} />
               <Route path="contact" element={<ContactPage />} />
               <Route path="legal" element={<LegalPage />} />
+              <Route path="start" element={<StartQuestionnairePage />} />
             </Route>
 
             <Route path="become-a-partner" element={<Navigate to="/partner" replace />} />
             <Route path="partner/dashboard" element={<Navigate to="/dashboard" replace />} />
-            <Route path="start" element={<StartQuestionnairePage />} />
             <Route element={<PublicLayout />}>
               <Route path="*" element={<NotFoundPage />} />
             </Route>

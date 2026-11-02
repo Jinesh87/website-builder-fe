@@ -27,7 +27,7 @@ const NAV = [
   ["/contact", "Contact"],
 ] as const;
 
-const NO_CTA = ["/contact", "/legal", "/templates", "/partner"];
+const NO_CTA = ["/contact", "/legal", "/templates", "/partner", "/start"];
 const LIGHT_ONLY = ["/partner"];
 const SITE_TITLE = "Website Builder";
 

@@ -765,16 +765,15 @@
   .mk .pv-row {grid-template-columns:auto 1fr}
   .mk .pv-row em {grid-column:1/-1;text-align:left}
 }
+.mk .split-hero {overflow:hidden}
 .mk .split-hero .wrap {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:center;text-align:left}
 .mk .split-hero .wrap>.stack {align-items:flex-start}
+.mk .collage {position:relative;min-height:360px;padding-bottom:20px}
+.mk .collage .cl-2 {position:absolute;right:-10px;top:28px;bottom:auto;width:64%;z-index:2}
 @media (max-width:900px) {
   .mk .split-hero .wrap {grid-template-columns:minmax(0,1fr)}
-}
-.mk .collage {position:relative;padding-bottom:40px}
-.mk .collage .cl-2 {position:absolute;right:-10px;bottom:-10px;width:62%}
-@media (max-width:600px) {
-  .mk .collage .cl-2 {position:static;width:100%;margin-top:14px}
-  .mk .collage {padding-bottom:0}
+  .mk .collage {min-height:auto;padding-bottom:0}
+  .mk .collage .cl-2 {position:static;width:100%;margin-top:16px}
 }
 .mk .tcollage {position:relative;height:340px}
 .mk .tcollage .tframe {position:absolute;width:62%;box-shadow:0 24px 50px -20px rgba(20,24,60,.45)}

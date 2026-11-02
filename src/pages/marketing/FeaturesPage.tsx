@@ -98,14 +98,6 @@ export default function FeaturesPage() {
                       <i>Contact</i>
                     </span>
                   </div>
-                  <div className="b me">Make the hero photo bigger and add prices.</div>
-                  <div className="b ai">
-                    Done. Review the change on Home{" "}
-                    <span className="keep">
-                      <i>Keep</i>
-                      <i className="o">Undo</i>
-                    </span>
-                  </div>
                 </div>
                 <div className="ui-input">
                   <span>Describe a change…</span>

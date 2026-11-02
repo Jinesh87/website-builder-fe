@@ -683,7 +683,7 @@ export default function QuestionnaireForm({
           </div>
         </header>
       ) : (
-        <div className="mx-auto max-w-[1400px]">
+        <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
           <div
             className={`flex items-center justify-between rounded-xl border p-4 ${
               isDark
@@ -704,26 +704,37 @@ export default function QuestionnaireForm({
                   isDark ? "text-slate-400" : "text-ink-muted"
                 }`}
               >
-                Answer a few questions to generate your website brief
+                Design Brief &amp; Requirements · ~3 minutes
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <span
-                className={`text-xs font-medium ${
-                  isDark ? "text-slate-400" : "text-ink-muted"
-                }`}
-              >
-                {progress}% complete
-              </span>
+            <div className="flex items-center gap-3 sm:gap-6">
               <div
-                className={`h-2 w-28 overflow-hidden rounded-full sm:w-44 ${
-                  isDark ? "bg-[#1b2334]" : "bg-slate-200"
+                className={`hidden sm:flex items-center gap-1.5 text-xs font-medium ${
+                  isDark ? "text-emerald-400/90" : "text-emerald-600"
                 }`}
               >
+                <Check className="size-3.5" />
+                <span>Auto-saved</span>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`text-xs font-semibold tabular-nums ${
+                    isDark ? "text-slate-300" : "text-ink-muted"
+                  }`}
+                >
+                  {progress}%
+                </span>
                 <div
-                  className="h-full rounded-full bg-brand transition-all duration-300 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
+                  className={`h-2 w-24 overflow-hidden rounded-full sm:w-36 ${
+                    isDark ? "bg-[#1b2334]" : "bg-slate-200"
+                  }`}
+                >
+                  <div
+                    className="h-full rounded-full bg-brand transition-all duration-300 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>
