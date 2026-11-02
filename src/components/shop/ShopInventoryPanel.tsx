@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
 import { Button, Spinner } from "@heroui/react";
-import { Plus, Search } from "lucide-react";
+import { ChevronLeft, Plus, Search } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
-import { shopApi, type InventoryItem, type InventoryLogPage } from "../../api/shop.ts";
+import {
+  shopApi,
+  type InventoryItem,
+  type InventoryLogPage,
+  type ProductReturnedOrders,
+} from "../../api/shop.ts";
 import { formatPaise } from "../../api/wallet.ts";
 import CommonModal from "../ui/CommonModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import TextInput from "../ui/TextInput.tsx";
+
+/** Flip to true when shipping the returns UI. */
+const SHOW_RETURNED_ORDERS = false;
 
 function useDebounced(value: string): string {
   const [debounced, setDebounced] = useState(value.trim());
@@ -128,6 +136,7 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
   const [items, setItems] = useState<InventoryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [addingVariantId, setAddingVariantId] = useState<string | null>(null);
+  const [returnsProduct, setReturnsProduct] = useState<{ id: string; name: string } | null>(null);
   const visible =
     items?.filter((item) =>
       `${item.productName} ${item.categoryName} ${item.variantName} ${item.options.map((option) => `${option.name} ${option.value}`).join(" ")}`
@@ -151,12 +160,28 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
     };
   }, [websiteId]);
 
+  if (SHOW_RETURNED_ORDERS && returnsProduct) {
+    return (
+      <ShopProductReturnsPanel
+        websiteId={websiteId}
+        productId={returnsProduct.id}
+        productName={returnsProduct.name}
+        onBack={() => setReturnsProduct(null)}
+      />
+    );
+  }
+
   return (
     <section className="rounded-xl border border-line bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
         <div>
           <h3 className="text-sm font-semibold text-ink">Inventory</h3>
-          <p className="mt-0.5 text-xs text-ink-muted">Each variant has its own quantity. Adding stock is recorded in the inventory log.</p>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            Each variant has its own quantity.
+            {SHOW_RETURNED_ORDERS
+              ? " Returned orders are listed separately and are not added back to on-hand stock."
+              : ""}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SearchField value={search} onChange={setSearch} label="Search inventory" />
@@ -182,7 +207,7 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
       )}
       {visible && visible.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[40rem] text-left text-sm">
+          <table className="w-full min-w-[44rem] text-left text-sm">
             <thead>
               <tr className="border-b border-line text-xs font-medium text-ink-muted">
                 <th className="px-5 py-2 font-medium">Product</th>
@@ -191,6 +216,7 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
                   <th key={name} className="px-3 py-2 font-medium">{name}</th>
                 ))}
                 <th className="px-3 py-2 font-medium">On hand</th>
+                {SHOW_RETURNED_ORDERS && <th className="px-3 py-2 font-medium">Returned orders</th>}
                 <th className="px-5 py-2 font-medium" />
               </tr>
             </thead>
@@ -206,6 +232,21 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
                     <td key={name} className="px-3 py-3 text-ink">{optionValue(item, name)}</td>
                   ))}
                   <td className="px-3 py-3 text-ink">{item.quantity}</td>
+                  {SHOW_RETURNED_ORDERS && (
+                    <td className="px-3 py-3 text-ink">
+                      {item.returnedOrderCount > 0 ? (
+                        <button
+                          type="button"
+                          className="font-medium text-ink underline underline-offset-2 hover:text-ink-muted"
+                          onClick={() => setReturnsProduct({ id: item.productId, name: item.productName })}
+                        >
+                          {item.returnedOrderCount}
+                        </button>
+                      ) : (
+                        <span className="text-ink-muted">0</span>
+                      )}
+                    </td>
+                  )}
                   <td className="px-5 py-3 text-right">
                     <Button size="sm" variant="outline" onPress={() => setAddingVariantId(item.variantId)}>
                       Add
@@ -225,6 +266,110 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
           onClose={() => setAddingVariantId(null)}
           onSaved={(saved) => setItems((current) => current?.map((row) => (row.variantId === saved.variantId ? saved : row)) ?? current)}
         />
+      )}
+    </section>
+  );
+}
+
+function ShopProductReturnsPanel({
+  websiteId,
+  productId,
+  productName,
+  onBack,
+}: {
+  websiteId: string;
+  productId: string;
+  productName: string;
+  onBack: () => void;
+}) {
+  const [data, setData] = useState<ProductReturnedOrders | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setData(null);
+    setError(null);
+    shopApi
+      .productReturns(websiteId, productId)
+      .then((next) => {
+        if (!cancelled) setData(next);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(errorMessage(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [websiteId, productId]);
+
+  return (
+    <section className="rounded-xl border border-line bg-surface">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
+        <div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="mb-2 inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink"
+          >
+            <ChevronLeft className="size-4" aria-hidden /> Inventory
+          </button>
+          <h3 className="text-sm font-semibold text-ink">Returned orders · {data?.productName ?? productName}</h3>
+          <p className="mt-0.5 text-xs text-ink-muted">Customer returns for this product. These units are not added back to on-hand stock.</p>
+        </div>
+      </div>
+      {error && (
+        <div className="px-5 pt-4">
+          <FormAlert status="danger">{error}</FormAlert>
+        </div>
+      )}
+      {!data && !error && (
+        <div className="grid place-items-center py-12">
+          <Spinner aria-label="Loading returned orders" />
+        </div>
+      )}
+      {data && data.orders.length === 0 && (
+        <p className="px-5 py-10 text-center text-sm text-ink-muted">No returned orders for this product yet.</p>
+      )}
+      {data && data.orders.length > 0 && (
+        <ul className="divide-y divide-line">
+          {data.orders.map((order) => (
+            <li key={order.id} className="px-5 py-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-ink">Order #{order.number}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    Returned {formatWhen(order.returnedAt)} · {order.customerName} · {order.customerEmail}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-ink">{formatPaise(order.totalPaise)}</p>
+                  <p className="mt-0.5 text-xs capitalize text-ink-muted">
+                    {order.refundStatus === "none" ? "No refund" : `Refund ${order.refundStatus}`}
+                  </p>
+                </div>
+              </div>
+              {order.returnReason && (
+                <p className="mt-2 text-sm text-ink-body">
+                  <span className="font-medium text-ink">Reason:</span> {order.returnReason}
+                </p>
+              )}
+              <ul className="mt-3 space-y-1.5">
+                {order.items.map((item) => (
+                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="text-ink">
+                      {item.productName}
+                      <span className="text-ink-muted">
+                        {" "}
+                        · {item.variantName} · Qty {item.quantity}
+                      </span>
+                    </span>
+                    <span className="text-ink">{formatPaise(item.lineTotalPaise)}</span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
       )}
     </section>
   );

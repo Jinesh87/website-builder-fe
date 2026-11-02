@@ -89,6 +89,7 @@ export const ACCOUNT_CSS = `
 .wb-acct-badge.is-pending { background: color-mix(in srgb, #f59e0b 16%, transparent); color: #b45309; }
 .wb-acct-badge.is-processing, .wb-acct-badge.is-shipped { background: color-mix(in srgb, #0284c7 14%, transparent); color: #0369a1; }
 .wb-acct-badge.is-failed, .wb-acct-badge.is-cancelled { background: color-mix(in srgb, #dc2626 12%, transparent); color: #b91c1c; }
+.wb-acct-badge.is-returned { background: color-mix(in srgb, #7c3aed 12%, transparent); color: #6d28d9; }
 .wb-acct-badge.is-refund-pending { background: color-mix(in srgb, #f59e0b 16%, transparent); color: #b45309; }
 .wb-acct-badge.is-refund-processed { background: color-mix(in srgb, #16a34a 14%, transparent); color: #15803d; }
 .wb-acct-badge.is-refund-failed { background: color-mix(in srgb, #dc2626 12%, transparent); color: #b91c1c; }
@@ -310,6 +311,7 @@ export const ACCOUNT_CSS = `
 .wb-acct-v-dark-panel .wb-acct-badge.is-pending { color: #fcd34d; }
 .wb-acct-v-dark-panel .wb-acct-badge.is-processing, .wb-acct-v-dark-panel .wb-acct-badge.is-shipped { color: #7dd3fc; }
 .wb-acct-v-dark-panel .wb-acct-badge.is-failed, .wb-acct-v-dark-panel .wb-acct-badge.is-cancelled { color: #fca5a5; }
+.wb-acct-v-dark-panel .wb-acct-badge.is-returned { color: #c4b5fd; }
 .wb-acct-v-dark-panel .wb-acct-badge.is-refund-pending { color: #fcd34d; }
 .wb-acct-v-dark-panel .wb-acct-badge.is-refund-processed { color: #86efac; }
 .wb-acct-v-dark-panel .wb-acct-badge.is-refund-failed { color: #fca5a5; }
@@ -481,6 +483,48 @@ export const ACCOUNT_CSS = `
 .wb-acct-cancel-confirm:hover { filter: brightness(0.95); }
 .wb-acct-cancel-confirm:disabled, .wb-acct-cancel-keep:disabled { opacity: 0.6; cursor: not-allowed; }
 .wb-acct-cancel-reason-view { margin: 14px 0 0; font-size: 0.88rem; color: var(--wb-muted); }
+.wb-acct-row-return {
+  appearance: none; margin: 0; border: 0; background: transparent; color: #6d28d9;
+  font: inherit; font-size: 0.78rem; font-weight: 600; padding: 0.15rem 0.2rem; cursor: pointer;
+  line-height: 1.2; text-decoration: underline; text-underline-offset: 2px;
+}
+.wb-acct-row-return:hover { color: #5b21b6; }
+.wb-acct-return { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--wb-border); }
+.wb-acct-return-open {
+  appearance: none; margin: 0; padding: 0; border: 0; background: transparent;
+  color: #6d28d9; font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.wb-acct-return-open:hover { color: #5b21b6; }
+.wb-acct-return-open[hidden] { display: none !important; }
+.wb-acct-return-form {
+  display: grid; gap: 10px; margin: 0; padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, #6d28d9 24%, var(--wb-border));
+  border-radius: var(--wb-acct-field-r);
+  background: color-mix(in srgb, #6d28d9 5%, transparent);
+}
+.wb-acct-return-form[hidden] { display: none !important; }
+.wb-acct-return-title { margin: 0; font-size: 0.92rem; font-weight: 700; color: var(--wb-text); }
+.wb-acct-return-label { display: grid; gap: 6px; font-size: 0.8rem; font-weight: 600; color: var(--wb-muted); }
+.wb-acct-return-reason {
+  width: 100%; box-sizing: border-box; min-height: 64px; max-height: 140px; resize: vertical;
+  padding: 9px 11px; border-radius: calc(var(--wb-acct-field-r) - 2px); border: 1px solid var(--wb-border);
+  background: var(--wb-acct-card, var(--wb-bg)); color: var(--wb-text); font: inherit; font-size: 0.9rem; font-weight: 400;
+}
+.wb-acct-return-hint { margin: 0; font-size: 0.76rem; color: var(--wb-muted); font-weight: 400; }
+.wb-acct-return-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 2px; }
+.wb-acct-return-keep, .wb-acct-return-confirm {
+  appearance: none; margin: 0; font: inherit; font-size: 0.84rem; font-weight: 600;
+  padding: 0.55rem 0.95rem; border-radius: 8px; cursor: pointer; line-height: 1.2;
+}
+.wb-acct-return-keep {
+  border: 1px solid var(--wb-border); background: transparent; color: var(--wb-text);
+}
+.wb-acct-return-keep:hover { background: color-mix(in srgb, var(--wb-text) 4%, transparent); }
+.wb-acct-return-confirm { border: 0; background: #6d28d9; color: #fff; }
+.wb-acct-return-confirm:hover { filter: brightness(0.95); }
+.wb-acct-return-confirm:disabled, .wb-acct-return-keep:disabled { opacity: 0.6; cursor: not-allowed; }
+.wb-acct-return-reason-view { margin: 14px 0 0; font-size: 0.88rem; color: var(--wb-muted); }
 .wb-acct-form-msg { margin: 0; font-size: 0.82rem; }
 .wb-acct-form-msg.is-error { color: #b91c1c; }
 .wb-acct-form-msg.is-ok { color: #15803d; }

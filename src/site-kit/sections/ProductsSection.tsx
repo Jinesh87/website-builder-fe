@@ -329,9 +329,13 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
                       {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
                     </div>
                     <div className="wb-shop-body">
-                      <span className="wb-shop-category">{listing.product.categoryName}</span>
+                      <span className={`wb-shop-category${listing.product.categoryName ? "" : " is-empty"}`} aria-hidden={listing.product.categoryName ? undefined : true}>
+                        {listing.product.categoryName || "\u00A0"}
+                      </span>
                       <h3 className="wb-shop-name">{listing.product.name}</h3>
-                      {listing.label && <p className="wb-shop-variant">{listing.label}</p>}
+                      <p className={`wb-shop-variant${listing.label ? "" : " is-empty"}`} aria-hidden={listing.label ? undefined : true}>
+                        {listing.label || "\u00A0"}
+                      </p>
                       <span className="wb-shop-price">{formatInr(price)}</span>
                     </div>
                   </a>
@@ -347,9 +351,13 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
                     {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
                   </div>
                   <div className="wb-shop-body">
-                    <span className="wb-shop-category">{listing.product.categoryName}</span>
+                    <span className={`wb-shop-category${listing.product.categoryName ? "" : " is-empty"}`} aria-hidden={listing.product.categoryName ? undefined : true}>
+                      {listing.product.categoryName || "\u00A0"}
+                    </span>
                     <h3 className="wb-shop-name">{listing.product.name}</h3>
-                    {listing.label && <p className="wb-shop-variant">{listing.label}</p>}
+                    <p className={`wb-shop-variant${listing.label ? "" : " is-empty"}`} aria-hidden={listing.label ? undefined : true}>
+                      {listing.label || "\u00A0"}
+                    </p>
                     <span className="wb-shop-price">{listing.variants[0] ? formatInr(price) : ""}</span>
                   </div>
                 </a>
