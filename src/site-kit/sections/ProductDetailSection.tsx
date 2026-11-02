@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
 import ShopCartActions from "../ShopCartActions.tsx";
-import { coverImage, formatInr, shopCancelPolicyText, SHOP_DETAIL_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
+import { coverImage, formatInr, shopCancelPolicyText, shopReturnPolicyText, SHOP_DETAIL_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
 import { SHOP_CART_SCRIPT } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ProductDetailData, SectionOf, ShopCatalogProduct, ShopCatalogVariant } from "../types.ts";
@@ -12,6 +12,7 @@ const SAMPLE: ShopCatalogProduct = {
   slug: "everyday-tee",
   description: "A soft cotton tee. Pick a size and a colour.",
   categoryName: "Tops",
+  returnDays: 7,
   images: [],
   variants: [
     {
@@ -112,10 +113,21 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
   const showStock = data.showStock !== false;
   const showDescription = data.showDescription !== false;
   const showCancellationPolicy = data.showCancellationPolicy !== false;
+  const showReturnPolicy = data.showReturnPolicy !== false;
   const cancelPolicy =
     showCancellationPolicy
       ? shopCancelPolicyText(catalog?.cancelUntilStatus ?? (!live ? "paid" : null))
       : null;
+  const returnPolicyText = showReturnPolicy
+    ? shopReturnPolicyText(product?.returnDays ?? (!live ? 7 : null))
+    : null;
+  const returnGuidelines = showReturnPolicy
+    ? (catalog?.returnGuidelines?.length
+        ? catalog.returnGuidelines
+        : !live
+          ? ["Item must be unused and in original packaging"]
+          : [])
+    : [];
   const selected = product?.variants.find((variant) => variant.id === variantId) ?? product?.variants[0];
   const groups = product ? optionGroups(product.variants) : [];
   const photos = selected && selected.images.length > 0 ? selected.images : (product?.images ?? []);
@@ -260,13 +272,27 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
         <p className="wb-product-policy-text">{cancelPolicy}</p>
       </aside>
     ) : null;
+    const returns = returnPolicyText ? (
+      <aside className="wb-product-policy" aria-label="Return policy">
+        <p className="wb-product-policy-label">Returns</p>
+        <p className="wb-product-policy-text">{returnPolicyText}</p>
+        {returnGuidelines.length > 0 ? (
+          <ul className="wb-product-policy-list">
+            {returnGuidelines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        ) : null}
+      </aside>
+    ) : null;
     const detailsBody = (
       <>
         {description}
         {policy}
+        {returns}
       </>
     );
-    const hasDetails = hasDescription || !!cancelPolicy;
+    const hasDetails = hasDescription || !!cancelPolicy || !!returnPolicyText;
 
     let layout;
     if (design === "gallery-focus") {
@@ -313,6 +339,7 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
             {heading}
             {description}
             {policy}
+            {returns}
             {buy}
             {options}
           </div>

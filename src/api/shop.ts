@@ -24,6 +24,9 @@ export type ShopProduct = {
   description: string | null;
   categoryId: string | null;
   categoryName: string;
+  returnsEnabled: boolean;
+  /** Null = use the shop default return window. */
+  returnDays: number | null;
   optionSets: ShopOptionSet[];
   images: ShopImage[];
   variants: ShopVariant[];
@@ -57,6 +60,8 @@ export type ShopProductInput = {
   name: string;
   description?: string;
   categoryId?: string | null;
+  returnsEnabled?: boolean;
+  returnDays?: number | null;
   optionSets: {
     pricePaise: number;
     options: ShopOption[];

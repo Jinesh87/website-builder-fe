@@ -346,6 +346,14 @@ export const SHOP_CSS = `
   text-transform: uppercase; color: var(--wb-text);
 }
 .wb-product-policy-text { margin: 0; font-size: 0.88rem; line-height: 1.55; color: var(--wb-muted); }
+.wb-product-policy-list {
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--wb-muted);
+}
+.wb-product-policy-list li + li { margin-top: 0.2rem; }
 .wb-product-price { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
 .wb-product-stock {
   display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 0.85rem; font-weight: 600; color: #15803d;

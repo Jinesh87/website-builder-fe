@@ -59,6 +59,10 @@ export type WebsiteSummary = {
   shopEnabled: boolean;
   /** Inclusive status ceiling for shopper cancels. Null = customers cannot cancel. */
   shopCancelUntilStatus: "paid" | "processing" | "shipped" | null;
+  /** Default return window in days. Null = returns off for the shop. */
+  shopReturnDays: number | null;
+  /** Guideline bullets shown with the return policy. */
+  shopReturnGuidelines: string[];
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -227,6 +231,8 @@ export type UpdateWebsiteInput = {
   seoToolsEnabled?: boolean;
   shopEnabled?: boolean;
   shopCancelUntilStatus?: "paid" | "processing" | "shipped" | null;
+  shopReturnDays?: number | null;
+  shopReturnGuidelines?: string[];
 } & { [K in keyof WebsiteInfo]?: string | null };
 
 export const GENERATION_TONES = ["professional", "friendly", "luxury", "playful", "bold", "minimal"] as const;

@@ -1727,6 +1727,8 @@ export type ShopCatalogProduct = {
   slug: string;
   description: string | null;
   categoryName: string;
+  /** Effective return window in days. Null = returns not offered for this product. */
+  returnDays?: number | null;
   images: ShopCatalogImage[];
   variants: ShopCatalogVariant[];
 };
@@ -1743,6 +1745,8 @@ export type ShopCatalog = {
   accountHref?: string;
   /** Inclusive status ceiling for shopper cancels. Null/omitted = cancels disabled. */
   cancelUntilStatus?: ShopCancelUntilStatus | null;
+  /** Shop-wide return guideline bullets. */
+  returnGuidelines?: string[];
   products: ShopCatalogProduct[];
   productSlug?: string;
   /** Option values to preselect, from the shop-card link. */
@@ -1784,6 +1788,8 @@ export type ProductDetailData = {
   showStock?: boolean;
   /** Shows the shop's order cancellation policy under the description. */
   showCancellationPolicy?: boolean;
+  /** Shows the product return policy under the description. */
+  showReturnPolicy?: boolean;
 };
 
 /** Mirrors backend ACCOUNT_VARIANTS. Stored in site data, so values are only ever appended. */

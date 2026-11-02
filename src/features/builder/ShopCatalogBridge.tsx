@@ -44,13 +44,18 @@ function sharedValuePhotos(product: ShopProduct, variantName: string): { url: st
   return [];
 }
 
-function toCatalogProduct(product: ShopProduct): ShopCatalogProduct {
+function toCatalogProduct(product: ShopProduct, shopReturnDays: number | null | undefined): ShopCatalogProduct {
+  const returnDays =
+    !shopReturnDays || shopReturnDays < 1 || product.returnsEnabled === false
+      ? null
+      : product.returnDays ?? shopReturnDays;
   return {
     id: product.id,
     name: product.name,
     slug: product.slug,
     description: product.description,
     categoryName: product.categoryName,
+    returnDays,
     images: (product.images ?? []).map(({ url, alt }) => ({ url, alt })),
     variants: product.variants.map((variant) => {
       const own = (variant.images ?? []).map(({ url, alt }) => ({ url, alt }));
@@ -71,6 +76,8 @@ type ShopWebsite = {
   shopEnabled: boolean;
   shopFeatureEnabled: boolean;
   shopCancelUntilStatus?: ShopCancelUntilStatus | null;
+  shopReturnDays?: number | null;
+  shopReturnGuidelines?: string[];
 };
 
 /** Loads a website’s shop catalogue for editor canvas and draft preview. */
@@ -103,7 +110,7 @@ export function WebsiteShopCatalogProvider({
           const next = await shopApi.products(website.id, { page, pageSize });
           loaded.push(...next.products);
         }
-        if (!cancel) setProducts(loaded.map(toCatalogProduct));
+        if (!cancel) setProducts(loaded.map((product) => toCatalogProduct(product, website.shopReturnDays)));
       })
       .catch(() => {
         if (!cancel) setProducts([]);
@@ -111,7 +118,7 @@ export function WebsiteShopCatalogProvider({
     return () => {
       cancel = true;
     };
-  }, [website?.id, website?.shopEnabled, website?.shopFeatureEnabled]);
+  }, [website?.id, website?.shopEnabled, website?.shopFeatureEnabled, website?.shopReturnDays]);
 
   const catalog =
     website?.shopFeatureEnabled && website.shopEnabled && products
@@ -120,6 +127,7 @@ export function WebsiteShopCatalogProvider({
           authHref: "/login",
           accountHref: "/account",
           cancelUntilStatus: website.shopCancelUntilStatus,
+          returnGuidelines: website.shopReturnGuidelines ?? [],
           products,
           productSlug,
           selection,
