@@ -92,7 +92,15 @@ type FormErrors = Partial<
 
 function InstagramIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-4"
+    >
       <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
       <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
       <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
@@ -102,7 +110,15 @@ function InstagramIcon() {
 
 function FacebookIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-4"
+    >
       <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
     </svg>
   );
@@ -110,7 +126,15 @@ function FacebookIcon() {
 
 function YoutubeIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-4"
+    >
       <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
       <polygon points="10 15 15 12 10 9 10 15" />
     </svg>
@@ -119,7 +143,15 @@ function YoutubeIcon() {
 
 function LinkedinIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="size-4"
+    >
       <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
       <rect width="4" height="12" x="2" y="9" />
       <circle cx="4" cy="4" r="2" />
@@ -189,7 +221,10 @@ export default function QuestionnaireForm({
   const [emailDispatched, setEmailDispatched] = useState(false);
 
   // Uploads go to the client's media library, so themes, templates and files need a client account.
-  const clientId = user?.role === "CLIENT" ? (user.client?.id ?? null) : null;
+  const clientId =
+    user?.role === "CLIENT" || user?.role === "PARTNER"
+      ? (user.client?.id ?? null)
+      : null;
   const [themes, setThemes] = useState<ThemeOption[] | null>(null);
   const [templates, setTemplates] = useState<WebsiteTemplate[] | null>(null);
   const [attachments, setAttachments] = useState<Attachments>(NO_ATTACHMENTS);
@@ -302,10 +337,20 @@ export default function QuestionnaireForm({
     setForm((prev) => {
       const current = prev.answers.pages;
       if (current.includes(page)) {
-        return { ...prev, answers: { ...prev.answers, pages: current.filter((p) => p !== page) } };
+        return {
+          ...prev,
+          answers: {
+            ...prev.answers,
+            pages: current.filter((p) => p !== page),
+          },
+        };
       }
-      if (new Set(["Home", ...current]).size >= MAX_QUESTIONNAIRE_PAGES) return prev;
-      return { ...prev, answers: { ...prev.answers, pages: [...current, page] } };
+      if (new Set(["Home", ...current]).size >= MAX_QUESTIONNAIRE_PAGES)
+        return prev;
+      return {
+        ...prev,
+        answers: { ...prev.answers, pages: [...current, page] },
+      };
     });
     if (errors.pages) setErrors((prev) => ({ ...prev, pages: undefined }));
   }
@@ -361,16 +406,25 @@ export default function QuestionnaireForm({
 
     if (Object.keys(nextErrors).length > 0) {
       if (nextErrors.businessName && businessNameRef.current) {
-        businessNameRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        businessNameRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
         businessNameRef.current.focus();
       } else if (nextErrors.name && nameRef.current) {
         nameRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
         nameRef.current.focus();
       } else if (nextErrors.phone && phoneRef.current) {
-        phoneRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        phoneRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
         phoneRef.current.focus();
       } else if (nextErrors.email && emailRef.current) {
-        emailRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        emailRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
         emailRef.current.focus();
       }
       return false;
@@ -422,22 +476,37 @@ export default function QuestionnaireForm({
 
   if (submitted) {
     return (
-      <div className={`mx-auto max-w-2xl px-4 py-20 text-center ${theme === "dark" ? "text-white" : "text-ink"}`}>
+      <div
+        className={`mx-auto max-w-2xl px-4 py-20 text-center ${theme === "dark" ? "text-white" : "text-ink"}`}
+      >
         <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-emerald-500/20 text-emerald-500">
           <CheckCircle2 className="size-10" />
         </div>
-        <h2 className={`mt-6 text-2xl font-bold tracking-tight sm:text-3xl ${theme === "dark" ? "text-white" : "text-ink"}`}>
+        <h2
+          className={`mt-6 text-2xl font-bold tracking-tight sm:text-3xl ${theme === "dark" ? "text-white" : "text-ink"}`}
+        >
           Questionnaire Submitted!
         </h2>
-        <p className={`mt-3 text-base ${theme === "dark" ? "text-slate-300" : "text-ink-body"}`}>
+        <p
+          className={`mt-3 text-base ${theme === "dark" ? "text-slate-300" : "text-ink-body"}`}
+        >
           Thank you for sharing your website vision with{" "}
-          <strong className={theme === "dark" ? "text-white" : "text-ink"}>{brandName}</strong>. Our team
-          will review your brief and get back to you soon.
+          <strong className={theme === "dark" ? "text-white" : "text-ink"}>
+            {brandName}
+          </strong>
+          . Our team will review your brief and get back to you soon.
         </p>
         {emailDispatched && (
-          <p className={`mt-2 text-sm ${theme === "dark" ? "text-slate-400" : "text-ink-muted"}`}>
+          <p
+            className={`mt-2 text-sm ${theme === "dark" ? "text-slate-400" : "text-ink-muted"}`}
+          >
             A confirmation email is on its way to{" "}
-            <span className={`font-semibold ${theme === "dark" ? "text-white" : "text-ink"}`}>{form.email}</span>.
+            <span
+              className={`font-semibold ${theme === "dark" ? "text-white" : "text-ink"}`}
+            >
+              {form.email}
+            </span>
+            .
           </p>
         )}
         <div className="mt-8 flex justify-center gap-4">
@@ -470,7 +539,9 @@ export default function QuestionnaireForm({
     ? "rounded-2xl border border-[#1e2638] bg-[#121824] p-5 shadow-xl sm:p-6"
     : "rounded-2xl border border-line bg-surface p-5 sm:p-6 shadow-xs";
 
-  const cardTitleCls = isDark ? "text-base font-bold text-white" : "text-base font-bold text-ink";
+  const cardTitleCls = isDark
+    ? "text-base font-bold text-white"
+    : "text-base font-bold text-ink";
   const sectionLabelCls = isDark
     ? "block text-[11px] font-bold uppercase tracking-wider text-slate-400"
     : "block text-[11px] font-bold uppercase tracking-wider text-ink-muted";
@@ -510,7 +581,11 @@ export default function QuestionnaireForm({
   const toggleTrackCls = isDark ? "bg-[#1e273a]" : "bg-slate-300";
 
   return (
-    <div className={isDark ? "min-h-screen bg-[#0d1117] text-slate-200" : "text-ink"}>
+    <div
+      className={
+        isDark ? "min-h-screen bg-[#0d1117] text-slate-200" : "text-ink"
+      }
+    >
       {/* Single clean, professional header */}
       {standalone ? (
         <header
@@ -692,20 +767,24 @@ export default function QuestionnaireForm({
                     <span className="grid size-6 place-items-center rounded-full bg-brand text-xs font-bold text-white">
                       1
                     </span>
-                    <h2 className={cardTitleCls}>
-                      Your details
-                    </h2>
+                    <h2 className={cardTitleCls}>Your details</h2>
                   </div>
-                  <span className={isDark ? "text-xs text-slate-400" : "text-xs text-ink-muted"}>* required</span>
+                  <span
+                    className={
+                      isDark
+                        ? "text-xs text-slate-400"
+                        : "text-xs text-ink-muted"
+                    }
+                  >
+                    * required
+                  </span>
                 </div>
 
                 <div className="mt-5 space-y-4">
                   <div>
-                    <label
-                      htmlFor="businessName"
-                      className={fieldLabelCls}
-                    >
-                      Business / website name <span className="text-red-500">*</span>
+                    <label htmlFor="businessName" className={fieldLabelCls}>
+                      Business / website name{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <input
                       id="businessName"
@@ -726,10 +805,7 @@ export default function QuestionnaireForm({
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
-                      <label
-                        htmlFor="name"
-                        className={fieldLabelCls}
-                      >
+                      <label htmlFor="name" className={fieldLabelCls}>
                         Your name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -748,10 +824,7 @@ export default function QuestionnaireForm({
                     </div>
 
                     <div>
-                      <label
-                        htmlFor="phone"
-                        className={fieldLabelCls}
-                      >
+                      <label htmlFor="phone" className={fieldLabelCls}>
                         Mobile <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -772,10 +845,7 @@ export default function QuestionnaireForm({
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="email"
-                      className={fieldLabelCls}
-                    >
+                    <label htmlFor="email" className={fieldLabelCls}>
                       Email <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -802,16 +872,12 @@ export default function QuestionnaireForm({
                   <span className="grid size-6 place-items-center rounded-full bg-amber-500 text-xs font-bold text-white">
                     2
                   </span>
-                  <h2 className={cardTitleCls}>
-                    Your business
-                  </h2>
+                  <h2 className={cardTitleCls}>Your business</h2>
                 </div>
 
                 <div className="mt-5 space-y-5">
                   <div>
-                    <span className={sectionLabelCls}>
-                      TYPE *
-                    </span>
+                    <span className={sectionLabelCls}>TYPE *</span>
                     <div
                       role="radiogroup"
                       aria-label="Business type"
@@ -837,10 +903,10 @@ export default function QuestionnaireForm({
 
                   <div>
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className={sectionLabelCls}>
-                        PAGES YOU WANT
-                      </span>
-                      <span className={`text-[11px] tabular-nums ${isDark ? "text-slate-400" : "text-ink-muted"}`}>
+                      <span className={sectionLabelCls}>PAGES YOU WANT</span>
+                      <span
+                        className={`text-[11px] tabular-nums ${isDark ? "text-slate-400" : "text-ink-muted"}`}
+                      >
                         {pageCount}/{MAX_QUESTIONNAIRE_PAGES}
                       </span>
                     </div>
@@ -861,7 +927,11 @@ export default function QuestionnaireForm({
                             aria-pressed={selected}
                             disabled={isHome || blocked}
                             onClick={() => togglePage(page)}
-                            title={blocked ? `Up to ${MAX_QUESTIONNAIRE_PAGES} pages` : undefined}
+                            title={
+                              blocked
+                                ? `Up to ${MAX_QUESTIONNAIRE_PAGES} pages`
+                                : undefined
+                            }
                             className={`${pillCls(selected)} ${
                               isHome ? "cursor-default opacity-85" : ""
                             } ${blocked ? "cursor-not-allowed opacity-50" : ""}`}
@@ -872,11 +942,16 @@ export default function QuestionnaireForm({
                       })}
                     </div>
                     {errors.pages ? (
-                      <p className="mt-2 text-xs text-red-500">{errors.pages}</p>
+                      <p className="mt-2 text-xs text-red-500">
+                        {errors.pages}
+                      </p>
                     ) : (
                       pagesFull && (
-                        <p className={`mt-2 text-[11px] ${isDark ? "text-slate-400" : "text-ink-muted"}`}>
-                          Up to {MAX_QUESTIONNAIRE_PAGES} pages. Remove one to pick another.
+                        <p
+                          className={`mt-2 text-[11px] ${isDark ? "text-slate-400" : "text-ink-muted"}`}
+                        >
+                          Up to {MAX_QUESTIONNAIRE_PAGES} pages. Remove one to
+                          pick another.
                         </p>
                       )
                     )}
@@ -893,9 +968,7 @@ export default function QuestionnaireForm({
                   <span className="grid size-6 place-items-center rounded-full bg-emerald-500 text-xs font-bold text-white">
                     3
                   </span>
-                  <h2 className={cardTitleCls}>
-                    Look &amp; colours
-                  </h2>
+                  <h2 className={cardTitleCls}>Look &amp; colours</h2>
                 </div>
 
                 <div className="mt-5 space-y-5">
@@ -977,9 +1050,7 @@ export default function QuestionnaireForm({
 
                   {/* STYLE */}
                   <div>
-                    <span className={sectionLabelCls}>
-                      STYLE
-                    </span>
+                    <span className={sectionLabelCls}>STYLE</span>
                     <div
                       role="radiogroup"
                       aria-label="Style"
@@ -1005,9 +1076,7 @@ export default function QuestionnaireForm({
 
                   {/* COLOURS */}
                   <div>
-                    <span className={sectionLabelCls}>
-                      COLOURS
-                    </span>
+                    <span className={sectionLabelCls}>COLOURS</span>
                     <div
                       role="radiogroup"
                       aria-label="Colours palette"
@@ -1069,7 +1138,9 @@ export default function QuestionnaireForm({
                           <ThemeChoice
                             themes={themes}
                             value={form.answers.themeId ?? null}
-                            onChange={(themeId) => updateAnswer("themeId", themeId)}
+                            onChange={(themeId) =>
+                              updateAnswer("themeId", themeId)
+                            }
                             isDark={isDark}
                           />
                         </div>
@@ -1083,7 +1154,9 @@ export default function QuestionnaireForm({
                           <TemplateChoice
                             templates={templates}
                             value={form.answers.templateKey ?? null}
-                            onChange={(templateKey) => updateAnswer("templateKey", templateKey)}
+                            onChange={(templateKey) =>
+                              updateAnswer("templateKey", templateKey)
+                            }
                             theme={selectedTheme}
                             isDark={isDark}
                           />
@@ -1100,9 +1173,7 @@ export default function QuestionnaireForm({
                   <span className="grid size-6 place-items-center rounded-full bg-amber-500 text-xs font-bold text-white">
                     4
                   </span>
-                  <h2 className={cardTitleCls}>
-                    How customers reach you
-                  </h2>
+                  <h2 className={cardTitleCls}>How customers reach you</h2>
                 </div>
 
                 <div className="mt-5 space-y-4">
@@ -1186,9 +1257,7 @@ export default function QuestionnaireForm({
                         <input
                           type="text"
                           placeholder="Phone number for call button"
-                          value={
-                            form.answers.reach.call.differentContact || ""
-                          }
+                          value={form.answers.reach.call.differentContact || ""}
                           onChange={(e) =>
                             updateAnswer("reach", {
                               ...form.answers.reach,
@@ -1383,7 +1452,8 @@ export default function QuestionnaireForm({
                           type="email"
                           placeholder="Routing email for inquiries"
                           value={
-                            form.answers.reach.enquiryForm.differentContact || ""
+                            form.answers.reach.enquiryForm.differentContact ||
+                            ""
                           }
                           onChange={(e) =>
                             updateAnswer("reach", {
@@ -1433,14 +1503,17 @@ export default function QuestionnaireForm({
                       <label className="relative inline-flex cursor-pointer items-center">
                         <input
                           type="checkbox"
-                          checked={Boolean(form.answers.reach.mapLocation?.enabled)}
+                          checked={Boolean(
+                            form.answers.reach.mapLocation?.enabled,
+                          )}
                           onChange={(e) =>
                             updateAnswer("reach", {
                               ...form.answers.reach,
                               mapLocation: {
                                 enabled: e.target.checked,
                                 differentContact:
-                                  form.answers.reach.mapLocation?.differentContact ?? null,
+                                  form.answers.reach.mapLocation
+                                    ?.differentContact ?? null,
                               },
                             })
                           }
@@ -1459,27 +1532,30 @@ export default function QuestionnaireForm({
                       SOCIAL LINKS · tap the ones you have
                     </span>
                     <div className="mt-2.5 flex items-center gap-2">
-                      {SOCIAL_PLATFORMS.map(({ id, label, icon: IconComponent }) => {
-                        const active = form.answers.reach.socialLinks?.includes(id);
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            title={label}
-                            aria-pressed={active}
-                            onClick={() => toggleSocial(id)}
-                            className={`grid size-9 place-items-center rounded-xl border transition-all ${
-                              active
-                                ? "border-brand bg-brand text-white shadow-xs"
-                                : isDark
-                                  ? "border-[#222c40] bg-[#0c101a] text-slate-400 hover:border-slate-500 hover:text-white"
-                                  : "border-line bg-canvas text-ink-muted hover:border-brand/40 hover:text-ink"
-                            }`}
-                          >
-                            <IconComponent className="size-4" />
-                          </button>
-                        );
-                      })}
+                      {SOCIAL_PLATFORMS.map(
+                        ({ id, label, icon: IconComponent }) => {
+                          const active =
+                            form.answers.reach.socialLinks?.includes(id);
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              title={label}
+                              aria-pressed={active}
+                              onClick={() => toggleSocial(id)}
+                              className={`grid size-9 place-items-center rounded-xl border transition-all ${
+                                active
+                                  ? "border-brand bg-brand text-white shadow-xs"
+                                  : isDark
+                                    ? "border-[#222c40] bg-[#0c101a] text-slate-400 hover:border-slate-500 hover:text-white"
+                                    : "border-line bg-canvas text-ink-muted hover:border-brand/40 hover:text-ink"
+                              }`}
+                            >
+                              <IconComponent className="size-4" />
+                            </button>
+                          );
+                        },
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1672,11 +1748,17 @@ export default function QuestionnaireForm({
                     <span className="grid size-6 place-items-center rounded-full bg-rose-500 text-xs font-bold text-white">
                       6
                     </span>
-                    <h2 className={cardTitleCls}>
-                      Your files
-                    </h2>
+                    <h2 className={cardTitleCls}>Your files</h2>
                   </div>
-                  <span className={isDark ? "text-xs text-slate-400" : "text-xs text-ink-muted"}>optional</span>
+                  <span
+                    className={
+                      isDark
+                        ? "text-xs text-slate-400"
+                        : "text-xs text-ink-muted"
+                    }
+                  >
+                    optional
+                  </span>
                 </div>
 
                 <div className="mt-5 space-y-4">
@@ -1695,7 +1777,10 @@ export default function QuestionnaireForm({
                     >
                       Share your logo, photos and videos with a Drive or
                       WeTransfer link.{" "}
-                      <Link to="/login" className="font-semibold text-brand hover:underline">
+                      <Link
+                        to="/login"
+                        className="font-semibold text-brand hover:underline"
+                      >
                         Sign in
                       </Link>{" "}
                       to upload files and pick a theme or template here.
@@ -1703,10 +1788,7 @@ export default function QuestionnaireForm({
                   )}
 
                   <div>
-                    <label
-                      htmlFor="filesLink"
-                      className={fieldLabelCls}
-                    >
+                    <label htmlFor="filesLink" className={fieldLabelCls}>
                       {clientId
                         ? "Or a Drive / WeTransfer link (ZIPs, large files)"
                         : "Drive / WeTransfer link"}
@@ -1722,10 +1804,7 @@ export default function QuestionnaireForm({
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="notes"
-                      className={fieldLabelCls}
-                    >
+                    <label htmlFor="notes" className={fieldLabelCls}>
                       Notes (optional)
                     </label>
                     <textarea
@@ -1764,8 +1843,8 @@ export default function QuestionnaireForm({
                       isDark ? "text-slate-700" : "text-ink-body"
                     }`}
                   >
-                    I agree that [{brandName}] may use these details and files to
-                    build my website.
+                    I agree that [{brandName}] may use these details and files
+                    to build my website.
                   </span>
                 </label>
                 {errors.consent && (

@@ -94,6 +94,7 @@
 
 .admin-template-grid .tacts .btn-preview,
 .admin-template-grid .tacts .btn-details,
+.admin-template-grid .tacts .btn-use,
 .admin-template-grid .tacts .btn-fav {
   background: var(--color-surface);
   border-color: var(--color-line);
@@ -102,6 +103,7 @@
 
 .admin-template-grid .tacts .btn-preview:hover,
 .admin-template-grid .tacts .btn-details:hover,
+.admin-template-grid .tacts .btn-use:hover,
 .admin-template-grid .tacts .btn-fav:hover {
   background: var(--color-canvas);
   border-color: var(--color-line-strong);

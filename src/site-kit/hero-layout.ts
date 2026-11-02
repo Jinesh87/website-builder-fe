@@ -11,8 +11,51 @@ import {
   type HeroAlign,
   type HeroAlignElement,
   type HeroData,
+  type LinkRef,
   type SectionSettings,
 } from "./types.ts";
+
+const DEFAULT_DEMO_VIDEO_URL = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+
+export type HeroCtas = { primary?: LinkRef; secondary?: LinkRef; video?: LinkRef };
+
+/**
+ * The hero's action buttons. Only the three CTA fields the inspector toggles are
+ * read, so turning a button off always removes it. Legacy `buttons` arrays fill
+ * empty slots for sections the editor has not migrated yet.
+ */
+export function heroCtas(data: HeroData): HeroCtas {
+  const primary = data.primaryCta ?? data.buttons?.[0];
+  const secondary = data.secondaryCta ?? data.buttons?.[1];
+  const tertiary = data.tertiaryCta;
+  if (!tertiary) return { primary, secondary };
+  if (tertiary.actionType === "link" || tertiary.actionType === "download") {
+    return { primary, secondary, video: tertiary };
+  }
+  const hrefIsVideo = tertiary.href && tertiary.href !== "#" && tertiary.href !== "#demo";
+  return {
+    primary,
+    secondary,
+    video: {
+      ...tertiary,
+      actionType: "video",
+      videoUrl: tertiary.videoUrl || (hrefIsVideo ? tertiary.href : DEFAULT_DEMO_VIDEO_URL),
+    },
+  };
+}
+
+/** Moves a legacy `buttons` array into the primary and secondary CTA fields the inspector edits. */
+export function liftLegacyHeroButtons(data: HeroData): HeroData {
+  if (!data.buttons) return data;
+  const { buttons, ...rest } = data;
+  const primaryCta = data.primaryCta ?? buttons[0];
+  const secondaryCta = data.secondaryCta ?? buttons[1];
+  return {
+    ...rest,
+    ...(primaryCta ? { primaryCta } : {}),
+    ...(secondaryCta ? { secondaryCta } : {}),
+  };
+}
 
 export type VintagePolaroid = NonNullable<HeroData["vintagePolaroids"]>[number];
 

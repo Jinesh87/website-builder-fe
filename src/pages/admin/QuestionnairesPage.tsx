@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { errorMessage } from "../../api/http.ts";
+import { formatEmailDeliveryError } from "../../utils/email-error.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import ConfirmDialog from "../../components/ui/ConfirmDialog.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
@@ -492,7 +493,7 @@ function QuestionnaireRow({
         {emailNotSent(questionnaire) && (
           <p
             className="mt-1.5 flex items-center gap-1 text-xs whitespace-nowrap text-amber-700"
-            title={questionnaire.emailError ?? undefined}
+            title={formatEmailDeliveryError(questionnaire.emailError)}
           >
             <MailWarning className="size-3.5 shrink-0" aria-hidden /> Email not sent
           </p>
