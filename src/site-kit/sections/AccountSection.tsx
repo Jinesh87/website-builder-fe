@@ -119,6 +119,7 @@ const SAMPLE_ORDER_DETAIL: ShopOrderDetail = {
   ],
   failureReason: null,
   cancelReason: null,
+  returnReason: null,
   paidAt: "2026-10-21T10:12:00.000Z",
   updatedAt: "2026-10-23T14:30:00.000Z",
 };
@@ -593,6 +594,7 @@ function OrdersPanel({
           timeline: [{ id: "1", status: summary.status, actorType: "SYSTEM", note: null, createdAt: summary.createdAt }],
           failureReason: null,
           cancelReason: null,
+          returnReason: null,
           paidAt: null,
           updatedAt: summary.createdAt,
         });
