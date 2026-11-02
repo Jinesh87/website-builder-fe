@@ -1120,16 +1120,110 @@ export const SHOP_AUTH_SCRIPT = `(function(){
     el.hidden=!message;
     el.textContent=message||"";
   }
+  function focusOtp(root){
+    var panel=root.querySelector('[data-wb-state="otp"]');
+    if(!panel||panel.hidden) return;
+    var first=panel.querySelector(".wb-auth-otp-cell");
+    if(!first) return;
+    setTimeout(function(){
+      first.focus();
+      try{ first.select(); }catch(_e){}
+    }, 0);
+  }
   function goState(root, state){
     var box=root.closest("[data-wb-states]")||root.querySelector("[data-wb-states]");
     if(!box) return;
     box.querySelectorAll("[data-wb-state]").forEach(function(node){
       node.hidden=node.getAttribute("data-wb-state")!==state;
     });
+    if(state==="otp") focusOtp(root);
   }
   function pendingEmail(root, value){
     if(value!==undefined) root.setAttribute("data-wb-pending-email", value||"");
     return root.getAttribute("data-wb-pending-email")||"";
+  }
+  /** Digits live in .wb-auth-otp-cell; the hidden name=code field is only kept in sync for forms. */
+  function readOtpCode(form){
+    var cells=form.querySelectorAll(".wb-auth-otp-cell");
+    if(cells.length){
+      var code="";
+      for(var i=0;i<cells.length;i++){
+        code+=String(cells[i].value||"").replace(/\\D/g,"").slice(-1);
+      }
+      return code;
+    }
+    var hidden=form.querySelector('input[name="code"]');
+    return hidden&&hidden.value?String(hidden.value).trim():"";
+  }
+  function syncOtpHidden(form){
+    var hidden=form.querySelector('input[name="code"]');
+    if(hidden) hidden.value=readOtpCode(form);
+  }
+  function wireOtp(root){
+    root.querySelectorAll(".wb-auth-otp").forEach(function(group){
+      if(group.getAttribute("data-wb-otp-ready")) return;
+      group.setAttribute("data-wb-otp-ready","1");
+      var cells=Array.prototype.slice.call(group.querySelectorAll(".wb-auth-otp-cell"));
+      if(!cells.length) return;
+      var form=group.closest("form");
+      cells.forEach(function(cell, index){
+        cell.removeAttribute("value");
+        cell.addEventListener("focus", function(){ try{ cell.select(); }catch(_e){} });
+        // keydown is more reliable than input+maxLength=1 for advancing boxes
+        cell.addEventListener("keydown", function(event){
+          if(event.ctrlKey||event.metaKey||event.altKey) return;
+          if(event.key>="0"&&event.key<="9"){
+            event.preventDefault();
+            cell.value=event.key;
+            if(form) syncOtpHidden(form);
+            if(index<cells.length-1) cells[index+1].focus();
+            return;
+          }
+          if(event.key==="Backspace"){
+            event.preventDefault();
+            if(cell.value){
+              cell.value="";
+              if(form) syncOtpHidden(form);
+            } else if(index>0){
+              cells[index-1].value="";
+              if(form) syncOtpHidden(form);
+              cells[index-1].focus();
+            }
+            return;
+          }
+          if(event.key==="Delete"){
+            event.preventDefault();
+            cell.value="";
+            if(form) syncOtpHidden(form);
+            return;
+          }
+          if(event.key==="ArrowLeft"&&index>0){ event.preventDefault(); cells[index-1].focus(); }
+          if(event.key==="ArrowRight"&&index<cells.length-1){ event.preventDefault(); cells[index+1].focus(); }
+        });
+        // Mobile SMS autofill / IME may fill without a digit keydown
+        cell.addEventListener("input", function(){
+          var raw=String(cell.value||"").replace(/\\D/g,"");
+          if(raw.length>1){
+            for(var i=0;i<cells.length;i++) cells[i].value=raw.charAt(i)||"";
+            cells[Math.min(raw.length, cells.length)-1].focus();
+            if(form) syncOtpHidden(form);
+            return;
+          }
+          var digit=raw.slice(-1);
+          cell.value=digit;
+          if(digit&&index<cells.length-1) cells[index+1].focus();
+          if(form) syncOtpHidden(form);
+        });
+        cell.addEventListener("paste", function(event){
+          var pasted=(event.clipboardData&&event.clipboardData.getData("text")||"").replace(/\\D/g,"").slice(0, cells.length);
+          if(!pasted) return;
+          event.preventDefault();
+          for(var i=0;i<cells.length;i++) cells[i].value=pasted.charAt(i)||"";
+          cells[Math.min(pasted.length, cells.length)-1].focus();
+          if(form) syncOtpHidden(form);
+        });
+      });
+    });
   }
   function successHref(root){
     var raw=(root.getAttribute("data-wb-shop-success-href")||"/account").trim();
@@ -1148,6 +1242,7 @@ export const SHOP_AUTH_SCRIPT = `(function(){
     var websiteId=root.getAttribute("data-wb-shop-auth");
     if(!websiteId) return;
     var base=apiBase()+"/shop/"+websiteId+"/auth";
+    wireOtp(root);
     var params=new URLSearchParams(window.location.search);
     var resetToken=params.get("reset");
     if(resetToken){
@@ -1178,7 +1273,6 @@ export const SHOP_AUTH_SCRIPT = `(function(){
       showError(form.parentElement||root, "");
       var emailInput=form.querySelector('input[name="email"], input[type="email"]');
       var passwordInput=form.querySelector('input[name="password"], input[data-auth-type="password"]');
-      var codeInput=form.querySelector('input[name="code"]');
       var remember=form.querySelector('input[name="remember"]');
       var body=null;
       var path="";
@@ -1195,7 +1289,8 @@ export const SHOP_AUTH_SCRIPT = `(function(){
         body={ email:(emailInput&&emailInput.value||"").trim().toLowerCase() };
       } else if(view==="otp"){
         path="/verify-email";
-        body={ email:pendingEmail(root), code:codeInput&&codeInput.value||"" };
+        syncOtpHidden(form);
+        body={ email:pendingEmail(root), code:readOtpCode(form) };
       } else if(view==="reset"){
         path="/reset-password";
         body={ token:root.getAttribute("data-wb-reset-token")||"", password:passwordInput&&passwordInput.value||"" };
