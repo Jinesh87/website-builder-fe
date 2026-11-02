@@ -354,6 +354,27 @@ export const SHOP_CSS = `
   color: var(--wb-muted);
 }
 .wb-product-policy-list li + li { margin-top: 0.2rem; }
+.wb-product-returns { margin: 0; color: var(--wb-muted); }
+.wb-product-returns-label {
+  margin: 0; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--wb-text);
+}
+.wb-product-returns-text { margin: 0; font-size: 0.88rem; line-height: 1.55; }
+.wb-product-returns-list {
+  margin: 0.45rem 0 0; padding-left: 1.1rem; font-size: 0.86rem; line-height: 1.5;
+}
+.wb-product-returns-list li + li { margin-top: 0.2rem; }
+.wb-product-returns-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0.28rem 0.7rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.02em; color: var(--wb-text);
+  background: color-mix(in srgb, var(--wb-text) 8%, var(--wb-bg));
+}
+.wb-product-returns-days {
+  font-family: var(--wb-font-display, var(--wb-font-body));
+  font-weight: 700; letter-spacing: -0.04em; color: var(--wb-text); line-height: 1;
+}
+.wb-product-returns-unit { color: var(--wb-muted); }
 .wb-product-price { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
 .wb-product-stock {
   display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 0.85rem; font-weight: 600; color: #15803d;
@@ -541,6 +562,19 @@ export const SHOP_CSS = `
 .wb-shop-detail.is-split .wb-product-buy,
 .wb-shop-detail.is-split .wb-product-options,
 .wb-shop-detail.is-split .wb-product-details { padding-top: 20px; border-top: 1px solid color-mix(in srgb, var(--wb-text) 10%, transparent); }
+.wb-shop-detail.is-split .wb-product-returns {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start;
+  margin-top: 4px; padding: 14px; border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--wb-text) 12%, transparent);
+  background: color-mix(in srgb, var(--wb-text) 3%, var(--wb-bg));
+}
+.wb-shop-detail.is-split .wb-product-returns-badge {
+  display: grid; place-items: center; gap: 2px; min-width: 64px; padding: 10px 8px;
+  border-radius: 12px; background: color-mix(in srgb, var(--wb-text) 8%, var(--wb-bg));
+}
+.wb-shop-detail.is-split .wb-product-returns-days { font-size: 1.7rem; }
+.wb-shop-detail.is-split .wb-product-returns-unit { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.wb-shop-detail.is-split .wb-product-returns-body { display: grid; gap: 4px; }
 
 /* Thumbnail rail: thumbs | large photo | purchase card */
 .wb-shop-detail.is-gallery-focus .wb-product { grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; }
@@ -564,6 +598,13 @@ export const SHOP_CSS = `
   grid-column: 1 / -1; max-width: 760px; padding-top: 28px;
   border-top: 1px solid color-mix(in srgb, var(--wb-text) 10%, transparent);
 }
+.wb-shop-detail.is-gallery-focus .wb-product-returns {
+  display: grid; gap: 8px; padding-top: 16px;
+  border-top: 1px dashed color-mix(in srgb, var(--wb-text) 14%, transparent);
+}
+.wb-shop-detail.is-gallery-focus .wb-product-returns-kicker { margin: 0; }
+.wb-shop-detail.is-gallery-focus .wb-product-returns-text { font-size: 0.82rem; }
+.wb-shop-detail.is-gallery-focus .wb-product-returns-list { margin-top: 0; font-size: 0.8rem; }
 
 /* Centered showcase: centred title, wide photo, options and description in cards */
 .wb-shop-detail.is-editorial .wb-product-back { align-self: center; }
@@ -584,6 +625,26 @@ export const SHOP_CSS = `
   background: color-mix(in srgb, var(--wb-text) 4%, var(--wb-bg));
 }
 .wb-shop-detail.is-editorial .wb-option-value { border-radius: 999px; }
+.wb-shop-detail.is-editorial .wb-product-band-card.is-returns {
+  align-items: center; text-align: center;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--wb-text) 6%, var(--wb-bg)), color-mix(in srgb, var(--wb-text) 2%, var(--wb-bg)));
+}
+.wb-shop-detail.is-editorial .wb-product-returns { display: grid; gap: 10px; justify-items: center; width: 100%; }
+.wb-shop-detail.is-editorial .wb-product-returns-hero {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 8px 10px; margin: 0;
+}
+.wb-shop-detail.is-editorial .wb-product-returns-days { font-size: clamp(2.4rem, 5vw, 3.4rem); }
+.wb-shop-detail.is-editorial .wb-product-returns-unit { font-size: 1rem; font-weight: 600; color: var(--wb-text); }
+.wb-shop-detail.is-editorial .wb-product-returns-chips {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px;
+}
+.wb-shop-detail.is-editorial .wb-product-returns-chip {
+  display: inline-flex; max-width: 100%; padding: 0.45rem 0.85rem; border-radius: 999px;
+  font-size: 0.82rem; line-height: 1.35; color: var(--wb-text);
+  border: 1px solid color-mix(in srgb, var(--wb-text) 12%, transparent);
+  background: color-mix(in srgb, var(--wb-bg) 70%, transparent);
+}
 
 /* Quick view: one compact card */
 .wb-shop-detail.is-compact { max-width: 940px; margin-inline: auto; width: 100%; }
@@ -610,6 +671,18 @@ export const SHOP_CSS = `
 .wb-shop-detail.is-compact .wb-product-options { gap: 12px; }
 .wb-shop-detail.is-compact .wb-option { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: center; gap: 12px; }
 .wb-shop-detail.is-compact .wb-option-value { min-width: 2.4rem; padding: 0.35rem 0.75rem; font-size: 0.85rem; border-radius: 8px; }
+.wb-shop-detail.is-compact .wb-product-returns {
+  display: grid; gap: 6px; padding: 10px 12px; border-radius: 10px;
+  border-left: 3px solid color-mix(in srgb, var(--wb-text) 35%, transparent);
+  background: color-mix(in srgb, var(--wb-text) 4%, var(--wb-bg));
+}
+.wb-shop-detail.is-compact .wb-product-returns-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.wb-shop-detail.is-compact .wb-product-returns-text {
+  font-size: 0.78rem; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 
 /* Photo-led layouts: arrows are just the chevron, and dots sit on the photo. */
 .wb-shop-detail.is-split .wb-product-nav,

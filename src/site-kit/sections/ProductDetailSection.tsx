@@ -272,27 +272,73 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
         <p className="wb-product-policy-text">{cancelPolicy}</p>
       </aside>
     ) : null;
-    const returns = returnPolicyText ? (
-      <aside className="wb-product-policy" aria-label="Return policy">
-        <p className="wb-product-policy-label">Returns</p>
-        <p className="wb-product-policy-text">{returnPolicyText}</p>
-        {returnGuidelines.length > 0 ? (
-          <ul className="wb-product-policy-list">
-            {returnGuidelines.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        ) : null}
+    const returnDays = product.returnDays && product.returnDays > 0 ? product.returnDays : null;
+    const returns = returnDays && returnPolicyText ? (
+      <aside className={`wb-product-returns is-${design}`} aria-label="Return policy">
+        {design === "split" ? (
+          <>
+            <div className="wb-product-returns-badge" aria-hidden="true">
+              <span className="wb-product-returns-days">{returnDays}</span>
+              <span className="wb-product-returns-unit">day{returnDays === 1 ? "" : "s"}</span>
+            </div>
+            <div className="wb-product-returns-body">
+              <p className="wb-product-returns-label">Easy returns</p>
+              <p className="wb-product-returns-text">{returnPolicyText}</p>
+              {returnGuidelines.length > 0 ? (
+                <ul className="wb-product-returns-list">
+                  {returnGuidelines.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          </>
+        ) : design === "gallery-focus" ? (
+          <>
+            <p className="wb-product-returns-kicker">
+              <span className="wb-product-returns-pill">{returnDays}-day returns</span>
+            </p>
+            <p className="wb-product-returns-text">{returnPolicyText}</p>
+            {returnGuidelines.length > 0 ? (
+              <ul className="wb-product-returns-list">
+                {returnGuidelines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
+          </>
+        ) : design === "editorial" ? (
+          <>
+            <p className="wb-product-returns-label">Returns</p>
+            <p className="wb-product-returns-hero">
+              <span className="wb-product-returns-days">{returnDays}</span>
+              <span className="wb-product-returns-unit">day{returnDays === 1 ? "" : "s"} to return</span>
+            </p>
+            <p className="wb-product-returns-text">{returnPolicyText}</p>
+            {returnGuidelines.length > 0 ? (
+              <div className="wb-product-returns-chips">
+                {returnGuidelines.map((line) => (
+                  <span key={line} className="wb-product-returns-chip">{line}</span>
+                ))}
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <div className="wb-product-returns-row">
+              <span className="wb-product-returns-label">Returns</span>
+              <span className="wb-product-returns-pill">{returnDays} day{returnDays === 1 ? "" : "s"}</span>
+            </div>
+            {returnGuidelines.length > 0 ? (
+              <p className="wb-product-returns-text">{returnGuidelines.join(" · ")}</p>
+            ) : (
+              <p className="wb-product-returns-text">{returnPolicyText}</p>
+            )}
+          </>
+        )}
       </aside>
     ) : null;
-    const detailsBody = (
-      <>
-        {description}
-        {policy}
-        {returns}
-      </>
-    );
-    const hasDetails = hasDescription || !!cancelPolicy || !!returnPolicyText;
+    const hasCopyDetails = hasDescription || !!cancelPolicy;
 
     let layout;
     if (design === "gallery-focus") {
@@ -303,11 +349,13 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
             {heading}
             {buy}
             {options}
+            {returns}
           </aside>
-          {hasDetails && (
+          {hasCopyDetails && (
             <section className="wb-product-details">
               <h3 className="wb-product-details-title">Details</h3>
-              {detailsBody}
+              {description}
+              {policy}
             </section>
           )}
         </>
@@ -322,12 +370,14 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
           {gallery}
           <div className="wb-product-band">
             {options && <div className="wb-product-band-card">{options}</div>}
-            {hasDetails && (
+            {hasCopyDetails && (
               <div className="wb-product-band-card">
                 <h3 className="wb-product-details-title">About this product</h3>
-                {detailsBody}
+                {description}
+                {policy}
               </div>
             )}
+            {returns ? <div className="wb-product-band-card is-returns">{returns}</div> : null}
           </div>
         </>
       );
@@ -353,12 +403,14 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
             {heading}
             {buy}
             {options}
-            {hasDetails && (
+            {hasCopyDetails && (
               <div className="wb-product-details">
                 <h3 className="wb-product-details-title">Description</h3>
-                {detailsBody}
+                {description}
+                {policy}
               </div>
             )}
+            {returns}
           </div>
         </>
       );

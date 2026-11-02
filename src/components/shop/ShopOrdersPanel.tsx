@@ -14,6 +14,7 @@ const STATUS_OPTIONS: { value: ShopOrderStatus | ""; label: string }[] = [
   { value: "delivered", label: "Delivered" },
   { value: "failed", label: "Failed" },
   { value: "cancelled", label: "Cancelled" },
+  { value: "returned", label: "Returned" },
 ];
 
 const UPDATE_STATUSES: ShopOrderStatus[] = [
@@ -24,6 +25,7 @@ const UPDATE_STATUSES: ShopOrderStatus[] = [
   "delivered",
   "failed",
   "cancelled",
+  "returned",
 ];
 
 function useDebounced(value: string): string {
@@ -296,6 +298,12 @@ function OrderDetail({
               <div className="sm:col-span-2">
                 <dt className="text-xs font-medium text-ink-muted">Customer cancel reason</dt>
                 <dd className="mt-0.5 text-sm text-ink">{order.cancelReason}</dd>
+              </div>
+            )}
+            {order.returnReason && (
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-medium text-ink-muted">Customer return reason</dt>
+                <dd className="mt-0.5 text-sm text-ink">{order.returnReason}</dd>
               </div>
             )}
           </dl>

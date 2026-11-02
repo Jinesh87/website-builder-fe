@@ -89,7 +89,14 @@ export type ShopPaymentInput = {
   razorpayWebhookSecret?: string;
 };
 
-export type ShopOrderEmailStatus = "paid" | "processing" | "shipped" | "delivered" | "failed" | "cancelled";
+export type ShopOrderEmailStatus =
+  | "paid"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "failed"
+  | "cancelled"
+  | "returned";
 
 export type ShopOrderEmailLayout = "classic" | "bold" | "minimal" | "banner" | "postcard";
 
@@ -191,7 +198,8 @@ export type ShopOrderStatus =
   | "shipped"
   | "delivered"
   | "failed"
-  | "cancelled";
+  | "cancelled"
+  | "returned";
 
 export type ShopRefundStatus = "none" | "pending" | "processed" | "failed";
 
@@ -233,6 +241,7 @@ export type ShopOrder = {
   refundedAt: string | null;
   failureReason: string | null;
   cancelReason: string | null;
+  returnReason: string | null;
   timeline: ShopOrderTimelineEvent[];
   createdAt: string;
   updatedAt: string;
