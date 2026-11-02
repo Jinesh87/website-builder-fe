@@ -6,6 +6,9 @@ export type EmailConfig = {
   fromEmail: string | null;
   fromName: string | null;
   enabled: boolean;
+  contactSalesEmail?: string | null;
+  questionnaireSalesEmail?: string | null;
+  partnerSalesEmail?: string | null;
   updatedAt: string | null;
 };
 
@@ -15,6 +18,9 @@ export type EmailConfigInput = {
   fromEmail: string;
   fromName: string;
   enabled: boolean;
+  contactSalesEmail?: string;
+  questionnaireSalesEmail?: string;
+  partnerSalesEmail?: string;
 };
 
 type ConfigResponse = { config: EmailConfig };
