@@ -150,6 +150,7 @@ export type InventoryItem = {
   options: { name: string; value: string }[];
   pricePaise: number;
   quantity: number;
+  returnedOrderCount: number;
 };
 
 export type InventoryMovement = {
@@ -202,6 +203,33 @@ export type ShopOrderStatus =
   | "returned";
 
 export type ShopRefundStatus = "none" | "pending" | "processed" | "failed";
+
+export type ProductReturnedOrder = {
+  id: string;
+  number: string;
+  status: "returned";
+  refundStatus: ShopRefundStatus;
+  totalPaise: number;
+  returnReason: string | null;
+  customerName: string;
+  customerEmail: string;
+  returnedAt: string;
+  createdAt: string;
+  items: {
+    id: string;
+    productName: string;
+    variantName: string;
+    quantity: number;
+    unitPricePaise: number;
+    lineTotalPaise: number;
+  }[];
+};
+
+export type ProductReturnedOrders = {
+  productId: string;
+  productName: string;
+  orders: ProductReturnedOrder[];
+};
 
 export type ShopOrderItem = {
   id: string;
@@ -338,6 +366,9 @@ export const shopApi = {
     if (search) query.set("search", search);
     return request<InventoryLogPage>(`${base(websiteId)}/inventory/log?${query}`);
   },
+
+  productReturns: (websiteId: string, productId: string) =>
+    request<ProductReturnedOrders>(`${base(websiteId)}/inventory/returns/${productId}`),
 
   revealPaymentSecrets: (websiteId: string) =>
     request<{ secrets: { razorpayKeySecret: string | null; razorpayWebhookSecret: string | null } }>(
