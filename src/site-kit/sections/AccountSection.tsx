@@ -25,16 +25,46 @@ const FULFILLMENT = [
   { key: "delivered", label: "Delivered" },
 ] as const;
 
-function fulfillmentIndex(status: string): number {
-  const i = FULFILLMENT.findIndex((step) => step.key === status);
-  if (i >= 0) return i;
-  if (status === "pending") return -1;
-  return -1;
+type TrackingStep = { key: string; label: string };
+
+function trackingSteps(status: string): TrackingStep[] {
+  const steps: TrackingStep[] = FULFILLMENT.map((step) => ({ key: step.key, label: step.label }));
+  if (status === "returned") steps.push({ key: "returned", label: "Returned" });
+  if (status === "cancelled") steps.push({ key: "cancelled", label: "Cancelled" });
+  if (status === "failed") steps.push({ key: "failed", label: "Failed" });
+  return steps;
+}
+
+function maxFulfillmentReached(timeline: { status: string }[]): number {
+  let max = -1;
+  for (const event of timeline) {
+    const index = FULFILLMENT.findIndex((step) => step.key === event.status);
+    if (index > max) max = index;
+  }
+  return max;
 }
 
 function eventTime(timeline: { status: string; createdAt: string }[], status: string): string | null {
   const hit = [...timeline].reverse().find((event) => event.status === status);
   return hit?.createdAt ?? null;
+}
+
+function trackingStepClass(
+  index: number,
+  step: TrackingStep,
+  status: string,
+  timeline: { status: string; createdAt: string }[],
+): string {
+  const steps = trackingSteps(status);
+  const statusIndex = steps.findIndex((item) => item.key === status);
+  const reached = maxFulfillmentReached(timeline);
+  const current = statusIndex >= 0 ? statusIndex : Math.max(reached, -1);
+  const terminal = status === "returned" || status === "cancelled" || status === "failed";
+  const done = terminal
+    ? index < current && (index <= reached || !!eventTime(timeline, step.key))
+    : index < current;
+  const isCurrent = index === current && current >= 0;
+  return `${done ? " is-done" : ""}${isCurrent ? " is-current" : ""}`;
 }
 
 /**
@@ -189,6 +219,8 @@ function statusLabel(status: string): string {
       return "Failed";
     case "cancelled":
       return "Cancelled";
+    case "returned":
+      return "Returned";
     default:
       return status;
   }
@@ -224,15 +256,12 @@ function OrderTimeline({
   order: Pick<ShopOrderDetail, "status" | "timeline">;
   variant: AccountOrderDetailVariant;
 }) {
-  const current = fulfillmentIndex(order.status);
+  const steps = trackingSteps(order.status);
   if (variant === "steps") {
     return (
       <div className="wb-acct-steps" data-wb-order-timeline="steps">
-        {FULFILLMENT.map((step, index) => (
-          <div
-            key={step.key}
-            className={`wb-acct-step${index < current ? " is-done" : ""}${index === current ? " is-current" : ""}`}
-          >
+        {steps.map((step, index) => (
+          <div key={step.key} className={`wb-acct-step${trackingStepClass(index, step, order.status, order.timeline)}`}>
             {step.label}
           </div>
         ))}
@@ -241,14 +270,11 @@ function OrderTimeline({
   }
   return (
     <ol className={`wb-acct-timeline${variant === "compact" ? " wb-acct-order-compact" : ""}`} data-wb-order-timeline={variant}>
-      {FULFILLMENT.map((step, index) => {
+      {steps.map((step, index) => {
         const when = eventTime(order.timeline, step.key);
         const note = [...order.timeline].reverse().find((event) => event.status === step.key)?.note;
         return (
-          <li
-            key={step.key}
-            className={`wb-acct-timeline-step${index < current ? " is-done" : ""}${index === current ? " is-current" : ""}`}
-          >
+          <li key={step.key} className={`wb-acct-timeline-step${trackingStepClass(index, step, order.status, order.timeline)}`}>
             <span className="wb-acct-timeline-dot" aria-hidden="true" />
             <div>
               <span className="wb-acct-timeline-label">{step.label}</span>
@@ -276,14 +302,18 @@ function OrderDetailView({
   websiteId?: string;
 }) {
   const [cancelling, setCancelling] = useState(false);
+  const [returning, setReturning] = useState(false);
   const [showCancelForm, setShowCancelForm] = useState(false);
+  const [showReturnForm, setShowReturnForm] = useState(false);
   const [reason, setReason] = useState("");
   const [cancelError, setCancelError] = useState<string | null>(null);
-  const [cancelNotice, setCancelNotice] = useState<string | null>(null);
+  const [returnError, setReturnError] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const formBusy = cancelling || returning;
 
   async function submitCancel(event: FormEvent) {
     event.preventDefault();
-    if (!websiteId || !order.canCancel || cancelling) return;
+    if (!websiteId || !order.canCancel || formBusy) return;
     const trimmed = reason.trim();
     if (trimmed.length < 3) {
       setCancelError("Please share a short reason.");
@@ -293,7 +323,7 @@ function OrderDetailView({
     setCancelError(null);
     try {
       const next = await shopAuthApi.cancelOrder(websiteId, order.id, trimmed);
-      setCancelNotice(next.failureReason || "Order cancelled.");
+      setActionNotice(next.failureReason || "Order cancelled.");
       onCancelled?.(next);
     } catch (err) {
       setCancelError(err instanceof Error ? err.message : "Could not cancel this order.");
@@ -301,6 +331,31 @@ function OrderDetailView({
       setCancelling(false);
     }
   }
+
+  async function submitReturn(event: FormEvent) {
+    event.preventDefault();
+    if (!websiteId || !order.canReturn || formBusy) return;
+    const trimmed = reason.trim();
+    if (trimmed.length < 3) {
+      setReturnError("Please share a short reason.");
+      return;
+    }
+    setReturning(true);
+    setReturnError(null);
+    try {
+      const next = await shopAuthApi.returnOrder(websiteId, order.id, trimmed);
+      setActionNotice(next.failureReason || "Return accepted.");
+      onCancelled?.(next);
+    } catch (err) {
+      setReturnError(err instanceof Error ? err.message : "Could not return this order.");
+    } finally {
+      setReturning(false);
+    }
+  }
+
+  const returnUntilLabel = order.returnUntil
+    ? new Date(order.returnUntil).toLocaleDateString(undefined, { dateStyle: "medium" })
+    : null;
 
   return (
     <div className="wb-acct-order-modal" data-wb-account-order-modal>
@@ -315,7 +370,7 @@ function OrderDetailView({
             ×
           </button>
         </div>
-        {cancelNotice && <p className="wb-acct-form-msg is-ok">{cancelNotice}</p>}
+        {actionNotice && <p className="wb-acct-form-msg is-ok">{actionNotice}</p>}
         <div className="wb-acct-badges">
           <StatusBadge status={order.status} />
           <RefundBadge status={order.refundStatus} />
@@ -372,8 +427,54 @@ function OrderDetailView({
                   >
                     Keep order
                   </button>
-                  <button type="submit" className="wb-acct-cancel-confirm" disabled={cancelling}>
+                  <button type="submit" className="wb-acct-cancel-confirm" disabled={formBusy}>
                     {cancelling ? "Cancelling…" : "Confirm"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+        {order.canReturn && websiteId && (
+          <div className="wb-acct-return">
+            {!showReturnForm ? (
+              <button type="button" className="wb-acct-return-open" onClick={() => setShowReturnForm(true)}>
+                Return this order
+              </button>
+            ) : (
+              <form className="wb-acct-return-form" onSubmit={(event) => void submitReturn(event)}>
+                <p className="wb-acct-return-title">Return order</p>
+                <label className="wb-acct-return-label">
+                  Reason
+                  <textarea
+                    name="reason"
+                    rows={2}
+                    maxLength={500}
+                    required
+                    placeholder="e.g. Wrong size / damaged"
+                    className="wb-acct-return-reason"
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                  />
+                </label>
+                <p className="wb-acct-return-hint">
+                  {returnUntilLabel ? `Return by ${returnUntilLabel}. ` : ""}
+                  Paid orders are refunded automatically.
+                </p>
+                {returnError && <p className="wb-acct-form-msg is-error">{returnError}</p>}
+                <div className="wb-acct-return-actions">
+                  <button
+                    type="button"
+                    className="wb-acct-return-keep"
+                    onClick={() => {
+                      setShowReturnForm(false);
+                      setReturnError(null);
+                    }}
+                  >
+                    Keep order
+                  </button>
+                  <button type="submit" className="wb-acct-return-confirm" disabled={formBusy}>
+                    {returning ? "Returning…" : "Confirm return"}
                   </button>
                 </div>
               </form>
@@ -385,7 +486,12 @@ function OrderDetailView({
             <strong>Cancel reason:</strong> {order.cancelReason}
           </p>
         )}
-        {!showCancelForm && (
+        {order.returnReason && !order.canReturn && (
+          <p className="wb-acct-return-reason-view">
+            <strong>Return reason:</strong> {order.returnReason}
+          </p>
+        )}
+        {!showCancelForm && !showReturnForm && (
           <div className="wb-acct-order-tracking">
             <h4 className="wb-acct-panel-title" style={{ marginTop: 18 }}>
               Tracking
@@ -538,6 +644,18 @@ function OrdersPanel({
                   }}
                 >
                   Cancel
+                </button>
+              )}
+              {order.canReturn && interactive && websiteId && (
+                <button
+                  type="button"
+                  className="wb-acct-row-return"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void openOrder(order.id);
+                  }}
+                >
+                  Return
                 </button>
               )}
             </div>

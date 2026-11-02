@@ -3180,6 +3180,12 @@ function ProductDetailForm({ data, onChange }: DataFormProps<ProductDetailData>)
         onChange={(showCancellationPolicy) => onChange({ ...data, showCancellationPolicy })}
         hint="Uses the cancel-until setting from Shop → Shop settings."
       />
+      <CheckboxField
+        label="Show return policy"
+        checked={data.showReturnPolicy !== false}
+        onChange={(showReturnPolicy) => onChange({ ...data, showReturnPolicy })}
+        hint="Uses the shop return window and guidelines from Shop → Shop settings, plus each product's return settings."
+      />
     </FormGroup>
   );
 }

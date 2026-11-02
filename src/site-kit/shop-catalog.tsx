@@ -15,6 +15,12 @@ export function shopCancelPolicyText(status: ShopCancelUntilStatus | null | unde
   }
 }
 
+/** Customer-facing return window line. Null when returns are not offered. */
+export function shopReturnPolicyText(days: number | null | undefined): string | null {
+  if (!days || days < 1) return null;
+  return `Return within ${days} day${days === 1 ? "" : "s"} of delivery.`;
+}
+
 const ShopCatalogContext = createContext<ShopCatalog | null>(null);
 
 export function ShopCatalogProvider({ value, children }: { value: ShopCatalog | null; children: ReactNode }) {
