@@ -7,6 +7,8 @@ const CLIENT_NAV: ShellNavItem[] = [
   { label: "My websites", icon: Globe, to: "/websites", activePrefixes: ["/websites"] },
   { label: "Media library", icon: Image, to: "/media" },
   { label: "Connects", icon: Coins, to: "/connects" },
+  // Hidden for client dashboard presentation:
+  // { label: "Partnership", icon: Handshake, to: "/partnership", activePrefixes: ["/partnership"] },
   { label: "Website settings", icon: Settings },
   { label: "Account settings", icon: UserCog, to: "/account" },
 ];

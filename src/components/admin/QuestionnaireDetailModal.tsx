@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { errorMessage } from "../../api/http.ts";
+import { formatEmailDeliveryError } from "../../utils/email-error.ts";
 import {
   adminQuestionnairesApi,
   type Questionnaire,
@@ -247,7 +248,7 @@ export default function QuestionnaireDetailModal({
         {/* Email Warning Banner if delivery failed */}
         {emailNotSent(questionnaire) && (
           <FormAlert status="warning" title="Notification email failed to deliver">
-            <span className="block">{questionnaire.emailError ?? "The notification email could not be sent."}</span>
+            <span className="block">{formatEmailDeliveryError(questionnaire.emailError)}</span>
             <Button
               size="sm"
               variant="outline"
@@ -709,7 +710,7 @@ function ActivityItem({ item }: { item: QuestionnaireActivity }) {
           title="Notification email failed to deliver"
           at={item.createdAt}
         >
-          {item.body && <p className="mt-0.5 text-xs text-ink-muted">{item.body}</p>}
+          {item.body && <p className="mt-0.5 text-xs text-ink-muted">{formatEmailDeliveryError(item.body)}</p>}
         </TimelineRow>
       );
   }
