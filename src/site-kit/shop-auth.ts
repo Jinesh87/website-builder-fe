@@ -815,30 +815,56 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         payNow();
       });
     });
-    function fulfillmentIndex(status){
-      var steps=["paid","processing","shipped","delivered"];
-      return steps.indexOf(String(status||""));
-    }
-    function timelineHtml(order, variant){
+    function trackingSteps(status){
       var steps=[
         { key:"paid", label:"Order received" },
         { key:"processing", label:"Processing" },
         { key:"shipped", label:"Shipped" },
         { key:"delivered", label:"Delivered" }
       ];
+      if(status==="returned") steps.push({ key:"returned", label:"Returned" });
+      if(status==="cancelled") steps.push({ key:"cancelled", label:"Cancelled" });
+      if(status==="failed") steps.push({ key:"failed", label:"Failed" });
+      return steps;
+    }
+    function maxFulfillmentReached(timeline){
+      var keys=["paid","processing","shipped","delivered"];
+      var max=-1;
+      (timeline||[]).forEach(function(event){
+        var index=keys.indexOf(String(event.status||""));
+        if(index>max) max=index;
+      });
+      return max;
+    }
+    function timelineHit(timeline, key){
+      for(var i=(timeline||[]).length-1;i>=0;i--){ if(timeline[i].status===key) return timeline[i]; }
+      return null;
+    }
+    function trackingStepClass(index, step, status, timeline){
+      var steps=trackingSteps(status);
+      var statusIndex=-1;
+      for(var i=0;i<steps.length;i++){ if(steps[i].key===status){ statusIndex=i; break; } }
+      var reached=maxFulfillmentReached(timeline);
+      var current=statusIndex>=0?statusIndex:Math.max(reached,-1);
+      var terminal=status==="returned"||status==="cancelled"||status==="failed";
+      var done=terminal
+        ? (index<current && (index<=reached || !!timelineHit(timeline, step.key)))
+        : index<current;
+      var isCurrent=index===current && current>=0;
+      return (done?" is-done":"")+(isCurrent?" is-current":"");
+    }
+    function timelineHtml(order, variant){
+      var status=String(order.status||"pending");
+      var steps=trackingSteps(status);
       var timeline=order.timeline||[];
-      var current=fulfillmentIndex(order.status);
       if(variant==="steps"){
         return '<div class="wb-acct-steps">'+steps.map(function(step, index){
-          var cls="wb-acct-step"+(index<current?" is-done":"")+(index===current?" is-current":"");
-          return '<div class="'+cls+'">'+step.label+"</div>";
+          return '<div class="wb-acct-step'+trackingStepClass(index, step, status, timeline)+'">'+step.label+"</div>";
         }).join("")+"</div>";
       }
       return '<ol class="wb-acct-timeline'+(variant==="compact"?" wb-acct-order-compact":"")+'">'+steps.map(function(step, index){
-        var hit=null;
-        for(var i=timeline.length-1;i>=0;i--){ if(timeline[i].status===step.key){ hit=timeline[i]; break; } }
-        var cls="wb-acct-timeline-step"+(index<current?" is-done":"")+(index===current?" is-current":"");
-        return '<li class="'+cls+'"><span class="wb-acct-timeline-dot" aria-hidden="true"></span><div>'+
+        var hit=timelineHit(timeline, step.key);
+        return '<li class="wb-acct-timeline-step'+trackingStepClass(index, step, status, timeline)+'"><span class="wb-acct-timeline-dot" aria-hidden="true"></span><div>'+
           '<span class="wb-acct-timeline-label">'+step.label+"</span>"+
           (hit&&hit.createdAt?'<span class="wb-acct-timeline-time">'+day(hit.createdAt)+"</span>":"")+
           (hit&&hit.note?'<span class="wb-acct-timeline-note">'+String(hit.note)+"</span>":"")+

@@ -25,16 +25,46 @@ const FULFILLMENT = [
   { key: "delivered", label: "Delivered" },
 ] as const;
 
-function fulfillmentIndex(status: string): number {
-  const i = FULFILLMENT.findIndex((step) => step.key === status);
-  if (i >= 0) return i;
-  if (status === "pending") return -1;
-  return -1;
+type TrackingStep = { key: string; label: string };
+
+function trackingSteps(status: string): TrackingStep[] {
+  const steps: TrackingStep[] = FULFILLMENT.map((step) => ({ key: step.key, label: step.label }));
+  if (status === "returned") steps.push({ key: "returned", label: "Returned" });
+  if (status === "cancelled") steps.push({ key: "cancelled", label: "Cancelled" });
+  if (status === "failed") steps.push({ key: "failed", label: "Failed" });
+  return steps;
+}
+
+function maxFulfillmentReached(timeline: { status: string }[]): number {
+  let max = -1;
+  for (const event of timeline) {
+    const index = FULFILLMENT.findIndex((step) => step.key === event.status);
+    if (index > max) max = index;
+  }
+  return max;
 }
 
 function eventTime(timeline: { status: string; createdAt: string }[], status: string): string | null {
   const hit = [...timeline].reverse().find((event) => event.status === status);
   return hit?.createdAt ?? null;
+}
+
+function trackingStepClass(
+  index: number,
+  step: TrackingStep,
+  status: string,
+  timeline: { status: string; createdAt: string }[],
+): string {
+  const steps = trackingSteps(status);
+  const statusIndex = steps.findIndex((item) => item.key === status);
+  const reached = maxFulfillmentReached(timeline);
+  const current = statusIndex >= 0 ? statusIndex : Math.max(reached, -1);
+  const terminal = status === "returned" || status === "cancelled" || status === "failed";
+  const done = terminal
+    ? index < current && (index <= reached || !!eventTime(timeline, step.key))
+    : index < current;
+  const isCurrent = index === current && current >= 0;
+  return `${done ? " is-done" : ""}${isCurrent ? " is-current" : ""}`;
 }
 
 /**
@@ -226,15 +256,12 @@ function OrderTimeline({
   order: Pick<ShopOrderDetail, "status" | "timeline">;
   variant: AccountOrderDetailVariant;
 }) {
-  const current = fulfillmentIndex(order.status);
+  const steps = trackingSteps(order.status);
   if (variant === "steps") {
     return (
       <div className="wb-acct-steps" data-wb-order-timeline="steps">
-        {FULFILLMENT.map((step, index) => (
-          <div
-            key={step.key}
-            className={`wb-acct-step${index < current ? " is-done" : ""}${index === current ? " is-current" : ""}`}
-          >
+        {steps.map((step, index) => (
+          <div key={step.key} className={`wb-acct-step${trackingStepClass(index, step, order.status, order.timeline)}`}>
             {step.label}
           </div>
         ))}
@@ -243,14 +270,11 @@ function OrderTimeline({
   }
   return (
     <ol className={`wb-acct-timeline${variant === "compact" ? " wb-acct-order-compact" : ""}`} data-wb-order-timeline={variant}>
-      {FULFILLMENT.map((step, index) => {
+      {steps.map((step, index) => {
         const when = eventTime(order.timeline, step.key);
         const note = [...order.timeline].reverse().find((event) => event.status === step.key)?.note;
         return (
-          <li
-            key={step.key}
-            className={`wb-acct-timeline-step${index < current ? " is-done" : ""}${index === current ? " is-current" : ""}`}
-          >
+          <li key={step.key} className={`wb-acct-timeline-step${trackingStepClass(index, step, order.status, order.timeline)}`}>
             <span className="wb-acct-timeline-dot" aria-hidden="true" />
             <div>
               <span className="wb-acct-timeline-label">{step.label}</span>

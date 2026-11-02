@@ -404,6 +404,12 @@ export const shopApi = {
       body: { status },
     }).then((data) => data.order),
 
+  retryOrderRefund: (websiteId: string, orderId: string) =>
+    request<{ order: ShopOrder }>(`${base(websiteId)}/orders/${orderId}/refund`, {
+      method: "POST",
+      body: {},
+    }).then((data) => data.order),
+
   orderEmailTemplates: (websiteId: string) =>
     request<{
       templates: ShopOrderEmailTemplate[];
