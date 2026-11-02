@@ -55,7 +55,6 @@ export function MarketingHeader({
             width={280}
             height={72}
           />
-          {isTemplates && <span className="brand-badge">Templates</span>}
         </Link>
         <nav className="nav" aria-label="Main">
           {NAV.map(([to, label]) => (
