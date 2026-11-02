@@ -23,12 +23,12 @@ const NAV = [
   ["/features", "Features"],
   ["/templates", "Templates"],
   ["/pricing", "Pricing"],
-  ["/partner", "Become a Partner"],
   ["/about", "About"],
   ["/contact", "Contact"],
 ] as const;
 
 const NO_CTA = ["/contact", "/legal", "/templates", "/partner"];
+const LIGHT_ONLY = ["/partner"];
 const SITE_TITLE = "Website Builder";
 
 export function MarketingHeader({
@@ -217,8 +217,8 @@ export function MarketingFooter() {
           </div>
           <div className="col">
             <h4>Get Started</h4>
-            <Link to="/start">Questionnaire</Link>
-            <Link to="/partner">Partner Form</Link>
+            <Link to="/start">Submit Your Requirements</Link>
+            <Link to="/partner">Become a Partner</Link>
           </div>
           <div className="col">
             <h4>Company</h4>
@@ -646,7 +646,7 @@ export default function MarketingLayout() {
 
   return (
     <MarketingContext.Provider value={context}>
-      <div className="mk">
+      <div className="mk" data-theme={LIGHT_ONLY.includes(pathname) ? "light" : undefined}>
         <MarketingHeader shortlist={shortlist} onOpenShortlist={openShortlist} />
         <main id="app">
           <Suspense fallback={null}>
