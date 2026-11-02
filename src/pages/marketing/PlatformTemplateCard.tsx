@@ -3,6 +3,7 @@ import type { WebsiteTemplate } from "../../api/websites.ts";
 import TemplateThumbnail from "../../components/websites/TemplateThumbnail.tsx";
 import { CAT_LABEL } from "./data.ts";
 import TemplateCardShell, { TemplateCardEyeIcon, templateDomain } from "./TemplateCardShell.tsx";
+import { getTemplateDisplayId } from "./use-gallery-templates.ts";
 
 interface PlatformTemplateCardProps {
   template: WebsiteTemplate;
@@ -13,15 +14,18 @@ export default function PlatformTemplateCard({ template }: PlatformTemplateCardP
   const templatePath = `/templates/${encodeURIComponent(template.key)}`;
   const useTemplatePath = `/websites/new?templateKey=${encodeURIComponent(template.key)}`;
   const pageCount = template.pages.length;
+  const displayId = getTemplateDisplayId(template);
 
   return (
     <TemplateCardShell
       name={template.name}
       href={templatePath}
-      thumbnailLabel={`Open ${template.name}`}
+      thumbnailLabel={`Open ${template.name} (ID: #${displayId})`}
+      nameTitle={`${template.name} (ID: #${displayId})`}
       domain={templateDomain(template.name)}
       badge={template.category}
       thumbnail={<TemplateThumbnail template={template} />}
+      nameExtra={<span className="tid-badge">#{displayId}</span>}
       hint={
         <>
           {CAT_LABEL[template.category] ?? template.category} · {pageCount} {pageCount === 1 ? "page" : "pages"}

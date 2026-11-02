@@ -4,6 +4,7 @@ import { Check, LayoutTemplate } from "lucide-react";
 import type { ThemeOption, WebsiteTemplate } from "../../api/websites.ts";
 import TemplateThumbnail from "../../components/websites/TemplateThumbnail.tsx";
 import CommonModal from "../../components/ui/AppModal.tsx";
+import { getTemplateDisplayId } from "../../pages/marketing/use-gallery-templates.ts";
 
 type TemplateChoiceProps = {
   templates: WebsiteTemplate[] | null;
@@ -50,8 +51,13 @@ export default function TemplateChoice({ templates, value, onChange, theme, isDa
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className={`truncate text-xs font-bold ${isDark ? "text-white" : "text-ink"}`}>
-            {selected ? selected.name : "No template"}
+          <p className={`flex items-center gap-1.5 truncate text-xs font-bold ${isDark ? "text-white" : "text-ink"}`}>
+            <span className="truncate">{selected ? selected.name : "No template"}</span>
+            {selected && (
+              <span className={`inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-semibold ${isDark ? "bg-white/10 text-slate-300" : "bg-line/60 text-ink-muted"}`}>
+                #{getTemplateDisplayId(selected)}
+              </span>
+            )}
           </p>
           <p className={`truncate text-[11px] ${muted}`}>
             {selected ? selected.category : "We design it from your answers"}
@@ -134,7 +140,12 @@ export default function TemplateChoice({ templates, value, onChange, theme, isDa
                   <TemplateThumbnail template={template} theme={theme?.settings} />
                   <div className="p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-semibold text-ink">{template.name}</span>
+                      <span className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-ink">
+                        <span className="truncate">{template.name}</span>
+                        <span className="inline-flex shrink-0 items-center rounded border border-line bg-canvas px-1.5 py-0.5 text-[10px] font-semibold text-ink-muted">
+                          #{getTemplateDisplayId(template)}
+                        </span>
+                      </span>
                       {isSelected && <Check className="size-4 shrink-0 text-brand" aria-hidden />}
                     </div>
                     <p className="mt-0.5 text-xs text-ink-muted">

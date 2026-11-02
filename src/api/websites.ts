@@ -133,6 +133,8 @@ export type DomainList = {
 export type WebsiteTemplate = {
   id: string;
   key: string;
+  /** Gallery sequence number (#3001, …) for platform templates; null for built-in or custom client templates. */
+  number?: number | null;
   /** The client's own saved template (vs a platform template). */
   isCustom: boolean;
   name: string;

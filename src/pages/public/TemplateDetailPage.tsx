@@ -27,6 +27,7 @@ import { PreviewFrame, type Device } from "../../components/websites/DevicePrevi
 import { SitePage } from "../../site-kit/index.ts";
 import { resolvePageLink } from "../../site-kit/links.ts";
 import { getTemplateKey, getTemplateSite } from "../../site-kit/templates/index.ts";
+import { getTemplateDisplayId } from "../marketing/use-gallery-templates.ts";
 import { isLightColor } from "../../utils/colors.ts";
 import { Spinner } from "@heroui/react";
 import "../marketing/templates-gallery.css";
@@ -835,6 +836,7 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
   }
 
   const { template } = preview;
+  const displayId = getTemplateDisplayId(template);
 
   return (
     <div className="tpl-full-viewport">
@@ -845,6 +847,7 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
           </Link>
           <div className="tpl-full-meta">
             <span className="tpl-full-title">{template.name}</span>
+            <span className="tpl-full-badge-id">ID: #{displayId}</span>
             <span className="tpl-full-badge-id">{template.category}</span>
           </div>
         </div>
@@ -853,7 +856,7 @@ function LegacyApiTemplateDetail({ templateKey }: { templateKey: string }) {
           <div className="tpl-full-url-bar">
             <Lock className="lock" />
             <div className="tpl-full-url-text">
-              https://yourbrand.com/templates/<b>{templateKey}</b>
+              https://yourbrand.com/templates/<b>{displayId || templateKey}</b>
               {page.slug !== "/" && <span>{page.slug}</span>}
             </div>
             <button type="button" className="tpl-full-copy-btn" onClick={handleCopyUrl} title="Copy URL">

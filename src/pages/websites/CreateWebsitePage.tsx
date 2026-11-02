@@ -43,6 +43,7 @@ import TextAreaInput from "../../components/ui/TextAreaInput.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import TemplateThumbnail from "../../components/websites/TemplateThumbnail.tsx";
 import { getTemplateKey } from "../../site-kit/templates/index.ts";
+import { getTemplateDisplayId } from "../marketing/use-gallery-templates.ts";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -1288,8 +1289,11 @@ export default function CreateWebsitePage() {
                     />
                     <span className="flex flex-1 flex-col p-4">
                       <span className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-ink">
-                          {template.name}
+                        <span className="flex min-w-0 items-center gap-1.5 font-medium text-ink">
+                          <span className="truncate">{template.name}</span>
+                          <span className="inline-flex shrink-0 items-center rounded border border-line bg-canvas px-1.5 py-0.5 text-[11px] font-semibold text-ink-muted">
+                            #{getTemplateDisplayId(template)}
+                          </span>
                         </span>
                         {selected && (
                           <span className="rounded-full bg-brand px-2 py-0.5 text-ed-2xs font-medium text-white">
