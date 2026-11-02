@@ -32,7 +32,7 @@ type SetDraft = {
 };
 type ProductDraft = {
   id?: string;
-  originalCategoryId?: string;
+  originalCategoryId?: string | null;
   name: string;
   description: string;
   categoryId: string;
@@ -134,7 +134,6 @@ function priceLabel(product: ShopProduct): string {
 }
 
 function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: string } {
-  if (!draft.categoryId) return { error: "Choose a category" };
   if (!draft.name.trim()) return { error: "Enter a product name" };
   const seen = new Set<string>();
   const optionSets = [];
@@ -196,7 +195,7 @@ function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: st
     input: {
       name: draft.name.trim(),
       description: draft.description.trim(),
-      categoryId: draft.categoryId,
+      categoryId: draft.categoryId || null,
       optionSets,
       images: draft.images.map((image) => ({ mediaId: image.mediaId, alt: image.alt })),
     },
@@ -567,7 +566,7 @@ function ShopCatalog({
 
   function openProduct(product?: ShopProduct) {
     if (!product) {
-      setDraft(blankProduct(categoryId || categories?.[0]?.id || ""));
+      setDraft(blankProduct(categoryId || ""));
       return;
     }
     setDraft({
@@ -575,7 +574,7 @@ function ShopCatalog({
       originalCategoryId: product.categoryId,
       name: product.name,
       description: product.description ?? "",
-      categoryId: product.categoryId,
+      categoryId: product.categoryId ?? "",
       sets: setsFromProduct(product),
       images: product.images ?? [],
     });
@@ -595,7 +594,7 @@ function ShopCatalog({
       {section === "category" && (
       <section className="rounded-xl border border-line bg-surface p-5">
         <h3 className="text-sm font-semibold text-ink">Categories</h3>
-        <p className="mt-1 text-xs text-ink-muted">Products are filed under one category.</p>
+        <p className="mt-1 text-xs text-ink-muted">Optional — products can also be created without a category.</p>
         <div className="mt-4 flex max-w-md gap-2">
           <input
             value={categoryName}
@@ -718,7 +717,7 @@ function ShopCatalog({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-ink">{product.name}</span>
                   <span className="mt-0.5 block truncate text-xs text-ink-muted">
-                    {product.categoryName} · {optionSummary(product)}
+                    {[product.categoryName, optionSummary(product)].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 <span className="shrink-0 text-sm text-ink">{priceLabel(product)}</span>
@@ -845,7 +844,7 @@ function ProductVariants({ product, onBack, onEdit }: { product: ShopProduct; on
       <div className="px-5 py-4">
         <h3 className="text-base font-semibold text-ink">{product.name}</h3>
         <p className="mt-0.5 text-xs text-ink-muted">
-          {product.categoryName} · {priceLabel(product)}
+          {[product.categoryName, priceLabel(product)].filter(Boolean).join(" · ")}
         </p>
         {product.description && <p className="mt-2 max-w-2xl text-sm text-ink-body">{product.description}</p>}
       </div>
@@ -914,8 +913,8 @@ function ProductForm({
   draft: ProductDraft;
   onChange: (draft: ProductDraft) => void;
   onClose: () => void;
-  onSaved: (product: ShopProduct, previousCategoryId?: string) => void;
-  onDeleted: (productId: string, categoryId: string) => void;
+  onSaved: (product: ShopProduct, previousCategoryId?: string | null) => void;
+  onDeleted: (productId: string, categoryId: string | null) => void;
 }) {
   const draftRef = useRef(draft);
   draftRef.current = draft;
@@ -998,7 +997,7 @@ function ProductForm({
             aria-label="Product category"
             className="h-9 w-full rounded-lg border border-ed-border bg-surface px-3 text-sm text-ink"
           >
-            <option value="">Choose a category</option>
+            <option value="">No category</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}

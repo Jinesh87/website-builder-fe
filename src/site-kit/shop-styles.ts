@@ -96,12 +96,16 @@ export const SHOP_CSS = `
   width: 100%; height: 100%; display: grid; place-items: center;
   font-family: var(--wb-font-heading); font-size: 2rem; color: var(--wb-muted);
 }
-.wb-shop-body { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px 12px; }
+/* Keep name/price above the buttons when grid stretch makes cards equal height. */
+.wb-shop-card-link > .wb-shop-body { margin-top: auto; }
+.wb-shop-body { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px 10px; }
 .wb-shop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .wb-shop-link { font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--wb-muted); }
-.wb-shop-category { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--wb-primary); }
+.wb-shop-category { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--wb-primary); line-height: 1.2; min-height: 1.2em; }
+.wb-shop-category.is-empty { visibility: hidden; }
 .wb-shop-name { margin: 0; font-size: 1.05rem; line-height: 1.3; }
-.wb-shop-variant { margin: 0; color: var(--wb-muted); }
+.wb-shop-variant { margin: 0; color: var(--wb-muted); min-height: 1.35em; }
+.wb-shop-variant.is-empty { visibility: hidden; }
 .wb-shop-price { font-weight: 700; }
 .wb-shop-actions { display: flex; flex-direction: column; gap: 6px; padding: 0 14px 14px; }
 .wb-shop-actions.is-compact { padding-top: 0; }
@@ -460,7 +464,7 @@ export const SHOP_CSS = `
 }
 .wb-shop-list.is-compact .wb-shop-card-link { display: contents; }
 .wb-shop-list.is-compact .wb-shop-media { grid-row: 1 / -1; aspect-ratio: auto; height: 100%; min-height: 148px; background: color-mix(in srgb, var(--wb-text) 8%, transparent); }
-.wb-shop-list.is-compact .wb-shop-body { justify-content: center; gap: 5px; padding: 14px 16px 8px; }
+.wb-shop-list.is-compact .wb-shop-body { margin-top: 0; justify-content: center; gap: 5px; padding: 14px 16px 8px; }
 .wb-shop-list.is-compact .wb-shop-actions { grid-column: 2; padding: 0 16px 14px; }
 .wb-shop-list.is-compact .wb-shop-name { font-size: 1rem; }
 .wb-shop-list.is-compact .wb-shop-category { font-size: 0.65rem; }
@@ -506,19 +510,19 @@ export const SHOP_CSS = `
 .wb-shop-list.is-showcase .wb-shop-card-showcase:hover .wb-shop-media img { transform: scale(1.05); }
 .wb-shop-list.is-showcase .wb-shop-card-showcase .wb-shop-body {
   gap: 3px;
-  padding: 16px 17px 9px;
+  padding: 14px 17px 8px;
   border-top: 1px solid color-mix(in srgb, var(--wb-text) 7%, transparent);
 }
-.wb-shop-list.is-showcase .wb-shop-card-showcase .wb-shop-actions { padding: 0 17px 16px; }
+.wb-shop-list.is-showcase .wb-shop-card-showcase .wb-shop-actions { padding: 2px 17px 16px; }
 .wb-shop-list.is-showcase .wb-shop-card-showcase .wb-shop-category { font-size: 0.68rem; color: var(--wb-muted); }
-.wb-shop-list.is-showcase .wb-shop-card-showcase .wb-shop-variant { font-size: 0.85rem; color: var(--wb-muted); }
+.wb-shop-list.is-showcase .wb-shop-card-showcase .wb-shop-variant { font-size: 0.85rem; color: var(--wb-muted); min-height: 1.3em; }
 .wb-shop-list.is-showcase .wb-shop-card-showcase .wb-shop-name {
   font-family: var(--wb-font-heading);
   font-size: 1.02rem;
   font-weight: 650;
 }
 .wb-shop-list.is-showcase .wb-shop-card-showcase .wb-shop-price {
-  margin-top: 8px;
+  margin-top: 4px;
   font-size: 1rem;
   color: var(--wb-text);
 }

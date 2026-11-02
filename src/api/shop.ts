@@ -22,7 +22,7 @@ export type ShopProduct = {
   name: string;
   slug: string;
   description: string | null;
-  categoryId: string;
+  categoryId: string | null;
   categoryName: string;
   optionSets: ShopOptionSet[];
   images: ShopImage[];
@@ -56,7 +56,7 @@ export type ShopImage = {
 export type ShopProductInput = {
   name: string;
   description?: string;
-  categoryId: string;
+  categoryId?: string | null;
   optionSets: {
     pricePaise: number;
     options: ShopOption[];

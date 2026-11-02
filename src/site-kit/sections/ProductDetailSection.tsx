@@ -198,7 +198,7 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
     );
     const heading = (
       <header className="wb-product-heading">
-        <span className="wb-shop-category">{product.categoryName}</span>
+        {product.categoryName ? <span className="wb-shop-category">{product.categoryName}</span> : null}
         <h2 className="wb-shop-title">{parseRichText(product.name)}</h2>
       </header>
     );
