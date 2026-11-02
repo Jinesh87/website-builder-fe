@@ -22,8 +22,11 @@ export type ShopProduct = {
   name: string;
   slug: string;
   description: string | null;
-  categoryId: string;
+  categoryId: string | null;
   categoryName: string;
+  returnsEnabled: boolean;
+  /** Null = use the shop default return window. */
+  returnDays: number | null;
   optionSets: ShopOptionSet[];
   images: ShopImage[];
   variants: ShopVariant[];
@@ -56,7 +59,9 @@ export type ShopImage = {
 export type ShopProductInput = {
   name: string;
   description?: string;
-  categoryId: string;
+  categoryId?: string | null;
+  returnsEnabled?: boolean;
+  returnDays?: number | null;
   optionSets: {
     pricePaise: number;
     options: ShopOption[];
@@ -84,7 +89,14 @@ export type ShopPaymentInput = {
   razorpayWebhookSecret?: string;
 };
 
-export type ShopOrderEmailStatus = "paid" | "processing" | "shipped" | "delivered" | "failed" | "cancelled";
+export type ShopOrderEmailStatus =
+  | "paid"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "failed"
+  | "cancelled"
+  | "returned";
 
 export type ShopOrderEmailLayout = "classic" | "bold" | "minimal" | "banner" | "postcard";
 
@@ -138,6 +150,7 @@ export type InventoryItem = {
   options: { name: string; value: string }[];
   pricePaise: number;
   quantity: number;
+  returnedOrderCount: number;
 };
 
 export type InventoryMovement = {
@@ -186,9 +199,37 @@ export type ShopOrderStatus =
   | "shipped"
   | "delivered"
   | "failed"
-  | "cancelled";
+  | "cancelled"
+  | "returned";
 
 export type ShopRefundStatus = "none" | "pending" | "processed" | "failed";
+
+export type ProductReturnedOrder = {
+  id: string;
+  number: string;
+  status: "returned";
+  refundStatus: ShopRefundStatus;
+  totalPaise: number;
+  returnReason: string | null;
+  customerName: string;
+  customerEmail: string;
+  returnedAt: string;
+  createdAt: string;
+  items: {
+    id: string;
+    productName: string;
+    variantName: string;
+    quantity: number;
+    unitPricePaise: number;
+    lineTotalPaise: number;
+  }[];
+};
+
+export type ProductReturnedOrders = {
+  productId: string;
+  productName: string;
+  orders: ProductReturnedOrder[];
+};
 
 export type ShopOrderItem = {
   id: string;
@@ -228,6 +269,7 @@ export type ShopOrder = {
   refundedAt: string | null;
   failureReason: string | null;
   cancelReason: string | null;
+  returnReason: string | null;
   timeline: ShopOrderTimelineEvent[];
   createdAt: string;
   updatedAt: string;
@@ -325,6 +367,9 @@ export const shopApi = {
     return request<InventoryLogPage>(`${base(websiteId)}/inventory/log?${query}`);
   },
 
+  productReturns: (websiteId: string, productId: string) =>
+    request<ProductReturnedOrders>(`${base(websiteId)}/inventory/returns/${productId}`),
+
   revealPaymentSecrets: (websiteId: string) =>
     request<{ secrets: { razorpayKeySecret: string | null; razorpayWebhookSecret: string | null } }>(
       `${base(websiteId)}/payments/secrets`,
@@ -357,6 +402,12 @@ export const shopApi = {
     request<{ order: ShopOrder }>(`${base(websiteId)}/orders/${orderId}`, {
       method: "PATCH",
       body: { status },
+    }).then((data) => data.order),
+
+  retryOrderRefund: (websiteId: string, orderId: string) =>
+    request<{ order: ShopOrder }>(`${base(websiteId)}/orders/${orderId}/refund`, {
+      method: "POST",
+      body: {},
     }).then((data) => data.order),
 
   orderEmailTemplates: (websiteId: string) =>

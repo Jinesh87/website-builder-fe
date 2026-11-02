@@ -32,10 +32,13 @@ type SetDraft = {
 };
 type ProductDraft = {
   id?: string;
-  originalCategoryId?: string;
+  originalCategoryId?: string | null;
   name: string;
   description: string;
   categoryId: string;
+  returnsEnabled: boolean;
+  /** Empty string = use shop default. */
+  returnDays: string;
   sets: SetDraft[];
   images: ShopImage[];
 };
@@ -49,7 +52,15 @@ function blankSet(): SetDraft {
 }
 
 function blankProduct(categoryId = ""): ProductDraft {
-  return { name: "", description: "", categoryId, sets: [blankSet()], images: [] };
+  return {
+    name: "",
+    description: "",
+    categoryId,
+    returnsEnabled: true,
+    returnDays: "",
+    sets: [blankSet()],
+    images: [],
+  };
 }
 
 function variantKey(values: string[]): string {
@@ -134,8 +145,16 @@ function priceLabel(product: ShopProduct): string {
 }
 
 function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: string } {
-  if (!draft.categoryId) return { error: "Choose a category" };
   if (!draft.name.trim()) return { error: "Enter a product name" };
+  const returnDaysRaw = draft.returnDays.trim();
+  let returnDays: number | null = null;
+  if (returnDaysRaw) {
+    const parsed = Number(returnDaysRaw);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 365) {
+      return { error: "Return days must be between 1 and 365, or left blank for the shop default." };
+    }
+    returnDays = parsed;
+  }
   const seen = new Set<string>();
   const optionSets = [];
   for (const set of draft.sets) {
@@ -196,7 +215,9 @@ function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: st
     input: {
       name: draft.name.trim(),
       description: draft.description.trim(),
-      categoryId: draft.categoryId,
+      categoryId: draft.categoryId || null,
+      returnsEnabled: draft.returnsEnabled,
+      returnDays,
       optionSets,
       images: draft.images.map((image) => ({ mediaId: image.mediaId, alt: image.alt })),
     },
@@ -298,10 +319,24 @@ export default function ShopPanel({
   const [cancelUntilDraft, setCancelUntilDraft] = useState<"" | "paid" | "processing" | "shipped">(
     website.shopCancelUntilStatus ?? "",
   );
+  const [savingReturnPolicy, setSavingReturnPolicy] = useState(false);
+  const [returnPolicyError, setReturnPolicyError] = useState<string | null>(null);
+  const [returnPolicyMessage, setReturnPolicyMessage] = useState<string | null>(null);
+  const [returnsEnabledDraft, setReturnsEnabledDraft] = useState(website.shopReturnDays != null);
+  const [returnDaysDraft, setReturnDaysDraft] = useState(String(website.shopReturnDays ?? 7));
+  const [returnGuidelinesDraft, setReturnGuidelinesDraft] = useState<string[]>(
+    website.shopReturnGuidelines.length > 0 ? website.shopReturnGuidelines : [""],
+  );
 
   useEffect(() => {
     setCancelUntilDraft(website.shopCancelUntilStatus ?? "");
   }, [website.shopCancelUntilStatus]);
+
+  useEffect(() => {
+    setReturnsEnabledDraft(website.shopReturnDays != null);
+    setReturnDaysDraft(String(website.shopReturnDays ?? 7));
+    setReturnGuidelinesDraft(website.shopReturnGuidelines.length > 0 ? website.shopReturnGuidelines : [""]);
+  }, [website.shopReturnDays, website.shopReturnGuidelines]);
 
   async function setShopEnabled(shopEnabled: boolean) {
     setTurning(true);
@@ -334,6 +369,37 @@ export default function ShopPanel({
   }
 
   const cancelPolicyDirty = (website.shopCancelUntilStatus ?? "") !== cancelUntilDraft;
+
+  async function saveReturnPolicy() {
+    const days = Number(returnDaysDraft);
+    if (returnsEnabledDraft && (!Number.isInteger(days) || days < 1 || days > 365)) {
+      setReturnPolicyError("Enter a return window between 1 and 365 days.");
+      return;
+    }
+    setSavingReturnPolicy(true);
+    setReturnPolicyError(null);
+    setReturnPolicyMessage(null);
+    try {
+      onChange(
+        await websitesApi.update(website.id, {
+          shopReturnDays: returnsEnabledDraft ? days : null,
+          shopReturnGuidelines: returnGuidelinesDraft.map((line) => line.trim()).filter(Boolean),
+        }),
+      );
+      setReturnPolicyMessage("Return policy saved.");
+    } catch (err) {
+      setReturnPolicyError(errorMessage(err));
+    } finally {
+      setSavingReturnPolicy(false);
+    }
+  }
+
+  const cleanedGuidelines = returnGuidelinesDraft.map((line) => line.trim()).filter(Boolean);
+  const savedGuidelines = website.shopReturnGuidelines;
+  const returnPolicyDirty =
+    returnsEnabledDraft !== (website.shopReturnDays != null) ||
+    (returnsEnabledDraft && Number(returnDaysDraft) !== (website.shopReturnDays ?? 7)) ||
+    cleanedGuidelines.join("\n") !== savedGuidelines.join("\n");
 
   return (
     <div className="space-y-4">
@@ -431,6 +497,94 @@ export default function ShopPanel({
               </div>
             </section>
           )}
+
+          {website.shopEnabled && (
+            <section className="rounded-xl border border-line bg-surface p-6">
+              <div className="max-w-2xl">
+                <h2 className="text-base font-semibold text-ink">Return policy</h2>
+                <p className="mt-1 text-sm text-ink-body">
+                  Set the default return window and guideline points for this shop. You can turn returns off or
+                  change the days on individual products.
+                </p>
+              </div>
+              <div className="mt-5 max-w-xl space-y-4">
+                <Switch isSelected={returnsEnabledDraft} onChange={setReturnsEnabledDraft}>
+                  <Switch.Content>
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                    <Label className="text-sm text-ink">{returnsEnabledDraft ? "Returns on" : "Returns off"}</Label>
+                  </Switch.Content>
+                </Switch>
+                {returnsEnabledDraft && (
+                  <>
+                    <label className="grid gap-1 text-sm font-medium text-ink">
+                      Default return window (days)
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={returnDaysDraft}
+                        onChange={(event) => setReturnDaysDraft(event.target.value)}
+                        className="h-10 rounded-lg border border-ed-border bg-surface px-3 text-sm font-normal text-ink"
+                      />
+                    </label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-ink">Guideline points</span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onPress={() => setReturnGuidelinesDraft((current) => [...current, ""])}
+                          isDisabled={returnGuidelinesDraft.length >= 12}
+                        >
+                          Add point
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {returnGuidelinesDraft.map((line, index) => (
+                          <div key={index} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={line}
+                              maxLength={240}
+                              placeholder="e.g. Item must be unused and in original packaging"
+                              onChange={(event) =>
+                                setReturnGuidelinesDraft((current) =>
+                                  current.map((item, itemIndex) => (itemIndex === index ? event.target.value : item)),
+                                )
+                              }
+                              className="h-10 min-w-0 flex-1 rounded-lg border border-ed-border bg-surface px-3 text-sm text-ink"
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onPress={() =>
+                                setReturnGuidelinesDraft((current) =>
+                                  current.length <= 1 ? [""] : current.filter((_, itemIndex) => itemIndex !== index),
+                                )
+                              }
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+                {returnPolicyError && <FormAlert status="danger">{returnPolicyError}</FormAlert>}
+                {returnPolicyMessage && <FormAlert status="success">{returnPolicyMessage}</FormAlert>}
+                <Button
+                  size="sm"
+                  onPress={() => void saveReturnPolicy()}
+                  isDisabled={savingReturnPolicy || !returnPolicyDirty}
+                >
+                  {savingReturnPolicy ? "Saving…" : "Save return policy"}
+                </Button>
+              </div>
+            </section>
+          )}
         </div>
       )}
 
@@ -461,7 +615,12 @@ export default function ShopPanel({
       {section === "inventory-log" && website.shopEnabled && <ShopInventoryLogPanel websiteId={website.id} />}
 
       {(section === "category" || section === "products") && website.shopEnabled && (
-        <ShopCatalog websiteId={website.id} clientId={website.clientId} section={section} />
+        <ShopCatalog
+          websiteId={website.id}
+          clientId={website.clientId}
+          section={section}
+          shopReturnDays={website.shopReturnDays}
+        />
       )}
     </div>
   );
@@ -471,10 +630,12 @@ function ShopCatalog({
   websiteId,
   clientId,
   section,
+  shopReturnDays,
 }: {
   websiteId: string;
   clientId: string;
   section: "category" | "products";
+  shopReturnDays: number | null;
 }) {
   const [categories, setCategories] = useState<ShopCategory[] | null>(null);
   const [products, setProducts] = useState<ShopProduct[] | null>(null);
@@ -567,7 +728,7 @@ function ShopCatalog({
 
   function openProduct(product?: ShopProduct) {
     if (!product) {
-      setDraft(blankProduct(categoryId || categories?.[0]?.id || ""));
+      setDraft(blankProduct(categoryId || ""));
       return;
     }
     setDraft({
@@ -575,7 +736,9 @@ function ShopCatalog({
       originalCategoryId: product.categoryId,
       name: product.name,
       description: product.description ?? "",
-      categoryId: product.categoryId,
+      categoryId: product.categoryId ?? "",
+      returnsEnabled: product.returnsEnabled !== false,
+      returnDays: product.returnDays != null ? String(product.returnDays) : "",
       sets: setsFromProduct(product),
       images: product.images ?? [],
     });
@@ -595,7 +758,7 @@ function ShopCatalog({
       {section === "category" && (
       <section className="rounded-xl border border-line bg-surface p-5">
         <h3 className="text-sm font-semibold text-ink">Categories</h3>
-        <p className="mt-1 text-xs text-ink-muted">Products are filed under one category.</p>
+        <p className="mt-1 text-xs text-ink-muted">Optional — products can also be created without a category.</p>
         <div className="mt-4 flex max-w-md gap-2">
           <input
             value={categoryName}
@@ -644,13 +807,18 @@ function ShopCatalog({
             <h3 className="text-sm font-semibold text-ink">Products</h3>
             <p className="mt-0.5 text-xs text-ink-muted">Search by name, description, or variant.</p>
           </div>
-          <Button size="sm" onPress={() => openProduct()} isDisabled={categories.length === 0}>
+          <Button size="sm" onPress={() => openProduct()}>
             <Plus className="size-4" aria-hidden /> Add product
           </Button>
         </div>
 
         {viewing ? (
-          <ProductVariants product={viewing} onBack={() => setViewing(null)} onEdit={() => openProduct(viewing)} />
+          <ProductVariants
+            product={viewing}
+            shopReturnDays={shopReturnDays}
+            onBack={() => setViewing(null)}
+            onEdit={() => openProduct(viewing)}
+          />
         ) : (
         <>
         <div className="flex flex-wrap gap-2 border-b border-line px-5 py-3">
@@ -718,7 +886,7 @@ function ShopCatalog({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-ink">{product.name}</span>
                   <span className="mt-0.5 block truncate text-xs text-ink-muted">
-                    {product.categoryName} · {optionSummary(product)}
+                    {[product.categoryName, optionSummary(product)].filter(Boolean).join(" · ")}
                   </span>
                 </span>
                 <span className="shrink-0 text-sm text-ink">{priceLabel(product)}</span>
@@ -780,6 +948,7 @@ function ShopCatalog({
             websiteId={websiteId}
             clientId={clientId}
             categories={categories}
+            shopReturnDays={shopReturnDays}
             draft={draft}
             onChange={setDraft}
             onClose={() => setDraft(null)}
@@ -831,7 +1000,19 @@ function ShopCatalog({
   );
 }
 
-function ProductVariants({ product, onBack, onEdit }: { product: ShopProduct; onBack: () => void; onEdit: () => void }) {
+function ProductVariants({
+  product,
+  shopReturnDays,
+  onBack,
+  onEdit,
+}: {
+  product: ShopProduct;
+  shopReturnDays: number | null;
+  onBack: () => void;
+  onEdit: () => void;
+}) {
+  const returnsOff = !shopReturnDays || product.returnsEnabled === false;
+  const effectiveDays = returnsOff ? null : product.returnDays ?? shopReturnDays;
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
@@ -845,7 +1026,12 @@ function ProductVariants({ product, onBack, onEdit }: { product: ShopProduct; on
       <div className="px-5 py-4">
         <h3 className="text-base font-semibold text-ink">{product.name}</h3>
         <p className="mt-0.5 text-xs text-ink-muted">
-          {product.categoryName} · {priceLabel(product)}
+          {[product.categoryName, priceLabel(product)].filter(Boolean).join(" · ")}
+        </p>
+        <p className="mt-1 text-xs text-ink-muted">
+          {returnsOff
+            ? "Returns off"
+            : `Returns within ${effectiveDays} day${effectiveDays === 1 ? "" : "s"}${product.returnDays == null ? " (shop default)" : ""}`}
         </p>
         {product.description && <p className="mt-2 max-w-2xl text-sm text-ink-body">{product.description}</p>}
       </div>
@@ -902,6 +1088,7 @@ function ProductForm({
   websiteId,
   clientId,
   categories,
+  shopReturnDays,
   draft,
   onChange,
   onClose,
@@ -911,11 +1098,12 @@ function ProductForm({
   websiteId: string;
   clientId: string;
   categories: ShopCategory[];
+  shopReturnDays: number | null;
   draft: ProductDraft;
   onChange: (draft: ProductDraft) => void;
   onClose: () => void;
-  onSaved: (product: ShopProduct, previousCategoryId?: string) => void;
-  onDeleted: (productId: string, categoryId: string) => void;
+  onSaved: (product: ShopProduct, previousCategoryId?: string | null) => void;
+  onDeleted: (productId: string, categoryId: string | null) => void;
 }) {
   const draftRef = useRef(draft);
   draftRef.current = draft;
@@ -998,7 +1186,7 @@ function ProductForm({
             aria-label="Product category"
             className="h-9 w-full rounded-lg border border-ed-border bg-surface px-3 text-sm text-ink"
           >
-            <option value="">Choose a category</option>
+            <option value="">No category</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
@@ -1013,6 +1201,44 @@ function ProductForm({
             value={draft.description}
             onChange={(description) => onChange({ ...draft, description })}
           />
+        </div>
+        <div className="sm:col-span-2 rounded-xl border border-line bg-canvas/40 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-ink">Returns</p>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                {shopReturnDays
+                  ? `Shop default is ${shopReturnDays} day${shopReturnDays === 1 ? "" : "s"}. Leave days blank to use that.`
+                  : "Shop returns are currently off. Turn them on in Shop settings to offer returns."}
+              </p>
+            </div>
+            <Switch
+              isSelected={draft.returnsEnabled}
+              onChange={(returnsEnabled) => onChange({ ...draft, returnsEnabled })}
+              isDisabled={!shopReturnDays}
+            >
+              <Switch.Content>
+                <Switch.Control>
+                  <Switch.Thumb />
+                </Switch.Control>
+                <Label className="text-sm text-ink">{draft.returnsEnabled ? "Returns allowed" : "Returns off"}</Label>
+              </Switch.Content>
+            </Switch>
+          </div>
+          {shopReturnDays && draft.returnsEnabled && (
+            <label className="mt-3 grid max-w-xs gap-1 text-sm font-medium text-ink">
+              Return days for this product
+              <input
+                type="number"
+                min={1}
+                max={365}
+                value={draft.returnDays}
+                placeholder={String(shopReturnDays)}
+                onChange={(event) => onChange({ ...draft, returnDays: event.target.value })}
+                className="h-10 rounded-lg border border-ed-border bg-surface px-3 text-sm font-normal text-ink"
+              />
+            </label>
+          )}
         </div>
         <div className="sm:col-span-2">
           <ImageStrip

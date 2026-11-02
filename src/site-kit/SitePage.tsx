@@ -168,11 +168,13 @@ type SitePageProps = {
 
 /** One full page of a client website: header, visible sections, footer. */
 export default function SitePage({ site, page, editor }: SitePageProps) {
-  return (
-    <ShopCatalogProvider value={site.shop ?? null}>
-      <SitePageBody site={site} page={page} editor={editor} />
-    </ShopCatalogProvider>
-  );
+  const body = <SitePageBody site={site} page={page} editor={editor} />;
+  // Only override when the live renderer supplies a catalogue. Draft preview /
+  // editor wrap SitePage with WebsiteShopCatalogProvider and must keep that value.
+  if (site.shop) {
+    return <ShopCatalogProvider value={site.shop}>{body}</ShopCatalogProvider>;
+  }
+  return body;
 }
 
 function SitePageBody({ site, page, editor }: SitePageProps) {

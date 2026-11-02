@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { shopApi, type ShopProduct } from "../../api/shop.ts";
 import { ShopCatalogProvider } from "../../site-kit/shop-catalog.tsx";
-import type { ShopCatalogProduct } from "../../site-kit/index.ts";
+import type { ShopCancelUntilStatus, ShopCatalogProduct } from "../../site-kit/index.ts";
 import { useEditor } from "./editor-context.ts";
 
 function variantOptions(product: ShopProduct, variantName: string): { name: string; value: string }[] {
@@ -44,13 +44,18 @@ function sharedValuePhotos(product: ShopProduct, variantName: string): { url: st
   return [];
 }
 
-function toCatalogProduct(product: ShopProduct): ShopCatalogProduct {
+function toCatalogProduct(product: ShopProduct, shopReturnDays: number | null | undefined): ShopCatalogProduct {
+  const returnDays =
+    !shopReturnDays || shopReturnDays < 1 || product.returnsEnabled === false
+      ? null
+      : product.returnDays ?? shopReturnDays;
   return {
     id: product.id,
     name: product.name,
     slug: product.slug,
     description: product.description,
     categoryName: product.categoryName,
+    returnDays,
     images: (product.images ?? []).map(({ url, alt }) => ({ url, alt })),
     variants: product.variants.map((variant) => {
       const own = (variant.images ?? []).map(({ url, alt }) => ({ url, alt }));
@@ -66,21 +71,31 @@ function toCatalogProduct(product: ShopProduct): ShopCatalogProduct {
   };
 }
 
-/** Loads this website’s shop so product sections on the canvas show the real catalogue. */
-export default function ShopCatalogBridge({
+type ShopWebsite = {
+  id: string;
+  shopEnabled: boolean;
+  shopFeatureEnabled: boolean;
+  shopCancelUntilStatus?: ShopCancelUntilStatus | null;
+  shopReturnDays?: number | null;
+  shopReturnGuidelines?: string[];
+};
+
+/** Loads a website’s shop catalogue for editor canvas and draft preview. */
+export function WebsiteShopCatalogProvider({
+  website,
   productSlug,
   selection,
   children,
 }: {
+  website: ShopWebsite | null | undefined;
   productSlug?: string;
   selection?: Record<string, string>;
   children: ReactNode;
 }) {
-  const { website } = useEditor();
   const [products, setProducts] = useState<ShopCatalogProduct[] | null>(null);
 
   useEffect(() => {
-    if (!website.shopFeatureEnabled || !website.shopEnabled) {
+    if (!website?.shopFeatureEnabled || !website.shopEnabled) {
       setProducts(null);
       return;
     }
@@ -95,26 +110,48 @@ export default function ShopCatalogBridge({
           const next = await shopApi.products(website.id, { page, pageSize });
           loaded.push(...next.products);
         }
-        if (!cancel) setProducts(loaded.map(toCatalogProduct));
+        if (!cancel) setProducts(loaded.map((product) => toCatalogProduct(product, website.shopReturnDays)));
       })
       .catch(() => {
-        if (!cancel) setProducts(null);
+        if (!cancel) setProducts([]);
       });
     return () => {
       cancel = true;
     };
-  }, [website.id, website.shopEnabled, website.shopFeatureEnabled]);
+  }, [website?.id, website?.shopEnabled, website?.shopFeatureEnabled, website?.shopReturnDays]);
 
-  const catalog = products
-    ? {
-        websiteId: website.id,
-        authHref: "/login",
-        cancelUntilStatus: website.shopCancelUntilStatus,
-        products,
-        productSlug,
-        selection,
-        live: true as const,
-      }
-    : null;
+  const catalog =
+    website?.shopFeatureEnabled && website.shopEnabled && products
+      ? {
+          websiteId: website.id,
+          authHref: "/login",
+          accountHref: "/account",
+          cancelUntilStatus: website.shopCancelUntilStatus,
+          returnGuidelines: website.shopReturnGuidelines ?? [],
+          products,
+          productSlug,
+          selection,
+          live: true as const,
+        }
+      : null;
+
   return <ShopCatalogProvider value={catalog}>{children}</ShopCatalogProvider>;
+}
+
+/** Loads this website’s shop so product sections on the canvas show the real catalogue. */
+export default function ShopCatalogBridge({
+  productSlug,
+  selection,
+  children,
+}: {
+  productSlug?: string;
+  selection?: Record<string, string>;
+  children: ReactNode;
+}) {
+  const { website } = useEditor();
+  return (
+    <WebsiteShopCatalogProvider website={website} productSlug={productSlug} selection={selection}>
+      {children}
+    </WebsiteShopCatalogProvider>
+  );
 }

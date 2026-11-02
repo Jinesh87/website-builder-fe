@@ -14,6 +14,7 @@ const STATUS_OPTIONS: { value: ShopOrderStatus | ""; label: string }[] = [
   { value: "delivered", label: "Delivered" },
   { value: "failed", label: "Failed" },
   { value: "cancelled", label: "Cancelled" },
+  { value: "returned", label: "Returned" },
 ];
 
 const UPDATE_STATUSES: ShopOrderStatus[] = [
@@ -24,6 +25,7 @@ const UPDATE_STATUSES: ShopOrderStatus[] = [
   "delivered",
   "failed",
   "cancelled",
+  "returned",
 ];
 
 function useDebounced(value: string): string {
@@ -182,11 +184,14 @@ function OrderDetail({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<ShopOrderStatus>("pending");
   const [saving, setSaving] = useState(false);
+  const [refunding, setRefunding] = useState(false);
+  const [refundMessage, setRefundMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setOrder(null);
     setError(null);
+    setRefundMessage(null);
     shopApi
       .order(websiteId, orderId)
       .then((next) => {
@@ -218,6 +223,36 @@ function OrderDetail({
       setSaving(false);
     }
   }
+
+  async function retryRefund() {
+    if (!order || refunding) return;
+    setRefunding(true);
+    setError(null);
+    setRefundMessage(null);
+    try {
+      const next = await shopApi.retryOrderRefund(websiteId, order.id);
+      setOrder(next);
+      setStatus(next.status);
+      onUpdated(next);
+      setRefundMessage(
+        next.refundStatus === "processed"
+          ? "Refund processed."
+          : next.refundStatus === "pending"
+            ? "Refund started. Waiting for Razorpay to confirm."
+            : "Refund updated.",
+      );
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setRefunding(false);
+    }
+  }
+
+  const canRetryRefund =
+    !!order &&
+    order.status === "returned" &&
+    order.refundStatus === "failed" &&
+    !!order.razorpayPaymentId;
 
   return (
     <section className="rounded-xl border border-line bg-surface">
@@ -266,6 +301,24 @@ function OrderDetail({
             </div>
           </div>
 
+          {canRetryRefund && (
+            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3">
+              <p className="text-sm font-medium text-rose-900">Automatic refund failed</p>
+              <p className="mt-1 text-xs text-rose-800">
+                Retry the Razorpay refund for this returned order. The customer is not charged again.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button size="sm" onPress={() => void retryRefund()} isDisabled={refunding || saving}>
+                  {refunding ? "Refunding…" : "Retry refund"}
+                </Button>
+                {refundMessage && <p className="text-xs font-medium text-emerald-700">{refundMessage}</p>}
+              </div>
+            </div>
+          )}
+          {!canRetryRefund && refundMessage && (
+            <FormAlert status="success">{refundMessage}</FormAlert>
+          )}
+
           <dl className="grid gap-3 sm:grid-cols-2">
             <div>
               <dt className="text-xs font-medium text-ink-muted">Customer</dt>
@@ -296,6 +349,12 @@ function OrderDetail({
               <div className="sm:col-span-2">
                 <dt className="text-xs font-medium text-ink-muted">Customer cancel reason</dt>
                 <dd className="mt-0.5 text-sm text-ink">{order.cancelReason}</dd>
+              </div>
+            )}
+            {order.returnReason && (
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-medium text-ink-muted">Customer return reason</dt>
+                <dd className="mt-0.5 text-sm text-ink">{order.returnReason}</dd>
               </div>
             )}
           </dl>
