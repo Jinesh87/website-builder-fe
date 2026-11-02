@@ -179,7 +179,11 @@ export const aiSuggestionSchema = z.object({
       focusSectionId: z.string().optional(),
     }),
     z.object({ scope: z.literal("section"), sectionId: z.string().min(1) }),
-    z.object({ scope: z.literal("site") }),
+    z.object({
+      scope: z.literal("site"),
+      createdPageIds: z.array(z.string()).optional(),
+      affectedPageIds: z.array(z.string()).optional(),
+    }),
   ]),
   before: z.array(sectionEnvelopeSchema).max(60),
   after: z.array(sectionEnvelopeSchema).max(60),
