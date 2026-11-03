@@ -201,7 +201,12 @@ body[data-puck-dragging] [class*="_DropZone-hitbox"] {
   outline: none;
 }
 
-/* Ensure Puck root fills height properly and acts as a flex column */
+/* Ensure Puck root fills height properly, acts as a flex column, and is strictly light mode */
+.ed-root,
+.ed-root * {
+  color-scheme: light !important;
+}
+
 .ed-root {
   height: 100dvh;
   max-height: 100dvh;

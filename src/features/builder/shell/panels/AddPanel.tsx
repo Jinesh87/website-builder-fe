@@ -317,7 +317,7 @@ const SectionLivePreview = memo(function SectionLivePreview({
   return (
     <div
       ref={ref}
-      className={`relative ${heightClass} w-full overflow-hidden rounded-md border border-ed-border/70 bg-white dark:bg-zinc-950 pointer-events-none select-none`}
+      className={`relative ${heightClass} w-full overflow-hidden rounded-md border border-ed-border/70 bg-white pointer-events-none select-none`}
       aria-hidden
       inert
     >
@@ -489,19 +489,23 @@ const CategoryRail = memo(function CategoryRail({
               onClick={() => onSelect(id)}
               className={`group flex w-full flex-col items-center justify-center rounded-ed py-1.5 px-0.5 text-center transition-all ${
                 isSelected
-                  ? "bg-white text-ed-accent shadow-xs dark:bg-zinc-800"
+                  ? "bg-white text-brand shadow-xs border border-ed-border font-medium"
                   : "text-ed-muted hover:bg-ed-hover hover:text-ed-text"
               }`}
             >
               <Icon
                 className={`size-4 transition-transform group-hover:scale-105 ${
                   isSelected
-                    ? "text-ed-accent"
+                    ? "text-brand"
                     : "text-ed-muted group-hover:text-ed-text"
                 }`}
                 aria-hidden
               />
-              <span className="mt-0.5 block w-full truncate text-[8px] font-medium leading-tight tracking-tight">
+              <span
+                className={`mt-0.5 block w-full truncate text-[8px] leading-tight tracking-tight ${
+                  isSelected ? "font-semibold text-brand" : "font-medium text-ed-muted"
+                }`}
+              >
                 {shortLabel}
               </span>
             </button>

@@ -20,8 +20,10 @@ export function RequireAuth({ roles }: { roles?: UserRole[] }) {
 
   if (loading) return <FullPageSpinner />;
   if (!user) {
+    const isPartnerRoute = location.pathname.startsWith("/partner");
+    const loginTarget = isPartnerRoute ? "/partner/login" : "/login";
     const state: RedirectState = { from: `${location.pathname}${location.search}` };
-    return <Navigate to="/login" replace state={state} />;
+    return <Navigate to={loginTarget} replace state={state} />;
   }
   if (roles && !roles.includes(user.role)) return <Navigate to={homeForRole(user)} replace />;
   return <Outlet />;

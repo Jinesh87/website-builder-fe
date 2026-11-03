@@ -1579,6 +1579,7 @@ Sitemap: ${dom}/sitemap.xml`;
               type="button"
               onClick={() => setReviewModalOpen(true)}
               className="group relative flex w-full items-center justify-between gap-2.5 rounded-lg border border-blue-500/30 bg-blue-50/50 hover:bg-blue-50 dark:bg-blue-950/20 dark:hover:bg-blue-950/35 px-3 py-2 text-xs font-semibold text-ed-text shadow-2xs hover:border-blue-500/50 active:scale-[0.99] transition-all cursor-pointer"
+              className="group relative flex w-full items-center justify-between gap-2.5 rounded-lg border border-blue-500/30 bg-blue-50/50 hover:bg-blue-50 px-3 py-2 text-xs font-semibold text-ed-text shadow-2xs hover:border-blue-500/50 active:scale-[0.99] transition-all cursor-pointer"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <AiSparklesIcon
@@ -1620,6 +1621,7 @@ Sitemap: ${dom}/sitemap.xml`;
 
         {error && (
           <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-2.5 text-ed-2xs text-red-600 dark:text-red-400">
+          <div className="flex items-start gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-2.5 text-ed-2xs text-red-600">
             <AlertCircle className="size-3.5 shrink-0 mt-0.5" />
             <div className="flex-1 space-y-1">
               <p className="leading-tight">{error}</p>
@@ -1629,6 +1631,7 @@ Sitemap: ${dom}/sitemap.xml`;
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 font-semibold text-amber-600 hover:text-amber-700 dark:text-amber-400 hover:underline pt-0.5"
+                  className="inline-flex items-center gap-1 font-semibold text-amber-600 hover:text-amber-700 hover:underline pt-0.5"
                 >
                   <Coins className="size-3" /> Buy Connects &rarr;
                 </a>
@@ -1639,6 +1642,7 @@ Sitemap: ${dom}/sitemap.xml`;
 
         {successMsg && (
           <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-ed-2xs font-medium text-emerald-600 dark:text-emerald-400">
+          <div className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-ed-2xs font-medium text-emerald-600">
             <Check className="size-3.5 shrink-0" />
             <p>{successMsg}</p>
           </div>
@@ -1651,6 +1655,7 @@ Sitemap: ${dom}/sitemap.xml`;
             <span className="truncate">{previewUrl}</span>
           </div>
           <h4 className="text-ed-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline line-clamp-1 leading-tight">
+          <h4 className="text-ed-xs font-semibold text-blue-600 hover:underline line-clamp-1 leading-tight">
             {displayTitle}
           </h4>
           <p className="text-ed-2xs text-ed-muted line-clamp-2 leading-relaxed">
@@ -1666,8 +1671,10 @@ Sitemap: ${dom}/sitemap.xml`;
               className={`text-[10px] font-mono font-medium rounded px-1.5 py-0.5 ${
                 seoTitle.length > 60
                   ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  ? "bg-amber-500/15 text-amber-600"
                   : seoTitle.length >= 35
                     ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    ? "bg-emerald-500/15 text-emerald-600"
                     : "bg-ed-subtle text-ed-muted"
               }`}
             >
@@ -1691,8 +1698,10 @@ Sitemap: ${dom}/sitemap.xml`;
               className={`text-[10px] font-mono font-medium rounded px-1.5 py-0.5 ${
                 seoDescription.length > 160
                   ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  ? "bg-amber-500/15 text-amber-600"
                   : seoDescription.length >= 110
                     ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                    ? "bg-emerald-500/15 text-emerald-600"
                     : "bg-ed-subtle text-ed-muted"
               }`}
             >
@@ -1786,6 +1795,7 @@ Sitemap: ${dom}/sitemap.xml`;
                 Search Engine Assets
               </span>
               <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+              <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
                 <span className="size-1.5 rounded-full bg-emerald-500" />
                 Auto-managed
               </span>
@@ -1909,6 +1919,7 @@ Sitemap: ${dom}/sitemap.xml`;
                     </pre>
                   </div>
                   <div className="flex items-center gap-2 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
+                  <div className="flex items-center gap-2 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-xs text-emerald-700">
                     <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span>
                       Auto-generated by Bytezora and served directly to search

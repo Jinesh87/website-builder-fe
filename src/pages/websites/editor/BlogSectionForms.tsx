@@ -60,7 +60,7 @@ function BlogPostLinkField({
           Target Page / Redirection URL
         </label>
         {matchedTarget && (
-          <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
+          <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
             Linked to: {matchedTarget.label}
           </span>
         )}
@@ -77,7 +77,7 @@ function BlogPostLinkField({
               matchedTarget ? matchedTarget.href : isCustom ? "__custom__" : ""
             }
             onChange={(e) => handleSelectPage(e.target.value)}
-            className="w-full rounded-md border border-ed-border bg-white px-2 py-1.5 text-xs text-ed-text focus:border-ed-accent focus:outline-none dark:bg-zinc-800"
+            className="w-full rounded-md border border-ed-border bg-white px-2 py-1.5 text-xs text-ed-text focus:border-ed-accent focus:outline-none"
           >
             <option value="">-- Choose a page to open --</option>
             {targets.map((t) => (
@@ -101,7 +101,7 @@ function BlogPostLinkField({
           onChange={(e) => onChange(e.target.value)}
           placeholder="/blog1 or https://…"
           list={listId}
-          className="w-full rounded-md border border-ed-border bg-white px-2 py-1.5 text-xs font-mono text-ed-text focus:border-ed-accent focus:outline-none dark:bg-zinc-800"
+          className="w-full rounded-md border border-ed-border bg-white px-2 py-1.5 text-xs font-mono text-ed-text focus:border-ed-accent focus:outline-none"
         />
         <datalist id={listId}>
           {targets.map((t) => (

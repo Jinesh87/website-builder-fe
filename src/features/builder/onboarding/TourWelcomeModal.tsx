@@ -35,11 +35,11 @@ export function TourWelcomeModal({ isOpen, onStart, onSkip, showAi = true }: Tou
       />
 
       {/* Minimalist Premium Modal Card */}
-      <div className="relative w-full max-w-[410px] overflow-hidden rounded-2xl border border-zinc-200/90 bg-white p-6 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.18)] dark:border-zinc-800 dark:bg-zinc-900 animate-in zoom-in-95 fade-in duration-150">
+      <div className="relative w-full max-w-[410px] overflow-hidden rounded-2xl border border-zinc-200/90 bg-white p-6 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.18)] animate-in zoom-in-95 fade-in duration-150">
         {/* Top bar: Subtle pill badge & close button */}
         <div className="flex items-center justify-between mb-4">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200/80 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-800/80 dark:text-zinc-300">
-            <Sparkles className="size-3 text-zinc-700 dark:text-zinc-300" aria-hidden />
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200/80 bg-zinc-50 px-2.5 py-1 text-[11px] font-medium text-zinc-700">
+            <Sparkles className="size-3 text-zinc-700" aria-hidden />
             <span>Interactive Guide</span>
           </div>
 
@@ -47,7 +47,7 @@ export function TourWelcomeModal({ isOpen, onStart, onSkip, showAi = true }: Tou
             type="button"
             onClick={onSkip}
             aria-label="Close"
-            className="flex size-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+            className="flex size-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
           >
             <X className="size-3.5" aria-hidden />
           </button>
@@ -57,13 +57,13 @@ export function TourWelcomeModal({ isOpen, onStart, onSkip, showAi = true }: Tou
         <div className="space-y-1 mb-5">
           <h2
             id="welcome-modal-title"
-            className="text-lg font-semibold tracking-tight text-zinc-900 dark:white"
+            className="text-lg font-semibold tracking-tight text-zinc-900"
           >
             Let’s build your site
           </h2>
           <p
             id="welcome-modal-desc"
-            className="text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400"
+            className="text-[13px] leading-relaxed text-zinc-500"
           >
             {showAi
               ? "A quick 1-minute walkthrough to introduce visual canvas editing, our AI design chat, and publishing."
@@ -72,38 +72,38 @@ export function TourWelcomeModal({ isOpen, onStart, onSkip, showAi = true }: Tou
         </div>
 
         {/* Minimal Feature Highlights (Clean & Monochrome) */}
-        <div className="space-y-2 mb-6 rounded-xl border border-zinc-100 bg-zinc-50/70 p-3 dark:border-zinc-800/80 dark:bg-zinc-800/40">
+        <div className="space-y-2 mb-6 rounded-xl border border-zinc-100 bg-zinc-50/70 p-3">
           {showAi && (
-            <div className="flex items-start gap-2.5 text-xs text-zinc-700 dark:text-zinc-200">
-              <Sparkles className="mt-0.5 size-3.5 shrink-0 text-zinc-700 dark:text-zinc-300" />
+            <div className="flex items-start gap-2.5 text-xs text-zinc-700">
+              <Sparkles className="mt-0.5 size-3.5 shrink-0 text-zinc-700" />
               <div className="min-w-0">
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">AI Assistant Chat:</span>{" "}
-                <span className="text-zinc-500 dark:text-zinc-400">Ask AI to build sections, rewrite copy, and refine styles.</span>
+                <span className="font-semibold text-zinc-900">AI Assistant Chat:</span>{" "}
+                <span className="text-zinc-500">Ask AI to build sections, rewrite copy, and refine styles.</span>
               </div>
             </div>
           )}
 
-          <div className="flex items-start gap-2.5 text-xs text-zinc-700 dark:text-zinc-200">
-            <Layout className="mt-0.5 size-3.5 shrink-0 text-zinc-700 dark:text-zinc-300" />
+          <div className="flex items-start gap-2.5 text-xs text-zinc-700">
+            <Layout className="mt-0.5 size-3.5 shrink-0 text-zinc-700" />
             <div className="min-w-0">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">Visual Editing:</span>{" "}
-              <span className="text-zinc-500 dark:text-zinc-400">Click any block directly on the canvas to customize text and layout.</span>
+              <span className="font-semibold text-zinc-900">Visual Editing:</span>{" "}
+              <span className="text-zinc-500">Click any block directly on the canvas to customize text and layout.</span>
             </div>
           </div>
 
-          <div className="flex items-start gap-2.5 text-xs text-zinc-700 dark:text-zinc-200">
-            <Sliders className="mt-0.5 size-3.5 shrink-0 text-zinc-700 dark:text-zinc-300" />
+          <div className="flex items-start gap-2.5 text-xs text-zinc-700">
+            <Sliders className="mt-0.5 size-3.5 shrink-0 text-zinc-700" />
             <div className="min-w-0">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">Settings & SEO:</span>{" "}
-              <span className="text-zinc-500 dark:text-zinc-400">Fine-tune colors, fonts, page hierarchy, and search rankings.</span>
+              <span className="font-semibold text-zinc-900">Settings & SEO:</span>{" "}
+              <span className="text-zinc-500">Fine-tune colors, fonts, page hierarchy, and search rankings.</span>
             </div>
           </div>
 
-          <div className="flex items-start gap-2.5 text-xs text-zinc-700 dark:text-zinc-200">
-            <Globe className="mt-0.5 size-3.5 shrink-0 text-zinc-700 dark:text-zinc-300" />
+          <div className="flex items-start gap-2.5 text-xs text-zinc-700">
+            <Globe className="mt-0.5 size-3.5 shrink-0 text-zinc-700" />
             <div className="min-w-0">
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">Responsive & Publish:</span>{" "}
-              <span className="text-zinc-500 dark:text-zinc-400">Check desktop, tablet, and mobile, then launch live with one click.</span>
+              <span className="font-semibold text-zinc-900">Responsive & Publish:</span>{" "}
+              <span className="text-zinc-500">Check desktop, tablet, and mobile, then launch live with one click.</span>
             </div>
           </div>
         </div>
@@ -113,7 +113,7 @@ export function TourWelcomeModal({ isOpen, onStart, onSkip, showAi = true }: Tou
           <button
             type="button"
             onClick={onSkip}
-            className="text-xs font-medium text-zinc-400 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors cursor-pointer py-1"
+            className="text-xs font-medium text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer py-1"
           >
             Skip for now
           </button>
@@ -122,7 +122,7 @@ export function TourWelcomeModal({ isOpen, onStart, onSkip, showAi = true }: Tou
             ref={startButtonRef}
             type="button"
             onClick={onStart}
-            className="flex h-9 items-center gap-1.5 rounded-lg bg-zinc-900 px-4 text-xs font-medium text-white shadow-sm hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100 transition-all cursor-pointer"
+            className="flex h-9 items-center gap-1.5 rounded-lg bg-zinc-900 px-4 text-xs font-medium text-white shadow-sm hover:bg-zinc-800 transition-all cursor-pointer"
           >
             <span>Start tour</span>
             <ArrowRight className="size-3.5" aria-hidden />

@@ -1,4 +1,4 @@
-import { ClipboardList, Coins, Image, LayoutDashboard, Globe, Settings, UserCog } from "lucide-react";
+import { ClipboardList, Coins, Globe, Handshake, Image, LayoutDashboard, Settings, UserCog } from "lucide-react";
 import AppShell, { type ShellNavItem } from "./AppShell.tsx";
 
 const CLIENT_NAV: ShellNavItem[] = [
@@ -7,8 +7,7 @@ const CLIENT_NAV: ShellNavItem[] = [
   { label: "My websites", icon: Globe, to: "/websites", activePrefixes: ["/websites"] },
   { label: "Media library", icon: Image, to: "/media" },
   { label: "Connects", icon: Coins, to: "/connects" },
-  // Hidden for client dashboard presentation:
-  // { label: "Partnership", icon: Handshake, to: "/partnership", activePrefixes: ["/partnership"] },
+  { label: "Partnership", icon: Handshake, to: "/partnership", activePrefixes: ["/partnership"] },
   { label: "Website settings", icon: Settings },
   { label: "Account settings", icon: UserCog, to: "/account" },
 ];

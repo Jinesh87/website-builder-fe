@@ -1916,7 +1916,7 @@ export default function AiDrawer() {
                             onClick={() => handleTogglePreview("original")}
                             className={`flex items-center gap-1 px-2 py-0.5 rounded-md font-medium transition-all cursor-pointer ${
                               previewMode === "original"
-                                ? "bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-900 shadow-xs"
+                                ? "bg-neutral-800 text-white shadow-xs"
                                 : "text-ed-muted hover:text-ed-text"
                             }`}
                           >
@@ -1939,7 +1939,7 @@ export default function AiDrawer() {
                       {suggestion.createdPages && suggestion.createdPages.length > 0 && (
                         <div className="flex flex-col gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-2.5 text-[11px]">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+                            <div className="flex items-center gap-1.5 font-bold text-emerald-600">
                               <FilePlus className="size-3.5" />
                               <span>Pages to be Created ({suggestion.createdPages.length})</span>
                             </div>
@@ -1964,7 +1964,7 @@ export default function AiDrawer() {
                                     }),
                                   });
                                 }}
-                                className="text-[10px] font-semibold text-emerald-600 underline hover:text-emerald-500 dark:text-emerald-400 cursor-pointer"
+                                className="text-[10px] font-semibold text-emerald-600 underline hover:text-emerald-500 cursor-pointer"
                               >
                                 View {page.name}
                               </button>
@@ -1996,7 +1996,7 @@ export default function AiDrawer() {
                                   }}
                                   className={`flex items-center justify-between rounded-lg px-2 py-1 text-left transition-colors cursor-pointer ${
                                     isPreviewing
-                                      ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold ring-1 ring-emerald-500/40"
+                                      ? "bg-emerald-500/20 text-emerald-700 font-semibold ring-1 ring-emerald-500/40"
                                       : "hover:bg-emerald-500/10 text-ed-text"
                                   }`}
                                   title="Click to preview this page on canvas"
@@ -2007,7 +2007,7 @@ export default function AiDrawer() {
                                   <div className="flex items-center gap-1.5 text-[10px] text-ed-muted">
                                     <span>{cp.sections.length} sections</span>
                                     {isPreviewing && (
-                                      <span className="rounded bg-emerald-500/20 px-1 py-0.5 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                                      <span className="rounded bg-emerald-500/20 px-1 py-0.5 text-[9px] font-bold text-emerald-600">
                                         previewing
                                       </span>
                                     )}
@@ -2021,7 +2021,7 @@ export default function AiDrawer() {
 
                       {suggestion.updatedPages && suggestion.updatedPages.length > 0 && (
                         <div className="flex flex-col gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/5 p-2.5 text-[11px]">
-                          <div className="flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400">
+                          <div className="flex items-center gap-1.5 font-bold text-blue-600">
                             <FileEdit className="size-3.5" />
                             <span>Other Pages Modified ({suggestion.updatedPages.length})</span>
                           </div>
@@ -2036,7 +2036,7 @@ export default function AiDrawer() {
                       )}
 
                       {suggestion.deletedPageIds && suggestion.deletedPageIds.length > 0 && (
-                        <div className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/5 p-2 text-[11px] text-red-600 dark:text-red-400 font-bold">
+                        <div className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/5 p-2 text-[11px] text-red-600 font-bold">
                           <Trash2 className="size-3.5" />
                           <span>{suggestion.deletedPageIds.length} page(s) marked for removal</span>
                         </div>
@@ -2044,7 +2044,7 @@ export default function AiDrawer() {
 
                       {suggestion.navigationPatch && (
                         <div className="flex flex-col gap-1 rounded-xl border border-purple-500/30 bg-purple-500/5 p-2.5 text-[11px]">
-                          <div className="flex items-center gap-1.5 font-bold text-purple-600 dark:text-purple-400">
+                          <div className="flex items-center gap-1.5 font-bold text-purple-600">
                             <Compass className="size-3.5" />
                             <span>Navigation & Menus</span>
                           </div>
@@ -2062,7 +2062,7 @@ export default function AiDrawer() {
                       )}
 
                       {suggestion.themePatch && (
-                        <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] text-amber-600 dark:text-amber-400 font-bold">
+                        <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/5 p-2 text-[11px] text-amber-600 font-bold">
                           <Palette className="size-3.5" />
                           <span>Theme styling will be updated</span>
                         </div>
@@ -2225,7 +2225,7 @@ export default function AiDrawer() {
                   <button
                     type="button"
                     onClick={handleStop}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 hover:bg-rose-500/25 border border-rose-500/30 text-ed-xs font-medium transition-all cursor-pointer animate-pulse"
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 text-rose-600 hover:bg-rose-500/25 border border-rose-500/30 text-ed-xs font-medium transition-all cursor-pointer animate-pulse"
                     title="Stop AI generation"
                   >
                     <Square className="size-2.5 fill-current" />
@@ -2369,11 +2369,11 @@ function SuggestionStatusCard({
 
   if (message.status === "accepted" && remainingMs > 0) {
     return (
-      <div className="flex w-full flex-col gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-amber-900 dark:text-amber-200">
+      <div className="flex w-full flex-col gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-amber-900">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <History
-              className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400"
+              className="size-3.5 shrink-0 text-amber-600"
               aria-hidden
             />
             <span className="truncate text-ed-2xs">
@@ -2383,7 +2383,7 @@ function SuggestionStatusCard({
           <button
             type="button"
             onClick={onRollback}
-            className="ml-2 flex shrink-0 items-center gap-1 rounded-lg bg-amber-500/20 px-2 py-1 text-[10.5px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/30 dark:text-amber-300 cursor-pointer"
+            className="ml-2 flex shrink-0 items-center gap-1 rounded-lg bg-amber-500/20 px-2 py-1 text-[10.5px] font-semibold text-amber-700 transition-colors hover:bg-amber-500/30 cursor-pointer"
           >
             <Undo2 className="size-3" aria-hidden />
             Rollback
@@ -2397,7 +2397,7 @@ function SuggestionStatusCard({
         </div>
         {createdPages && createdPages.length > 0 && onSelectPage && (
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5 border-t border-amber-500/20">
-            <span className="text-[10px] text-amber-800 dark:text-amber-300 font-medium">Switch to created page:</span>
+            <span className="text-[10px] text-amber-800 font-medium">Switch to created page:</span>
             {createdPages.map((cp) => (
               <button
                 key={cp.id}

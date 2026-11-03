@@ -38,8 +38,10 @@ const WebsitePreviewPage = lazy(() => import("./pages/websites/WebsitePreviewPag
 const ProjectDashboardPage = lazy(() => import("./pages/websites/ProjectDashboardPage.tsx"));
 const BuilderRoute = lazy(() => import("./features/builder/BuilderRoute.tsx"));
 const BecomePartnerPage = lazy(() => import("./pages/marketing/BecomePartnerPage.tsx"));
-// Partner dashboard hidden for presentation:
-// const PartnerDashboardPage = lazy(() => import("./pages/partner/PartnerDashboardPage.tsx"));
+const PartnerDashboardPage = lazy(() => import("./pages/partner/PartnerDashboardPage.tsx"));
+const PartnerLayout = lazy(() => import("./layouts/PartnerLayout.tsx"));
+const PartnerLoginPage = lazy(() => import("./pages/partner/PartnerLoginPage.tsx"));
+const PartnerSetPasswordPage = lazy(() => import("./pages/partner/PartnerSetPasswordPage.tsx"));
 
 // Admin pages
 const ClientsPage = lazy(() => import("./pages/admin/ClientsPage.tsx"));
@@ -85,7 +87,7 @@ export default function App() {
             </Route>
 
             <Route path="become-a-partner" element={<Navigate to="/partner" replace />} />
-            <Route path="partner/dashboard" element={<Navigate to="/dashboard" replace />} />
+            <Route path="partnership" element={<Navigate to="/partner/dashboard" replace />} />
             <Route element={<PublicLayout />}>
               <Route path="*" element={<NotFoundPage />} />
             </Route>
@@ -94,11 +96,19 @@ export default function App() {
               <Route path="login" element={<LoginPage />} />
               <Route path="signup" element={<SignupPage />} />
               <Route path="forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="partner/login" element={<PartnerLoginPage />} />
             </Route>
             <Route path="verify-email" element={<VerifyEmailPage />} />
             <Route path="reset-password" element={<ResetPasswordPage />} />
+            <Route path="partner/set-password" element={<PartnerSetPasswordPage />} />
 
-            <Route element={<RequireAuth roles={["CLIENT", "PARTNER"]} />}>
+            <Route element={<RequireAuth roles={["PARTNER"]} />}>
+              <Route element={<PartnerLayout />}>
+                <Route path="partner/dashboard" element={<PartnerDashboardPage />} />
+              </Route>
+            </Route>
+
+            <Route element={<RequireAuth roles={["CLIENT"]} />}>
               <Route element={<ClientLayout />}>
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="questionnaire" element={<ClientQuestionnairePage />} />
@@ -106,8 +116,6 @@ export default function App() {
                 <Route path="media" element={<MediaLibraryPage />} />
                 <Route path="account" element={<AccountSettingsPage />} />
                 <Route path="connects" element={<ConnectsPage />} />
-                {/* Partnership program hidden from client portal for presentation */}
-                <Route path="partnership" element={<Navigate to="/dashboard" replace />} />
                 <Route path="wallet" element={<Navigate to="/connects" replace />} />
               </Route>
             </Route>
