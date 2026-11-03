@@ -126,6 +126,23 @@ export const ACCOUNT_CSS = `
 .wb-acct-form { display: grid; gap: 14px; }
 .wb-acct-form-row { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .wb-acct-label { display: grid; gap: 6px; font-size: 0.84rem; font-weight: 600; color: var(--wb-muted); }
+.wb-acct-label.wb-acct-check {
+  display: inline-flex; align-items: center; gap: 8px; align-self: end; padding-bottom: 0.75rem;
+  font-weight: 600; color: var(--wb-text);
+}
+.wb-acct-label.wb-acct-check input { width: 1rem; height: 1rem; accent-color: var(--wb-acct-accent); }
+.wb-acct-addresses { display: grid; gap: 14px; }
+.wb-acct-address-row { align-items: flex-start; }
+.wb-acct-address-row .wb-acct-row-main { gap: 4px; }
+.wb-acct-address-row .wb-acct-badge { margin-left: 8px; vertical-align: middle; }
+.wb-acct-badge.is-default { background: color-mix(in srgb, var(--wb-acct-accent) 14%, transparent); color: var(--wb-acct-accent); text-transform: none; letter-spacing: 0; }
+.wb-acct-address-actions { display: flex; flex-wrap: wrap; gap: 8px; flex: none; }
+.wb-acct-linkish {
+  appearance: none; border: 0; background: transparent; color: var(--wb-acct-accent);
+  font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; padding: 0.4rem 0.2rem;
+}
+.wb-acct-linkish:hover { text-decoration: underline; }
+.wb-acct-form[hidden] { display: none !important; }
 .wb-acct-input {
   width: 100%; border: 1px solid var(--wb-border); background: var(--wb-acct-card); color: var(--wb-text);
   border-radius: var(--wb-acct-field-r); padding: 0.7rem 0.9rem; font: inherit; font-size: 0.95rem; font-weight: 400;

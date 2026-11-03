@@ -1812,10 +1812,12 @@ export type AccountData = {
   showOrders?: boolean;
   showCart?: boolean;
   showProfile?: boolean;
+  showAddresses?: boolean;
   showPassword?: boolean;
   ordersLabel?: string;
   cartLabel?: string;
   profileLabel?: string;
+  addressesLabel?: string;
   passwordLabel?: string;
   logoutLabel?: string;
   saveLabel?: string;
