@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Spinner } from "@heroui/react";
 import { ChevronLeft, Plus, Search } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
@@ -37,6 +37,20 @@ function SearchField({ value, onChange, label }: { value: string; onChange: (val
   );
 }
 
+const VARIANT_BATCH_SIZE = 12;
+
+function variantLabel(item: InventoryItem): string {
+  const options =
+    item.options.length > 0 ? item.options.map((option) => option.value).join(" / ") : item.variantName;
+  return `${item.productName} · ${item.categoryName} · ${options}`;
+}
+
+function variantSearchText(item: InventoryItem): string {
+  return `${item.productName} ${item.categoryName} ${item.variantName} ${item.options
+    .map((option) => `${option.name} ${option.value}`)
+    .join(" ")}`.toLowerCase();
+}
+
 function AddQuantityModal({
   websiteId,
   items,
@@ -51,12 +65,50 @@ function AddQuantityModal({
   onSaved: (item: InventoryItem) => void;
 }) {
   const [variantId, setVariantId] = useState(initialVariantId);
+  const [variantSearch, setVariantSearch] = useState("");
+  const [visibleCount, setVisibleCount] = useState(VARIANT_BATCH_SIZE);
   const [quantity, setQuantity] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLLIElement>(null);
   const selected = items.find((item) => item.variantId === variantId) ?? null;
   const adding = /^\d+$/.test(quantity.trim()) ? Number(quantity.trim()) : null;
+  const variantQuery = useDebounced(variantSearch).toLowerCase();
+  const filteredVariants = items.filter((item) => variantSearchText(item).includes(variantQuery));
+  const visibleVariants = filteredVariants.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredVariants.length;
+
+  useEffect(() => {
+    setVisibleCount(VARIANT_BATCH_SIZE);
+  }, [variantQuery]);
+
+  useEffect(() => {
+    if (!initialVariantId) return;
+    const index = filteredVariants.findIndex((item) => item.variantId === initialVariantId);
+    if (index >= 0) setVisibleCount(Math.max(VARIANT_BATCH_SIZE, index + 1));
+    // Only align the first open to the preselected variant.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount/initial selection only
+  }, [initialVariantId]);
+
+  useEffect(() => {
+    const root = listRef.current;
+    const sentinel = loadMoreRef.current;
+    if (!root || !sentinel || !hasMore) return;
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setVisibleCount((count) => Math.min(filteredVariants.length, count + VARIANT_BATCH_SIZE));
+        }
+      },
+      { root, rootMargin: "40px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [filteredVariants.length, hasMore, visibleCount]);
 
   async function save() {
     if (!selected) {
@@ -91,22 +143,62 @@ function AddQuantityModal({
       secondaryAction={{ label: "Cancel", onPress: onClose }}
     >
       <div className="space-y-4">
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-ink">Variant</span>
-          <select
-            value={variantId}
-            onChange={(event) => setVariantId(event.target.value)}
-            aria-label="Variant"
-            className="h-9 w-full rounded-lg border border-ed-border bg-surface px-3 text-sm text-ink"
-          >
-            <option value="">Choose a variant</option>
-            {items.map((item) => (
-              <option key={item.variantId} value={item.variantId}>
-                {item.productName} · {item.categoryName} · {item.options.length > 0 ? item.options.map((option) => option.value).join(" / ") : item.variantName} ({item.quantity} on hand)
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="space-y-2">
+          <span className="block text-sm font-medium text-ink">Variant</span>
+          <SearchField value={variantSearch} onChange={setVariantSearch} label="Search variants" />
+          <div className="overflow-hidden rounded-lg border border-ed-border">
+            {visibleVariants.length === 0 ? (
+              <p className="px-3 py-6 text-center text-sm text-ink-muted">
+                {variantQuery ? "No variants match this search." : "No variants available."}
+              </p>
+            ) : (
+              <div ref={listRef} className="max-h-64 overflow-y-auto">
+                <ul className="divide-y divide-line" role="listbox" aria-label="Choose a variant">
+                  {visibleVariants.map((item) => {
+                    const active = item.variantId === variantId;
+                    return (
+                      <li key={item.variantId}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={active}
+                          onClick={() => {
+                            setVariantId(item.variantId);
+                            setError(null);
+                          }}
+                          className={`flex w-full items-start gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
+                            active ? "bg-ed-bg text-ink" : "bg-surface text-ink hover:bg-canvas"
+                          }`}
+                        >
+                          <span
+                            className={`mt-0.5 size-4 shrink-0 rounded-full border ${
+                              active ? "border-ink bg-ink" : "border-ed-border bg-surface"
+                            }`}
+                            aria-hidden
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium">{variantLabel(item)}</span>
+                            <span className="block text-xs text-ink-muted">{item.quantity} on hand</span>
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {hasMore && (
+                    <li ref={loadMoreRef} className="px-3 py-2 text-center text-xs text-ink-muted" aria-hidden>
+                      Loading more…
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+          {selected && (
+            <p className="text-xs text-ink-muted">
+              Selected: <span className="font-medium text-ink">{variantLabel(selected)}</span>
+            </p>
+          )}
+        </div>
         <TextInput
           label="Quantity to add"
           name="addQuantity"
