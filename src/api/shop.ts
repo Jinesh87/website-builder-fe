@@ -250,6 +250,18 @@ export type ShopOrderTimelineEvent = {
   createdAt: string;
 };
 
+export type ShopOrderShippingAddress = {
+  label: string | null;
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+};
+
 export type ShopOrder = {
   id: string;
   number: string;
@@ -272,6 +284,7 @@ export type ShopOrder = {
   failureReason: string | null;
   cancelReason: string | null;
   returnReason: string | null;
+  shippingAddress: ShopOrderShippingAddress | null;
   timeline: ShopOrderTimelineEvent[];
   createdAt: string;
   updatedAt: string;
