@@ -101,6 +101,33 @@ export const ACCOUNT_CSS = `
   display: grid; gap: 10px; margin-top: 14px;
 }
 .wb-acct-checkout[hidden] { display: none !important; }
+.wb-acct-checkout-address { display: grid; gap: 10px; }
+.wb-acct-checkout-label {
+  margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--wb-muted);
+}
+.wb-acct-checkout-empty {
+  display: grid; gap: 6px; justify-items: start; padding: 12px 14px;
+  border: 1px dashed var(--wb-border); border-radius: var(--wb-acct-field-r); color: var(--wb-muted);
+}
+.wb-acct-checkout-empty[hidden],
+.wb-acct-checkout-address-list[hidden],
+.wb-acct-checkout-address > [data-wb-account-go-addresses][hidden] { display: none !important; }
+.wb-acct-checkout-empty p { margin: 0; font-size: 0.9rem; }
+.wb-acct-checkout-address-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.wb-acct-checkout-option {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start;
+  padding: 12px 14px; border: 1px solid var(--wb-border); border-radius: 12px; cursor: pointer;
+  background: var(--wb-bg);
+}
+.wb-acct-checkout-option.is-selected {
+  border-color: color-mix(in srgb, var(--wb-acct-accent) 55%, var(--wb-border));
+  background: color-mix(in srgb, var(--wb-acct-accent) 6%, var(--wb-bg));
+}
+.wb-acct-checkout-option input { margin-top: 3px; accent-color: var(--wb-acct-accent); }
+.wb-acct-checkout-option-body { display: grid; gap: 2px; min-width: 0; }
+.wb-acct-checkout-option-body strong { font-size: 0.92rem; }
+.wb-acct-checkout-option-body span { font-size: 0.82rem; color: var(--wb-muted); line-height: 1.4; }
 .wb-acct-button.is-pay {
   width: 100%; justify-content: center; background: var(--wb-acct-accent); color: var(--wb-acct-on-accent);
   border: 0; cursor: pointer;

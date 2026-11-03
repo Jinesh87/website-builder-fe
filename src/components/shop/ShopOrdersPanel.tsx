@@ -326,6 +326,20 @@ function OrderDetail({
               <dd className="text-xs text-ink-muted">{order.customer.email}</dd>
               {order.customer.phone && <dd className="text-xs text-ink-muted">{order.customer.phone}</dd>}
             </div>
+            {order.shippingAddress && (
+              <div>
+                <dt className="text-xs font-medium text-ink-muted">Delivery address</dt>
+                <dd className="text-sm text-ink">{order.shippingAddress.fullName}</dd>
+                <dd className="text-xs text-ink-muted">{order.shippingAddress.phone}</dd>
+                <dd className="text-xs text-ink-muted">
+                  {[order.shippingAddress.line1, order.shippingAddress.line2].filter(Boolean).join(", ")}
+                </dd>
+                <dd className="text-xs text-ink-muted">
+                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.postalCode}
+                </dd>
+                <dd className="text-xs text-ink-muted">{order.shippingAddress.country}</dd>
+              </div>
+            )}
             <div>
               <dt className="text-xs font-medium text-ink-muted">Placed</dt>
               <dd className="text-sm text-ink">{formatWhen(order.createdAt)}</dd>
