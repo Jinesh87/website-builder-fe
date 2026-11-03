@@ -4,6 +4,13 @@ export type PartnerStatus = "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
 export type PartnerReferralStatus = "REGISTERED" | "CONVERTED";
 export type CommissionStatus = "PENDING" | "APPROVED" | "PAID" | "CANCELLED";
 export type CommissionSource = "WALLET_TOPUP" | "HOSTING" | "SHOP_ORDER";
+export type PartnerCommissionPolicy = "GLOBAL_DEFAULT" | "FIRST_PAYMENT" | "EVERY_RENEWAL";
+
+export type PartnerProgramConfig = {
+  defaultCommissionRate: number;
+  defaultCommissionPolicy: "FIRST_PAYMENT" | "EVERY_RENEWAL";
+  updatedAt: string | null;
+};
 
 export type PartnerApplicationForm = {
   companyName: string;
@@ -33,8 +40,12 @@ export type PartnerApplicationForm = {
 
 export type PartnerSummary = {
   id: string;
+  partnerNumber?: number;
   applicationId: string;
   companyName: string;
+  city?: string;
+  state?: string;
+  country?: string;
   contactName: string;
   email: string;
   phone: string;
@@ -44,11 +55,14 @@ export type PartnerSummary = {
   referralCode: string | null;
   commissionRate: number;
   isCommissionActive: boolean;
+  commissionPolicy?: PartnerCommissionPolicy;
+  effectiveCommissionPolicy?: PartnerCommissionPolicy;
   totalReferrals: number;
   convertedReferrals: number;
   totalCommissionPaise: number;
   approvedAt: string | null;
   createdAt: string;
+  lastCommissionChange?: string;
 };
 
 export type PartnerListResponse = {
@@ -63,7 +77,33 @@ export type PartnerListResponse = {
     APPROVED: number;
     REJECTED: number;
     SUSPENDED: number;
+    COMMISSIONS?: number;
+    AUDIT_LOGS?: number;
   };
+};
+
+export type PartnerAuditLogItem = {
+  id: string;
+  createdAt: string;
+  kind: string;
+  body: string;
+  actorName: string;
+  partnerId: string;
+  reference: string;
+  companyName: string;
+  actionBadge: {
+    label: string;
+    variant: "orange" | "slate" | "blue" | "emerald" | "rose";
+  };
+  details: string;
+};
+
+export type PartnerAuditLogsResponse = {
+  items: PartnerAuditLogItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 };
 
 export type PartnerDetail = PartnerSummary & {
@@ -87,6 +127,7 @@ export type PartnerDetail = PartnerSummary & {
   rejectedAt: string | null;
   suspendedAt: string | null;
   userId: string | null;
+  inviteLink?: string;
   activities: {
     id: string;
     kind: string;
@@ -102,14 +143,19 @@ export type PartnerDashboardData = {
     applicationId?: string;
     companyName: string;
     contactName: string;
+    designation?: string;
     email: string;
     phone?: string;
+    alternatePhone?: string | null;
     businessType?: string;
     partnershipType?: string;
     status?: PartnerStatus;
+    suspensionReason?: string | null;
     referralCode: string | null;
     commissionRate: number;
     isCommissionActive: boolean;
+    commissionPolicy?: PartnerCommissionPolicy;
+    effectiveCommissionPolicy?: PartnerCommissionPolicy;
     shareUrl: string;
     createdAt?: string;
   };
@@ -126,8 +172,13 @@ export type PartnerDashboardData = {
     id: string;
     customerName: string;
     customerEmail: string;
-    status: PartnerReferralStatus;
+    planName?: string;
+    source?: string;
+    status: PartnerReferralStatus | "PAID" | "REGISTERED" | "CLICKED";
     totalSpentPaise: number;
+    paymentAmountPaise?: number;
+    commissionAmountPaise?: number;
+    commissionStatus?: "PENDING" | "APPROVED" | "PAID" | "NO_PAYMENT";
     registeredAt: string;
     convertedAt: string | null;
   }[];
@@ -193,14 +244,33 @@ export const partnerApi = {
 };
 
 export const adminPartnerApi = {
+  getProgramConfig: () => request<PartnerProgramConfig>(`${ADMIN_BASE}/config/program`),
+
+  updateProgramConfig: (data: {
+    defaultCommissionRate?: number;
+    defaultCommissionPolicy?: "FIRST_PAYMENT" | "EVERY_RENEWAL";
+  }) =>
+    request<PartnerProgramConfig>(`${ADMIN_BASE}/config/program`, {
+      method: "PATCH",
+      body: data,
+    }),
+
   list: (params: { search?: string; status?: string; page?: number; pageSize?: number }) =>
     request<PartnerListResponse>(`${ADMIN_BASE}${toQuery(params)}`),
+
+  listAuditLogs: (params?: { search?: string; page?: number; pageSize?: number }) =>
+    request<PartnerAuditLogsResponse>(`${ADMIN_BASE}/audit-logs${toQuery(params || {})}`),
 
   get: (id: string) => request<PartnerDetail>(`${ADMIN_BASE}/${id}`),
 
   approve: (
     id: string,
-    data: { commissionRate: number; customReferralCode?: string; temporaryPassword?: string },
+    data: {
+      commissionRate: number;
+      customReferralCode?: string;
+      temporaryPassword?: string;
+      commissionPolicy?: PartnerCommissionPolicy;
+    },
   ) =>
     request<PartnerDetail>(`${ADMIN_BASE}/${id}/approve`, {
       method: "POST",
@@ -226,7 +296,11 @@ export const adminPartnerApi = {
 
   updateCommission: (
     id: string,
-    data: { commissionRate?: number; isCommissionActive?: boolean },
+    data: {
+      commissionRate?: number;
+      isCommissionActive?: boolean;
+      commissionPolicy?: PartnerCommissionPolicy;
+    },
   ) =>
     request<PartnerDetail>(`${ADMIN_BASE}/${id}/commission`, {
       method: "PATCH",

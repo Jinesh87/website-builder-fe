@@ -85,6 +85,7 @@ import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
 import { Bold, Italic } from "lucide-react";
 import { isVintageHero, VintageHeroFields } from "./VintageHeroFields.tsx";
+import { HeroFloatingCardsFields } from "./HeroFloatingCardsFields.tsx";
 import ClapperContactFields from "./ClapperContactFields.tsx";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
@@ -601,6 +602,10 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
       </FormGroup>
 
       <HeroAlignmentGroup data={data} onChange={onChange} />
+
+      {data.variant === "floating-cards" && (
+        <HeroFloatingCardsFields data={data} onChange={onChange} />
+      )}
 
       {data.variant === "curved-carousel" && (
         <FormGroup title="3D Carousel Settings">

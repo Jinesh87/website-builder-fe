@@ -139,6 +139,15 @@ export default function LoginPage() {
           </FormAlert>
         )}
       </form>
+
+      <div className="mt-6 pt-5 border-t border-line text-center">
+        <p className="text-xs text-ink-muted">
+          Looking for the Partner Portal?{" "}
+          <Link to="/partner/login" className="font-semibold text-brand hover:underline">
+            Partner Sign In →
+          </Link>
+        </p>
+      </div>
     </AuthSplitLayout>
   );
 }

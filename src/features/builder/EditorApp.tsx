@@ -451,7 +451,7 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
       <LinkTargetsContext.Provider value={linkTargets}>
         <MediaTargetContext.Provider value={mediaTarget}>
           <TourProvider steps={isAiSite ? EDITOR_TOUR_STEPS : EDITOR_TOUR_STEPS.filter((step) => step.id !== "step-3-ai-chat")}>
-            <div className="ed-root flex h-dvh flex-col overflow-hidden bg-ed-app font-sans text-ed-text">
+            <div className="ed-root flex h-dvh flex-col overflow-hidden bg-ed-app font-sans text-ed-text" data-theme="light">
               <PageCanvas
                 key={page.id}
                 page={page}

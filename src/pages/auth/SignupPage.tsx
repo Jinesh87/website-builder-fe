@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Button, Checkbox, FieldError, Label } from "@heroui/react";
+import { Check } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { authApi, type SignupInput } from "../../api/auth.ts";
 import { ApiError, errorMessage } from "../../api/http.ts";
@@ -7,7 +8,7 @@ import { validateEmail, validatePassword } from "../../auth/validation.ts";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import AuthSplitLayout from "../../layouts/AuthSplitLayout.tsx";
-import { getReferralCode } from "../../utils/referral.ts";
+import { captureReferralCodeFromUrl, getReferralCode } from "../../utils/referral.ts";
 import type { VerifyEmailState } from "./VerifyEmailPage.tsx";
 
 type SignupForm = Required<Omit<SignupInput, "referralCode">> & { referralCode?: string };
@@ -69,6 +70,9 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [emailTaken, setEmailTaken] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [appliedRefCode] = useState<string | null>(() => {
+    return captureReferralCodeFromUrl() || getReferralCode();
+  });
 
   function update<K extends keyof SignupForm>(key: K) {
     return (value: SignupForm[K]) => setForm((current) => ({ ...current, [key]: value }));
@@ -84,7 +88,7 @@ export default function SignupPage() {
 
     setSubmitting(true);
     try {
-      const refCode = getReferralCode();
+      const refCode = appliedRefCode || getReferralCode();
       const result = await authApi.signup({
         ...form,
         fullName: form.fullName.trim(),
@@ -124,6 +128,14 @@ export default function SignupPage() {
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="mt-7 flex flex-col gap-4">
+        {appliedRefCode && (
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium">
+            <Check className="size-4 shrink-0 text-emerald-600" />
+            <span>
+              Partner referral code <strong className="font-mono font-bold text-emerald-900">{appliedRefCode}</strong> applied
+            </span>
+          </div>
+        )}
         {notice && <p className="rounded-lg bg-canvas px-4 py-3 text-sm text-ink-body">{notice}</p>}
         <TextInput
           label="Full name"

@@ -1219,7 +1219,7 @@ export function ImageField({
           <img
             src={image.url}
             alt={image.alt || label}
-            className={`h-28 w-full ${isDataUri || label.toLowerCase().includes("logo") ? "object-contain p-3 bg-white/75 dark:bg-black/40" : "object-cover"} transition-transform duration-200 group-hover/preview:scale-105 cursor-pointer`}
+            className={`h-28 w-full ${isDataUri || label.toLowerCase().includes("logo") ? "object-contain p-3 bg-white/75" : "object-cover"} transition-transform duration-200 group-hover/preview:scale-105 cursor-pointer`}
             onClick={() => setLightboxOpen(true)}
           />
 
@@ -2012,7 +2012,7 @@ export function LogoSizeField({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-ed border border-ed-border bg-ed-panel/60 p-3 shadow-ed-xs">
+    <div className="flex flex-col gap-2 rounded-ed border border-ed-border bg-ed-panel/60 p-3 shadow-ed-xs w-full min-w-0 overflow-hidden">
       <div className="flex items-center justify-between">
         <span className="text-ed-xs font-semibold text-ed-text">{label}</span>
         <div className="flex items-center gap-2">
@@ -2038,7 +2038,7 @@ export function LogoSizeField({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pt-0.5">
+      <div className="flex items-center gap-1.5 pt-0.5 w-full min-w-0">
         <button
           type="button"
           onClick={handleDecrease}
@@ -2056,7 +2056,7 @@ export function LogoSizeField({
           step={step}
           value={current}
           onChange={(e) => handleSlider(Number(e.target.value))}
-          className="h-1.5 flex-1 cursor-pointer accent-brand rounded-lg bg-ed-border appearance-none transition-all"
+          className="h-1.5 flex-1 min-w-0 cursor-pointer accent-brand rounded-lg bg-ed-border appearance-none transition-all"
           aria-label={label}
         />
 
@@ -2070,17 +2070,19 @@ export function LogoSizeField({
           <Plus className="size-3.5" />
         </button>
 
-        <div className="flex items-center gap-1 shrink-0 pl-1">
+        <div className="relative flex items-center shrink-0">
           <input
             type="number"
             min={min}
             max={max}
             value={current}
             onChange={(e) => handleNumberInput(e.target.value)}
-            className="h-7 w-12 rounded-ed border border-ed-border bg-ed-panel px-1 text-center text-ed-xs font-semibold text-ed-text shadow-ed-xs transition-all hover:border-ed-border-strong focus:border-ed-accent focus:outline-none"
+            className="h-7 w-13 rounded-ed border border-ed-border bg-ed-panel pl-2 pr-5 text-right text-ed-xs font-semibold text-ed-text shadow-ed-xs transition-all hover:border-ed-border-strong focus:border-ed-accent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             aria-label="Logo height in pixels"
           />
-          <span className="text-ed-2xs font-medium text-ed-muted">px</span>
+          <span className="pointer-events-none absolute right-1.5 text-[10px] font-medium text-ed-muted select-none">
+            px
+          </span>
         </div>
       </div>
 

@@ -94,6 +94,8 @@ export type SubmitQuestionnaireInput = {
 
 export type Questionnaire = {
   id: string;
+  questionnaireNumber?: number;
+  referenceId?: string;
   businessName: string;
   name: string;
   phone: string;
@@ -166,7 +168,7 @@ function toQuery(params: QuestionnaireListParams): string {
 
 export const questionnaireApi = {
   submit: (input: SubmitQuestionnaireInput) =>
-    request<{ ok: boolean; message: string; id?: string; emailDispatched: boolean }>(
+    request<{ ok: boolean; message: string; id?: string; referenceId?: string; questionnaireNumber?: number; emailDispatched: boolean }>(
       PUBLIC_BASE,
       { method: "POST", body: input },
     ),

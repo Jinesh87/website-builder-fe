@@ -16,6 +16,8 @@ export type ShellNavItem = {
   activePrefixes?: string[];
   /** Count of items waiting for attention; hidden when zero. */
   badge?: number;
+  badgeTone?: "brand" | "amber";
+  children?: { label: string; to: string }[];
 };
 
 type AppShellProps = {
@@ -82,42 +84,87 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
         </div>
 
         <nav aria-label="Main" className="mt-6 flex flex-1 flex-col gap-1 overflow-y-auto pr-1">
-          {nav.map(({ label, icon: Icon, to, end, activePrefixes, badge }) =>
-            to ? (
-              <NavLink
-                key={label}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  linkClass({
-                    isActive: isActive || (activePrefixes?.some((prefix) => pathname.startsWith(prefix)) ?? false),
-                  })
-                }
-              >
-                <Icon className="size-4 shrink-0" aria-hidden />
-                <span className="truncate">{label}</span>
-                {badge ? (
-                  <span className="ml-auto min-w-5 shrink-0 rounded-full bg-brand px-1.5 text-center text-[11px] font-semibold leading-5 text-white">
-                    {badge > 99 ? "99+" : badge}
-                    <span className="sr-only"> new</span>
+          {nav.map(({ label, icon: Icon, to, end, activePrefixes, badge, badgeTone, children }) => {
+            const isSelfOrChildActive =
+              (to ? (end ? pathname === to : pathname.startsWith(to)) : false) ||
+              (activePrefixes?.some((prefix) => pathname.startsWith(prefix)) ?? false);
+
+            return (
+              <div key={label} className="flex flex-col gap-0.5">
+                {to ? (
+                  <NavLink
+                    to={to}
+                    end={end}
+                    className={({ isActive }) =>
+                      linkClass({
+                        isActive: isActive || isSelfOrChildActive,
+                      })
+                    }
+                  >
+                    <Icon className="size-4 shrink-0" aria-hidden />
+                    <span className="truncate">{label}</span>
+                    {badge ? (
+                      <span
+                        className={`ml-auto min-w-5 shrink-0 rounded-full px-1.5 text-center text-[11px] font-semibold leading-5 text-white ${
+                          badgeTone === "amber"
+                            ? "bg-amber-600 text-amber-50"
+                            : "bg-brand text-white"
+                        }`}
+                      >
+                        {badge > 99 ? "99+" : badge}
+                        <span className="sr-only"> new</span>
+                      </span>
+                    ) : null}
+                  </NavLink>
+                ) : (
+                  <span
+                    aria-disabled="true"
+                    title="Coming soon"
+                    className={`flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm ${
+                      dark ? "text-white/35" : "text-ink-muted/70"
+                    }`}
+                  >
+                    <Icon className="size-4 shrink-0" aria-hidden />
+                    <span className="truncate">{label}</span>
+                    <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wider">Soon</span>
                   </span>
-                ) : null}
-              </NavLink>
-            ) : (
-              <span
-                key={label}
-                aria-disabled="true"
-                title="Coming soon"
-                className={`flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm ${
-                  dark ? "text-white/35" : "text-ink-muted/70"
-                }`}
-              >
-                <Icon className="size-4 shrink-0" aria-hidden />
-                <span className="truncate">{label}</span>
-                <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wider">Soon</span>
-              </span>
-            ),
-          )}
+                )}
+
+                {children && isSelfOrChildActive && (
+                  <div className="ml-6 flex flex-col gap-0.5 border-l border-white/10 pl-3 pt-0.5 pb-1">
+                    {children.map((sub) => {
+                      const currentSearch = new URLSearchParams(window.location.search);
+                      const targetSearch = sub.to.includes("?")
+                        ? new URLSearchParams(sub.to.split("?")[1])
+                        : null;
+                      const isSubActive = targetSearch
+                        ? targetSearch.get("tab") === currentSearch.get("tab") ||
+                          (!currentSearch.get("tab") && targetSearch.get("tab") === "applications")
+                        : pathname === sub.to;
+
+                      return (
+                        <NavLink
+                          key={sub.to}
+                          to={sub.to}
+                          className={`rounded-md px-2.5 py-1.5 text-xs transition-colors ${
+                            isSubActive
+                              ? dark
+                                ? "bg-white/10 font-semibold text-white"
+                                : "bg-brand-soft font-semibold text-brand"
+                              : dark
+                                ? "text-white/60 hover:text-white hover:bg-white/5"
+                                : "text-ink-muted hover:text-ink hover:bg-canvas"
+                          }`}
+                        >
+                          {sub.label}
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
 
         {user && (

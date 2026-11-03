@@ -135,8 +135,10 @@ body[data-theme="dark"],
 
 html[data-theme="light"],
 body[data-theme="light"],
-:root:has([data-theme="light"]) {
-  color-scheme: light;
+:root:has([data-theme="light"]),
+:root:has(.ed-root),
+.ed-root {
+  color-scheme: light !important;
   --root-bg: #ffffff;
   --root-fg: var(--color-ink);
   --scrollbar-thumb: rgba(140, 145, 160, 0.35);
