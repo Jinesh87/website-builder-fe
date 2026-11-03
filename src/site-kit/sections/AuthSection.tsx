@@ -591,17 +591,79 @@ function Divider({ label }: { label?: string }) {
 }
 
 function AuthBrand({ data, className = "" }: { data: AuthData; className?: string }) {
-  if (!data.brandName && !data.logo?.url) return null;
+  const name = data.brandName?.trim() || "";
+  const hasLogo = Boolean(data.logo?.url);
+  const mode = data.logoDisplay ?? "auto";
+  if (!name && !hasLogo) return null;
+  if (mode === "text_only" && !name) return null;
+
+  const logoHeight = data.logoHeight ?? data.logoSize;
+  const resolvedHeight = typeof logoHeight === "number" && logoHeight > 0 ? logoHeight : undefined;
+  const imageStyle: CSSProperties | undefined = resolvedHeight
+    ? {
+        height: `${resolvedHeight}px`,
+        maxHeight: `${resolvedHeight}px`,
+        width: "auto",
+        objectFit: "contain",
+      }
+    : undefined;
+  const brandStyle = resolvedHeight
+    ? ({ "--wb-logo-height": `${resolvedHeight}px` } as CSSProperties)
+    : undefined;
+
+  const mark = name ? (
+    <span className="wb-auth-mark" aria-hidden="true">
+      {name.charAt(0).toUpperCase()}
+    </span>
+  ) : null;
+  const logo = hasLogo ? <SiteImage image={data.logo!} className="wb-auth-logo" style={imageStyle} /> : mark;
+  const text = name ? <span className="wb-auth-brand-name">{name}</span> : null;
+
+  let content: ReactNode = null;
+  if (mode === "text_only") {
+    content = text;
+  } else if (mode === "logo_only") {
+    content = logo;
+  } else if (mode === "logo_right") {
+    content = (
+      <span className="wb-auth-brand-combo wb-auth-brand-logo-right">
+        {text}
+        {logo}
+      </span>
+    );
+  } else if (mode === "logo_top") {
+    content = (
+      <span className="wb-auth-brand-combo wb-auth-brand-logo-top">
+        {logo}
+        {text}
+      </span>
+    );
+  } else if (mode === "logo_left") {
+    content = (
+      <span className="wb-auth-brand-combo wb-auth-brand-logo-left">
+        {logo}
+        {text}
+      </span>
+    );
+  } else if (hasLogo) {
+    content = (
+      <>
+        <SiteImage image={data.logo!} className="wb-auth-logo" style={imageStyle} />
+        {text}
+      </>
+    );
+  } else {
+    content = (
+      <>
+        {mark}
+        {text}
+      </>
+    );
+  }
+
   return (
-    <div className={`wb-auth-brand ${className}`}>
-      {data.logo?.url ? (
-        <SiteImage image={data.logo} className="wb-auth-logo" />
-      ) : (
-        <span className="wb-auth-mark" aria-hidden="true">
-          {data.brandName?.trim().charAt(0).toUpperCase()}
-        </span>
-      )}
-      {data.brandName && <span className="wb-auth-brand-name">{data.brandName}</span>}
+    <div className={`wb-auth-brand ${className}`.trim()} style={brandStyle}>
+      {content}
     </div>
   );
 }

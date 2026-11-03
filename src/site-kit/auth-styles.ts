@@ -46,11 +46,20 @@ export const AUTH_CSS = `
 }
 .wb-auth-brand-center { display: flex; justify-content: center; margin-bottom: 28px; }
 .wb-auth-brand-stack { display: flex; flex-direction: column; gap: 12px; margin-bottom: 22px; }
-.wb-auth-logo { height: 36px; width: auto; max-width: 160px; object-fit: contain; }
+.wb-auth-brand-combo { display: inline-flex; align-items: center; gap: 10px; }
+.wb-auth-brand-logo-left { flex-direction: row; }
+.wb-auth-brand-logo-right { flex-direction: row; }
+.wb-auth-brand-logo-top { flex-direction: column; align-items: flex-start; gap: 6px; }
+.wb-auth-brand-center .wb-auth-brand-logo-top { align-items: center; text-align: center; }
+.wb-auth-logo {
+  height: var(--wb-logo-height, 36px); max-height: var(--wb-logo-height, 36px);
+  width: auto; max-width: min(220px, 100%); object-fit: contain;
+}
 .wb-auth-mark {
-  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px;
+  display: grid; place-items: center;
+  width: var(--wb-logo-height, 36px); height: var(--wb-logo-height, 36px); border-radius: 10px;
   background: var(--wb-auth-accent); color: var(--wb-auth-on-accent);
-  font-size: 17px; font-weight: 800; line-height: 1;
+  font-size: calc(var(--wb-logo-height, 36px) * 0.47); font-weight: 800; line-height: 1;
   box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--wb-auth-accent) 80%, transparent);
 }
 .wb-auth-brand-stack .wb-auth-mark { width: 52px; height: 52px; border-radius: 16px; font-size: 22px; }

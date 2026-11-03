@@ -81,10 +81,39 @@ export type ShopCartItemSummary = {
   imageUrl?: string;
 };
 
+export type ShopCustomerAddress = {
+  id: string;
+  label: string | null;
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  isDefault: boolean;
+  updatedAt: string;
+};
+
+export type ShopCustomerAddressInput = {
+  label?: string;
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country?: string;
+  isDefault?: boolean;
+};
+
 export type ShopCustomerAccount = {
   customer: ShopCustomer;
   orders: ShopOrderSummary[];
   cartItems: ShopCartItemSummary[];
+  addresses: ShopCustomerAddress[];
   cancelUntilStatus?: "paid" | "processing" | "shipped" | null;
 };
 
@@ -234,6 +263,33 @@ export const shopAuthApi = {
     return (result.body as { customer: ShopCustomer }).customer;
   },
 
+  listAddresses: async (websiteId: string) => {
+    const result = await shopAuthFetch(websiteId, "/addresses");
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { addresses: ShopCustomerAddress[] }).addresses;
+  },
+
+  createAddress: async (websiteId: string, input: ShopCustomerAddressInput) => {
+    const result = await shopAuthFetch(websiteId, "/addresses", { method: "POST", body: JSON.stringify(input) });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { addresses: ShopCustomerAddress[] }).addresses;
+  },
+
+  updateAddress: async (websiteId: string, addressId: string, input: ShopCustomerAddressInput) => {
+    const result = await shopAuthFetch(websiteId, `/addresses/${addressId}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { addresses: ShopCustomerAddress[] }).addresses;
+  },
+
+  deleteAddress: async (websiteId: string, addressId: string) => {
+    const result = await shopAuthFetch(websiteId, `/addresses/${addressId}`, { method: "DELETE" });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { addresses: ShopCustomerAddress[] }).addresses;
+  },
+
   changePassword: async (websiteId: string, input: { currentPassword: string; newPassword: string }) => {
     const result = await shopAuthFetch(websiteId, "/change-password", { method: "POST", body: JSON.stringify(input) });
     if (!result.ok) throw asError(result.status, result.body);
@@ -340,7 +396,10 @@ export function siteHref(href: string): string {
 }
 
 /** Account page URL that opens a specific panel (e.g. cart). */
-export function accountPanelHref(accountHref: string, panel: "orders" | "cart" | "profile" | "password"): string {
+export function accountPanelHref(
+  accountHref: string,
+  panel: "orders" | "cart" | "profile" | "addresses" | "password",
+): string {
   const raw = (accountHref || "/account").trim() || "/account";
   if (/^(https?:\/\/|mailto:|tel:)/i.test(raw)) {
     try {
@@ -451,10 +510,72 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       return refreshSession(base).then(function(ok){ return ok?once():result; });
     });
   }
+  function addressLine(address){
+    return [address.line1, address.line2, (address.city||"")+", "+(address.state||"")+" "+(address.postalCode||""), address.country]
+      .filter(function(part){ return part && String(part).trim(); })
+      .join(", ");
+  }
+  var addressCache=[];
+  var addressCustomer={};
+  function fillAddresses(root, addresses, customer){
+    addressCache=addresses||[];
+    addressCustomer=customer||{};
+    var list=root.querySelector('[data-wb-account-list="addresses"]');
+    var empty=root.querySelector('[data-wb-account-empty="addresses"]');
+    var form=root.querySelector("[data-wb-account-address-form]");
+    if(list){
+      list.innerHTML="";
+      (addresses||[]).forEach(function(address){
+        var row=el("li","wb-acct-row wb-acct-address-row");
+        row.setAttribute("data-wb-address-id", String(address.id||""));
+        var main=el("div","wb-acct-row-main");
+        var title=el("strong","", String(address.label||"Address"));
+        if(address.isDefault){
+          var badge=el("span","wb-acct-badge is-default","Default");
+          title.appendChild(document.createTextNode(" "));
+          title.appendChild(badge);
+        }
+        main.appendChild(title);
+        main.appendChild(el("span","wb-acct-row-sub", String(address.fullName||"")+" · "+String(address.phone||"")));
+        main.appendChild(el("span","wb-acct-row-sub", addressLine(address)));
+        row.appendChild(main);
+        var actions=el("div","wb-acct-address-actions");
+        var edit=el("button","wb-acct-linkish","Edit");
+        edit.type="button";
+        edit.setAttribute("data-wb-address-edit", String(address.id||""));
+        var remove=el("button","wb-acct-cart-remove","Remove");
+        remove.type="button";
+        remove.setAttribute("data-wb-address-delete", String(address.id||""));
+        actions.appendChild(edit);
+        actions.appendChild(remove);
+        row.appendChild(actions);
+        list.appendChild(row);
+      });
+      list.hidden=(addresses||[]).length===0;
+    }
+    if(empty) empty.hidden=(addresses||[]).length>0;
+    root.querySelectorAll("[data-wb-address-add]").forEach(function(btn){ btn.hidden=false; });
+    if(form){
+      form.hidden=true;
+      form.removeAttribute("data-wb-editing-id");
+      var idField=form.querySelector("[data-wb-address-id-field]");
+      if(idField) idField.value="";
+      form.reset();
+      var nameInput=form.querySelector('input[name="fullName"]');
+      var phoneInput=form.querySelector('input[name="phone"]');
+      if(nameInput && customer) nameInput.value=customer.fullName||"";
+      if(phoneInput && customer) phoneInput.value=customer.phone||"";
+      var countryInput=form.querySelector('input[name="country"]');
+      if(countryInput && !countryInput.value) countryInput.value="IN";
+      var defaultInput=form.querySelector('input[name="isDefault"]');
+      if(defaultInput) defaultInput.checked=(addresses||[]).length===0;
+    }
+  }
   function fill(root, account){
     var customer=account.customer||{};
     var orders=account.orders||[];
     var cart=account.cartItems||[];
+    var addresses=account.addresses||[];
     setText(root, "fullName", customer.fullName||"");
     setText(root, "email", customer.email||"");
     setText(root, "initials", initials(customer.fullName));
@@ -462,9 +583,10 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     root.querySelectorAll('[data-wb-account-count="orders"]').forEach(function(node){ node.textContent=String(orders.length); });
     var count=0; cart.forEach(function(item){ count+=Number(item.quantity||1); });
     root.querySelectorAll('[data-wb-account-count="cart"]').forEach(function(node){ node.textContent=String(count); });
-    root.querySelectorAll('input[name="fullName"]').forEach(function(input){ input.value=customer.fullName||""; });
-    root.querySelectorAll('input[name="phone"]').forEach(function(input){ input.value=customer.phone||""; });
+    root.querySelectorAll('[data-wb-account-profile] input[name="fullName"]').forEach(function(input){ input.value=customer.fullName||""; });
+    root.querySelectorAll('[data-wb-account-profile] input[name="phone"]').forEach(function(input){ input.value=customer.phone||""; });
     root.querySelectorAll('input[name="email"]').forEach(function(input){ input.value=customer.email||""; });
+    fillAddresses(root, addresses, customer);
 
     var orderList=root.querySelector('[data-wb-account-list="orders"]');
     var orderEmpty=root.querySelector('[data-wb-account-empty="orders"]');
@@ -1194,6 +1316,124 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
             if(customer){ setText(root, "fullName", customer.fullName||""); setText(root, "initials", initials(customer.fullName)); }
           })
           .catch(function(){ if(button) button.disabled=false; message(profile, "Can't reach the server. Try again.", false); });
+      });
+    }
+    var addressesRoot=root.querySelector("[data-wb-account-addresses]");
+    var addressForm=root.querySelector("[data-wb-account-address-form]");
+    function readAddressForm(form){
+      return {
+        label:((form.querySelector('input[name="label"]')||{}).value||"").trim(),
+        fullName:((form.querySelector('input[name="fullName"]')||{}).value||"").trim(),
+        phone:((form.querySelector('input[name="phone"]')||{}).value||"").trim(),
+        line1:((form.querySelector('input[name="line1"]')||{}).value||"").trim(),
+        line2:((form.querySelector('input[name="line2"]')||{}).value||"").trim(),
+        city:((form.querySelector('input[name="city"]')||{}).value||"").trim(),
+        state:((form.querySelector('input[name="state"]')||{}).value||"").trim(),
+        postalCode:((form.querySelector('input[name="postalCode"]')||{}).value||"").trim(),
+        country:(((form.querySelector('input[name="country"]')||{}).value||"IN").trim()||"IN").toUpperCase(),
+        isDefault:!!(form.querySelector('input[name="isDefault"]')||{}).checked
+      };
+    }
+    function openAddressForm(address){
+      if(!addressForm) return;
+      addressForm.hidden=false;
+      root.querySelectorAll("[data-wb-address-add]").forEach(function(btn){ btn.hidden=true; });
+      var idField=addressForm.querySelector("[data-wb-address-id-field]");
+      if(address){
+        addressForm.setAttribute("data-wb-editing-id", String(address.id||""));
+        if(idField) idField.value=String(address.id||"");
+        (addressForm.querySelector('input[name="label"]')||{}).value=address.label||"";
+        (addressForm.querySelector('input[name="fullName"]')||{}).value=address.fullName||"";
+        (addressForm.querySelector('input[name="phone"]')||{}).value=address.phone||"";
+        (addressForm.querySelector('input[name="line1"]')||{}).value=address.line1||"";
+        (addressForm.querySelector('input[name="line2"]')||{}).value=address.line2||"";
+        (addressForm.querySelector('input[name="city"]')||{}).value=address.city||"";
+        (addressForm.querySelector('input[name="state"]')||{}).value=address.state||"";
+        (addressForm.querySelector('input[name="postalCode"]')||{}).value=address.postalCode||"";
+        (addressForm.querySelector('input[name="country"]')||{}).value=address.country||"IN";
+        var def=addressForm.querySelector('input[name="isDefault"]');
+        if(def) def.checked=!!address.isDefault;
+      } else {
+        addressForm.removeAttribute("data-wb-editing-id");
+        if(idField) idField.value="";
+        addressForm.reset();
+        (addressForm.querySelector('input[name="fullName"]')||{}).value=addressCustomer.fullName||"";
+        (addressForm.querySelector('input[name="phone"]')||{}).value=addressCustomer.phone||"";
+        (addressForm.querySelector('input[name="country"]')||{}).value="IN";
+        var defNew=addressForm.querySelector('input[name="isDefault"]');
+        if(defNew) defNew.checked=addressCache.length===0;
+      }
+      if(addressesRoot) message(addressesRoot, "", true);
+    }
+    root.querySelectorAll("[data-wb-address-add]").forEach(function(btn){
+      btn.addEventListener("click", function(){ openAddressForm(null); });
+    });
+    root.addEventListener("click", function(event){
+      var editBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-address-edit]");
+      if(editBtn && root.contains(editBtn)){
+        event.preventDefault();
+        var editId=editBtn.getAttribute("data-wb-address-edit")||"";
+        var found=null;
+        addressCache.forEach(function(item){ if(String(item.id)===editId) found=item; });
+        if(found) openAddressForm(found);
+        return;
+      }
+      var deleteBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-address-delete]");
+      if(deleteBtn && root.contains(deleteBtn)){
+        event.preventDefault();
+        var deleteId=deleteBtn.getAttribute("data-wb-address-delete")||"";
+        if(!deleteId) return;
+        deleteBtn.disabled=true;
+        request(base, "/addresses/"+deleteId, "DELETE")
+          .then(function(result){
+            deleteBtn.disabled=false;
+            if(!result.ok){
+              if(addressesRoot) message(addressesRoot, (result.json&&result.json.error&&result.json.error.message)||"Could not remove this address.", false);
+              return;
+            }
+            fillAddresses(root, (result.json&&result.json.addresses)||[], addressCustomer);
+            if(addressesRoot) message(addressesRoot, "Address removed.", true);
+          })
+          .catch(function(){
+            deleteBtn.disabled=false;
+            if(addressesRoot) message(addressesRoot, "Can't reach the server. Try again.", false);
+          });
+        return;
+      }
+      var cancelBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-address-cancel]");
+      if(cancelBtn && root.contains(cancelBtn)){
+        event.preventDefault();
+        if(addressForm){
+          addressForm.hidden=true;
+          addressForm.removeAttribute("data-wb-editing-id");
+        }
+        root.querySelectorAll("[data-wb-address-add]").forEach(function(btn){ btn.hidden=false; });
+      }
+    });
+    if(addressForm){
+      addressForm.addEventListener("submit", function(event){
+        event.preventDefault();
+        var button=addressForm.querySelector("button[type=submit]");
+        if(button) button.disabled=true;
+        if(addressesRoot) message(addressesRoot, "", true);
+        var payload=readAddressForm(addressForm);
+        var editingId=addressForm.getAttribute("data-wb-editing-id")||"";
+        var path=editingId?"/addresses/"+editingId:"/addresses";
+        var method=editingId?"PATCH":"POST";
+        request(base, path, method, payload)
+          .then(function(result){
+            if(button) button.disabled=false;
+            if(!result.ok){
+              if(addressesRoot) message(addressesRoot, (result.json&&result.json.error&&result.json.error.message)||"Could not save this address.", false);
+              return;
+            }
+            fillAddresses(root, (result.json&&result.json.addresses)||[], addressCustomer);
+            if(addressesRoot) message(addressesRoot, editingId?"Address updated.":"Address saved.", true);
+          })
+          .catch(function(){
+            if(button) button.disabled=false;
+            if(addressesRoot) message(addressesRoot, "Can't reach the server. Try again.", false);
+          });
       });
     }
     var password=root.querySelector("[data-wb-account-password]");

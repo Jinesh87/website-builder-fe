@@ -13,9 +13,6 @@ import CommonModal from "../ui/CommonModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import TextInput from "../ui/TextInput.tsx";
 
-/** Flip to true when shipping the returns UI. */
-const SHOW_RETURNED_ORDERS = false;
-
 function useDebounced(value: string): string {
   const [debounced, setDebounced] = useState(value.trim());
   useEffect(() => {
@@ -160,7 +157,7 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
     };
   }, [websiteId]);
 
-  if (SHOW_RETURNED_ORDERS && returnsProduct) {
+  if (returnsProduct) {
     return (
       <ShopProductReturnsPanel
         websiteId={websiteId}
@@ -177,10 +174,7 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
         <div>
           <h3 className="text-sm font-semibold text-ink">Inventory</h3>
           <p className="mt-0.5 text-xs text-ink-muted">
-            Each variant has its own quantity.
-            {SHOW_RETURNED_ORDERS
-              ? " Returned orders are listed separately and are not added back to on-hand stock."
-              : ""}
+            Each variant has its own quantity. Returned orders are listed separately and are not added back to on-hand stock.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -216,7 +210,7 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
                   <th key={name} className="px-3 py-2 font-medium">{name}</th>
                 ))}
                 <th className="px-3 py-2 font-medium">On hand</th>
-                {SHOW_RETURNED_ORDERS && <th className="px-3 py-2 font-medium">Returned orders</th>}
+                <th className="px-3 py-2 font-medium">Returned orders</th>
                 <th className="px-5 py-2 font-medium" />
               </tr>
             </thead>
@@ -232,21 +226,19 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
                     <td key={name} className="px-3 py-3 text-ink">{optionValue(item, name)}</td>
                   ))}
                   <td className="px-3 py-3 text-ink">{item.quantity}</td>
-                  {SHOW_RETURNED_ORDERS && (
-                    <td className="px-3 py-3 text-ink">
-                      {item.returnedOrderCount > 0 ? (
-                        <button
-                          type="button"
-                          className="font-medium text-ink underline underline-offset-2 hover:text-ink-muted"
-                          onClick={() => setReturnsProduct({ id: item.productId, name: item.productName })}
-                        >
-                          {item.returnedOrderCount}
-                        </button>
-                      ) : (
-                        <span className="text-ink-muted">0</span>
-                      )}
-                    </td>
-                  )}
+                  <td className="px-3 py-3 text-ink">
+                    {item.returnedOrderCount > 0 ? (
+                      <button
+                        type="button"
+                        className="font-medium text-ink underline underline-offset-2 hover:text-ink-muted"
+                        onClick={() => setReturnsProduct({ id: item.productId, name: item.productName })}
+                      >
+                        {item.returnedOrderCount}
+                      </button>
+                    ) : (
+                      <span className="text-ink-muted">0</span>
+                    )}
+                  </td>
                   <td className="px-5 py-3 text-right">
                     <Button size="sm" variant="outline" onPress={() => setAddingVariantId(item.variantId)}>
                       Add
