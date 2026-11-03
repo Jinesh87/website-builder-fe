@@ -90,10 +90,15 @@ export default function ClientQuestionnairePage() {
                   className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-ink">
                         {sub.businessName}
                       </span>
+                      {sub.referenceId && (
+                        <span className="font-mono text-[10px] font-semibold text-brand bg-brand/10 px-1.5 py-0.5 rounded border border-brand/20">
+                          {sub.referenceId}
+                        </span>
+                      )}
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${meta.pill}`}
                       >

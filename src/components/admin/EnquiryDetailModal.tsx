@@ -39,6 +39,7 @@ export default function EnquiryDetailModal({
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedRefId, setCopiedRefId] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,12 +108,23 @@ export default function EnquiryDetailModal({
     }
   }
 
+  async function copyRefId() {
+    if (!enquiry.referenceId) return;
+    try {
+      await navigator.clipboard.writeText(enquiry.referenceId);
+      setCopiedRefId(true);
+      window.setTimeout(() => setCopiedRefId(false), 1800);
+    } catch {
+      setError("Couldn't copy reference ID.");
+    }
+  }
+
   return (
     <CommonModal
       isOpen
       onClose={onClose}
       size="lg"
-      title="Enquiry details"
+      title={enquiry.referenceId ? `Enquiry ${enquiry.referenceId}` : "Enquiry details"}
       subtitle={`Received ${formatWhen(enquiry.createdAt)}`}
       modalFooter={
         <div className="flex w-full items-center justify-between gap-3">
@@ -134,6 +146,21 @@ export default function EnquiryDetailModal({
         {error && <FormAlert status="danger">{error}</FormAlert>}
 
         <dl className="divide-y divide-line rounded-xl border border-line">
+          {enquiry.referenceId && (
+            <Field label="Reference ID">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="font-mono font-semibold text-brand">{enquiry.referenceId}</span>
+                <button
+                  type="button"
+                  onClick={copyRefId}
+                  aria-label={copiedRefId ? "Reference ID copied" : "Copy reference ID"}
+                  className="grid size-6 shrink-0 place-items-center rounded-md text-ink-muted hover:bg-canvas hover:text-ink cursor-pointer"
+                >
+                  {copiedRefId ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                </button>
+              </span>
+            </Field>
+          )}
           <Field label="Name">{enquiry.name}</Field>
           <Field label="Email">
             <span className="flex min-w-0 items-center gap-1.5">

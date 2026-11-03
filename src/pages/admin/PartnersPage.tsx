@@ -36,8 +36,10 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "SUSPENDED", label: "Suspended" },
 ];
 
-const TH = "px-4 py-3 text-xs font-medium text-ink-muted whitespace-nowrap first:pl-5 last:pr-5 border-b border-line bg-canvas/60";
-const TD = "px-4 py-3.5 text-sm text-ink align-middle first:pl-5 last:pr-5 border-b border-line";
+const TH =
+  "px-4 py-3 text-xs font-medium text-ink-muted whitespace-nowrap first:pl-5 last:pr-5 border-b border-line bg-canvas/60";
+const TD =
+  "px-4 py-3.5 text-sm text-ink align-middle first:pl-5 last:pr-5 border-b border-line";
 
 const tabClass = (active: boolean) =>
   `-mb-px flex shrink-0 cursor-pointer items-center gap-2 rounded-t-lg border-b-2 px-4 py-2.5 text-sm whitespace-nowrap transition-all ${
@@ -79,7 +81,10 @@ export default function PartnersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("status")?.toUpperCase();
   const currentTab: Tab =
-    rawTab === "PENDING" || rawTab === "APPROVED" || rawTab === "REJECTED" || rawTab === "SUSPENDED"
+    rawTab === "PENDING" ||
+    rawTab === "APPROVED" ||
+    rawTab === "REJECTED" ||
+    rawTab === "SUSPENDED"
       ? rawTab
       : "ALL";
 
@@ -99,26 +104,28 @@ export default function PartnersPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   // Approve modal
-  const [approvingPartner, setApprovingPartner] = useState<PartnerSummary | null>(null);
+  const [approvingPartner, setApprovingPartner] =
+    useState<PartnerSummary | null>(null);
   const [approveCommission, setApproveCommission] = useState(15);
   const [customCode, setCustomCode] = useState("");
   const [approvePassword, setApprovePassword] = useState("");
   const [isApproving, setIsApproving] = useState(false);
 
   // Reject modal
-  const [rejectingPartner, setRejectingPartner] = useState<PartnerSummary | null>(null);
+  const [rejectingPartner, setRejectingPartner] =
+    useState<PartnerSummary | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [isRejecting, setIsRejecting] = useState(false);
 
   // Suspend modal
-  const [suspendingPartner, setSuspendingPartner] = useState<PartnerSummary | null>(null);
+  const [suspendingPartner, setSuspendingPartner] =
+    useState<PartnerSummary | null>(null);
   const [suspendReason, setSuspendReason] = useState("");
   const [isSuspending, setIsSuspending] = useState(false);
 
   // Commission modal
-  const [editingCommissionPartner, setEditingCommissionPartner] = useState<PartnerSummary | null>(
-    null,
-  );
+  const [editingCommissionPartner, setEditingCommissionPartner] =
+    useState<PartnerSummary | null>(null);
   const [newCommissionRate, setNewCommissionRate] = useState(15);
   const [isCommissionActive, setIsCommissionActive] = useState(true);
   const [isUpdatingCommission, setIsUpdatingCommission] = useState(false);
@@ -326,7 +333,7 @@ export default function PartnersPage() {
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search company, code, email or phone" />
+            <SearchField.Input placeholder="Search ID (e.g. PART-1), company, code, email or phone" />
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
@@ -349,7 +356,9 @@ export default function PartnersPage() {
               <Handshake className="size-6" aria-hidden />
             </span>
             <h2 className="mt-4 text-base font-semibold text-ink">
-              {debouncedSearch ? "No partners match this search" : "No partner applications found"}
+              {debouncedSearch
+                ? "No partners match this search"
+                : "No partner applications found"}
             </h2>
             <p className="mt-1 text-sm text-ink-body">
               {debouncedSearch
@@ -362,21 +371,42 @@ export default function PartnersPage() {
             <table className="w-full min-w-[62rem] text-left border-collapse">
               <thead>
                 <tr>
-                  <th scope="col" className={`${TH} w-[34%]`}>Company &amp; Contact</th>
-                  <th scope="col" className={`${TH} w-[22%]`}>Business Type</th>
+                  <th scope="col" className={`${TH} w-[10%]`}>
+                    ID
+                  </th>
+                  <th scope="col" className={`${TH} w-[30%]`}>
+                    Company &amp; Contact
+                  </th>
+                  <th scope="col" className={`${TH} w-[20%]`}>
+                    Business Type
+                  </th>
                   {/* Client Presentation: Hidden complex columns to keep dashboard simple
                   <th scope="col" className={`${TH} w-[12%]`}>Referral Code</th>
                   <th scope="col" className={`${TH} w-[11%]`}>Commission %</th>
                   <th scope="col" className={`${TH} w-[12%]`}>Stats</th>
                   */}
-                  <th scope="col" className={`${TH} w-[16%]`}>Status</th>
-                  <th scope="col" className={`${TH} w-[14%]`}>Applied Date</th>
-                  <th scope="col" className={`${TH} w-[14%] text-right`}>Actions</th>
+                  <th scope="col" className={`${TH} w-[14%]`}>
+                    Status
+                  </th>
+                  <th scope="col" className={`${TH} w-[13%]`}>
+                    Applied Date
+                  </th>
+                  <th scope="col" className={`${TH} w-[13%] text-right`}>
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {data?.items.map((partner) => (
-                  <tr key={partner.id} className="hover:bg-canvas/40 transition-colors">
+                  <tr
+                    key={partner.id}
+                    className="hover:bg-canvas/40 transition-colors"
+                  >
+                    <td className={`${TD} whitespace-nowrap`}>
+                      <span className="font-mono text-xs font-semibold text-brand bg-brand/10 border border-brand/20 px-2 py-0.5 rounded inline-block">
+                        {partner.applicationId}
+                      </span>
+                    </td>
                     <td className={TD}>
                       <div className="space-y-0.5">
                         <div className="font-semibold text-ink leading-tight">
@@ -398,9 +428,6 @@ export default function PartnersPage() {
                           >
                             {partner.phone}
                           </a>
-                        </div>
-                        <div className="text-[11px] font-mono text-ink-muted/80">
-                          Ref ID: <span className="text-brand font-semibold">{partner.applicationId}</span>
                         </div>
                       </div>
                     </td>
@@ -470,7 +497,9 @@ export default function PartnersPage() {
                     </td>
                     */}
 
-                    <td className={`${TD} whitespace-nowrap text-xs text-ink-muted`}>
+                    <td
+                      className={`${TD} whitespace-nowrap text-xs text-ink-muted`}
+                    >
                       {new Date(partner.createdAt).toLocaleDateString("en-IN", {
                         month: "short",
                         day: "numeric",
@@ -578,7 +607,8 @@ export default function PartnersPage() {
                 </div>
                 <p className="text-xs text-ink-muted mt-1 font-mono">
                   Ref ID: {detailData?.applicationId} · Applied on{" "}
-                  {detailData && new Date(detailData.createdAt).toLocaleString()}
+                  {detailData &&
+                    new Date(detailData.createdAt).toLocaleString()}
                 </p>
               </div>
               <button
@@ -602,7 +632,9 @@ export default function PartnersPage() {
                     <div className="font-semibold text-xs uppercase tracking-wider">
                       Rejection Reason
                     </div>
-                    <p className="text-xs leading-relaxed">{detailData.rejectionReason}</p>
+                    <p className="text-xs leading-relaxed">
+                      {detailData.rejectionReason}
+                    </p>
                   </div>
                 )}
                 {detailData.status === "SUSPENDED" && (
@@ -610,7 +642,9 @@ export default function PartnersPage() {
                     <div className="font-semibold text-xs uppercase tracking-wider">
                       Suspension Reason
                     </div>
-                    <p className="text-xs leading-relaxed">{detailData.suspensionReason}</p>
+                    <p className="text-xs leading-relaxed">
+                      {detailData.suspensionReason}
+                    </p>
                   </div>
                 )}
 
@@ -621,12 +655,18 @@ export default function PartnersPage() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
                     <div>
-                      <span className="text-ink-muted block">Business Type</span>
-                      <strong className="text-ink">{detailData.businessType}</strong>
+                      <span className="text-ink-muted block">
+                        Business Type
+                      </span>
+                      <strong className="text-ink">
+                        {detailData.businessType}
+                      </strong>
                     </div>
                     <div>
                       <span className="text-ink-muted block">Established</span>
-                      <strong className="text-ink">{detailData.yearEstablished}</strong>
+                      <strong className="text-ink">
+                        {detailData.yearEstablished}
+                      </strong>
                     </div>
                     <div>
                       <span className="text-ink-muted block">Reg / Tax ID</span>
@@ -652,12 +692,15 @@ export default function PartnersPage() {
                     <div>
                       <span className="text-ink-muted block">Location</span>
                       <strong className="text-ink">
-                        {detailData.city}, {detailData.state}, {detailData.country}
+                        {detailData.city}, {detailData.state},{" "}
+                        {detailData.country}
                       </strong>
                     </div>
                     <div className="col-span-2 sm:col-span-3">
                       <span className="text-ink-muted block">Full Address</span>
-                      <strong className="text-ink">{detailData.businessAddress}</strong>
+                      <strong className="text-ink">
+                        {detailData.businessAddress}
+                      </strong>
                     </div>
                   </div>
                 </div>
@@ -669,12 +712,18 @@ export default function PartnersPage() {
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
                     <div>
-                      <span className="text-ink-muted block">Contact Person</span>
-                      <strong className="text-ink">{detailData.contactName}</strong>
+                      <span className="text-ink-muted block">
+                        Contact Person
+                      </span>
+                      <strong className="text-ink">
+                        {detailData.contactName}
+                      </strong>
                     </div>
                     <div>
                       <span className="text-ink-muted block">Designation</span>
-                      <strong className="text-ink">{detailData.designation}</strong>
+                      <strong className="text-ink">
+                        {detailData.designation}
+                      </strong>
                     </div>
                     <div>
                       <span className="text-ink-muted block">Email</span>
@@ -685,8 +734,12 @@ export default function PartnersPage() {
                       <strong className="text-ink">{detailData.phone}</strong>
                     </div>
                     <div>
-                      <span className="text-ink-muted block">Alternative Phone</span>
-                      <strong className="text-ink">{detailData.alternatePhone || "None"}</strong>
+                      <span className="text-ink-muted block">
+                        Alternative Phone
+                      </span>
+                      <strong className="text-ink">
+                        {detailData.alternatePhone || "None"}
+                      </strong>
                     </div>
                   </div>
                 </div>
@@ -694,15 +747,22 @@ export default function PartnersPage() {
                 {/* Grid 3: Partnership Program Details */}
                 <div className="p-4 rounded-xl bg-canvas/60 border border-ed-border space-y-3">
                   <div className="font-semibold text-xs text-brand uppercase tracking-wider flex items-center gap-1.5">
-                    <Handshake className="size-4" /> Partnership &amp; Marketing Plan
+                    <Handshake className="size-4" /> Partnership &amp; Marketing
+                    Plan
                   </div>
                   <div className="space-y-3 text-xs">
                     <div>
-                      <span className="text-ink-muted block">Expected Monthly Referrals</span>
-                      <strong className="text-ink">{detailData.expectedReferrals}</strong>
+                      <span className="text-ink-muted block">
+                        Expected Monthly Referrals
+                      </span>
+                      <strong className="text-ink">
+                        {detailData.expectedReferrals}
+                      </strong>
                     </div>
                     <div>
-                      <span className="text-ink-muted block mb-1">Target Categories</span>
+                      <span className="text-ink-muted block mb-1">
+                        Target Categories
+                      </span>
                       <div className="flex flex-wrap gap-1.5">
                         {detailData.targetCategories.map((c) => (
                           <span
@@ -715,7 +775,9 @@ export default function PartnersPage() {
                       </div>
                     </div>
                     <div>
-                      <span className="text-ink-muted block mb-1">Marketing Channels</span>
+                      <span className="text-ink-muted block mb-1">
+                        Marketing Channels
+                      </span>
                       <div className="flex flex-wrap gap-1.5">
                         {detailData.marketingChannels.map((c) => (
                           <span
@@ -728,13 +790,17 @@ export default function PartnersPage() {
                       </div>
                     </div>
                     <div>
-                      <span className="text-ink-muted block mb-1">Reason for joining</span>
+                      <span className="text-ink-muted block mb-1">
+                        Reason for joining
+                      </span>
                       <p className="p-2.5 rounded bg-surface border border-ed-border text-ink leading-relaxed">
                         {detailData.reason}
                       </p>
                     </div>
                     <div>
-                      <span className="text-ink-muted block">Prior Referral Experience:</span>
+                      <span className="text-ink-muted block">
+                        Prior Referral Experience:
+                      </span>
                       <strong className="text-ink">
                         {detailData.previousExperience ? "Yes" : "No"}
                       </strong>
@@ -754,7 +820,9 @@ export default function PartnersPage() {
                         className="text-xs p-2 rounded bg-surface border border-ed-border flex items-start justify-between gap-4"
                       >
                         <div>
-                          <span className="font-medium text-ink">{act.body}</span>
+                          <span className="font-medium text-ink">
+                            {act.body}
+                          </span>
                           {act.actorName && (
                             <span className="text-ink-muted ml-2 text-[11px]">
                               by {act.actorName}
@@ -789,17 +857,21 @@ export default function PartnersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl bg-surface border border-ed-border shadow-2xl p-6 space-y-5">
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-ink">Approve Partner Application</h3>
+              <h3 className="text-lg font-bold text-ink">
+                Approve Partner Application
+              </h3>
               <p className="text-xs text-ink-muted">
-                Approve <strong>{approvingPartner.companyName}</strong>. This generates a referral
-                code, grants dashboard access, and sends the approval email.
+                Approve <strong>{approvingPartner.companyName}</strong>. This
+                generates a referral code, grants dashboard access, and sends
+                the approval email.
               </p>
             </div>
 
             <div className="space-y-4 text-xs">
               <div>
                 <label className="block font-semibold text-ink mb-1.5">
-                  Commission Percentage (%) <span className="text-red-500">*</span>
+                  Commission Percentage (%){" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -808,10 +880,14 @@ export default function PartnersPage() {
                     max="100"
                     step="0.5"
                     value={approveCommission}
-                    onChange={(e) => setApproveCommission(Number(e.target.value))}
+                    onChange={(e) =>
+                      setApproveCommission(Number(e.target.value))
+                    }
                     className="w-32 px-3 py-2 rounded-lg bg-canvas border border-ed-border text-ink font-semibold focus:outline-none focus:border-brand"
                   />
-                  <span className="text-ink-muted">% per referred customer payment</span>
+                  <span className="text-ink-muted">
+                    % per referred customer payment
+                  </span>
                 </div>
               </div>
 
@@ -827,8 +903,8 @@ export default function PartnersPage() {
                   className="w-full px-3 py-2 rounded-lg bg-canvas border border-ed-border text-ink font-mono focus:outline-none focus:border-brand uppercase"
                 />
                 <p className="text-[11px] text-ink-muted mt-1">
-                  Example: <code>ABC-7Q4M</code>. If blank, a unique code is created based on the
-                  company name.
+                  Example: <code>ABC-7Q4M</code>. If blank, a unique code is
+                  created based on the company name.
                 </p>
               </div>
 
@@ -844,14 +920,16 @@ export default function PartnersPage() {
                   className="w-full px-3 py-2 rounded-lg bg-canvas border border-ed-border text-ink font-mono focus:outline-none focus:border-brand"
                 />
                 <p className="text-[11px] text-ink-muted mt-1">
-                  The partner can use this password to log in at <code>/login</code> and view their
-                  &ldquo;Partnership&rdquo; tab.
+                  The partner can use this password to log in at{" "}
+                  <code>/login</code> and view their &ldquo;Partnership&rdquo;
+                  tab.
                 </p>
               </div>
 
               <div className="p-3 rounded-lg bg-brand/5 border border-brand/20 text-brand text-[11px] leading-relaxed">
-                An automatic email with their login credentials, referral code, commission rate, and
-                dashboard link will be sent to <strong>{approvingPartner.email}</strong>.
+                An automatic email with their login credentials, referral code,
+                commission rate, and dashboard link will be sent to{" "}
+                <strong>{approvingPartner.email}</strong>.
               </div>
             </div>
 
@@ -881,15 +959,19 @@ export default function PartnersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl bg-surface border border-ed-border shadow-2xl p-6 space-y-5">
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-ink">Reject Partner Application</h3>
+              <h3 className="text-lg font-bold text-ink">
+                Reject Partner Application
+              </h3>
               <p className="text-xs text-ink-muted">
-                Reject <strong>{rejectingPartner.companyName}</strong>. Please provide a reason to
-                be included in the notification email.
+                Reject <strong>{rejectingPartner.companyName}</strong>. Please
+                provide a reason to be included in the notification email.
               </p>
             </div>
 
             <div className="space-y-2 text-xs">
-              <label className="block font-semibold text-ink">Rejection Reason</label>
+              <label className="block font-semibold text-ink">
+                Rejection Reason
+              </label>
               <textarea
                 rows={3}
                 value={rejectReason}
@@ -925,15 +1007,20 @@ export default function PartnersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl bg-surface border border-ed-border shadow-2xl p-6 space-y-5">
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-ink">Suspend Partner Account</h3>
+              <h3 className="text-lg font-bold text-ink">
+                Suspend Partner Account
+              </h3>
               <p className="text-xs text-ink-muted">
-                Suspend <strong>{suspendingPartner.companyName}</strong>. Suspended partners cannot
-                generate new referrals. Existing referral and commission history remains intact.
+                Suspend <strong>{suspendingPartner.companyName}</strong>.
+                Suspended partners cannot generate new referrals. Existing
+                referral and commission history remains intact.
               </p>
             </div>
 
             <div className="space-y-2 text-xs">
-              <label className="block font-semibold text-ink">Suspension Reason</label>
+              <label className="block font-semibold text-ink">
+                Suspension Reason
+              </label>
               <textarea
                 rows={3}
                 value={suspendReason}
@@ -969,7 +1056,9 @@ export default function PartnersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl bg-surface border border-ed-border shadow-2xl p-6 space-y-5">
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-ink">Update Commission Settings</h3>
+              <h3 className="text-lg font-bold text-ink">
+                Update Commission Settings
+              </h3>
               <p className="text-xs text-ink-muted">
                 Adjust commission rate and eligibility for{" "}
                 <strong>{editingCommissionPartner.companyName}</strong>.
@@ -988,7 +1077,9 @@ export default function PartnersPage() {
                     max="100"
                     step="0.5"
                     value={newCommissionRate}
-                    onChange={(e) => setNewCommissionRate(Number(e.target.value))}
+                    onChange={(e) =>
+                      setNewCommissionRate(Number(e.target.value))
+                    }
                     className="w-32 px-3 py-2 rounded-lg bg-canvas border border-ed-border text-ink font-semibold focus:outline-none focus:border-brand"
                   />
                   <span className="text-ink-muted">% per payment</span>
@@ -1003,8 +1094,12 @@ export default function PartnersPage() {
                   onChange={(e) => setIsCommissionActive(e.target.checked)}
                   className="size-4 rounded text-brand focus:ring-0 cursor-pointer"
                 />
-                <label htmlFor="isCommissionActive" className="text-ink font-medium cursor-pointer">
-                  Commission Eligibility Active (can earn commission on payments)
+                <label
+                  htmlFor="isCommissionActive"
+                  className="text-ink font-medium cursor-pointer"
+                >
+                  Commission Eligibility Active (can earn commission on
+                  payments)
                 </label>
               </div>
             </div>
