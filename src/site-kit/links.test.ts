@@ -5,8 +5,14 @@ const pages = [
   { id: "p-home", name: "Home", slug: "/" },
   { id: "p-about", name: "About", slug: "/about" },
   { id: "p-contact", name: "Contact", slug: "/contact" },
+  {
+    id: "p-product",
+    name: "Product",
+    slug: "/product",
+    sections: [{ type: "product_detail" }],
+  },
 ];
-const [home, about, contact] = pages;
+const [home, about, contact, product] = pages;
 
 describe("isOffsiteHref", () => {
   it("detects web, email and phone links", () => {
@@ -75,5 +81,22 @@ describe("resolvePageLink", () => {
     expect(resolvePageLink(pages, "https://instagram.com")).toBeNull();
     expect(resolvePageLink(pages, "mailto:hi@example.com")).toBeNull();
     expect(resolvePageLink(pages, "/missing")).toBeNull();
+  });
+
+  it("opens product detail links under a product_detail page", () => {
+    expect(resolvePageLink(pages, "/product/everyday-tee")).toEqual({
+      page: product,
+      hash: "",
+      productSlug: "everyday-tee",
+      selection: undefined,
+    });
+    expect(resolvePageLink(pages, "/product/everyday-tee?Colour=Black")).toEqual({
+      page: product,
+      hash: "",
+      productSlug: "everyday-tee",
+      selection: { Colour: "Black" },
+    });
+    expect(resolvePageLink(pages, "/product")).toEqual({ page: product, hash: "" });
+    expect(resolvePageLink(pages, "/product/everyday-tee/extra")).toBeNull();
   });
 });

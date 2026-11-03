@@ -1317,6 +1317,11 @@ export type AuthData = {
   defaultView?: AuthView;
   brandName?: string;
   logo?: ImageRef;
+  /** Same options as the site header brand. */
+  logoDisplay?: BrandDisplayMode;
+  /** Custom logo height in pixels. Default is 36px on auth screens. */
+  logoHeight?: number;
+  logoSize?: number;
   formPosition?: "left" | "right";
   minHeight?: "auto" | "screen";
   inputStyle?: "outline" | "filled" | "underline" | "pill";
@@ -1816,10 +1821,12 @@ export type AccountData = {
   showOrders?: boolean;
   showCart?: boolean;
   showProfile?: boolean;
+  showAddresses?: boolean;
   showPassword?: boolean;
   ordersLabel?: string;
   cartLabel?: string;
   profileLabel?: string;
+  addressesLabel?: string;
   passwordLabel?: string;
   logoutLabel?: string;
   saveLabel?: string;

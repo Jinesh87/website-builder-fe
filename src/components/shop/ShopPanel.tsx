@@ -36,6 +36,7 @@ type ProductDraft = {
   name: string;
   description: string;
   categoryId: string;
+  listed: boolean;
   returnsEnabled: boolean;
   /** Empty string = use shop default. */
   returnDays: string;
@@ -56,6 +57,7 @@ function blankProduct(categoryId = ""): ProductDraft {
     name: "",
     description: "",
     categoryId,
+    listed: true,
     returnsEnabled: true,
     returnDays: "",
     sets: [blankSet()],
@@ -216,6 +218,7 @@ function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: st
       name: draft.name.trim(),
       description: draft.description.trim(),
       categoryId: draft.categoryId || null,
+      listed: draft.listed,
       returnsEnabled: draft.returnsEnabled,
       returnDays,
       optionSets,
@@ -737,6 +740,7 @@ function ShopCatalog({
       name: product.name,
       description: product.description ?? "",
       categoryId: product.categoryId ?? "",
+      listed: product.listed !== false,
       returnsEnabled: product.returnsEnabled !== false,
       returnDays: product.returnDays != null ? String(product.returnDays) : "",
       sets: setsFromProduct(product),
@@ -1201,6 +1205,24 @@ function ProductForm({
             value={draft.description}
             onChange={(description) => onChange({ ...draft, description })}
           />
+        </div>
+        <div className="sm:col-span-2 rounded-xl border border-line bg-canvas/40 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-ink">Listing</p>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                When off, this product stays in your catalogue but is hidden from the live shop.
+              </p>
+            </div>
+            <Switch isSelected={draft.listed} onChange={(listed) => onChange({ ...draft, listed })}>
+              <Switch.Content>
+                <Switch.Control>
+                  <Switch.Thumb />
+                </Switch.Control>
+                <Label className="text-sm text-ink">{draft.listed ? "Listed on shop" : "Hidden from shop"}</Label>
+              </Switch.Content>
+            </Switch>
+          </div>
         </div>
         <div className="sm:col-span-2 rounded-xl border border-line bg-canvas/40 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">

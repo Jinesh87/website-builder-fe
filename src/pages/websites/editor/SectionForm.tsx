@@ -3231,10 +3231,12 @@ function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
         <CheckboxField label="Orders" checked={data.showOrders !== false} onChange={(showOrders) => set({ showOrders })} />
         <CheckboxField label="Cart" checked={data.showCart !== false} onChange={(showCart) => set({ showCart })} />
         <CheckboxField label="Profile (name, phone)" checked={data.showProfile !== false} onChange={(showProfile) => set({ showProfile })} />
+        <CheckboxField label="Addresses" checked={data.showAddresses !== false} onChange={(showAddresses) => set({ showAddresses })} />
         <CheckboxField label="Change password" checked={data.showPassword !== false} onChange={(showPassword) => set({ showPassword })} />
         <TextField label="Orders label" value={data.ordersLabel ?? ""} onChange={(ordersLabel) => set({ ordersLabel })} maxLength={40} />
         <TextField label="Cart label" value={data.cartLabel ?? ""} onChange={(cartLabel) => set({ cartLabel })} maxLength={40} />
         <TextField label="Profile label" value={data.profileLabel ?? ""} onChange={(profileLabel) => set({ profileLabel })} maxLength={40} />
+        <TextField label="Addresses label" value={data.addressesLabel ?? ""} onChange={(addressesLabel) => set({ addressesLabel })} maxLength={40} />
         <TextField label="Password label" value={data.passwordLabel ?? ""} onChange={(passwordLabel) => set({ passwordLabel })} maxLength={40} />
         <TextField label="Save button" value={data.saveLabel ?? ""} onChange={(saveLabel) => set({ saveLabel })} maxLength={40} />
         <TextField label="Log out button" value={data.logoutLabel ?? ""} onChange={(logoutLabel) => set({ logoutLabel })} maxLength={40} />
