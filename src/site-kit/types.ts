@@ -1313,6 +1313,11 @@ export type AuthData = {
   defaultView?: AuthView;
   brandName?: string;
   logo?: ImageRef;
+  /** Same options as the site header brand. */
+  logoDisplay?: BrandDisplayMode;
+  /** Custom logo height in pixels. Default is 36px on auth screens. */
+  logoHeight?: number;
+  logoSize?: number;
   formPosition?: "left" | "right";
   minHeight?: "auto" | "screen";
   inputStyle?: "outline" | "filled" | "underline" | "pill";
