@@ -3,14 +3,13 @@ import { Button, Checkbox, Label } from "@heroui/react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { useAuth } from "../../auth/auth-context.ts";
-import { homeForRole } from "../../auth/home-for-role.ts";
 import { validateEmail } from "../../auth/validation.ts";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import AuthSplitLayout from "../../layouts/AuthSplitLayout.tsx";
 
 export default function PartnerLoginPage() {
-  const { login } = useAuth();
+  const { user: currentUser, login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,8 +38,15 @@ export default function PartnerLoginPage() {
     setSubmitting(true);
     try {
       const user = await login({ identifier: trimmed, password, remember });
-      const target = homeForRole(user);
-      navigate(target || "/partner/dashboard", { replace: true });
+      if (user.role !== "PARTNER") {
+        await logout();
+        setError(
+          "This account is registered as a Client, not an approved Partner. If your application was submitted recently, please wait for admin approval. Otherwise, please sign in via the client portal."
+        );
+        setSubmitting(false);
+        return;
+      }
+      navigate("/partner/dashboard", { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
         setError("Your account password has not been set yet. Please check your partner approval email for your activation link.");
@@ -63,6 +69,12 @@ export default function PartnerLoginPage() {
           Apply to become a partner
         </Link>
       </p>
+
+      {currentUser && currentUser.role !== "PARTNER" && (
+        <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-amber-800">
+          You are currently signed in as <strong>{currentUser.email}</strong> ({currentUser.role.toLowerCase()}). Please sign in with an approved Partner account below.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} noValidate className="mt-7 flex flex-col gap-4">
         <TextInput

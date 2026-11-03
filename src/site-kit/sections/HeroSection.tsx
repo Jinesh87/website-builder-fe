@@ -1169,7 +1169,18 @@ export default function HeroSection({
     data.variant === "asymmetric";
 
   const isFloatingCards = data.variant === "floating-cards";
-  const floatingCards = data.floatingCards?.slice(0, 3) ?? [];
+  const showFloatingCards = data.showFloatingCards ?? true;
+  const rawCards = data.floatingCards ?? [
+    { title: "102°F Thermal Pool", subtitle: "Three hydrothermal pools", icon: "sparkles", badge: "Mineral Circuit", slot: 1 },
+    { title: "48°F Cold Plunge", subtitle: "Nervous system recalibration", icon: "bolt", badge: "Nordic Contrast", slot: 2 },
+    { title: "Vogue Spa 2026", subtitle: "Top Urban Sanctuary Award", icon: "star", badge: "Gold Recipient", slot: 3 },
+  ];
+  const floatingCards = isFloatingCards && showFloatingCards
+    ? rawCards
+        .slice(0, 3)
+        .map((card, i) => ({ ...card, slot: card.slot ?? i + 1 }))
+        .filter((card) => !card.hidden)
+    : [];
 
   const mediaContent = hasAnyMedia && (
     <div
@@ -1198,13 +1209,16 @@ export default function HeroSection({
         ) : (
           <HeroMockupPlaceholder />
         )}
-        {isFloatingCards && floatingCards.length > 0 && (
+        {floatingCards.length > 0 && (
           <ul className="wb-hero-floating-cards-list">
             {floatingCards.map((card, index) => (
-              <li key={`${card.title}-${index}`} className={`wb-hero-floating-card wb-hero-floating-card-${index + 1}`}>
-                {card.icon && (
+              <li
+                key={`${card.title}-${card.slot ?? index}`}
+                className={`wb-hero-floating-card wb-hero-floating-card-${card.slot ?? index + 1}`}
+              >
+                {(card.icon || card.iconImage?.url) && (
                   <span className="wb-hero-floating-card-icon">
-                    <SiteIcon name={card.icon} />
+                    <SiteIcon name={card.icon} image={card.iconImage} />
                   </span>
                 )}
                 <span className="wb-hero-floating-card-text">

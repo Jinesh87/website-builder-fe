@@ -38,6 +38,14 @@ export function GuestOnly() {
   const location = useLocation();
   if (loading) return <FullPageSpinner />;
   if (user) {
+    if (location.pathname === "/partner/login") {
+      if (user.role === "PARTNER") {
+        return <Navigate to="/partner/dashboard" replace />;
+      }
+      // If a non-partner (e.g. CLIENT) visits /partner/login, allow them to view the page
+      // so they can log in with a partner account instead of being bounced to /dashboard.
+      return <Outlet />;
+    }
     const from = (location.state as RedirectState | null)?.from;
     return <Navigate to={from ?? homeForRole(user)} replace />;
   }

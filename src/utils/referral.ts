@@ -1,18 +1,29 @@
 const REFERRAL_KEY = "byz_referral_code";
 const COOKIE_MAX_AGE_DAYS = 30;
 
+export function saveReferralCode(rawCode: string): string | null {
+  if (typeof window === "undefined") return null;
+  const code = rawCode.trim().toUpperCase();
+  if (!code) return null;
+  try {
+    localStorage.setItem(REFERRAL_KEY, code);
+    const maxAge = COOKIE_MAX_AGE_DAYS * 24 * 60 * 60;
+    document.cookie = `${REFERRAL_KEY}=${encodeURIComponent(code)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    return code;
+  } catch {
+    return null;
+  }
+}
+
 export function captureReferralCodeFromUrl(): string | null {
   if (typeof window === "undefined") return null;
 
   try {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get("ref")?.trim();
+    const code = params.get("ref")?.trim() || params.get("r")?.trim();
 
     if (code) {
-      localStorage.setItem(REFERRAL_KEY, code.toUpperCase());
-      const maxAge = COOKIE_MAX_AGE_DAYS * 24 * 60 * 60;
-      document.cookie = `${REFERRAL_KEY}=${encodeURIComponent(code.toUpperCase())}; path=/; max-age=${maxAge}; SameSite=Lax`;
-      return code.toUpperCase();
+      return saveReferralCode(code);
     }
   } catch {
     // ignore

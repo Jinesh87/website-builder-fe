@@ -24,7 +24,9 @@ function initials(name: string): string {
 export default function PartnerLayout() {
   const { user, logout } = useAuth();
   const { pathname, hash } = useLocation();
-  const [partnerData, setPartnerData] = useState<PartnerDashboardData["partner"] | null>(null);
+  const [partnerData, setPartnerData] = useState<
+    PartnerDashboardData["partner"] | null
+  >(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,15 +45,24 @@ export default function PartnerLayout() {
     };
   }, []);
 
-  const contactName = partnerData?.contactName || user?.fullName || "Vivek Nair";
-  const companyName = partnerData?.companyName || "Kerala Web Studio";
+  const contactName = partnerData?.contactName || user?.fullName || "Partner";
+  const companyName = partnerData?.companyName || "Partner Account";
 
   const navItems = [
-    { label: "Dashboard", icon: LayoutDashboard, to: "/partner/dashboard", exact: true },
-    { label: "Referrals", icon: Users, to: "/partner/dashboard#referrals" },
-    { label: "Commission & payouts", icon: BadgePercent, to: "/partner/dashboard#commissions" },
-    { label: "Marketing kit", icon: Gift, to: "/partner/dashboard#marketing" },
-    { label: "Profile", icon: Settings, to: "/partner/dashboard#profile" },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      to: "/partner/dashboard",
+      exact: true,
+    },
+    { label: "Referrals", icon: Users, to: "/partner/referrals" },
+    {
+      label: "Commission & payouts",
+      icon: BadgePercent,
+      to: "/partner/commissions",
+    },
+    { label: "Marketing kit", icon: Gift, to: "/partner/marketing" },
+    { label: "Profile", icon: Settings, to: "/partner/profile" },
   ];
 
   return (
@@ -67,12 +78,25 @@ export default function PartnerLayout() {
         </div>
 
         {/* Navigation */}
-        <nav aria-label="Partner Navigation" className="mt-6 flex flex-1 flex-col gap-1 overflow-y-auto pr-1">
+        <nav
+          aria-label="Partner Navigation"
+          className="mt-6 flex flex-1 flex-col gap-1 overflow-y-auto pr-1"
+        >
           {navItems.map((item) => {
             const isDashboard = item.exact;
             const isActive = isDashboard
-              ? pathname === "/partner/dashboard" && (!hash || hash === "#dashboard")
-              : hash === item.to.replace("/partner/dashboard", "");
+              ? pathname === "/partner/dashboard" &&
+                (!hash || hash === "#dashboard")
+              : item.to === "/partner/referrals"
+                ? pathname === "/partner/referrals" || hash === "#referrals"
+                : item.to === "/partner/commissions"
+                  ? pathname === "/partner/commissions" ||
+                    hash === "#commissions"
+                  : item.to === "/partner/marketing"
+                    ? pathname === "/partner/marketing" || hash === "#marketing"
+                    : item.to === "/partner/profile"
+                      ? pathname === "/partner/profile" || hash === "#profile"
+                      : pathname === item.to;
 
             return (
               <NavLink
@@ -108,7 +132,7 @@ export default function PartnerLayout() {
                 <p className="truncate text-xs font-semibold text-white leading-tight">
                   {contactName}
                 </p>
-                <p className="truncate text-[11px] text-slate-400 leading-tight mt-0.5">
+                <p className="truncate text-ed-2xs text-slate-400 leading-tight mt-0.5">
                   {companyName}
                 </p>
               </div>
@@ -126,7 +150,7 @@ export default function PartnerLayout() {
         </div>
       </aside>
 
-      {/* Main Content Area: Always Light Color */}
+      {/* Main Content Area: Always Light Mode */}
       <main className="flex-1 min-w-0 overflow-y-auto bg-canvas text-ink">
         <Outlet context={{ partner: partnerData }} />
       </main>

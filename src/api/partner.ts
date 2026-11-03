@@ -4,6 +4,13 @@ export type PartnerStatus = "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED";
 export type PartnerReferralStatus = "REGISTERED" | "CONVERTED";
 export type CommissionStatus = "PENDING" | "APPROVED" | "PAID" | "CANCELLED";
 export type CommissionSource = "WALLET_TOPUP" | "HOSTING" | "SHOP_ORDER";
+export type PartnerCommissionPolicy = "GLOBAL_DEFAULT" | "FIRST_PAYMENT" | "EVERY_RENEWAL";
+
+export type PartnerProgramConfig = {
+  defaultCommissionRate: number;
+  defaultCommissionPolicy: "FIRST_PAYMENT" | "EVERY_RENEWAL";
+  updatedAt: string | null;
+};
 
 export type PartnerApplicationForm = {
   companyName: string;
@@ -48,6 +55,8 @@ export type PartnerSummary = {
   referralCode: string | null;
   commissionRate: number;
   isCommissionActive: boolean;
+  commissionPolicy?: PartnerCommissionPolicy;
+  effectiveCommissionPolicy?: PartnerCommissionPolicy;
   totalReferrals: number;
   convertedReferrals: number;
   totalCommissionPaise: number;
@@ -134,8 +143,10 @@ export type PartnerDashboardData = {
     applicationId?: string;
     companyName: string;
     contactName: string;
+    designation?: string;
     email: string;
     phone?: string;
+    alternatePhone?: string | null;
     businessType?: string;
     partnershipType?: string;
     status?: PartnerStatus;
@@ -143,6 +154,8 @@ export type PartnerDashboardData = {
     referralCode: string | null;
     commissionRate: number;
     isCommissionActive: boolean;
+    commissionPolicy?: PartnerCommissionPolicy;
+    effectiveCommissionPolicy?: PartnerCommissionPolicy;
     shareUrl: string;
     createdAt?: string;
   };
@@ -160,6 +173,7 @@ export type PartnerDashboardData = {
     customerName: string;
     customerEmail: string;
     planName?: string;
+    source?: string;
     status: PartnerReferralStatus | "PAID" | "REGISTERED" | "CLICKED";
     totalSpentPaise: number;
     paymentAmountPaise?: number;
@@ -230,6 +244,17 @@ export const partnerApi = {
 };
 
 export const adminPartnerApi = {
+  getProgramConfig: () => request<PartnerProgramConfig>(`${ADMIN_BASE}/config/program`),
+
+  updateProgramConfig: (data: {
+    defaultCommissionRate?: number;
+    defaultCommissionPolicy?: "FIRST_PAYMENT" | "EVERY_RENEWAL";
+  }) =>
+    request<PartnerProgramConfig>(`${ADMIN_BASE}/config/program`, {
+      method: "PATCH",
+      body: data,
+    }),
+
   list: (params: { search?: string; status?: string; page?: number; pageSize?: number }) =>
     request<PartnerListResponse>(`${ADMIN_BASE}${toQuery(params)}`),
 
@@ -240,7 +265,12 @@ export const adminPartnerApi = {
 
   approve: (
     id: string,
-    data: { commissionRate: number; customReferralCode?: string; temporaryPassword?: string },
+    data: {
+      commissionRate: number;
+      customReferralCode?: string;
+      temporaryPassword?: string;
+      commissionPolicy?: PartnerCommissionPolicy;
+    },
   ) =>
     request<PartnerDetail>(`${ADMIN_BASE}/${id}/approve`, {
       method: "POST",
@@ -266,7 +296,11 @@ export const adminPartnerApi = {
 
   updateCommission: (
     id: string,
-    data: { commissionRate?: number; isCommissionActive?: boolean },
+    data: {
+      commissionRate?: number;
+      isCommissionActive?: boolean;
+      commissionPolicy?: PartnerCommissionPolicy;
+    },
   ) =>
     request<PartnerDetail>(`${ADMIN_BASE}/${id}/commission`, {
       method: "PATCH",

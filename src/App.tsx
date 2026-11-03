@@ -20,6 +20,7 @@ const AboutPage = lazy(() => marketing().then((m) => ({ default: m.AboutPage }))
 const ContactPage = lazy(() => marketing().then((m) => ({ default: m.ContactPage })));
 const LegalPage = lazy(() => marketing().then((m) => ({ default: m.LegalPage })));
 const StartQuestionnairePage = lazy(() => import("./pages/public/StartQuestionnairePage.tsx"));
+const ReferralRedirectPage = lazy(() => import("./pages/public/ReferralRedirectPage.tsx"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage.tsx"));
 const TemplateDetailPage = lazy(() => import("./pages/public/TemplateDetailPage.tsx"));
 const LoginPage = lazy(() => import("./pages/auth/LoginPage.tsx"));
@@ -39,6 +40,10 @@ const ProjectDashboardPage = lazy(() => import("./pages/websites/ProjectDashboar
 const BuilderRoute = lazy(() => import("./features/builder/BuilderRoute.tsx"));
 const BecomePartnerPage = lazy(() => import("./pages/marketing/BecomePartnerPage.tsx"));
 const PartnerDashboardPage = lazy(() => import("./pages/partner/PartnerDashboardPage.tsx"));
+const PartnerReferralsPage = lazy(() => import("./pages/partner/PartnerReferralsPage.tsx"));
+const PartnerCommissionsPage = lazy(() => import("./pages/partner/PartnerCommissionsPage.tsx"));
+const PartnerMarketingKitPage = lazy(() => import("./pages/partner/PartnerMarketingKitPage.tsx"));
+const PartnerProfilePage = lazy(() => import("./pages/partner/PartnerProfilePage.tsx"));
 const PartnerLayout = lazy(() => import("./layouts/PartnerLayout.tsx"));
 const PartnerLoginPage = lazy(() => import("./pages/partner/PartnerLoginPage.tsx"));
 const PartnerSetPasswordPage = lazy(() => import("./pages/partner/PartnerSetPasswordPage.tsx"));
@@ -88,6 +93,7 @@ export default function App() {
 
             <Route path="become-a-partner" element={<Navigate to="/partner" replace />} />
             <Route path="partnership" element={<Navigate to="/partner/dashboard" replace />} />
+            <Route path="r/:code" element={<ReferralRedirectPage />} />
             <Route element={<PublicLayout />}>
               <Route path="*" element={<NotFoundPage />} />
             </Route>
@@ -105,6 +111,11 @@ export default function App() {
             <Route element={<RequireAuth roles={["PARTNER"]} />}>
               <Route element={<PartnerLayout />}>
                 <Route path="partner/dashboard" element={<PartnerDashboardPage />} />
+                <Route path="partner/referrals" element={<PartnerReferralsPage />} />
+                <Route path="partner/commissions" element={<PartnerCommissionsPage />} />
+                <Route path="partner/marketing" element={<PartnerMarketingKitPage />} />
+                <Route path="partner/profile" element={<PartnerProfilePage />} />
+                <Route path="partner" element={<Navigate to="/partner/dashboard" replace />} />
               </Route>
             </Route>
 

@@ -8,12 +8,31 @@ import {
   MessageCircle,
   ShieldAlert,
 } from "lucide-react";
-import { useOutletContext } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+} from "react-router-dom";
 import { partnerApi, type PartnerDashboardData } from "../../api/partner.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 
 function formatCurrency(amount: number): string {
   return "₹" + amount.toLocaleString("en-IN");
+}
+
+function formatDate(iso?: string | null): string {
+  if (!iso) return "—";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
 }
 
 type ReferralRow = {
@@ -27,126 +46,32 @@ type ReferralRow = {
   commissionStatus: "Pending" | "Approved" | "Paid" | "No payment yet";
 };
 
-const SAMPLE_REFERRAL_HISTORY: ReferralRow[] = [
-  {
-    id: "ref-1",
-    date: "30 Oct 2026",
-    customer: "Green Leaf Café",
-    plan: "Business",
-    status: "Paid",
-    payment: 11988,
-    commission: 1798,
-    commissionStatus: "Pending",
-  },
-  {
-    id: "ref-2",
-    date: "27 Oct 2026",
-    customer: "St. Mary's School",
-    plan: "Pro",
-    status: "Paid",
-    payment: 23988,
-    commission: 3598,
-    commissionStatus: "Pending",
-  },
-  {
-    id: "ref-3",
-    date: "22 Oct 2026",
-    customer: "Lakshmi Silks",
-    plan: "Business",
-    status: "Registered",
-    payment: null,
-    commission: null,
-    commissionStatus: "No payment yet",
-  },
-  {
-    id: "ref-4",
-    date: "18 Oct 2026",
-    customer: "Coastal Car Care",
-    plan: "Starter",
-    status: "Paid",
-    payment: 5988,
-    commission: 898,
-    commissionStatus: "Approved",
-  },
-  {
-    id: "ref-5",
-    date: "11 Oct 2026",
-    customer: "Aster Dental Clinic",
-    plan: "Business",
-    status: "Paid",
-    payment: 11988,
-    commission: 1798,
-    commissionStatus: "Approved",
-  },
-  {
-    id: "ref-6",
-    date: "04 Oct 2026",
-    customer: "Print Hub TVM",
-    plan: "Starter",
-    status: "Registered",
-    payment: null,
-    commission: null,
-    commissionStatus: "No payment yet",
-  },
-  {
-    id: "ref-7",
-    date: "28 Sept 2026",
-    customer: "Royal Bakery",
-    plan: "Business",
-    status: "Paid",
-    payment: 11988,
-    commission: 1798,
-    commissionStatus: "Paid",
-  },
-  {
-    id: "ref-8",
-    date: "21 Sept 2026",
-    customer: "Sree Tuition Centre",
-    plan: "Starter",
-    status: "Paid",
-    payment: 5988,
-    commission: 898,
-    commissionStatus: "Paid",
-  },
-  {
-    id: "ref-9",
-    date: "19 Sept 2026",
-    customer: "Metro Mobiles",
-    plan: "—",
-    status: "Clicked",
-    payment: null,
-    commission: null,
-    commissionStatus: "No payment yet",
-  },
-  {
-    id: "ref-10",
-    date: "17 Sept 2026",
-    customer: "Hill View Resort",
-    plan: "Pro",
-    status: "Paid",
-    payment: 23988,
-    commission: 3598,
-    commissionStatus: "Paid",
-  },
-];
-
-const MONTHLY_STATS = [
-  { month: "May", paid: 2, other: 1, total: 3 },
-  { month: "Jun", paid: 3, other: 1, total: 4 },
-  { month: "Jul", paid: 4, other: 2, total: 6 },
-  { month: "Aug", paid: 3, other: 2, total: 5 },
-  { month: "Sep", paid: 5, other: 3, total: 8 },
-  { month: "Oct", paid: 7, other: 3, total: 10 },
-];
-
 export default function PartnerDashboardPage() {
   const { user } = useAuth();
-  const outletCtx = useOutletContext<{ partner?: PartnerDashboardData["partner"] }>();
+  const outletCtx = useOutletContext<{
+    partner?: PartnerDashboardData["partner"];
+  }>();
+  const { hash } = useLocation();
+  const navigate = useNavigate();
   const [data, setData] = useState<PartnerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [filterTab, setFilterTab] = useState<"All" | "Paid" | "Registered" | "Clicked">("All");
+  const [filterTab, setFilterTab] = useState<
+    "All" | "Paid" | "Registered" | "Clicked"
+  >("All");
+
+  useEffect(() => {
+    if (hash === "#referrals") {
+      navigate("/partner/referrals", { replace: true });
+    } else if (hash === "#commissions") {
+      navigate("/partner/commissions", { replace: true });
+    } else if (hash === "#marketing") {
+      navigate("/partner/marketing", { replace: true });
+    } else if (hash === "#profile") {
+      navigate("/partner/profile", { replace: true });
+    }
+  }, [hash, navigate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -171,57 +96,163 @@ export default function PartnerDashboardPage() {
 
   const partnerInfo = useMemo(() => {
     return {
-      contactName: data?.partner?.contactName || outletCtx?.partner?.contactName || user?.fullName || "Vivek Nair",
-      companyName: data?.partner?.companyName || outletCtx?.partner?.companyName || "Kerala Web Studio",
-      referralCode: data?.partner?.referralCode || outletCtx?.partner?.referralCode || "KWS-7Q4M",
-      commissionRate: data?.partner?.commissionRate ?? outletCtx?.partner?.commissionRate ?? 15,
+      contactName:
+        data?.partner?.contactName ||
+        outletCtx?.partner?.contactName ||
+        user?.fullName ||
+        "Partner",
+      companyName:
+        data?.partner?.companyName ||
+        outletCtx?.partner?.companyName ||
+        "Your Company",
+      referralCode:
+        data?.partner?.referralCode ||
+        outletCtx?.partner?.referralCode ||
+        "",
+      commissionRate:
+        data?.partner?.commissionRate ??
+        outletCtx?.partner?.commissionRate ??
+        15,
       status: data?.partner?.status || outletCtx?.partner?.status || "APPROVED",
-      suspensionReason: data?.partner?.suspensionReason || outletCtx?.partner?.suspensionReason || null,
-      isCommissionActive: data?.partner?.isCommissionActive ?? outletCtx?.partner?.isCommissionActive ?? true,
+      suspensionReason:
+        data?.partner?.suspensionReason ||
+        outletCtx?.partner?.suspensionReason ||
+        null,
+      isCommissionActive:
+        data?.partner?.isCommissionActive ??
+        outletCtx?.partner?.isCommissionActive ??
+        true,
+      effectiveCommissionPolicy:
+        data?.partner?.effectiveCommissionPolicy ??
+        outletCtx?.partner?.effectiveCommissionPolicy ??
+        "FIRST_PAYMENT",
     };
   }, [data, outletCtx, user]);
 
   const isSuspended = partnerInfo.status === "SUSPENDED";
   const firstName = partnerInfo.contactName.split(" ")[0] || "Partner";
 
-  const brandHost = typeof window !== "undefined" ? window.location.host : "yourbrand.com";
+  const brandHost =
+    typeof window !== "undefined" ? window.location.host : "yourbrand.com";
   const referralUrl = `https://${brandHost}/r/${partnerInfo.referralCode}`;
 
   function handleCopyCode() {
-    if (isSuspended) return;
+    if (isSuspended || !partnerInfo.referralCode) return;
     navigator.clipboard.writeText(partnerInfo.referralCode);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   }
 
   function handleCopyLink() {
-    if (isSuspended) return;
+    if (isSuspended || !partnerInfo.referralCode) return;
     navigator.clipboard.writeText(referralUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   }
 
   function shareWhatsApp() {
-    if (isSuspended) return;
+    if (isSuspended || !partnerInfo.referralCode) return;
     const text = encodeURIComponent(
-      `Check out this website builder: ${referralUrl} (Use referral code ${partnerInfo.referralCode} for exclusive benefits!)`
+      `Check out this website builder: ${referralUrl} (Use referral code ${partnerInfo.referralCode} for exclusive benefits!)`,
     );
     window.open(`https://wa.me/?text=${text}`, "_blank");
   }
 
   function shareEmail() {
-    if (isSuspended) return;
-    const subject = encodeURIComponent("Recommendation: Modern Website Builder Platform");
+    if (isSuspended || !partnerInfo.referralCode) return;
+    const subject = encodeURIComponent(
+      "Recommendation: Modern Website Builder Platform",
+    );
     const body = encodeURIComponent(
-      `Hi,\n\nI recommend checking out this web builder. You can sign up using my referral link:\n${referralUrl}\n\nReferral Code: ${partnerInfo.referralCode}\n\nBest regards,\n${partnerInfo.contactName}`
+      `Hi,\n\nI recommend checking out this web builder. You can sign up using my referral link:\n${referralUrl}\n\nReferral Code: ${partnerInfo.referralCode}\n\nBest regards,\n${partnerInfo.contactName}`,
     );
     window.open(`mailto:?subject=${subject}&body=${body}`, "_blank");
   }
 
+  const realReferrals = useMemo<ReferralRow[]>(() => {
+    if (!data?.referrals || data.referrals.length === 0) return [];
+    return data.referrals.map((r) => {
+      const isPaid =
+        r.status === "CONVERTED" ||
+        (r.totalSpentPaise && Number(r.totalSpentPaise) > 0);
+      let commStatus: "Pending" | "Approved" | "Paid" | "No payment yet" =
+        "No payment yet";
+      if (r.commissionStatus === "PENDING") commStatus = "Pending";
+      else if (r.commissionStatus === "APPROVED") commStatus = "Approved";
+      else if (r.commissionStatus === "PAID") commStatus = "Paid";
+      else if (isPaid) commStatus = "Approved";
+
+      const payment = r.paymentAmountPaise
+        ? r.paymentAmountPaise / 100
+        : r.totalSpentPaise
+          ? Number(r.totalSpentPaise) / 100
+          : null;
+
+      const commission = r.commissionAmountPaise
+        ? r.commissionAmountPaise / 100
+        : payment
+          ? Math.round((payment * (partnerInfo.commissionRate || 15)) / 100)
+          : null;
+
+      return {
+        id: r.id,
+        date: formatDate(r.convertedAt || r.registeredAt),
+        customer: r.customerName,
+        plan: r.planName || (isPaid ? "Business" : "—"),
+        status: isPaid ? "Paid" : "Registered",
+        payment,
+        commission,
+        commissionStatus: commStatus,
+      };
+    });
+  }, [data?.referrals, partnerInfo.commissionRate]);
+
   const filteredReferrals = useMemo(() => {
-    if (filterTab === "All") return SAMPLE_REFERRAL_HISTORY;
-    return SAMPLE_REFERRAL_HISTORY.filter((r) => r.status === filterTab);
-  }, [filterTab]);
+    if (filterTab === "All") return realReferrals;
+    return realReferrals.filter((r) => r.status === filterTab);
+  }, [realReferrals, filterTab]);
+
+  const monthlyStats = useMemo(() => {
+    const months: {
+      month: string;
+      monthIndex: number;
+      year: number;
+      paid: number;
+      other: number;
+      total: number;
+    }[] = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        month: d.toLocaleDateString("en-US", { month: "short" }),
+        monthIndex: d.getMonth(),
+        year: d.getFullYear(),
+        paid: 0,
+        other: 0,
+        total: 0,
+      });
+    }
+
+    if (data?.referrals) {
+      for (const r of data.referrals) {
+        const d = new Date(r.registeredAt);
+        const match = months.find(
+          (m) => m.monthIndex === d.getMonth() && m.year === d.getFullYear(),
+        );
+        if (match) {
+          const isPaid =
+            r.status === "CONVERTED" ||
+            (r.totalSpentPaise && Number(r.totalSpentPaise) > 0);
+          if (isPaid) match.paid += 1;
+          else match.other += 1;
+          match.total += 1;
+        }
+      }
+    }
+
+    return months;
+  }, [data?.referrals]);
 
   if (loading) {
     return (
@@ -242,7 +273,8 @@ export default function PartnerDashboardPage() {
               Partner Account Suspended
             </p>
             <p className="mt-1 leading-relaxed text-amber-800">
-              Your partner account is temporarily suspended. Referral tracking is inactive and commission payouts are locked.
+              Your partner account is temporarily suspended. Referral tracking
+              is inactive and commission payouts are locked.
               {partnerInfo.suspensionReason && (
                 <span className="block mt-1 font-mono text-amber-900 font-semibold">
                   Reason: {partnerInfo.suspensionReason}
@@ -282,13 +314,13 @@ export default function PartnerDashboardPage() {
       {/* Top 2 Cards: Referral Code & Link + Commission Rate & Share */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Card: Blue/Indigo Gradient Referral Code & Link */}
-        <div className="lg:col-span-7 rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-6 sm:p-7 text-white shadow-sm relative overflow-hidden flex flex-col justify-between">
+        <div className="lg:col-span-7 rounded-2xl bg-linear-to-br from-blue-600 via-blue-700 to-indigo-700 p-6 sm:p-7 text-white shadow-sm relative overflow-hidden flex flex-col justify-between">
           {/* Subtle background glow circle */}
           <div className="absolute -right-12 -top-12 size-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
 
           <div>
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-blue-200">
+              <span className="font-mono text-ed-2xs font-bold uppercase tracking-wider text-blue-200">
                 YOUR REFERRAL CODE
               </span>
             </div>
@@ -318,7 +350,7 @@ export default function PartnerDashboardPage() {
             </div>
 
             <div className="mt-5">
-              <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-blue-200 block mb-2">
+              <span className="font-mono text-ed-2xs font-bold uppercase tracking-wider text-blue-200 block mb-2">
                 SHAREABLE REFERRAL LINK
               </span>
               <div className="flex items-center gap-2 p-1.5 pl-3.5 rounded-xl bg-black/20 border border-white/20 backdrop-blur-sm">
@@ -356,7 +388,7 @@ export default function PartnerDashboardPage() {
         {/* Right Card: Commission Rate & Quick Share */}
         <div className="lg:col-span-5 rounded-2xl bg-surface border border-line p-6 sm:p-7 shadow-xs flex flex-col justify-between">
           <div>
-            <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-ink-muted block mb-2">
+            <span className="font-mono text-ed-2xs font-bold uppercase tracking-wider text-ink-muted block mb-2">
               YOUR COMMISSION RATE
             </span>
 
@@ -365,13 +397,17 @@ export default function PartnerDashboardPage() {
                 {partnerInfo.commissionRate}%
               </span>
               <span className="text-xs sm:text-sm text-ink-muted font-medium">
-                of every paid transaction
+                {partnerInfo.effectiveCommissionPolicy === "EVERY_RENEWAL"
+                  ? "on every subscription renewal"
+                  : "on customer's first payment"}
               </span>
             </div>
 
             <div className="mt-3 flex items-center gap-1.5 text-xs text-ink-muted">
               <Lock className="size-3.5 text-ink-muted" />
-              <span>Set by [Your Brand]. Contact support to discuss changes.</span>
+              <span>
+                Set by [Your Brand]. Contact support to discuss changes.
+              </span>
             </div>
           </div>
 
@@ -402,30 +438,54 @@ export default function PartnerDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Total Referrals */}
         <div className="rounded-2xl bg-surface border border-line p-5 shadow-xs">
-          <p className="text-xs font-semibold text-ink-muted">Total referrals</p>
-          <p className="text-3xl font-bold text-ink mt-1.5">10</p>
-          <p className="text-[11px] text-ink-muted mt-1">Link clicks that signed up or started</p>
+          <p className="text-xs font-semibold text-ink-muted">
+            Total referrals
+          </p>
+          <p className="text-3xl font-bold text-ink mt-1.5">
+            {data?.stats?.totalReferrals ?? 0}
+          </p>
+          <p className="text-ed-2xs text-ink-muted mt-1">
+            Link clicks that signed up or started
+          </p>
         </div>
 
         {/* KPI 2: Registered Customers */}
         <div className="rounded-2xl bg-surface border border-line p-5 shadow-xs">
-          <p className="text-xs font-semibold text-ink-muted">Registered customers</p>
-          <p className="text-3xl font-bold text-ink mt-1.5">9</p>
-          <p className="text-[11px] text-ink-muted mt-1">Created an account</p>
+          <p className="text-xs font-semibold text-ink-muted">
+            Registered customers
+          </p>
+          <p className="text-3xl font-bold text-ink mt-1.5">
+            {data?.stats?.registeredCustomers ?? 0}
+          </p>
+          <p className="text-ed-2xs text-ink-muted mt-1">Created an account</p>
         </div>
 
         {/* KPI 3: Successful Conversions */}
         <div className="rounded-2xl bg-surface border border-line p-5 shadow-xs">
-          <p className="text-xs font-semibold text-ink-muted">Successful conversions</p>
-          <p className="text-3xl font-bold text-ink mt-1.5">7</p>
-          <p className="text-[11px] text-ink-muted mt-1">70% of referrals paid</p>
+          <p className="text-xs font-semibold text-ink-muted">
+            Successful conversions
+          </p>
+          <p className="text-3xl font-bold text-ink mt-1.5">
+            {data?.stats?.successfulConversions ?? 0}
+          </p>
+          <p className="text-ed-2xs text-ink-muted mt-1">
+            {data?.stats?.totalReferrals && data.stats.totalReferrals > 0
+              ? `${Math.round(((data.stats.successfulConversions ?? 0) / data.stats.totalReferrals) * 100)}% of referrals paid`
+              : "0% of referrals paid"}
+          </p>
         </div>
 
         {/* KPI 4: Total Earned Commission (Accent card) */}
         <div className="rounded-2xl bg-blue-50/70 border border-blue-200 p-5 shadow-xs">
-          <p className="text-xs font-semibold text-blue-900">Total earned commission</p>
-          <p className="text-3xl font-extrabold text-blue-600 mt-1.5">₹14,387</p>
-          <p className="text-[11px] text-blue-700/80 mt-1">At 15% of paid transactions</p>
+          <p className="text-xs font-semibold text-blue-900">
+            Total earned commission
+          </p>
+          <p className="text-3xl font-extrabold text-blue-600 mt-1.5">
+            {formatCurrency(Math.round((data?.stats?.totalEarnedPaise ?? 0) / 100))}
+          </p>
+          <p className="text-ed-2xs text-blue-700/80 mt-1">
+            At {partnerInfo.commissionRate}% of paid transactions
+          </p>
         </div>
       </div>
 
@@ -437,8 +497,12 @@ export default function PartnerDashboardPage() {
             <span className="size-2 rounded-full bg-amber-500" />
             Pending
           </div>
-          <p className="text-2xl font-bold text-ink mt-2">₹5,396</p>
-          <p className="text-[11px] text-ink-muted mt-1">In the 15-day refund window</p>
+          <p className="text-2xl font-bold text-ink mt-2">
+            {formatCurrency(Math.round((data?.stats?.pendingCommissionPaise ?? 0) / 100))}
+          </p>
+          <p className="text-ed-2xs text-ink-muted mt-1">
+            In the 15-day refund window
+          </p>
         </div>
 
         {/* Approved */}
@@ -447,8 +511,12 @@ export default function PartnerDashboardPage() {
             <span className="size-2 rounded-full bg-blue-500" />
             Approved
           </div>
-          <p className="text-2xl font-bold text-ink mt-2">₹2,696</p>
-          <p className="text-[11px] text-ink-muted mt-1">Will be paid on [10th of next month]</p>
+          <p className="text-2xl font-bold text-ink mt-2">
+            {formatCurrency(Math.round((data?.stats?.approvedCommissionPaise ?? 0) / 100))}
+          </p>
+          <p className="text-ed-2xs text-ink-muted mt-1">
+            Will be paid on [10th of next month]
+          </p>
         </div>
 
         {/* Paid */}
@@ -457,8 +525,12 @@ export default function PartnerDashboardPage() {
             <span className="size-2 rounded-full bg-emerald-500" />
             Paid
           </div>
-          <p className="text-2xl font-bold text-ink mt-2">₹6,295</p>
-          <p className="text-[11px] text-ink-muted mt-1">Sent to your bank account</p>
+          <p className="text-2xl font-bold text-ink mt-2">
+            {formatCurrency(Math.round((data?.stats?.paidCommissionPaise ?? 0) / 100))}
+          </p>
+          <p className="text-ed-2xs text-ink-muted mt-1">
+            Sent to your bank account
+          </p>
         </div>
       </div>
 
@@ -473,22 +545,23 @@ export default function PartnerDashboardPage() {
 
           {/* Bar Chart Area */}
           <div className="h-56 flex items-end justify-between gap-4 px-2 sm:px-6 pt-6 pb-2 border-b border-line">
-            {MONTHLY_STATS.map((stat) => {
-              const maxVal = 10;
-              const totalHeightPct = Math.round((stat.total / maxVal) * 100);
-              const paidHeightPct = Math.round((stat.paid / stat.total) * 100);
+            {monthlyStats.map((stat) => {
+              const maxVal = Math.max(1, ...monthlyStats.map((s) => s.total));
+              const totalHeightPct = stat.total > 0 ? Math.round((stat.total / maxVal) * 100) : 4;
+              const paidHeightPct = stat.total > 0 ? Math.round((stat.paid / stat.total) * 100) : 0;
 
               return (
-                <div key={stat.month} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+                <div
+                  key={stat.month}
+                  className="flex-1 flex flex-col items-center gap-2 h-full justify-end group"
+                >
                   <span className="text-xs font-semibold text-ink group-hover:text-brand transition-colors">
                     {stat.total}
                   </span>
                   <div
                     style={{ height: `${totalHeightPct}%` }}
-                    className="w-full max-w-[38px] rounded-t-md overflow-hidden flex flex-col justify-end bg-blue-100 transition-all group-hover:brightness-95"
+                    className="w-full max-w-9.5 rounded-t-md overflow-hidden flex flex-col justify-end bg-blue-100 transition-all group-hover:brightness-95"
                   >
-                    {/* Other referrals is the top light blue remainder */}
-                    {/* Paid customers is the bottom solid blue section */}
                     <div
                       style={{ height: `${paidHeightPct}%` }}
                       className="w-full bg-[#2447C7] rounded-t-xs"
@@ -525,10 +598,17 @@ export default function PartnerDashboardPage() {
               <div>
                 <div className="flex items-center justify-between text-xs mb-1.5">
                   <span className="text-ink font-medium">Referrals</span>
-                  <span className="text-ink font-bold font-mono">10</span>
+                  <span className="text-ink font-bold font-mono">
+                    {data?.stats?.totalReferrals ?? 0}
+                  </span>
                 </div>
                 <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand rounded-full w-full" />
+                  <div
+                    className="h-full bg-brand rounded-full"
+                    style={{
+                      width: (data?.stats?.totalReferrals ?? 0) > 0 ? "100%" : "0%",
+                    }}
+                  />
                 </div>
               </div>
 
@@ -536,10 +616,20 @@ export default function PartnerDashboardPage() {
               <div>
                 <div className="flex items-center justify-between text-xs mb-1.5">
                   <span className="text-ink font-medium">Registered</span>
-                  <span className="text-ink font-bold font-mono">9</span>
+                  <span className="text-ink font-bold font-mono">
+                    {data?.stats?.registeredCustomers ?? 0}
+                  </span>
                 </div>
                 <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand rounded-full w-[90%]" />
+                  <div
+                    className="h-full bg-brand rounded-full"
+                    style={{
+                      width:
+                        data?.stats?.totalReferrals && data.stats.totalReferrals > 0
+                          ? `${Math.round(((data.stats.registeredCustomers ?? 0) / data.stats.totalReferrals) * 100)}%`
+                          : "0%",
+                    }}
+                  />
                 </div>
               </div>
 
@@ -547,26 +637,48 @@ export default function PartnerDashboardPage() {
               <div>
                 <div className="flex items-center justify-between text-xs mb-1.5">
                   <span className="text-ink font-medium">Paid</span>
-                  <span className="text-ink font-bold font-mono">7</span>
+                  <span className="text-ink font-bold font-mono">
+                    {data?.stats?.successfulConversions ?? 0}
+                  </span>
                 </div>
                 <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand rounded-full w-[70%]" />
+                  <div
+                    className="h-full bg-brand rounded-full"
+                    style={{
+                      width:
+                        data?.stats?.totalReferrals && data.stats.totalReferrals > 0
+                          ? `${Math.round(((data.stats.successfulConversions ?? 0) / data.stats.totalReferrals) * 100)}%`
+                          : "0%",
+                    }}
+                  />
                 </div>
               </div>
             </div>
           </div>
 
           <p className="mt-6 text-xs text-ink-muted leading-relaxed">
-            Commission is earned only when a referred customer completes a payment.
+            Commission is earned only when a referred customer completes a
+            payment.
           </p>
         </div>
       </div>
 
       {/* Referral History Table */}
-      <div id="referrals" className="rounded-2xl bg-surface border border-line overflow-hidden shadow-xs">
+      <div
+        id="referrals"
+        className="rounded-2xl bg-surface border border-line overflow-hidden shadow-xs"
+      >
         {/* Table Header & Tabs */}
         <div className="p-5 sm:px-6 flex flex-wrap items-center justify-between gap-4 border-b border-line">
-          <h2 className="text-base font-bold text-ink">Referral history</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-base font-bold text-ink">Referral history</h2>
+            <Link
+              to="/partner/referrals"
+              className="text-xs font-semibold text-brand hover:underline inline-flex items-center gap-1"
+            >
+              Open Referrals Tab &rarr;
+            </Link>
+          </div>
 
           <div className="flex items-center gap-1 bg-canvas p-1 rounded-xl border border-line">
             {(["All", "Paid", "Registered", "Clicked"] as const).map((tab) => {
@@ -593,7 +705,7 @@ export default function PartnerDashboardPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-canvas/50 border-b border-line text-[11px] font-mono uppercase tracking-wider text-ink-muted">
+              <tr className="bg-canvas/50 border-b border-line text-ed-2xs font-mono uppercase tracking-wider text-ink-muted">
                 <th className="px-5 py-3.5 font-semibold">DATE</th>
                 <th className="px-5 py-3.5 font-semibold">CUSTOMER</th>
                 <th className="px-5 py-3.5 font-semibold">PLAN</th>
@@ -604,11 +716,21 @@ export default function PartnerDashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line text-xs">
-              {filteredReferrals.map((row) => {
+              {filteredReferrals.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-10 text-center text-ink-muted">
+                    No referrals recorded yet. Share your partner referral link or QR code to start tracking customers.
+                  </td>
+                </tr>
+              ) : (
+                filteredReferrals.map((row) => {
                 return (
-                  <tr key={row.id} className="hover:bg-canvas/40 transition-colors">
+                  <tr
+                    key={row.id}
+                    className="hover:bg-canvas/40 transition-colors"
+                  >
                     {/* Date */}
-                    <td className="px-5 py-3.5 text-ink-body font-mono text-[11px] whitespace-nowrap">
+                    <td className="px-5 py-3.5 text-ink-body font-mono text-ed-2xs whitespace-nowrap">
                       {row.date}
                     </td>
 
@@ -625,19 +747,19 @@ export default function PartnerDashboardPage() {
                     {/* Status */}
                     <td className="px-5 py-3.5 whitespace-nowrap">
                       {row.status === "Paid" && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-ed-2xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <span className="size-1.5 rounded-full bg-emerald-500" />
                           Paid
                         </span>
                       )}
                       {row.status === "Registered" && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-ed-2xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                           <span className="size-1.5 rounded-full bg-blue-500" />
                           Registered
                         </span>
                       )}
                       {row.status === "Clicked" && (
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-ed-2xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                           <span className="size-1.5 rounded-full bg-slate-400" />
                           Clicked
                         </span>
@@ -651,7 +773,9 @@ export default function PartnerDashboardPage() {
 
                     {/* Commission */}
                     <td className="px-5 py-3.5 text-ink font-semibold font-mono whitespace-nowrap">
-                      {row.commission !== null ? formatCurrency(row.commission) : "—"}
+                      {row.commission !== null
+                        ? formatCurrency(row.commission)
+                        : "—"}
                     </td>
 
                     {/* Commission Status */}
@@ -682,7 +806,7 @@ export default function PartnerDashboardPage() {
                     </td>
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

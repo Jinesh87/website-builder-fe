@@ -20,8 +20,10 @@ import { errorMessage } from "../../api/http.ts";
 import {
   adminPartnerApi,
   type PartnerAuditLogItem,
+  type PartnerCommissionPolicy,
   type PartnerDetail,
   type PartnerListResponse,
+  type PartnerProgramConfig,
   type PartnerStatus,
   type PartnerSummary,
 } from "../../api/partner.ts";
@@ -75,254 +77,6 @@ function formatDateTime(dateStr: string | null | undefined): string {
   const mins = String(d.getMinutes()).padStart(2, "0");
   return `${year}-${month}-${day} ${hours}:${mins}`;
 }
-
-const SAMPLE_PARTNERS: PartnerSummary[] = [
-  {
-    id: "demo-pa-147",
-    partnerNumber: 147,
-    applicationId: "PA-2026-00147",
-    companyName: "Nexa Digital Solutions",
-    city: "Kochi",
-    state: "Kerala",
-    contactName: "Anjali Menon",
-    email: "anjali@nexadigital.example.com",
-    phone: "+91 98470 12345",
-    partnershipType: "Agency Partner",
-    businessType: "Digital Agency",
-    status: "PENDING",
-    referralCode: null,
-    commissionRate: 15,
-    isCommissionActive: false,
-    totalReferrals: 0,
-    convertedReferrals: 0,
-    totalCommissionPaise: 0,
-    approvedAt: null,
-    createdAt: "2026-10-31T16:42:00.000Z",
-  },
-  {
-    id: "demo-pa-146",
-    partnerNumber: 146,
-    applicationId: "PA-2026-00146",
-    companyName: "BrightPath Consultancy",
-    city: "Bengaluru",
-    state: "Karnataka",
-    contactName: "Rahul Iyer",
-    email: "rahul@brightpath.example.com",
-    phone: "+91 98801 54321",
-    partnershipType: "Referral Partner",
-    businessType: "Consultancy",
-    status: "PENDING",
-    referralCode: null,
-    commissionRate: 15,
-    isCommissionActive: false,
-    totalReferrals: 0,
-    convertedReferrals: 0,
-    totalCommissionPaise: 0,
-    approvedAt: null,
-    createdAt: "2026-10-29T11:05:00.000Z",
-  },
-  {
-    id: "demo-pa-139",
-    partnerNumber: 139,
-    applicationId: "PA-2026-00139",
-    companyName: "Kerala Web Studio",
-    city: "Thiruvananthapuram",
-    state: "Kerala",
-    contactName: "Vivek Nair",
-    email: "vivek@keralawebstudio.example.com",
-    phone: "+91 94471 22334",
-    partnershipType: "Reseller Partner",
-    businessType: "IT Company",
-    status: "APPROVED",
-    referralCode: "KWS-7Q4M",
-    commissionRate: 15,
-    isCommissionActive: true,
-    totalReferrals: 12,
-    convertedReferrals: 8,
-    totalCommissionPaise: 1845000,
-    approvedAt: "2026-09-15T12:31:00.000Z",
-    createdAt: "2026-09-12T09:15:00.000Z",
-    lastCommissionChange: "15 Sept 2026 · Set to 15%",
-  },
-  {
-    id: "demo-pa-131",
-    partnerNumber: 131,
-    applicationId: "PA-2026-00131",
-    companyName: "Sunrise Edu Services",
-    city: "Coimbatore",
-    state: "Tamil Nadu",
-    contactName: "Deepa Raghavan",
-    email: "deepa@sunriseedu.example.com",
-    phone: "+91 98422 99887",
-    partnershipType: "Referral Partner",
-    businessType: "Education",
-    status: "APPROVED",
-    referralCode: "SES-2H8T",
-    commissionRate: 10,
-    isCommissionActive: true,
-    totalReferrals: 5,
-    convertedReferrals: 3,
-    totalCommissionPaise: 750000,
-    approvedAt: "2026-08-22T14:20:00.000Z",
-    createdAt: "2026-08-20T10:00:00.000Z",
-    lastCommissionChange: "01 Oct 2026 · 10% → 10% (eligibility re-enabled)",
-  },
-  {
-    id: "demo-pa-128",
-    partnerNumber: 128,
-    applicationId: "PA-2026-00128",
-    companyName: "Arun Prakash",
-    city: "Kozhikode",
-    state: "Kerala",
-    contactName: "Arun Prakash",
-    email: "arun.p@example.com",
-    phone: "+91 94950 33445",
-    partnershipType: "Affiliate",
-    businessType: "Individual",
-    status: "APPROVED",
-    referralCode: "ARP-9K3D",
-    commissionRate: 20,
-    isCommissionActive: true,
-    totalReferrals: 18,
-    convertedReferrals: 14,
-    totalCommissionPaise: 2950000,
-    approvedAt: "2026-08-07T11:45:00.000Z",
-    createdAt: "2026-08-05T15:30:00.000Z",
-    lastCommissionChange: "30 Sept 2026 · 15% → 20%",
-  },
-  {
-    id: "demo-pa-119",
-    partnerNumber: 119,
-    applicationId: "PA-2026-00119",
-    companyName: "Metro Growth Marketing",
-    city: "Pune",
-    state: "Maharashtra",
-    contactName: "Kiran Desai",
-    email: "kiran@metrogrowth.example.com",
-    phone: "+91 98230 77665",
-    partnershipType: "Agency Partner",
-    businessType: "Digital Agency",
-    status: "SUSPENDED",
-    referralCode: "MGM-5T1R",
-    commissionRate: 25,
-    isCommissionActive: false,
-    totalReferrals: 9,
-    convertedReferrals: 6,
-    totalCommissionPaise: 1200000,
-    approvedAt: "2026-07-14T16:00:00.000Z",
-    createdAt: "2026-07-10T11:20:00.000Z",
-    lastCommissionChange: "14 Jul 2026 · Set to 25%",
-  },
-  {
-    id: "demo-pa-112",
-    partnerNumber: 112,
-    applicationId: "PA-2026-00112",
-    companyName: "QuickLeads Hub",
-    city: "New Delhi",
-    state: "Delhi",
-    contactName: "Sameer Khan",
-    email: "sameer@quickleads.example.com",
-    phone: "+91 98110 44332",
-    partnershipType: "Affiliate",
-    businessType: "Other",
-    status: "REJECTED",
-    referralCode: null,
-    commissionRate: 15,
-    isCommissionActive: false,
-    totalReferrals: 0,
-    convertedReferrals: 0,
-    totalCommissionPaise: 0,
-    approvedAt: null,
-    createdAt: "2026-06-28T14:10:00.000Z",
-  },
-];
-
-const SAMPLE_AUDIT_LOGS: PartnerAuditLogItem[] = [
-  {
-    id: "log-1",
-    createdAt: "2026-10-31T16:42:00.000Z",
-    kind: "APPLIED",
-    body: "Partner application submitted",
-    actorName: "System",
-    partnerId: "demo-pa-147",
-    reference: "PA-2026-00147",
-    companyName: "Nexa Digital Solutions",
-    actionBadge: { label: "Application received", variant: "orange" },
-    details: "PA-2026-00147 · Nexa Digital Solutions",
-  },
-  {
-    id: "log-2",
-    createdAt: "2026-10-29T11:05:00.000Z",
-    kind: "APPLIED",
-    body: "Partner application submitted",
-    actorName: "System",
-    partnerId: "demo-pa-146",
-    reference: "PA-2026-00146",
-    companyName: "BrightPath Consultancy",
-    actionBadge: { label: "Application received", variant: "orange" },
-    details: "PA-2026-00146 · BrightPath Consultancy",
-  },
-  {
-    id: "log-3",
-    createdAt: "2026-10-18T10:20:00.000Z",
-    kind: "STATUS_CHANGED",
-    body: "Partner suspended. Multiple self-referrals detected in October.",
-    actorName: "Admin (Priya S.)",
-    partnerId: "demo-pa-119",
-    reference: "PA-2026-00119",
-    companyName: "Metro Growth Marketing",
-    actionBadge: { label: "Partner suspended", variant: "slate" },
-    details: "PA-2026-00119 · Metro Growth Marketing · Multiple self-referrals detected in October.",
-  },
-  {
-    id: "log-4",
-    createdAt: "2026-10-01T09:12:00.000Z",
-    kind: "COMMISSION_ELIGIBILITY_TOGGLED",
-    body: "Commission eligibility re-enabled",
-    actorName: "Admin (Priya S.)",
-    partnerId: "demo-pa-131",
-    reference: "PA-2026-00131",
-    companyName: "Sunrise Edu Services",
-    actionBadge: { label: "Commission eligibility enabled", variant: "blue" },
-    details: "PA-2026-00131 · Sunrise Edu Services",
-  },
-  {
-    id: "log-5",
-    createdAt: "2026-09-30T15:48:00.000Z",
-    kind: "COMMISSION_RATE_UPDATED",
-    body: "Commission changed 15% → 20%",
-    actorName: "Admin (Priya S.)",
-    partnerId: "demo-pa-128",
-    reference: "PA-2026-00128",
-    companyName: "Arun Prakash",
-    actionBadge: { label: "Commission changed 15% → 20%", variant: "blue" },
-    details: "PA-2026-00128 · Arun Prakash",
-  },
-  {
-    id: "log-6",
-    createdAt: "2026-09-15T12:31:00.000Z",
-    kind: "STATUS_CHANGED",
-    body: "Approved with code KWS-7Q4M",
-    actorName: "Admin (Priya S.)",
-    partnerId: "demo-pa-139",
-    reference: "PA-2026-00139",
-    companyName: "Kerala Web Studio",
-    actionBadge: { label: "Approved - code KWS-7Q4M - 15%", variant: "emerald" },
-    details: "PA-2026-00139 · Kerala Web Studio",
-  },
-  {
-    id: "log-7",
-    createdAt: "2026-06-30T10:02:00.000Z",
-    kind: "STATUS_CHANGED",
-    body: "Application rejected. Business details could not be verified.",
-    actorName: "Admin (Priya S.)",
-    partnerId: "demo-pa-112",
-    reference: "PA-2026-00112",
-    companyName: "QuickLeads Hub",
-    actionBadge: { label: "Application rejected", variant: "rose" },
-    details: "PA-2026-00112 · QuickLeads Hub · Business details could not be verified.",
-  },
-];
 
 function statusPill(status: PartnerStatus) {
   switch (status) {
@@ -421,6 +175,7 @@ export default function PartnersPage() {
   // Approve modal
   const [approvingPartner, setApprovingPartner] = useState<PartnerSummary | null>(null);
   const [approveCommission, setApproveCommission] = useState(15);
+  const [approvePolicy, setApprovePolicy] = useState<PartnerCommissionPolicy>("GLOBAL_DEFAULT");
   const [customCode, setCustomCode] = useState("");
   const [approvePassword, setApprovePassword] = useState("");
   const [isApproving, setIsApproving] = useState(false);
@@ -445,8 +200,14 @@ export default function PartnersPage() {
   // Adjust Commission modal
   const [editingCommissionPartner, setEditingCommissionPartner] = useState<PartnerSummary | null>(null);
   const [newCommissionRate, setNewCommissionRate] = useState(15);
+  const [newCommissionPolicy, setNewCommissionPolicy] = useState<PartnerCommissionPolicy>("GLOBAL_DEFAULT");
   const [isCommissionActive, setIsCommissionActive] = useState(true);
   const [isUpdatingCommission, setIsUpdatingCommission] = useState(false);
+
+  // Global Program Config
+  const [programConfig, setProgramConfig] = useState<PartnerProgramConfig | null>(null);
+  const [savingProgramConfig, setSavingProgramConfig] = useState(false);
+  const [programConfigSaved, setProgramConfigSaved] = useState(false);
 
   // Fetch partners list
   useEffect(() => {
@@ -502,49 +263,6 @@ export default function PartnersPage() {
       return;
     }
 
-    // Check if viewing demo record
-    const demo = SAMPLE_PARTNERS.find((p) => p.id === viewingId);
-    if (demo) {
-      setDetailData({
-        ...demo,
-        registrationNumber: demo.partnerNumber ? `REG-2026-${demo.partnerNumber}` : "REG-2026-001",
-        website: "https://example.com",
-        yearEstablished: "2021",
-        country: "India",
-        city: demo.city || "Kochi",
-        state: demo.state || "Kerala",
-        businessAddress: "Suite 402, Technology Tower, Infopark",
-        designation: "Managing Partner",
-        alternatePhone: null,
-        targetCategories: ["Digital Agency", "Ecommerce", "Corporate Portals"],
-        expectedReferrals: "6 - 15",
-        marketingChannels: ["Direct Client Referral", "LinkedIn", "Partner Network"],
-        reason:
-          "We develop premium client web projects and recommend this modern website builder engine to our business network.",
-        previousExperience: true,
-        rejectionReason: demo.status === "REJECTED" ? "Business details could not be verified." : null,
-        suspensionReason:
-          demo.status === "SUSPENDED" ? "Multiple self-referrals detected in October." : null,
-        approvedBy: demo.status === "APPROVED" ? "Admin (Priya S.)" : null,
-        rejectedAt: demo.status === "REJECTED" ? "2026-06-30T10:02:00.000Z" : null,
-        suspendedAt: demo.status === "SUSPENDED" ? "2026-10-18T10:20:00.000Z" : null,
-        userId: null,
-        activities: [
-          {
-            id: `act-${demo.id}`,
-            kind: demo.status === "APPROVED" ? "STATUS_CHANGED" : "APPLIED",
-            body:
-              demo.status === "APPROVED"
-                ? `Approved - code ${demo.referralCode} - ${demo.commissionRate}%`
-                : "Partner application submitted",
-            actorName: demo.status === "APPROVED" ? "Admin (Priya S.)" : "System",
-            createdAt: demo.createdAt,
-          },
-        ],
-      });
-      return;
-    }
-
     setLoadingDetail(true);
     adminPartnerApi
       .get(viewingId)
@@ -552,6 +270,29 @@ export default function PartnersPage() {
       .catch((err) => setError(errorMessage(err)))
       .finally(() => setLoadingDetail(false));
   }, [viewingId]);
+
+  // Fetch global partner program config
+  useEffect(() => {
+    adminPartnerApi
+      .getProgramConfig()
+      .then(setProgramConfig)
+      .catch(() => undefined);
+  }, [refreshKey]);
+
+  async function handleUpdateGlobalPolicy(policy: "FIRST_PAYMENT" | "EVERY_RENEWAL") {
+    setSavingProgramConfig(true);
+    try {
+      const res = await adminPartnerApi.updateProgramConfig({ defaultCommissionPolicy: policy });
+      setProgramConfig(res);
+      setProgramConfigSaved(true);
+      setTimeout(() => setProgramConfigSaved(false), 2500);
+      refresh();
+    } catch (err) {
+      alert(errorMessage(err));
+    } finally {
+      setSavingProgramConfig(false);
+    }
+  }
 
   function refresh() {
     setRefreshKey((k) => k + 1);
@@ -576,55 +317,25 @@ export default function PartnersPage() {
 
   // Merged partners list
   const displayPartners: PartnerSummary[] = useMemo(() => {
-    if (data && data.items && data.items.length > 0) {
-      return data.items;
-    }
-    return SAMPLE_PARTNERS.filter((p) => {
-      if (currentStatusFilter !== "ALL" && p.status !== currentStatusFilter) {
-        return false;
-      }
-      if (debouncedSearch) {
-        const q = debouncedSearch.toLowerCase();
-        return (
-          p.companyName.toLowerCase().includes(q) ||
-          p.contactName.toLowerCase().includes(q) ||
-          p.email.toLowerCase().includes(q) ||
-          (p.city && p.city.toLowerCase().includes(q)) ||
-          (p.referralCode && p.referralCode.toLowerCase().includes(q)) ||
-          p.applicationId.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [data, currentStatusFilter, debouncedSearch]);
+    return data?.items ?? [];
+  }, [data]);
 
   // Derived counts for tabs and KPI cards
   const counts = useMemo(() => {
-    if (data?.counts) {
-      return {
-        ALL: data.counts.ALL ?? displayPartners.length,
-        PENDING: data.counts.PENDING ?? 2,
-        APPROVED: data.counts.APPROVED ?? 3,
-        REJECTED: data.counts.REJECTED ?? 1,
-        SUSPENDED: data.counts.SUSPENDED ?? 1,
-        COMMISSIONS: data.counts.COMMISSIONS ?? 4,
-        AUDIT_LOGS: data.counts.AUDIT_LOGS ?? 7,
-      };
-    }
     return {
-      ALL: 7,
-      PENDING: 2,
-      APPROVED: 3,
-      REJECTED: 1,
-      SUSPENDED: 1,
-      COMMISSIONS: 4,
-      AUDIT_LOGS: 7,
+      ALL: data?.counts?.ALL ?? 0,
+      PENDING: data?.counts?.PENDING ?? 0,
+      APPROVED: data?.counts?.APPROVED ?? 0,
+      REJECTED: data?.counts?.REJECTED ?? 0,
+      SUSPENDED: data?.counts?.SUSPENDED ?? 0,
+      COMMISSIONS: data?.counts?.COMMISSIONS ?? 0,
+      AUDIT_LOGS: data?.counts?.AUDIT_LOGS ?? (auditLogsData?.length ?? 0),
     };
-  }, [data, displayPartners.length]);
+  }, [data, auditLogsData]);
 
   // Commission partners list
   const commissionPartners = useMemo(() => {
-    const base = (data && data.items && data.items.length > 0 ? data.items : SAMPLE_PARTNERS).filter(
+    const base = (data?.items ?? []).filter(
       (p) => p.status === "APPROVED" || p.status === "SUSPENDED" || p.referralCode,
     );
     if (debouncedSearch) {
@@ -640,20 +351,8 @@ export default function PartnersPage() {
 
   // Audit logs list
   const displayAuditLogs: PartnerAuditLogItem[] = useMemo(() => {
-    if (auditLogsData && auditLogsData.length > 0) {
-      return auditLogsData;
-    }
-    if (debouncedSearch) {
-      const q = debouncedSearch.toLowerCase();
-      return SAMPLE_AUDIT_LOGS.filter(
-        (l) =>
-          l.details.toLowerCase().includes(q) ||
-          l.actorName.toLowerCase().includes(q) ||
-          l.actionBadge.label.toLowerCase().includes(q),
-      );
-    }
-    return SAMPLE_AUDIT_LOGS;
-  }, [auditLogsData, debouncedSearch]);
+    return auditLogsData ?? [];
+  }, [auditLogsData]);
 
   // Handle Approve
   async function submitApprove() {
@@ -661,18 +360,15 @@ export default function PartnersPage() {
     setIsApproving(true);
     try {
       let inviteLink: string | undefined = undefined;
-      let generatedCode = customCode.trim() || approvingPartner.referralCode || "KWS-7Q4M";
-      if (!approvingPartner.id.startsWith("demo-")) {
-        const res = await adminPartnerApi.approve(approvingPartner.id, {
-          commissionRate: approveCommission,
-          customReferralCode: customCode.trim() || undefined,
-          temporaryPassword: approvePassword.trim() || undefined,
-        });
-        inviteLink = res.inviteLink;
-        if (res.referralCode) generatedCode = res.referralCode;
-      } else {
-        inviteLink = `${window.location.origin}/partner/set-password?token=demo-${approvingPartner.id}`;
-      }
+      let generatedCode = customCode.trim() || approvingPartner.referralCode || "";
+      const res = await adminPartnerApi.approve(approvingPartner.id, {
+        commissionRate: approveCommission,
+        commissionPolicy: approvePolicy,
+        customReferralCode: customCode.trim() || undefined,
+        temporaryPassword: approvePassword.trim() || undefined,
+      });
+      inviteLink = res.inviteLink;
+      if (res.referralCode) generatedCode = res.referralCode;
 
       setApprovedSuccess({
         partnerName: approvingPartner.companyName,
@@ -754,6 +450,7 @@ export default function PartnersPage() {
         await adminPartnerApi.updateCommission(editingCommissionPartner.id, {
           commissionRate: newCommissionRate,
           isCommissionActive,
+          commissionPolicy: newCommissionPolicy,
         });
       }
       setEditingCommissionPartner(null);
@@ -1062,15 +759,73 @@ export default function PartnersPage() {
       {/* ======================================================== */}
       {currentMainTab === "commission" && (
         <div className="space-y-6">
+          {/* Global Commission Policy Control Card */}
+          <div className="rounded-xl border border-line bg-surface p-5 shadow-xs">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="max-w-xl">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
+                    <Sliders className="size-4 text-brand" />
+                    Global Platform Commission Policy
+                  </h3>
+                  {programConfigSaved && (
+                    <span className="text-xs font-semibold text-emerald-600 animate-fade-in">
+                      ✓ Saved!
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-ink-muted leading-relaxed">
+                  Default commission rule applied to newly approved partners and any partner configured to use the global setting. Admin can still override rules for individual partners below.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="inline-flex rounded-lg border border-line bg-canvas p-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateGlobalPolicy("FIRST_PAYMENT")}
+                    disabled={savingProgramConfig}
+                    className={`px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
+                      (programConfig?.defaultCommissionPolicy ?? "FIRST_PAYMENT") === "FIRST_PAYMENT"
+                        ? "bg-surface text-ink font-semibold shadow-xs border border-line"
+                        : "text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    First payment only (One-Time)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateGlobalPolicy("EVERY_RENEWAL")}
+                    disabled={savingProgramConfig}
+                    className={`px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
+                      programConfig?.defaultCommissionPolicy === "EVERY_RENEWAL"
+                        ? "bg-surface text-ink font-semibold shadow-xs border border-line"
+                        : "text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    Every renewal (Recurring)
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 border-l border-line pl-3 text-xs">
+                  <span className="text-ink-muted">Default rate:</span>
+                  <span className="font-bold text-ink">
+                    {programConfig?.defaultCommissionRate ?? 15}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Blue Info Notice Banner */}
           <div className="rounded-xl border border-blue-200 bg-blue-50/80 px-4 py-3 text-xs text-blue-900 leading-relaxed font-medium">
-            Commission is calculated only on successfully paid customer transactions. Partners can't change their rate or code.
+            Commission is calculated only on successfully paid customer transactions. Partners can't change their rate, code, or payout policy.
           </div>
 
           {/* Commission Table */}
           <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[50rem]">
+              <table className="w-full text-left border-collapse min-w-[55rem]">
                 <thead>
                   <tr className="border-b border-line bg-canvas/60">
                     <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap">
@@ -1086,6 +841,9 @@ export default function PartnersPage() {
                       COMMISSION
                     </th>
                     <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap">
+                      POLICY
+                    </th>
+                    <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap">
                       ELIGIBLE
                     </th>
                     <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap">
@@ -1099,7 +857,7 @@ export default function PartnersPage() {
                 <tbody className="divide-y divide-line text-sm text-ink">
                   {commissionPartners.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-16 text-center text-ink-muted">
+                      <td colSpan={8} className="py-16 text-center text-ink-muted">
                         No partners with commission settings found.
                       </td>
                     </tr>
@@ -1128,6 +886,24 @@ export default function PartnersPage() {
                           <td className="px-5 py-3.5 text-base font-bold text-ink">
                             {partner.commissionRate}%
                           </td>
+                          <td className="px-5 py-3.5 whitespace-nowrap">
+                            {partner.commissionPolicy === "FIRST_PAYMENT" ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-blue-700 border border-blue-500/20">
+                                1st payment only
+                              </span>
+                            ) : partner.commissionPolicy === "EVERY_RENEWAL" ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                                Every renewal
+                              </span>
+                            ) : (
+                              <span
+                                className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-canvas text-ink-muted border border-line"
+                                title="Inherits platform global policy"
+                              >
+                                Global ({programConfig?.defaultCommissionPolicy === "EVERY_RENEWAL" ? "Renewal" : "1st pay"})
+                              </span>
+                            )}
+                          </td>
                           <td className="px-5 py-3.5">
                             {partner.isCommissionActive ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
@@ -1154,6 +930,7 @@ export default function PartnersPage() {
                                 setEditingCommissionPartner(partner);
                                 setNewCommissionRate(partner.commissionRate);
                                 setIsCommissionActive(partner.isCommissionActive);
+                                setNewCommissionPolicy(partner.commissionPolicy ?? "GLOBAL_DEFAULT");
                               }}
                               className="px-3.5 py-1.5 rounded-lg border border-line bg-surface hover:bg-canvas text-ink text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                             >
@@ -1402,6 +1179,7 @@ export default function PartnersPage() {
                       onClick={() => {
                         setApprovingPartner(detailData);
                         setApproveCommission(detailData.commissionRate || 15);
+                        setApprovePolicy(detailData.commissionPolicy ?? "GLOBAL_DEFAULT");
                       }}
                       className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
@@ -1425,6 +1203,7 @@ export default function PartnersPage() {
                         setEditingCommissionPartner(detailData);
                         setNewCommissionRate(detailData.commissionRate);
                         setIsCommissionActive(detailData.isCommissionActive);
+                        setNewCommissionPolicy(detailData.commissionPolicy ?? "GLOBAL_DEFAULT");
                       }}
                       className="px-3.5 py-2 rounded-lg border border-line bg-surface hover:bg-canvas text-ink text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
@@ -1455,6 +1234,7 @@ export default function PartnersPage() {
                         setEditingCommissionPartner(detailData);
                         setNewCommissionRate(detailData.commissionRate);
                         setIsCommissionActive(detailData.isCommissionActive);
+                        setNewCommissionPolicy(detailData.commissionPolicy ?? "GLOBAL_DEFAULT");
                       }}
                       className="px-3.5 py-2 rounded-lg border border-line bg-surface hover:bg-canvas text-ink text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
@@ -1508,6 +1288,62 @@ export default function PartnersPage() {
                     className="w-28 px-3 py-2 rounded-lg bg-surface border border-line text-ink font-semibold focus:outline-none focus:border-brand shadow-xs"
                   />
                   <span className="text-ink-muted">%</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-ink mb-1.5">
+                  Commission Policy (When does this partner earn?)
+                </label>
+                <div className="space-y-1.5">
+                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
+                    <input
+                      type="radio"
+                      name="approvePolicy"
+                      value="GLOBAL_DEFAULT"
+                      checked={approvePolicy === "GLOBAL_DEFAULT"}
+                      onChange={() => setApprovePolicy("GLOBAL_DEFAULT")}
+                      className="mt-0.5 text-brand"
+                    />
+                    <div>
+                      <div className="font-semibold text-ink text-xs">Use Global Default</div>
+                      <div className="text-[11px] text-ink-muted">
+                        Inherits platform rule ({programConfig?.defaultCommissionPolicy === "EVERY_RENEWAL" ? "Every renewal" : "First payment only"}).
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
+                    <input
+                      type="radio"
+                      name="approvePolicy"
+                      value="FIRST_PAYMENT"
+                      checked={approvePolicy === "FIRST_PAYMENT"}
+                      onChange={() => setApprovePolicy("FIRST_PAYMENT")}
+                      className="mt-0.5 text-brand"
+                    />
+                    <div>
+                      <div className="font-semibold text-ink text-xs">First Payment Only (One-Time)</div>
+                      <div className="text-[11px] text-ink-muted">
+                        Earns commission on customer's initial payment only.
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
+                    <input
+                      type="radio"
+                      name="approvePolicy"
+                      value="EVERY_RENEWAL"
+                      checked={approvePolicy === "EVERY_RENEWAL"}
+                      onChange={() => setApprovePolicy("EVERY_RENEWAL")}
+                      className="mt-0.5 text-brand"
+                    />
+                    <div>
+                      <div className="font-semibold text-ink text-xs">Every Subscription Renewal (Recurring)</div>
+                      <div className="text-[11px] text-ink-muted">
+                        Earns on initial payment and every recurring subscription renewal.
+                      </div>
+                    </div>
+                  </label>
                 </div>
               </div>
 
@@ -1758,6 +1594,62 @@ export default function PartnersPage() {
                     className="w-28 px-3 py-2 rounded-lg bg-surface border border-line text-ink font-semibold focus:outline-none focus:border-brand shadow-xs"
                   />
                   <span className="text-ink-muted">%</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-ink mb-1.5">
+                  Commission Policy (When does this partner earn?)
+                </label>
+                <div className="space-y-1.5">
+                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
+                    <input
+                      type="radio"
+                      name="editCommissionPolicy"
+                      value="GLOBAL_DEFAULT"
+                      checked={newCommissionPolicy === "GLOBAL_DEFAULT"}
+                      onChange={() => setNewCommissionPolicy("GLOBAL_DEFAULT")}
+                      className="mt-0.5 text-brand"
+                    />
+                    <div>
+                      <div className="font-semibold text-ink text-xs">Use Global Default</div>
+                      <div className="text-[11px] text-ink-muted">
+                        Inherits platform rule ({programConfig?.defaultCommissionPolicy === "EVERY_RENEWAL" ? "Every renewal" : "First payment only"}).
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
+                    <input
+                      type="radio"
+                      name="editCommissionPolicy"
+                      value="FIRST_PAYMENT"
+                      checked={newCommissionPolicy === "FIRST_PAYMENT"}
+                      onChange={() => setNewCommissionPolicy("FIRST_PAYMENT")}
+                      className="mt-0.5 text-brand"
+                    />
+                    <div>
+                      <div className="font-semibold text-ink text-xs">First Payment Only (One-Time)</div>
+                      <div className="text-[11px] text-ink-muted">
+                        Earns commission on customer's initial payment only.
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
+                    <input
+                      type="radio"
+                      name="editCommissionPolicy"
+                      value="EVERY_RENEWAL"
+                      checked={newCommissionPolicy === "EVERY_RENEWAL"}
+                      onChange={() => setNewCommissionPolicy("EVERY_RENEWAL")}
+                      className="mt-0.5 text-brand"
+                    />
+                    <div>
+                      <div className="font-semibold text-ink text-xs">Every Subscription Renewal (Recurring)</div>
+                      <div className="text-[11px] text-ink-muted">
+                        Earns on initial payment and every recurring subscription renewal.
+                      </div>
+                    </div>
+                  </label>
                 </div>
               </div>
 
