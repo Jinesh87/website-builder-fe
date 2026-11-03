@@ -115,11 +115,11 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
               <span className="text-ed-muted font-normal">Page:</span>
               <span className="font-semibold text-ed-text max-w-28 truncate">{page.name}</span>
               {blogArticleTitle ? (
-                <span className="hidden sm:inline-flex items-center gap-1 rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-indigo-600 dark:text-indigo-400 max-w-48 truncate">
+                <span className="hidden sm:inline-flex items-center gap-1 rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-indigo-600 max-w-48 truncate">
                   Blog: “{blogArticleTitle}”
                 </span>
               ) : isBlogPage ? (
-                <span className="hidden sm:inline-flex items-center rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-indigo-600 dark:text-indigo-400">
+                <span className="hidden sm:inline-flex items-center rounded bg-indigo-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-indigo-600">
                   Blog
                 </span>
               ) : null}
@@ -157,7 +157,7 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
                             <span className="truncate">{p.name}</span>
                           </div>
                           {pBlogTitle && (
-                            <p className="truncate text-[10.5px] text-indigo-600 dark:text-indigo-400 pl-5 font-normal">
+                            <p className="truncate text-[10.5px] text-indigo-600 pl-5 font-normal">
                               “{pBlogTitle}”
                             </p>
                           )}

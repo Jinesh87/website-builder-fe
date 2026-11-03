@@ -1769,35 +1769,91 @@ em, i {
 .wb-hero-floating-cards .wb-hero-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
 }
-.wb-hero-floating-cards .wb-floating-card-wrap { display: block; padding: 28px 0 28px 28px; }
+.wb-hero-floating-cards .wb-floating-card-wrap { display: block; padding: 28px 0 28px 28px; position: relative; }
 .wb-hero-floating-cards .wb-floating-card-wrap img {
   aspect-ratio: 4 / 5; max-height: 600px; box-shadow: 0 30px 60px -24px rgb(15 23 42 / 0.35);
 }
 .wb-hero-floating-cards-list { list-style: none; margin: 0; padding: 0; }
 .wb-hero-floating-card {
-  position: absolute; display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-  max-width: 260px; border-radius: calc(var(--wb-radius) + 4px);
-  background: color-mix(in srgb, var(--wb-bg) 92%, transparent);
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px 12px 14px;
+  max-width: 360px;
+  min-width: 240px;
+  width: max-content;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--wb-surface, #ffffff) 96%, var(--wb-bg));
   border: 1px solid color-mix(in srgb, var(--wb-text) 8%, transparent);
-  box-shadow: 0 18px 40px -14px rgb(15 23 42 / 0.3);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  color: var(--wb-text); z-index: 2;
+  box-shadow: 0 18px 36px -10px rgba(15, 23, 42, 0.16), 0 4px 12px -2px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--wb-text);
+  z-index: 2;
   animation: wbHeroCardFloat 6s ease-in-out infinite;
+  box-sizing: border-box;
 }
-.wb-hero-floating-card-1 { top: 10%; left: 0; }
-.wb-hero-floating-card-2 { top: 46%; right: -16px; animation-delay: -2s; }
-.wb-hero-floating-card-3 { bottom: 4%; left: 8%; animation-delay: -4s; }
+.wb-hero-floating-card-1 { top: 8%; left: -20px; }
+.wb-hero-floating-card-2 { top: 48%; right: -24px; animation-delay: -2s; }
+.wb-hero-floating-card-3 { bottom: 6%; left: -8px; animation-delay: -4s; }
 .wb-hero-floating-card-icon {
-  display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%;
-  background: color-mix(in srgb, var(--wb-primary) 14%, transparent); color: var(--wb-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--wb-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--wb-primary) 18%, transparent);
+  color: var(--wb-primary);
 }
-.wb-hero-floating-card-icon svg { width: 18px; height: 18px; }
-.wb-hero-floating-card-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.wb-hero-floating-card-text strong { font-size: 15px; font-weight: 700; }
-.wb-hero-floating-card-text span { font-size: 12.5px; color: var(--wb-muted); }
+.wb-hero-floating-card-icon svg { width: 20px; height: 20px; stroke-width: 2; }
+.wb-hero-floating-card-icon img { width: 22px; height: 22px; object-fit: contain; }
+.wb-hero-floating-card-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  gap: 2px;
+  flex: 1 1 auto;
+}
+.wb-hero-floating-card-text strong {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--wb-text);
+  letter-spacing: -0.01em;
+  white-space: normal;
+  word-break: keep-all;
+}
+.wb-hero-floating-card-text span {
+  font-size: 11.5px;
+  color: var(--wb-muted);
+  line-height: 1.35;
+  font-weight: 400;
+  white-space: normal;
+}
 .wb-hero-floating-card-badge {
-  padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
-  background: var(--wb-primary); color: var(--wb-on-primary, #ffffff);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  white-space: nowrap !important;
+  align-self: center;
+  margin-left: auto;
+  padding: 5px 11px;
+  border-radius: 9999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  background: var(--wb-primary);
+  color: var(--wb-on-primary, #ffffff);
+  box-shadow: 0 2px 6px -1px color-mix(in srgb, var(--wb-primary) 40%, transparent);
 }
 @keyframes wbHeroCardFloat {
   0%, 100% { transform: translateY(0); }

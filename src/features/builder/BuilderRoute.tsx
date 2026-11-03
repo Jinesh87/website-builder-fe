@@ -36,7 +36,7 @@ export default function BuilderRoute() {
     ])
       .then(([website, themes, savedSections]) => {
         if (cancelled) return;
-        if (website.draft.pages.length === 0) {
+        if (!website?.draft?.pages || website.draft.pages.length === 0) {
           setState({ status: "error", message: "This website has no pages to edit.", notFound: false });
           return;
         }

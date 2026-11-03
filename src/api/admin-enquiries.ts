@@ -6,6 +6,8 @@ export type EnquiryActivityKind = "NOTE" | "REPLY_SENT" | "STATUS_CHANGED" | "EM
 
 export type Enquiry = {
   id: string;
+  enquiryNumber?: number;
+  referenceId?: string;
   name: string;
   email: string;
   phone: string | null;

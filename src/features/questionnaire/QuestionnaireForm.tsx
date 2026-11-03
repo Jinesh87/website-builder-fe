@@ -9,6 +9,7 @@ import { Spinner } from "@heroui/react";
 import {
   Check,
   CheckCircle2,
+  Copy,
   Lock,
   Mail,
   MapPin,
@@ -218,6 +219,8 @@ export default function QuestionnaireForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedRefId, setSubmittedRefId] = useState<string | null>(null);
+  const [copiedRefId, setCopiedRefId] = useState(false);
   const [emailDispatched, setEmailDispatched] = useState(false);
 
   // Uploads go to the client's media library, so themes, templates and files need a client account.
@@ -459,6 +462,7 @@ export default function QuestionnaireForm({
       });
       clearSavedDraft();
       setEmailDispatched(res.emailDispatched);
+      setSubmittedRefId(res.referenceId || null);
       setSubmitted(true);
       if (onSuccess) {
         onSuccess(res.id);
@@ -509,6 +513,47 @@ export default function QuestionnaireForm({
             .
           </p>
         )}
+        {submittedRefId && (
+          <div
+            className={`my-6 mx-auto max-w-sm rounded-xl p-4 border flex items-center justify-between ${
+              theme === "dark"
+                ? "bg-slate-800/80 border-slate-700 text-white"
+                : "bg-slate-50 border-slate-200 text-ink"
+            }`}
+          >
+            <div className="text-left">
+              <div
+                className={`text-[11px] uppercase tracking-wider font-semibold ${
+                  theme === "dark" ? "text-slate-400" : "text-slate-500"
+                }`}
+              >
+                Your Reference ID
+              </div>
+              <div className="font-mono text-xl font-bold text-brand">
+                {submittedRefId}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(submittedRefId);
+                setCopiedRefId(true);
+                setTimeout(() => setCopiedRefId(false), 2000);
+              }}
+              className="px-3 py-1.5 rounded-lg bg-surface hover:bg-canvas text-ink border border-line text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              {copiedRefId ? (
+                <>
+                  <Check className="size-3.5 text-emerald-500" /> Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="size-3.5" /> Copy
+                </>
+              )}
+            </button>
+          </div>
+        )}
         <div className="mt-8 flex justify-center gap-4">
           <button
             type="button"
@@ -522,6 +567,8 @@ export default function QuestionnaireForm({
               setErrors({});
               setSubmitError(null);
               setEmailDispatched(false);
+              setSubmittedRefId(null);
+              setCopiedRefId(false);
               setSubmitted(false);
             }}
             className="rounded-xl bg-brand px-6 py-3 font-semibold text-white shadow-lg hover:bg-brand-hover transition-colors"

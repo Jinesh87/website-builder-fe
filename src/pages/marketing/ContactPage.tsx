@@ -76,7 +76,7 @@ export default function ContactPage() {
 
     try {
       setSubmitting(true);
-      const { emailDispatched } = await request<{ ok: boolean; message: string; emailDispatched: boolean }>("/contact", {
+      const { emailDispatched, referenceId } = await request<{ ok: boolean; message: string; emailDispatched: boolean; referenceId?: string }>("/contact", {
         method: "POST",
         body: {
           name: form.name.trim(),
@@ -89,10 +89,11 @@ export default function ContactPage() {
 
       const firstName = form.name.trim().split(" ")[0];
       const replyNote = `We will get back to you at ${form.email.trim()} within 2–4 hours.`;
+      const refNote = referenceId ? ` (Reference ID: ${referenceId})` : "";
       setSent(
         emailDispatched
-          ? `Thank you, ${firstName}! Your inquiry was delivered directly to support@bytezoracoders.com. ${replyNote}`
-          : `Thank you, ${firstName}! Your inquiry has been received. ${replyNote}`,
+          ? `Thank you, ${firstName}! Your inquiry${refNote} was delivered directly to our support team. ${replyNote}`
+          : `Thank you, ${firstName}! Your inquiry${refNote} has been received. ${replyNote}`,
       );
       toast(emailDispatched ? "Inquiry sent to support@bytezoracoders.com" : "Inquiry received");
       setForm(EMPTY_FORM);

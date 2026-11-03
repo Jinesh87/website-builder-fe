@@ -20,8 +20,10 @@ export function RequireAuth({ roles }: { roles?: UserRole[] }) {
 
   if (loading) return <FullPageSpinner />;
   if (!user) {
+    const isPartnerRoute = location.pathname.startsWith("/partner");
+    const loginTarget = isPartnerRoute ? "/partner/login" : "/login";
     const state: RedirectState = { from: `${location.pathname}${location.search}` };
-    return <Navigate to="/login" replace state={state} />;
+    return <Navigate to={loginTarget} replace state={state} />;
   }
   if (roles && !roles.includes(user.role)) return <Navigate to={homeForRole(user)} replace />;
   return <Outlet />;
@@ -36,6 +38,14 @@ export function GuestOnly() {
   const location = useLocation();
   if (loading) return <FullPageSpinner />;
   if (user) {
+    if (location.pathname === "/partner/login") {
+      if (user.role === "PARTNER") {
+        return <Navigate to="/partner/dashboard" replace />;
+      }
+      // If a non-partner (e.g. CLIENT) visits /partner/login, allow them to view the page
+      // so they can log in with a partner account instead of being bounced to /dashboard.
+      return <Outlet />;
+    }
     const from = (location.state as RedirectState | null)?.from;
     return <Navigate to={from ?? homeForRole(user)} replace />;
   }

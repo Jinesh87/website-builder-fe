@@ -77,9 +77,7 @@ const TD = "px-3 py-3.5 align-top first:pl-5 last:pr-5";
 
 function tabFromParam(value: string | null): Tab {
   const status = value?.toUpperCase();
-  return (
-    QUESTIONNAIRE_STATUSES.find((option) => option === status) ?? "ALL"
-  );
+  return QUESTIONNAIRE_STATUSES.find((option) => option === status) ?? "ALL";
 }
 
 export default function QuestionnairesPage() {
@@ -99,7 +97,9 @@ export default function QuestionnairesPage() {
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Questionnaire | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<Questionnaire | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Questionnaire | null>(
+    null,
+  );
   const [deleting, setDeleting] = useState(false);
   const latestRequest = useRef(0);
 
@@ -115,7 +115,11 @@ export default function QuestionnairesPage() {
         pageSize,
       })
       .then((result) => requestId === latestRequest.current && setData(result))
-      .catch((err: unknown) => requestId === latestRequest.current && setLoadError(errorMessage(err)))
+      .catch(
+        (err: unknown) =>
+          requestId === latestRequest.current &&
+          setLoadError(errorMessage(err)),
+      )
       .finally(() => requestId === latestRequest.current && setLoading(false));
   }, [debouncedSearch, tab, page, pageSize, refreshKey]);
 
@@ -160,7 +164,8 @@ export default function QuestionnairesPage() {
     try {
       const updated = await action();
       handleChanged(updated);
-      if (success) setFeedback({ status: "success", message: success(updated) });
+      if (success)
+        setFeedback({ status: "success", message: success(updated) });
     } catch (err) {
       setFeedback({ status: "danger", message: errorMessage(err) });
     } finally {
@@ -186,7 +191,9 @@ export default function QuestionnairesPage() {
 
   function handleBuildWebsite(item: Questionnaire) {
     const clientIdParam = item.clientId ? `&clientId=${item.clientId}` : "";
-    navigate(`/websites/new?mode=ai${clientIdParam}&questionnaireId=${item.id}`);
+    navigate(
+      `/websites/new?mode=ai${clientIdParam}&questionnaireId=${item.id}`,
+    );
   }
 
   async function confirmDelete() {
@@ -287,7 +294,7 @@ export default function QuestionnairesPage() {
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search business, name, email or phone" />
+            <SearchField.Input placeholder="Search ID (e.g. QST-1), business, name, email or phone" />
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
@@ -315,7 +322,9 @@ export default function QuestionnairesPage() {
             <span className="mx-auto grid size-12 place-items-center rounded-full bg-brand-soft text-brand">
               <ClipboardList className="size-6" aria-hidden />
             </span>
-            <h2 className="mt-4 text-base font-semibold text-ink">{empty.title}</h2>
+            <h2 className="mt-4 text-base font-semibold text-ink">
+              {empty.title}
+            </h2>
             <p className="mt-1 text-sm text-ink-body">{empty.text}</p>
           </div>
         ) : (
@@ -324,12 +333,27 @@ export default function QuestionnairesPage() {
               <table className="w-full min-w-[62rem] text-left text-sm">
                 <thead className="border-b border-line bg-canvas/60 text-xs text-ink-muted">
                   <tr>
-                    <th scope="col" className={TH}>Business &amp; Client</th>
-                    <th scope="col" className={TH}>Type &amp; Pages</th>
-                    <th scope="col" className={TH}>Look &amp; Style</th>
-                    <th scope="col" className={TH}>Status</th>
-                    <th scope="col" className={TH}>Submitted</th>
-                    <th scope="col" className={`${TH} text-right`}>Actions</th>
+                    <th scope="col" className={`${TH} w-[10%]`}>
+                      ID
+                    </th>
+                    <th scope="col" className={TH}>
+                      Business &amp; Client
+                    </th>
+                    <th scope="col" className={TH}>
+                      Type &amp; Pages
+                    </th>
+                    <th scope="col" className={TH}>
+                      Look &amp; Style
+                    </th>
+                    <th scope="col" className={TH}>
+                      Status
+                    </th>
+                    <th scope="col" className={TH}>
+                      Submitted
+                    </th>
+                    <th scope="col" className={`${TH} text-right`}>
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -398,9 +422,9 @@ export default function QuestionnairesPage() {
         onConfirm={confirmDelete}
         onCancel={() => setPendingDelete(null)}
       >
-        The brief, its answers, and its activity history will be permanently deleted.
-        To keep it out of the active list without losing it, consider marking it as
-        Spam or Done instead.
+        The brief, its answers, and its activity history will be permanently
+        deleted. To keep it out of the active list without losing it, consider
+        marking it as Spam or Done instead.
       </ConfirmDialog>
     </div>
   );
@@ -427,6 +451,14 @@ function QuestionnaireRow({
 
   return (
     <tr className={unread ? "bg-brand-soft/25" : "hover:bg-canvas/40"}>
+      <td className={`${TD} whitespace-nowrap`}>
+        <span className="font-mono text-xs font-semibold text-brand bg-brand/10 border border-brand/20 px-2 py-0.5 rounded inline-block">
+          {questionnaire.referenceId ||
+            (questionnaire.questionnaireNumber
+              ? `QST-${questionnaire.questionnaireNumber}`
+              : "—")}
+        </span>
+      </td>
       <td className={TD}>
         <div className="flex min-w-36 items-start gap-2.5">
           <span
@@ -467,7 +499,10 @@ function QuestionnaireRow({
             {answers?.businessType}
           </span>
           {answers?.pages && answers.pages.length > 0 && (
-            <p className="line-clamp-2 text-xs text-ink-muted" title={answers.pages.join(", ")}>
+            <p
+              className="line-clamp-2 text-xs text-ink-muted"
+              title={answers.pages.join(", ")}
+            >
               {answers.pages.slice(0, 3).join(", ")}
               {answers.pages.length > 3 && ` +${answers.pages.length - 3} more`}
             </p>
@@ -495,7 +530,8 @@ function QuestionnaireRow({
             className="mt-1.5 flex items-center gap-1 text-xs whitespace-nowrap text-amber-700"
             title={formatEmailDeliveryError(questionnaire.emailError)}
           >
-            <MailWarning className="size-3.5 shrink-0" aria-hidden /> Email not sent
+            <MailWarning className="size-3.5 shrink-0" aria-hidden /> Email not
+            sent
           </p>
         )}
       </td>
@@ -528,7 +564,11 @@ function QuestionnaireRow({
           >
             <Plus className="size-4" aria-hidden /> Build
           </Button>
-          <RowMenu questionnaire={questionnaire} busy={busy} onAction={onAction} />
+          <RowMenu
+            questionnaire={questionnaire}
+            busy={busy}
+            onAction={onAction}
+          />
         </div>
       </td>
     </tr>

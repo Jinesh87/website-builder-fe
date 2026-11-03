@@ -350,6 +350,9 @@ export type HeroFloatingCard = {
   subtitle?: string;
   badge?: string;
   icon?: string;
+  iconImage?: ImageRef;
+  hidden?: boolean;
+  slot?: number;
 };
 
 export type HeroRating = {
@@ -453,6 +456,7 @@ export type HeroData = {
   bottomShape?: "none" | "wave" | "curve" | "curved" | "slant" | "tilt" | "arch" | "normal";
   rating?: HeroRating;
   floatingCards?: HeroFloatingCard[];
+  showFloatingCards?: boolean;
   trustedBy?: HeroTrustedBy;
   carouselSpeed?: number;
   carouselDirection?: "left-to-right" | "right-to-left";

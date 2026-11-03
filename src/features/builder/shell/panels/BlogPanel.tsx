@@ -669,7 +669,7 @@ export default function BlogPanel() {
                   className="flex items-start gap-3 p-2.5 text-left cursor-pointer"
                 >
                   {/* Thumbnail */}
-                  <div className="relative size-14 shrink-0 rounded-ed overflow-hidden bg-zinc-200 dark:bg-zinc-800 border border-ed-border">
+                  <div className="relative size-14 shrink-0 rounded-ed overflow-hidden bg-zinc-200 border border-ed-border">
                     <img src={coverImage} alt="" className="size-full object-cover" />
                     {isActive && (
                       <span className="absolute inset-0 bg-ed-accent/20 flex items-center justify-center">

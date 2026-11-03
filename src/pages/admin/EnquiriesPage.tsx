@@ -204,7 +204,7 @@ export default function EnquiriesPage() {
         >
           <SearchField.Group>
             <SearchField.SearchIcon />
-            <SearchField.Input placeholder="Search name, email, phone or message" />
+            <SearchField.Input placeholder="Search ID (e.g. ENQ-1), name, email, phone or message" />
             <SearchField.ClearButton />
           </SearchField.Group>
         </SearchField>
@@ -241,6 +241,7 @@ export default function EnquiriesPage() {
               <table className="w-full min-w-[58rem] text-left text-sm">
                 <thead className="border-b border-line bg-canvas/60 text-xs text-ink-muted">
                   <tr>
+                    <th scope="col" className={TH}>ID</th>
                     <th scope="col" className={TH}>Name</th>
                     <th scope="col" className={TH}>Email</th>
                     <th scope="col" className={TH}>Phone</th>
@@ -337,10 +338,15 @@ function EnquiryRow({
 
   return (
     <tr className={unread ? "bg-brand-soft/25" : "hover:bg-canvas/40"}>
+      <td className={`${TD} whitespace-nowrap`}>
+        <span className="font-mono text-xs font-semibold text-brand bg-brand/10 border border-brand/20 px-2 py-0.5 rounded inline-block">
+          {enquiry.referenceId || `ENQ-${enquiry.enquiryNumber || ""}`}
+        </span>
+      </td>
       <td className={TD}>
         <div className="flex min-w-28 items-start gap-2">
           <span className={`mt-1.5 size-2 shrink-0 rounded-full ${unread ? "bg-brand" : "bg-transparent"}`} aria-hidden />
-          <div className="min-w-0 max-w-48">
+          <div className="min-w-0 max-w-48 space-y-0.5">
             <p className={`break-words ${strong}`}>
               {enquiry.name}
               {unread && <span className="sr-only"> (unread)</span>}
