@@ -14,6 +14,7 @@ import {
   type ShopCustomerAddress,
   type ShopCustomerAddressInput,
   type ShopOrderDetail,
+  type ShopOrderShippingAddress,
   type ShopOrderSummary,
 } from "../shop-auth.ts";
 import { formatInr, useShopCatalog } from "../shop-catalog.tsx";
@@ -196,7 +197,7 @@ const EMPTY_ADDRESS: ShopCustomerAddressInput = {
   isDefault: false,
 };
 
-function formatAddressLines(address: ShopCustomerAddress): string {
+function formatAddressLines(address: ShopOrderShippingAddress): string {
   return [address.line1, address.line2, `${address.city}, ${address.state} ${address.postalCode}`, address.country]
     .filter(Boolean)
     .join(", ");
