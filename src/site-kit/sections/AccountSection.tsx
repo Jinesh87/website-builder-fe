@@ -11,6 +11,8 @@ import {
   type ShopAuthError,
   type ShopCartItemSummary,
   type ShopCustomerAccount,
+  type ShopCustomerAddress,
+  type ShopCustomerAddressInput,
   type ShopOrderDetail,
   type ShopOrderSummary,
 } from "../shop-auth.ts";
@@ -74,7 +76,7 @@ function trackingStepClass(
  * member view is filled with sample data so every template can be styled before anyone signs in.
  */
 
-type Panel = "orders" | "cart" | "profile" | "password";
+type Panel = "orders" | "cart" | "profile" | "addresses" | "password";
 
 /** Templates that switch between panels; the others stack every panel on one screen. */
 const TABBED: Record<AccountVariant, boolean> = {
@@ -104,6 +106,36 @@ const SAMPLE: ShopCustomerAccount = {
     { id: "c1", productId: "p1", variantId: "v1", productName: "Everyday tee", variantName: "M / Blue", quantity: 2, pricePaise: 99900 },
     { id: "c2", productId: "p2", variantId: "v2", productName: "Canvas tote", variantName: "Natural", quantity: 1, pricePaise: 59900 },
   ],
+  addresses: [
+    {
+      id: "a1",
+      label: "Home",
+      fullName: "Asha Menon",
+      phone: "+91 98765 43210",
+      line1: "14 Lotus Lane",
+      line2: "Apartment 3B",
+      city: "Bengaluru",
+      state: "Karnataka",
+      postalCode: "560001",
+      country: "IN",
+      isDefault: true,
+      updatedAt: "2026-10-01T10:00:00.000Z",
+    },
+    {
+      id: "a2",
+      label: "Office",
+      fullName: "Asha Menon",
+      phone: "+91 98765 43210",
+      line1: "42 MG Road",
+      line2: null,
+      city: "Bengaluru",
+      state: "Karnataka",
+      postalCode: "560025",
+      country: "IN",
+      isDefault: false,
+      updatedAt: "2026-09-12T10:00:00.000Z",
+    },
+  ],
 };
 
 const SAMPLE_ORDER_DETAIL: ShopOrderDetail = {
@@ -128,15 +160,36 @@ const LABELS = {
   orders: "Orders",
   cart: "Cart",
   profile: "Profile",
+  addresses: "Addresses",
   password: "Password",
   logout: "Log out",
   save: "Save changes",
   emptyOrders: "You haven't placed any orders yet.",
   emptyCart: "Your cart is empty.",
+  emptyAddresses: "No saved addresses yet.",
   guestHeading: "Sign in to see your account",
   guestText: "Your orders, cart and profile details are only shown to signed-in customers.",
   guestButton: "Log in",
 };
+
+const EMPTY_ADDRESS: ShopCustomerAddressInput = {
+  label: "",
+  fullName: "",
+  phone: "",
+  line1: "",
+  line2: "",
+  city: "",
+  state: "",
+  postalCode: "",
+  country: "IN",
+  isDefault: false,
+};
+
+function formatAddressLines(address: ShopCustomerAddress): string {
+  return [address.line1, address.line2, `${address.city}, ${address.state} ${address.postalCode}`, address.country]
+    .filter(Boolean)
+    .join(", ");
+}
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -155,6 +208,7 @@ function panelsOf(data: AccountData): Panel[] {
       data.showOrders !== false ? "orders" : null,
       data.showCart !== false ? "cart" : null,
       data.showProfile !== false ? "profile" : null,
+      data.showAddresses !== false ? "addresses" : null,
       data.showPassword !== false ? "password" : null,
     ] as Array<Panel | null>
   ).filter((panel): panel is Panel => panel !== null);
@@ -168,6 +222,8 @@ function labelOf(data: AccountData, panel: Panel): string {
       return data.cartLabel?.trim() || LABELS.cart;
     case "profile":
       return data.profileLabel?.trim() || LABELS.profile;
+    case "addresses":
+      return data.addressesLabel?.trim() || LABELS.addresses;
     case "password":
       return data.passwordLabel?.trim() || LABELS.password;
   }
@@ -995,6 +1051,297 @@ function ProfilePanel({
   );
 }
 
+function AddressesPanel({
+  account,
+  websiteId,
+  interactive,
+}: {
+  account: ShopCustomerAccount;
+  websiteId?: string;
+  interactive: boolean;
+}) {
+  const [addresses, setAddresses] = useState(account.addresses);
+  const [draft, setDraft] = useState<ShopCustomerAddressInput>(EMPTY_ADDRESS);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setAddresses(account.addresses);
+  }, [account.addresses]);
+
+  function openCreate() {
+    setEditingId(null);
+    setDraft({
+      ...EMPTY_ADDRESS,
+      fullName: account.customer.fullName || "",
+      phone: account.customer.phone || "",
+      isDefault: addresses.length === 0,
+    });
+    setShowForm(true);
+    setMessage(null);
+  }
+
+  function openEdit(address: ShopCustomerAddress) {
+    setEditingId(address.id);
+    setDraft({
+      label: address.label ?? "",
+      fullName: address.fullName,
+      phone: address.phone,
+      line1: address.line1,
+      line2: address.line2 ?? "",
+      city: address.city,
+      state: address.state,
+      postalCode: address.postalCode,
+      country: address.country || "IN",
+      isDefault: address.isDefault,
+    });
+    setShowForm(true);
+    setMessage(null);
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!interactive || !websiteId) return;
+    setBusy(true);
+    setMessage(null);
+    const input: ShopCustomerAddressInput = {
+      label: draft.label?.trim() || undefined,
+      fullName: draft.fullName.trim(),
+      phone: draft.phone.trim(),
+      line1: draft.line1.trim(),
+      line2: draft.line2?.trim() || undefined,
+      city: draft.city.trim(),
+      state: draft.state.trim(),
+      postalCode: draft.postalCode.trim(),
+      country: draft.country?.trim() || "IN",
+      isDefault: Boolean(draft.isDefault),
+    };
+    try {
+      const next = editingId
+        ? await shopAuthApi.updateAddress(websiteId, editingId, input)
+        : await shopAuthApi.createAddress(websiteId, input);
+      setAddresses(next);
+      setShowForm(false);
+      setEditingId(null);
+      setMessage({ text: editingId ? "Address updated." : "Address saved.", ok: true });
+    } catch (error) {
+      setMessage({ text: errorMessage(error), ok: false });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(addressId: string) {
+    if (!interactive || !websiteId || busy) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      setAddresses(await shopAuthApi.deleteAddress(websiteId, addressId));
+      if (editingId === addressId) {
+        setShowForm(false);
+        setEditingId(null);
+      }
+      setMessage({ text: "Address removed.", ok: true });
+    } catch (error) {
+      setMessage({ text: errorMessage(error), ok: false });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="wb-acct-addresses" data-wb-account-addresses>
+      <ul className="wb-acct-list" data-wb-account-list="addresses" hidden={addresses.length === 0}>
+        {addresses.map((address) => (
+          <li key={address.id} className="wb-acct-row wb-acct-address-row" data-wb-address-id={address.id}>
+            <div className="wb-acct-row-main">
+              <strong>
+                {address.label?.trim() || "Address"}
+                {address.isDefault ? <span className="wb-acct-badge is-default">Default</span> : null}
+              </strong>
+              <span className="wb-acct-row-sub">{address.fullName} · {address.phone}</span>
+              <span className="wb-acct-row-sub">{formatAddressLines(address)}</span>
+            </div>
+            <div className="wb-acct-address-actions">
+              <button
+                type="button"
+                className="wb-acct-linkish"
+                data-wb-address-edit={address.id}
+                onClick={interactive ? () => openEdit(address) : undefined}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className="wb-acct-cart-remove"
+                data-wb-address-delete={address.id}
+                onClick={interactive ? () => void remove(address.id) : undefined}
+              >
+                Remove
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="wb-acct-empty" data-wb-account-empty="addresses" hidden={addresses.length > 0}>
+        <p>{LABELS.emptyAddresses}</p>
+      </div>
+      {!showForm && (
+        <div className="wb-acct-actions">
+          <button type="button" className="wb-acct-button" data-wb-address-add onClick={interactive ? openCreate : undefined}>
+            Add address
+          </button>
+        </div>
+      )}
+      <form
+        className="wb-acct-form"
+        data-wb-account-address-form
+        hidden={!showForm}
+        onSubmit={submit}
+      >
+        <input type="hidden" name="addressId" value={editingId ?? ""} data-wb-address-id-field />
+        <div className="wb-acct-form-row">
+          <label className="wb-acct-label">
+            Label (optional)
+            <input
+              className="wb-acct-input"
+              name="label"
+              value={draft.label ?? ""}
+              onChange={(event) => setDraft((current) => ({ ...current, label: event.target.value }))}
+              placeholder="Home, Office…"
+              autoComplete="nickname"
+            />
+          </label>
+          <label className="wb-acct-label wb-acct-check">
+            <input
+              type="checkbox"
+              name="isDefault"
+              checked={Boolean(draft.isDefault)}
+              onChange={(event) => setDraft((current) => ({ ...current, isDefault: event.target.checked }))}
+            />
+            Default address
+          </label>
+        </div>
+        <div className="wb-acct-form-row">
+          <label className="wb-acct-label">
+            Full name
+            <input
+              className="wb-acct-input"
+              name="fullName"
+              value={draft.fullName}
+              onChange={(event) => setDraft((current) => ({ ...current, fullName: event.target.value }))}
+              required
+              autoComplete="name"
+            />
+          </label>
+          <label className="wb-acct-label">
+            Phone
+            <input
+              className="wb-acct-input"
+              name="phone"
+              value={draft.phone}
+              onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))}
+              required
+              autoComplete="tel"
+            />
+          </label>
+        </div>
+        <label className="wb-acct-label">
+          Address line 1
+          <input
+            className="wb-acct-input"
+            name="line1"
+            value={draft.line1}
+            onChange={(event) => setDraft((current) => ({ ...current, line1: event.target.value }))}
+            required
+            autoComplete="address-line1"
+          />
+        </label>
+        <label className="wb-acct-label">
+          Address line 2 (optional)
+          <input
+            className="wb-acct-input"
+            name="line2"
+            value={draft.line2 ?? ""}
+            onChange={(event) => setDraft((current) => ({ ...current, line2: event.target.value }))}
+            autoComplete="address-line2"
+          />
+        </label>
+        <div className="wb-acct-form-row">
+          <label className="wb-acct-label">
+            City
+            <input
+              className="wb-acct-input"
+              name="city"
+              value={draft.city}
+              onChange={(event) => setDraft((current) => ({ ...current, city: event.target.value }))}
+              required
+              autoComplete="address-level2"
+            />
+          </label>
+          <label className="wb-acct-label">
+            State
+            <input
+              className="wb-acct-input"
+              name="state"
+              value={draft.state}
+              onChange={(event) => setDraft((current) => ({ ...current, state: event.target.value }))}
+              required
+              autoComplete="address-level1"
+            />
+          </label>
+        </div>
+        <div className="wb-acct-form-row">
+          <label className="wb-acct-label">
+            PIN / Postal code
+            <input
+              className="wb-acct-input"
+              name="postalCode"
+              value={draft.postalCode}
+              onChange={(event) => setDraft((current) => ({ ...current, postalCode: event.target.value }))}
+              required
+              autoComplete="postal-code"
+            />
+          </label>
+          <label className="wb-acct-label">
+            Country
+            <input
+              className="wb-acct-input"
+              name="country"
+              value={draft.country ?? "IN"}
+              onChange={(event) => setDraft((current) => ({ ...current, country: event.target.value.toUpperCase() }))}
+              maxLength={2}
+              required
+              autoComplete="country"
+            />
+          </label>
+        </div>
+        <div className="wb-acct-actions">
+          <button type="submit" className="wb-acct-button" disabled={busy}>
+            {busy ? "Saving…" : editingId ? "Update address" : "Save address"}
+          </button>
+          <button
+            type="button"
+            className="wb-acct-logout"
+            data-wb-address-cancel
+            onClick={() => {
+              setShowForm(false);
+              setEditingId(null);
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+      <p className={`wb-acct-message${message ? (message.ok ? " is-ok" : " is-error") : ""}`} role="status" data-wb-account-message hidden={!message}>
+        {parseRichText(message?.text ?? "")}
+      </p>
+    </div>
+  );
+}
+
 function PasswordPanel({ websiteId, interactive }: { websiteId?: string; interactive: boolean }) {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -1237,6 +1584,8 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
         );
       case "profile":
         return <ProfilePanel data={data} account={liveAccount} websiteId={websiteId} interactive={interactive} />;
+      case "addresses":
+        return <AddressesPanel account={liveAccount} websiteId={websiteId} interactive={interactive} />;
       case "password":
         return <PasswordPanel websiteId={websiteId} interactive={interactive} />;
     }
@@ -1412,7 +1761,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
             <MemberView
               data={data}
               variant={variant}
-              account={{ customer: { ...SAMPLE.customer, fullName: "", email: "", phone: "" }, orders: [], cartItems: [] }}
+              account={{ customer: { ...SAMPLE.customer, fullName: "", email: "", phone: "" }, orders: [], cartItems: [], addresses: [] }}
               websiteId={websiteId}
               interactive={false}
               loginHref={loginHref}

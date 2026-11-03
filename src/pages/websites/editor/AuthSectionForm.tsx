@@ -17,6 +17,7 @@ import {
   FormGroup,
   ImageField,
   ItemList,
+  LogoSizeField,
   OptionalLinkField,
   SelectField,
   TextAreaField,
@@ -346,16 +347,50 @@ export default function AuthSectionForm({ data, onChange }: Props) {
         />
       </FormGroup>
 
-      <FormGroup title="Brand">
+      <FormGroup title="Logo & Brand display">
+        <SelectField
+          label="Logo & brand layout"
+          value={data.logoDisplay ?? "auto"}
+          options={[
+            {
+              value: "auto",
+              label: "Smart / Auto (Logo if uploaded, else brand mark + name)",
+            },
+            {
+              value: "logo_left",
+              label: "Logo + Name (Logo on left, Name on right)",
+            },
+            {
+              value: "logo_right",
+              label: "Logo + Name (Name on left, Logo on right)",
+            },
+            {
+              value: "logo_top",
+              label: "Logo + Name (Logo on top, Name below)",
+            },
+            { value: "logo_only", label: "Logo image only" },
+            { value: "text_only", label: "Brand text only" },
+          ]}
+          onChange={(logoDisplay) => set({ logoDisplay: logoDisplay as AuthData["logoDisplay"] })}
+        />
         <TextField label="Brand name" value={data.brandName} onChange={(brandName) => set({ brandName })} maxLength={60} />
         <ImageField
-          label="Logo"
+          label="Logo image"
           value={data.logo}
           onChange={(logo) => set({ logo })}
-          dimensionHint="200 × 50 px (horizontal) or 60 × 60 px (square)"
-          hint="Transparent PNG, SVG, or WebP"
+          dimensionHint={MEDIA_SIZE.logo}
+          hint={MEDIA_HINT.logo}
           optional
         />
+        {data.logoDisplay !== "text_only" && (
+          <LogoSizeField
+            label="Logo size"
+            value={data.logoHeight ?? data.logoSize}
+            onChange={(logoHeight) => set({ logoHeight, logoSize: undefined })}
+            defaultSize={36}
+            hint="Increase or decrease login logo size. Current default is 36px."
+          />
+        )}
       </FormGroup>
 
       <FormGroup title="Form style & typography" description="Fonts follow the section font picker in the Style tab.">

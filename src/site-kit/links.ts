@@ -36,12 +36,22 @@ export function mailtoHref(email: string | undefined): string | null {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text) ? `mailto:${text}` : null;
 }
 
-type LinkablePage = { id?: string; slug: string; name: string };
+type LinkablePage = {
+  id?: string;
+  slug: string;
+  name: string;
+  /** Used to resolve /product/:slug style shop detail links in draft preview. */
+  sections?: { type: string }[];
+};
 
 export type ResolvedPageLink<P extends LinkablePage> = {
   page: P;
   /** Section anchor to scroll to, without the leading "#". Empty for the top of the page. */
   hash: string;
+  /** Product slug when the link opens a product_detail page nested under its base path. */
+  productSlug?: string;
+  /** Option query values from the product card link, such as Size or Colour. */
+  selection?: Record<string, string>;
 };
 
 const LEGAL_PATH = /privacy|terms|disclaimer|legal|support|faq/;
@@ -86,7 +96,31 @@ export function resolvePageLink<P extends LinkablePage>(
       ? pages.find((candidate) => candidate.slug === "/contact" || candidate.slug === "/about")
       : undefined);
 
-  return page ? { page, hash } : null;
+  if (page) return { page, hash };
+
+  // Match live routing: /product/:slug opens the page that holds a product_detail section.
+  const detail = pages
+    .filter((candidate) => {
+      const base = normalizePath(candidate.slug);
+      if (!base || !target.startsWith(`${base}/`)) return false;
+      return (candidate.sections ?? []).some((section) => section.type === "product_detail");
+    })
+    .sort((left, right) => normalizePath(right.slug).length - normalizePath(left.slug).length)[0];
+  if (!detail) return null;
+
+  const base = normalizePath(detail.slug);
+  const rest = target.slice(base.length + 1);
+  const productSlug = decodeURIComponent(rest.split("/")[0] ?? "").trim();
+  if (!productSlug || rest.includes("/")) return null;
+
+  const query = value.split("#")[0]?.split("?")[1] ?? "";
+  const selection = Object.fromEntries(new URLSearchParams(query));
+  return {
+    page: detail,
+    hash,
+    productSlug,
+    selection: Object.keys(selection).length > 0 ? selection : undefined,
+  };
 }
 
 const YOUTUBE_ID = /^https:\/\/(?:(?:www\.|m\.)?youtube\.com\/watch\?v=([\w-]{6,20})|youtu\.be\/([\w-]{6,20}))/i;

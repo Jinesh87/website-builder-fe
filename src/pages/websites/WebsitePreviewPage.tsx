@@ -27,6 +27,8 @@ export default function WebsitePreviewPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [device, setDevice] = useState<Device>("desktop");
   const [pageId, setPageId] = useState<string | null>(null);
+  const [productSlug, setProductSlug] = useState<string | undefined>();
+  const [productSelection, setProductSelection] = useState<Record<string, string> | undefined>();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -57,11 +59,20 @@ export default function WebsitePreviewPage() {
     const target = resolvePageLink(pages, href, page);
     if (!target) return false;
     setPageId(target.page.id);
+    setProductSlug(target.productSlug);
+    setProductSelection(target.selection);
     return true;
   }
 
+  function openPage(nextPageId: string) {
+    setPageId(nextPageId);
+    setProductSlug(undefined);
+    setProductSelection(undefined);
+  }
+
   const simulatedDomain = getLiveSiteDomain(website?.subdomain || "preview", website?.customDomain);
-  const currentPath = page?.slug === "/" ? "" : page?.slug ?? "";
+  const pagePath = page?.slug === "/" ? "" : page?.slug ?? "";
+  const currentPath = productSlug ? `${pagePath || ""}/${productSlug}` : pagePath;
   const fullUrl = `https://${simulatedDomain}${currentPath}`;
 
   useEffect(() => {
@@ -154,7 +165,7 @@ export default function WebsitePreviewPage() {
             <div className="relative">
               <select
                 value={page?.id ?? ""}
-                onChange={(event) => setPageId(event.target.value)}
+                onChange={(event) => openPage(event.target.value)}
                 className="h-8.5 rounded-lg border border-white/15 bg-zinc-900 px-2.5 pr-7 text-xs font-medium text-zinc-200 outline-none transition focus:border-brand"
               >
                 {pages.map((candidate) => (
@@ -237,11 +248,11 @@ export default function WebsitePreviewPage() {
               device={device}
               onLinkClick={openLink}
               allowOffsiteLinks
-              scrollResetKey={page.id}
+              scrollResetKey={`${page.id}:${productSlug ?? ""}`}
               theme={site?.theme}
             >
               <ContactEndpointProvider endpoint={contactEndpointFor(website?.subdomain)}>
-                <WebsiteShopCatalogProvider website={website}>
+                <WebsiteShopCatalogProvider website={website} productSlug={productSlug} selection={productSelection}>
                   <SitePage site={site} page={page} />
                 </WebsiteShopCatalogProvider>
               </ContactEndpointProvider>
