@@ -113,8 +113,23 @@ export default function PartnerProfilePage() {
 
   const isSuspended = partnerInfo.status === "SUSPENDED";
 
-  // Initialize payout form from saved settings or defaults
+  // Initialize payout form from backend bank details or defaults
   useEffect(() => {
+    const backendBank = data?.bankDetails;
+    if (backendBank && (backendBank.bankAccountNumber || backendBank.upiId || backendBank.accountHolderName)) {
+      setPayoutForm((prev) => ({
+        ...prev,
+        phone: partnerInfo.phone,
+        alternatePhone: partnerInfo.alternatePhone,
+        accountHolderName: backendBank.accountHolderName || partnerInfo.companyName,
+        bankAccountNumber: backendBank.bankAccountNumber || "",
+        ifscCode: backendBank.ifscCode || "",
+        upiId: backendBank.upiId || "",
+        panNumber: backendBank.panNumber || "",
+      }));
+      return;
+    }
+
     try {
       const saved = localStorage.getItem(PAYOUT_STORAGE_KEY);
       if (saved) {
@@ -141,17 +156,24 @@ export default function PartnerProfilePage() {
       upiId: "",
       panNumber: "",
     }));
-  }, [partnerInfo]);
+  }, [partnerInfo, data?.bankDetails]);
 
-  function handleSavePayout(e: FormEvent) {
+  async function handleSavePayout(e: FormEvent) {
     e.preventDefault();
     setSavingPayout(true);
     try {
+      await partnerApi.updatePayoutDetails({
+        accountHolderName: payoutForm.accountHolderName,
+        bankAccountNumber: payoutForm.bankAccountNumber,
+        ifscCode: payoutForm.ifscCode,
+        upiId: payoutForm.upiId,
+        panNumber: payoutForm.panNumber,
+      });
       localStorage.setItem(PAYOUT_STORAGE_KEY, JSON.stringify(payoutForm));
       setPayoutSaved(true);
       setTimeout(() => setPayoutSaved(false), 3000);
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("Failed to save payout details", err);
     } finally {
       setSavingPayout(false);
     }

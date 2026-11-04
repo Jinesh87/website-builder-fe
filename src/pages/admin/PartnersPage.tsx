@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Spinner } from "@heroui/react";
 import {
   AlertCircle,
-  Ban,
-  Building2,
   Check,
   CheckCircle2,
+  CreditCard,
   ExternalLink,
-  Handshake,
-  RotateCcw,
+  FileText,
+  Landmark,
+  Printer,
   Search,
   Sliders,
-  Users,
+  Wallet,
   X,
   XCircle,
 } from "lucide-react";
@@ -21,17 +21,18 @@ import {
   adminPartnerApi,
   type PartnerAuditLogItem,
   type PartnerCommissionPolicy,
-  type PartnerDetail,
   type PartnerListResponse,
+  type PartnerPayoutRequest,
   type PartnerProgramConfig,
   type PartnerStatus,
   type PartnerSummary,
+  type PayoutRequestsListResponse,
 } from "../../api/partner.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
 import { announcePartnersChanged } from "../../hooks/use-pending-partner-count.ts";
 
-type MainTab = "applications" | "commission" | "audit-log";
+type MainTab = "applications" | "payout-requests" | "commission" | "audit-log";
 type StatusFilter = PartnerStatus | "ALL";
 
 const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
@@ -140,11 +141,12 @@ function actionBadge(label: string, variant: "orange" | "slate" | "blue" | "emer
 
 export default function PartnersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // Main Tabs: applications | commission | audit-log
+  // Main Tabs: applications | payout-requests | commission | audit-log
   const rawMainTab = searchParams.get("tab")?.toLowerCase();
   const currentMainTab: MainTab =
-    rawMainTab === "commission" || rawMainTab === "audit-log"
+    rawMainTab === "payout-requests" || rawMainTab === "commission" || rawMainTab === "audit-log"
       ? rawMainTab
       : "applications";
 
@@ -167,10 +169,26 @@ export default function PartnersPage() {
   const [, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Modals state
-  const [viewingId, setViewingId] = useState<string | null>(null);
-  const [detailData, setDetailData] = useState<PartnerDetail | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
+  // Payout requests state
+  const [payoutRequestsData, setPayoutRequestsData] = useState<PayoutRequestsListResponse | null>(null);
+  const [loadingPayouts, setLoadingPayouts] = useState(false);
+  const [payoutStatusFilter, setPayoutStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("ALL");
+
+  // Settle modal state
+  const [settlingRequest, setSettlingRequest] = useState<PartnerPayoutRequest | null>(null);
+  const [settleMethod, setSettleMethod] = useState<"BANK_TRANSFER" | "UPI">("BANK_TRANSFER");
+  const [transactionRef, setTransactionRef] = useState("");
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [isResolvingPayout, setIsResolvingPayout] = useState(false);
+
+  // Reject payout modal state
+  const [rejectingRequest, setRejectingRequest] = useState<PartnerPayoutRequest | null>(null);
+  const [payoutRejectReason, setPayoutRejectReason] = useState("");
+  const [isRejectingPayout, setIsRejectingPayout] = useState(false);
+
+  // View invoice modal state
+  const [viewingInvoice, setViewingInvoice] = useState<PartnerPayoutRequest | null>(null);
 
   // Approve modal
   const [approvingPartner, setApprovingPartner] = useState<PartnerSummary | null>(null);
@@ -254,21 +272,6 @@ export default function PartnersPage() {
     };
   }, [debouncedSearch, refreshKey]);
 
-  // Fetch detail modal data
-  useEffect(() => {
-    if (!viewingId) {
-      setDetailData(null);
-      return;
-    }
-
-    setLoadingDetail(true);
-    adminPartnerApi
-      .get(viewingId)
-      .then((res) => setDetailData(res))
-      .catch((err) => setError(errorMessage(err)))
-      .finally(() => setLoadingDetail(false));
-  }, [viewingId]);
-
   // Fetch global partner program config
   useEffect(() => {
     adminPartnerApi
@@ -277,9 +280,80 @@ export default function PartnersPage() {
       .catch(() => undefined);
   }, [refreshKey]);
 
+  // Fetch payout requests list
+  useEffect(() => {
+    let active = true;
+    setLoadingPayouts(true);
+    adminPartnerApi
+      .listPayoutRequests({
+        status: payoutStatusFilter === "ALL" ? undefined : payoutStatusFilter,
+        search: debouncedSearch,
+        page: 1,
+        pageSize: 50,
+      })
+      .then((res) => {
+        if (active) setPayoutRequestsData(res);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setLoadingPayouts(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [payoutStatusFilter, debouncedSearch, refreshKey, currentMainTab]);
+
   function refresh() {
     setRefreshKey((k) => k + 1);
     announcePartnersChanged();
+  }
+
+  async function submitSettlePayout() {
+    if (!settlingRequest) return;
+    if (!transactionRef.trim()) {
+      alert("Please enter a Transaction / UTR reference number");
+      return;
+    }
+
+    setIsResolvingPayout(true);
+    try {
+      await adminPartnerApi.resolvePayoutRequest(settlingRequest.id, {
+        status: "APPROVED",
+        payoutMethod: settleMethod,
+        transactionReference: transactionRef.trim(),
+        invoiceNumber: invoiceNo.trim() || undefined,
+        adminNotes: adminNotes.trim() || undefined,
+      });
+      setSettlingRequest(null);
+      refresh();
+    } catch (err) {
+      alert(errorMessage(err));
+    } finally {
+      setIsResolvingPayout(false);
+    }
+  }
+
+  async function submitRejectPayout() {
+    if (!rejectingRequest) return;
+    if (!payoutRejectReason.trim()) {
+      alert("Please provide a reason for rejecting the payout request");
+      return;
+    }
+
+    setIsRejectingPayout(true);
+    try {
+      await adminPartnerApi.resolvePayoutRequest(rejectingRequest.id, {
+        status: "REJECTED",
+        rejectionReason: payoutRejectReason.trim(),
+      });
+      setRejectingRequest(null);
+      refresh();
+    } catch (err) {
+      alert(errorMessage(err));
+    } finally {
+      setIsRejectingPayout(false);
+    }
   }
 
   function handleMainTabChange(tab: MainTab) {
@@ -411,19 +485,6 @@ export default function PartnersPage() {
     }
   }
 
-  // Handle Reactivate
-  async function handleReactivate(partner: PartnerSummary) {
-    if (!confirm(`Reactivate partner account for ${partner.companyName}?`)) return;
-    try {
-      if (!partner.id.startsWith("demo-")) {
-        await adminPartnerApi.reactivate(partner.id);
-      }
-      refresh();
-    } catch (err) {
-      alert(errorMessage(err));
-    }
-  }
-
   // Handle Update Commission
   async function submitUpdateCommission() {
     if (!editingCommissionPartner) return;
@@ -502,6 +563,29 @@ export default function PartnersPage() {
           >
             {counts.ALL}
           </span>
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={currentMainTab === "payout-requests"}
+          onClick={() => handleMainTabChange("payout-requests")}
+          className={tabClass(currentMainTab === "payout-requests")}
+        >
+          <span>Payout requests</span>
+          {(payoutRequestsData?.counts?.PENDING ?? 0) > 0 ? (
+            <span className="min-w-5 rounded-full px-1.5 text-center text-xs leading-5 bg-amber-500 text-white font-bold">
+              {payoutRequestsData?.counts?.PENDING}
+            </span>
+          ) : (
+            <span
+              className={`min-w-5 rounded-full px-1.5 text-center text-xs leading-5 ${
+                currentMainTab === "payout-requests" ? "bg-ink text-white" : "bg-canvas text-ink-muted"
+              }`}
+            >
+              {payoutRequestsData?.counts?.ALL ?? 0}
+            </span>
+          )}
         </button>
 
         <button
@@ -675,7 +759,7 @@ export default function PartnersPage() {
                       return (
                         <tr
                           key={partner.id}
-                          onClick={() => setViewingId(partner.id)}
+                          onClick={() => navigate(`/admin/partners/${partner.id}`)}
                           className="hover:bg-canvas/60 transition-colors cursor-pointer group"
                         >
                           <td className="px-5 py-3.5 font-mono text-xs font-medium text-ink">
@@ -738,7 +822,289 @@ export default function PartnersPage() {
       )}
 
       {/* ======================================================== */}
-      {/* TAB 2: COMMISSION SETTINGS                               */}
+      {/* TAB 2: PAYOUT REQUESTS                                   */}
+      {/* ======================================================== */}
+      {currentMainTab === "payout-requests" && (
+        <div className="space-y-6">
+          {/* Summary Stat Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="rounded-xl border border-line bg-surface p-5 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-sm text-ink-muted font-medium">
+                <span className="size-2 rounded-full bg-amber-500 shadow-xs" />
+                <span>Pending Approval</span>
+              </div>
+              <div className="text-3xl font-bold text-ink tracking-tight">
+                {payoutRequestsData?.counts?.PENDING ?? 0}
+              </div>
+              <p className="text-[11px] text-ink-muted">Awaiting manual admin payout</p>
+            </div>
+
+            <div className="rounded-xl border border-line bg-surface p-5 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-sm text-ink-muted font-medium">
+                <span className="size-2 rounded-full bg-emerald-500 shadow-xs" />
+                <span>Settled &amp; Paid</span>
+              </div>
+              <div className="text-3xl font-bold text-ink tracking-tight">
+                {payoutRequestsData?.counts?.APPROVED ?? 0}
+              </div>
+              <p className="text-[11px] text-ink-muted">Disbursed via Bank / UPI</p>
+            </div>
+
+            <div className="rounded-xl border border-line bg-surface p-5 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-sm text-ink-muted font-medium">
+                <span className="size-2 rounded-full bg-rose-500 shadow-xs" />
+                <span>Rejected</span>
+              </div>
+              <div className="text-3xl font-bold text-ink tracking-tight">
+                {payoutRequestsData?.counts?.REJECTED ?? 0}
+              </div>
+              <p className="text-[11px] text-ink-muted">Returned to partner balance</p>
+            </div>
+
+            <div className="rounded-xl border border-line bg-surface p-5 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-sm text-ink-muted font-medium">
+                <Wallet className="size-4 text-brand" />
+                <span>Total Requests</span>
+              </div>
+              <div className="text-3xl font-bold text-ink tracking-tight">
+                {payoutRequestsData?.counts?.ALL ?? 0}
+              </div>
+              <p className="text-[11px] text-ink-muted">All-time withdrawal requests</p>
+            </div>
+          </div>
+
+          {/* Search Bar & Filter Buttons */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-ink-muted" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search partner, email, or code..."
+                className="w-full rounded-lg border border-line bg-surface pl-10 pr-4 py-2 text-xs text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none shadow-xs transition-colors"
+              />
+            </div>
+
+            <div className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1 shadow-xs self-start sm:self-auto">
+              {(
+                [
+                  { key: "ALL", label: "All" },
+                  { key: "PENDING", label: "Pending" },
+                  { key: "APPROVED", label: "Settled" },
+                  { key: "REJECTED", label: "Rejected" },
+                ] as const
+              ).map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  onClick={() => setPayoutStatusFilter(f.key)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                    payoutStatusFilter === f.key
+                      ? "bg-brand text-white shadow-xs"
+                      : "text-ink-muted hover:text-ink hover:bg-canvas"
+                  }`}
+                >
+                  {f.label}
+                  {f.key !== "ALL" && payoutRequestsData?.counts && (
+                    <span className="ml-1.5 opacity-80">
+                      ({payoutRequestsData.counts[f.key] ?? 0})
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Payout Requests Table */}
+          <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[58rem]">
+                <thead>
+                  <tr className="border-b border-line bg-canvas/60">
+                    <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap">
+                      REQUEST &amp; DATE
+                    </th>
+                    <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap">
+                      PARTNER
+                    </th>
+                    <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap">
+                      AMOUNT &amp; TDS
+                    </th>
+                    <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap">
+                      DESTINATION
+                    </th>
+                    <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap">
+                      STATUS
+                    </th>
+                    <th className="px-5 py-3.5 text-xs font-medium text-ink-muted whitespace-nowrap text-right">
+                      ACTIONS
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line text-sm text-ink">
+                  {loadingPayouts ? (
+                    <tr>
+                      <td colSpan={6} className="py-16 text-center">
+                        <Spinner size="lg" className="mx-auto" />
+                      </td>
+                    </tr>
+                  ) : !payoutRequestsData || payoutRequestsData.items.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-16 text-center text-ink-muted">
+                        No payout requests found.
+                      </td>
+                    </tr>
+                  ) : (
+                    payoutRequestsData.items.map((req) => {
+                      const grossPaise = req.amountPaise;
+                      const tdsPaise = Math.round(grossPaise * 0.05);
+                      const netPaise = grossPaise - tdsPaise;
+
+                      return (
+                        <tr key={req.id} className="hover:bg-canvas/60 transition-colors">
+                          <td className="px-5 py-3.5">
+                            <div className="font-semibold text-ink font-mono text-xs">
+                              {req.formattedId}
+                            </div>
+                            <div className="text-ink-muted text-[11px] mt-0.5">
+                              {formatDateTime(req.requestedAt)}
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <Link
+                              to={`/admin/partners/${req.partnerId}?tab=payouts`}
+                              className="font-semibold text-ink hover:text-brand transition-colors block"
+                            >
+                              {req.partnerName || "Partner"}
+                            </Link>
+                            <div className="text-ink-muted text-xs flex items-center gap-2 mt-0.5">
+                              {req.partnerReferralCode && (
+                                <span className="px-1.5 py-0.5 rounded font-mono text-[11px] font-semibold bg-brand-soft text-brand">
+                                  {req.partnerReferralCode}
+                                </span>
+                              )}
+                              <span>{req.partnerEmail || req.partnerContact}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <div className="font-bold text-ink text-sm">
+                              ₹{(netPaise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-ink-muted text-[11px]">
+                              Gross: ₹{(grossPaise / 100).toLocaleString("en-IN")} · TDS (5%): ₹{(tdsPaise / 100).toLocaleString("en-IN")}
+                            </div>
+                          </td>
+                          <td className="px-5 py-3.5 text-xs">
+                            {req.payoutMethod === "UPI" ? (
+                              <div>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-500/10 text-indigo-700 border border-indigo-500/20 mb-1">
+                                  UPI
+                                </span>
+                                <div className="font-mono text-ink font-medium">{req.upiId || "—"}</div>
+                              </div>
+                            ) : (
+                              <div>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/10 text-blue-700 border border-blue-500/20 mb-1">
+                                  Bank Transfer
+                                </span>
+                                <div className="text-ink font-medium">
+                                  {req.accountHolderName}
+                                </div>
+                                <div className="text-ink-muted font-mono text-[11px]">
+                                  A/C: {req.bankAccountNumber || "—"} · IFSC: {req.ifscCode || "—"}
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-5 py-3.5 whitespace-nowrap">
+                            {req.status === "PENDING" && (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700 border border-amber-500/20">
+                                <span className="size-1.5 rounded-full bg-amber-500" />
+                                Pending Approval
+                              </span>
+                            )}
+                            {req.status === "APPROVED" && (
+                              <div>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                                  <span className="size-1.5 rounded-full bg-emerald-500" />
+                                  Settled / Paid
+                                </span>
+                                {req.transactionReference && (
+                                  <div className="text-ink-muted font-mono text-[11px] mt-1">
+                                    Ref: {req.transactionReference}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {req.status === "REJECTED" && (
+                              <div>
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-700 border border-rose-500/20">
+                                  <span className="size-1.5 rounded-full bg-rose-500" />
+                                  Rejected
+                                </span>
+                                {req.rejectionReason && (
+                                  <div className="text-rose-600 text-[11px] mt-1 max-w-xs truncate" title={req.rejectionReason}>
+                                    {req.rejectionReason}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                            {req.status === "PENDING" && (
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSettlingRequest(req);
+                                    setSettleMethod(req.payoutMethod || "BANK_TRANSFER");
+                                    setTransactionRef("");
+                                    setInvoiceNo(
+                                      req.invoiceNumber ||
+                                        `INV-PO-${new Date().getFullYear()}-${String(req.requestNumber).padStart(4, "0")}`
+                                    );
+                                    setAdminNotes("");
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <Check className="size-3.5" /> Approve &amp; Settle
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setRejectingRequest(req);
+                                    setPayoutRejectReason("");
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg border border-line bg-surface hover:bg-rose-50 text-rose-600 text-xs font-semibold transition-colors cursor-pointer"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            )}
+                            {req.status === "APPROVED" && (
+                              <button
+                                type="button"
+                                onClick={() => setViewingInvoice(req)}
+                                className="px-3 py-1.5 rounded-lg border border-line bg-surface hover:bg-canvas text-ink font-semibold text-xs transition-colors shadow-xs cursor-pointer flex items-center gap-1.5 ml-auto"
+                              >
+                                <FileText className="size-3.5 text-brand" /> Invoice / Receipt
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB 3: COMMISSION SETTINGS                               */}
       {/* ======================================================== */}
       {currentMainTab === "commission" && (
         <div className="space-y-6">
@@ -815,9 +1181,12 @@ export default function PartnersPage() {
                           className="hover:bg-canvas/60 transition-colors"
                         >
                           <td className="px-5 py-3.5">
-                            <div className="font-semibold text-ink">
+                            <Link
+                              to={`/admin/partners/${partner.id}`}
+                              className="font-semibold text-ink hover:text-brand transition-colors block"
+                            >
                               {partner.companyName}
-                            </div>
+                            </Link>
                             <div className="text-ink-muted font-mono text-xs mt-0.5">
                               {refId}
                             </div>
@@ -939,263 +1308,6 @@ export default function PartnersPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ======================================================== */}
-      {/* PARTNER DETAIL MODAL / DRAWER                            */}
-      {/* ======================================================== */}
-      {viewingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-2xl rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-6 max-h-[90vh] flex flex-col">
-            <div className="flex items-start justify-between border-b border-line pb-4">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h3 className="text-xl font-bold text-ink">
-                    {detailData?.companyName || "Partner Application"}
-                  </h3>
-                  {detailData && statusPill(detailData.status)}
-                </div>
-                <p className="text-xs text-ink-muted mt-1 font-mono">
-                  Ref ID: {detailData ? formatPartnerReference(detailData) : ""} · Submitted{" "}
-                  {detailData ? formatDate(detailData.createdAt) : ""}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setViewingId(null)}
-                className="size-8 rounded-lg text-ink-muted hover:text-ink hover:bg-canvas flex items-center justify-center cursor-pointer transition-colors"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            {loadingDetail ? (
-              <div className="py-20 text-center">
-                <Spinner size="lg" className="mx-auto" />
-              </div>
-            ) : detailData ? (
-              <div className="space-y-5 text-xs overflow-y-auto pr-1 flex-1">
-                {/* Rejection / Suspension Notice Banner */}
-                {detailData.status === "REJECTED" && detailData.rejectionReason && (
-                  <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 space-y-1">
-                    <div className="font-semibold uppercase tracking-wider text-[11px] text-rose-700">
-                      Rejection Reason
-                    </div>
-                    <p className="leading-relaxed">{detailData.rejectionReason}</p>
-                  </div>
-                )}
-                {detailData.status === "SUSPENDED" && detailData.suspensionReason && (
-                  <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 space-y-1">
-                    <div className="font-semibold uppercase tracking-wider text-[11px] text-slate-700">
-                      Suspension Reason
-                    </div>
-                    <p className="leading-relaxed">{detailData.suspensionReason}</p>
-                  </div>
-                )}
-
-                {/* Company Details */}
-                <div className="p-4 rounded-xl bg-canvas/70 border border-line space-y-3">
-                  <div className="font-semibold text-xs text-brand uppercase tracking-wider flex items-center gap-1.5">
-                    <Building2 className="size-4" /> Company Details
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Business Type</span>
-                      <strong className="text-ink">{detailData.businessType}</strong>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Established</span>
-                      <strong className="text-ink">{detailData.yearEstablished}</strong>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Reg / Tax ID</span>
-                      <strong className="text-ink">{detailData.registrationNumber || "None"}</strong>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Website</span>
-                      {detailData.website ? (
-                        <a
-                          href={detailData.website}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-brand hover:underline truncate block"
-                        >
-                          {detailData.website}
-                        </a>
-                      ) : (
-                        <span className="text-ink-muted italic">None</span>
-                      )}
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Location</span>
-                      <strong className="text-ink">
-                        {detailData.city}, {detailData.state}, {detailData.country}
-                      </strong>
-                    </div>
-                    <div className="col-span-2 sm:col-span-3">
-                      <span className="text-ink-muted block text-[11px]">Full Address</span>
-                      <strong className="text-ink">{detailData.businessAddress}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contact Information */}
-                <div className="p-4 rounded-xl bg-canvas/70 border border-line space-y-3">
-                  <div className="font-semibold text-xs text-brand uppercase tracking-wider flex items-center gap-1.5">
-                    <Users className="size-4" /> Contact Information
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Contact Person</span>
-                      <strong className="text-ink">{detailData.contactName}</strong>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Designation</span>
-                      <strong className="text-ink">{detailData.designation}</strong>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Email</span>
-                      <strong className="text-ink font-mono">{detailData.email}</strong>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Phone</span>
-                      <strong className="text-ink font-mono">{detailData.phone}</strong>
-                    </div>
-                    <div>
-                      <span className="text-ink-muted block text-[11px]">Alternative Phone</span>
-                      <strong className="text-ink font-mono">{detailData.alternatePhone || "None"}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Partnership Details */}
-                <div className="p-4 rounded-xl bg-canvas/70 border border-line space-y-3">
-                  <div className="font-semibold text-xs text-brand uppercase tracking-wider flex items-center gap-1.5">
-                    <Handshake className="size-4" /> Partnership Program Details
-                  </div>
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <span className="text-ink-muted block text-[11px]">Partner Type</span>
-                        <strong className="text-ink">{detailData.partnershipType}</strong>
-                      </div>
-                      <div>
-                        <span className="text-ink-muted block text-[11px]">Expected Monthly Referrals</span>
-                        <strong className="text-ink">{detailData.expectedReferrals}</strong>
-                      </div>
-                    </div>
-                    {detailData.referralCode && (
-                      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-line">
-                        <div>
-                          <span className="text-ink-muted block text-[11px]">Referral Code</span>
-                          <span className="px-2.5 py-0.5 rounded font-mono text-xs font-semibold bg-brand-soft text-brand border border-brand/20 inline-block mt-0.5">
-                            {detailData.referralCode}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-ink-muted block text-[11px]">Commission Rate</span>
-                          <span className="text-sm font-bold text-ink mt-0.5 inline-block">
-                            {detailData.commissionRate}%
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-ink-muted block text-[11px] mb-1">Reason for applying</span>
-                      <p className="p-2.5 rounded bg-surface border border-line text-ink leading-relaxed">
-                        {detailData.reason}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {/* Modal Bottom Actions */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-line">
-              <div className="flex items-center gap-2">
-                {detailData?.status === "PENDING" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setApprovingPartner(detailData);
-                        setApproveCommission(detailData.commissionRate || 15);
-                        setApprovePolicy(detailData.commissionPolicy ?? "GLOBAL_DEFAULT");
-                      }}
-                      className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <Check className="size-3.5" /> Approve Application
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRejectingPartner(detailData)}
-                      className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <X className="size-3.5" /> Reject
-                    </button>
-                  </>
-                )}
-
-                {detailData?.status === "APPROVED" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingCommissionPartner(detailData);
-                        setNewCommissionRate(detailData.commissionRate);
-                        setIsCommissionActive(detailData.isCommissionActive);
-                        setNewCommissionPolicy(detailData.commissionPolicy ?? "GLOBAL_DEFAULT");
-                      }}
-                      className="px-3.5 py-2 rounded-lg border border-line bg-surface hover:bg-canvas text-ink text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <Sliders className="size-3.5 text-brand" /> Adjust Commission
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSuspendingPartner(detailData)}
-                      className="px-3.5 py-2 rounded-lg border border-line bg-surface hover:bg-canvas text-ink-muted hover:text-ink text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <Ban className="size-3.5" /> Suspend
-                    </button>
-                  </>
-                )}
-
-                {detailData?.status === "SUSPENDED" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => handleReactivate(detailData)}
-                      className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <RotateCcw className="size-3.5" /> Reactivate Account
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingCommissionPartner(detailData);
-                        setNewCommissionRate(detailData.commissionRate);
-                        setIsCommissionActive(detailData.isCommissionActive);
-                        setNewCommissionPolicy(detailData.commissionPolicy ?? "GLOBAL_DEFAULT");
-                      }}
-                      className="px-3.5 py-2 rounded-lg border border-line bg-surface hover:bg-canvas text-ink text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <Sliders className="size-3.5 text-brand" /> Adjust Commission
-                    </button>
-                  </>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setViewingId(null)}
-                className="px-4 py-2 rounded-lg border border-line bg-surface text-xs font-semibold text-ink hover:bg-canvas transition-colors cursor-pointer shadow-xs"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
@@ -1762,6 +1874,385 @@ export default function PartnersPage() {
                 className="px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-50 text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
               >
                 {isUpdatingCommission ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* SETTLE / APPROVE PAYOUT MODAL                            */}
+      {/* ======================================================== */}
+      {settlingRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div
+            className="w-full max-w-lg rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5"
+            style={{ colorScheme: "light" }}
+          >
+            <div className="flex items-start justify-between border-b border-line pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-ink flex items-center gap-2">
+                  <CheckCircle2 className="size-5 text-emerald-600" />
+                  Approve &amp; Settle Payout
+                </h3>
+                <p className="text-xs text-ink-muted mt-1">
+                  Confirm manual disbursement for <strong>{settlingRequest.partnerName}</strong> ({settlingRequest.formattedId}).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettlingRequest(null)}
+                className="size-8 rounded-lg text-ink-muted hover:text-ink hover:bg-canvas flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Amount Summary */}
+            <div className="p-4 rounded-xl bg-canvas border border-line space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-ink-muted">Gross Requested Amount:</span>
+                <span className="font-semibold text-ink">
+                  ₹{(settlingRequest.amountPaise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-ink-muted">
+                <span>TDS Deduction (5% under Sec 194H):</span>
+                <span>
+                  - ₹{(Math.round(settlingRequest.amountPaise * 0.05) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-line text-sm font-bold">
+                <span className="text-ink">Net Payable to Partner:</span>
+                <span className="text-emerald-600">
+                  ₹{((settlingRequest.amountPaise - Math.round(settlingRequest.amountPaise * 0.05)) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
+
+            {/* Destination Info */}
+            <div className="p-3 rounded-lg bg-surface border border-line text-xs space-y-1">
+              <span className="font-semibold text-ink-muted uppercase tracking-wider text-[11px] block">
+                Partner Payout Destination
+              </span>
+              {settlingRequest.payoutMethod === "UPI" ? (
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-ink">UPI ID:</span>
+                  <span className="font-mono text-brand font-bold">{settlingRequest.upiId || "—"}</span>
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  <div><strong className="text-ink">{settlingRequest.accountHolderName}</strong></div>
+                  <div className="text-ink-muted font-mono">
+                    A/C: {settlingRequest.bankAccountNumber} · IFSC: {settlingRequest.ifscCode}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Payment Method selector */}
+              <div>
+                <label className="block font-medium text-ink mb-1.5">Payment Method Used</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSettleMethod("BANK_TRANSFER")}
+                    className={`p-2.5 rounded-lg border text-xs font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                      settleMethod === "BANK_TRANSFER"
+                        ? "border-brand bg-brand/10 text-brand"
+                        : "border-line bg-surface text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    <Landmark className="size-4" /> Bank Transfer (NEFT/IMPS)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSettleMethod("UPI")}
+                    className={`p-2.5 rounded-lg border text-xs font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer ${
+                      settleMethod === "UPI"
+                        ? "border-brand bg-brand/10 text-brand"
+                        : "border-line bg-surface text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    <CreditCard className="size-4" /> UPI Transfer
+                  </button>
+                </div>
+              </div>
+
+              {/* Transaction Reference / UTR */}
+              <div>
+                <label className="block font-medium text-ink mb-1">
+                  Transaction / UTR Reference ID <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={transactionRef}
+                  onChange={(e) => setTransactionRef(e.target.value)}
+                  placeholder="e.g. UTR1234567890 or IMPS98765432"
+                  className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none font-mono uppercase"
+                  required
+                />
+                <p className="text-[11px] text-ink-muted mt-1">
+                  Provide the bank or UPI transfer reference ID so the partner can reconcile payment.
+                </p>
+              </div>
+
+              {/* Invoice Number */}
+              <div>
+                <label className="block font-medium text-ink mb-1">Invoice / Receipt Number</label>
+                <input
+                  type="text"
+                  value={invoiceNo}
+                  onChange={(e) => setInvoiceNo(e.target.value)}
+                  placeholder="e.g. INV-PO-2026-0001"
+                  className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none font-mono"
+                />
+              </div>
+
+              {/* Admin Notes */}
+              <div>
+                <label className="block font-medium text-ink mb-1">Internal Notes / Remarks (Optional)</label>
+                <textarea
+                  rows={2}
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  placeholder="Optional internal remarks regarding this settlement..."
+                  className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-ink placeholder:text-ink-muted focus:border-brand focus:outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-line">
+              <button
+                type="button"
+                onClick={() => setSettlingRequest(null)}
+                className="px-4 py-2 rounded-lg border border-line bg-surface text-xs font-semibold text-ink hover:bg-canvas transition-colors cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isResolvingPayout || !transactionRef.trim()}
+                onClick={submitSettlePayout}
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
+              >
+                {isResolvingPayout ? "Marking Settled..." : "Confirm & Mark Settled"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* REJECT PAYOUT MODAL                                      */}
+      {/* ======================================================== */}
+      {rejectingRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div
+            className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5"
+            style={{ colorScheme: "light" }}
+          >
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-ink flex items-center gap-2">
+                <XCircle className="size-5 text-rose-600" />
+                Reject Payout Request
+              </h3>
+              <p className="text-xs text-ink-muted leading-relaxed">
+                Rejecting request <strong>{rejectingRequest.formattedId}</strong> will instantly return the amount of{" "}
+                <strong className="text-ink">
+                  ₹{(rejectingRequest.amountPaise / 100).toLocaleString("en-IN")}
+                </strong>{" "}
+                back into the partner&apos;s available commission balance.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-ink mb-1.5">
+                Rejection Reason <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={payoutRejectReason}
+                onChange={(e) => setPayoutRejectReason(e.target.value)}
+                placeholder="Explain why this payout was rejected (e.g. incorrect bank account details, invalid IFSC code)..."
+                className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink placeholder:text-ink-muted focus:border-rose-500 focus:outline-none resize-none"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-line">
+              <button
+                type="button"
+                onClick={() => setRejectingRequest(null)}
+                className="px-4 py-2 rounded-lg border border-line bg-surface text-xs font-semibold text-ink hover:bg-canvas transition-colors cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isRejectingPayout || !payoutRejectReason.trim()}
+                onClick={submitRejectPayout}
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+              >
+                {isRejectingPayout ? "Rejecting..." : "Reject & Refund Balance"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* PAYOUT INVOICE / STATEMENT MODAL                         */}
+      {/* ======================================================== */}
+      {viewingInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-6 max-h-[90vh] flex flex-col"
+            style={{ colorScheme: "light" }}
+          >
+            <div className="flex items-center justify-between border-b border-line pb-4">
+              <div>
+                <h3 className="text-xl font-bold text-ink flex items-center gap-2">
+                  <FileText className="size-5 text-brand" />
+                  Commission Payout Statement
+                </h3>
+                <p className="text-xs text-ink-muted mt-0.5">
+                  Official settlement voucher &amp; invoice receipt
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 rounded-lg border border-line bg-surface hover:bg-canvas text-ink text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Printer className="size-3.5" /> Print
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewingInvoice(null)}
+                  className="size-8 rounded-lg text-ink-muted hover:text-ink hover:bg-canvas flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-6 overflow-y-auto pr-1 flex-1 text-xs">
+              {/* Header Box */}
+              <div className="p-4 rounded-xl bg-canvas border border-line flex flex-col sm:flex-row justify-between gap-4">
+                <div>
+                  <div className="text-lg font-bold text-ink">Bytezora Technologies</div>
+                  <div className="text-ink-muted text-xs">Partner Affiliate Network</div>
+                  <div className="text-ink-muted text-[11px] mt-1">Official Commission Disbursement Receipt</div>
+                </div>
+                <div className="sm:text-right">
+                  <div className="font-mono text-xs font-bold text-ink">
+                    {viewingInvoice.invoiceNumber || `INV-PO-${viewingInvoice.formattedId}`}
+                  </div>
+                  <div className="text-ink-muted text-[11px] mt-0.5">
+                    Settled on: {viewingInvoice.processedAt ? formatDate(viewingInvoice.processedAt) : formatDate(viewingInvoice.requestedAt)}
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 mt-1.5">
+                    <CheckCircle2 className="size-3" /> Paid &amp; Settled
+                  </span>
+                </div>
+              </div>
+
+              {/* Billed To / Partner details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-surface border border-line space-y-1.5">
+                  <span className="font-semibold text-[11px] text-ink-muted uppercase tracking-wider block">
+                    Beneficiary (Partner)
+                  </span>
+                  <div className="font-bold text-sm text-ink">{viewingInvoice.partnerName || "Partner"}</div>
+                  {viewingInvoice.partnerReferralCode && (
+                    <div className="text-xs text-ink-muted font-mono">
+                      Partner Code: {viewingInvoice.partnerReferralCode}
+                    </div>
+                  )}
+                  {viewingInvoice.partnerEmail && (
+                    <div className="text-xs text-ink-muted">{viewingInvoice.partnerEmail}</div>
+                  )}
+                </div>
+
+                <div className="p-4 rounded-xl bg-surface border border-line space-y-1.5">
+                  <span className="font-semibold text-[11px] text-ink-muted uppercase tracking-wider block">
+                    Payment Details
+                  </span>
+                  <div className="text-xs text-ink">
+                    <strong>Method:</strong> {viewingInvoice.payoutMethod === "UPI" ? "UPI Transfer" : "Direct Bank Transfer"}
+                  </div>
+                  {viewingInvoice.transactionReference && (
+                    <div className="text-xs text-ink font-mono">
+                      <strong>UTR / Ref:</strong> {viewingInvoice.transactionReference}
+                    </div>
+                  )}
+                  {viewingInvoice.payoutMethod === "UPI" ? (
+                    <div className="text-xs text-ink-muted font-mono">UPI ID: {viewingInvoice.upiId}</div>
+                  ) : (
+                    <div className="text-xs text-ink-muted font-mono">
+                      A/C: {viewingInvoice.bankAccountNumber} · IFSC: {viewingInvoice.ifscCode}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Calculation Table */}
+              <div className="rounded-xl border border-line overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-line bg-canvas/60">
+                      <th className="px-4 py-3 text-xs font-medium text-ink-muted">Description</th>
+                      <th className="px-4 py-3 text-xs font-medium text-ink-muted text-right">Amount (INR)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line text-xs">
+                    <tr>
+                      <td className="px-4 py-3 text-ink">
+                        <div className="font-semibold">Affiliate Referral Commission</div>
+                        <div className="text-ink-muted text-[11px]">Request Ref: {viewingInvoice.formattedId}</div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-ink">
+                        ₹{(viewingInvoice.amountPaise / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                    <tr className="bg-canvas/30 text-ink-muted">
+                      <td className="px-4 py-2.5">
+                        TDS Deducted under Section 194H (5%)
+                      </td>
+                      <td className="px-4 py-2.5 text-right font-mono">
+                        - ₹{(Math.round(viewingInvoice.amountPaise * 0.05) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                    <tr className="bg-emerald-500/5 font-bold text-sm">
+                      <td className="px-4 py-3 text-ink">Net Amount Disbursed</td>
+                      <td className="px-4 py-3 text-right text-emerald-700">
+                        ₹{((viewingInvoice.amountPaise - Math.round(viewingInvoice.amountPaise * 0.05)) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {viewingInvoice.adminNotes && (
+                <div className="p-3 rounded-lg bg-canvas border border-line text-xs">
+                  <span className="font-semibold text-ink-muted text-[11px] block uppercase tracking-wider mb-0.5">
+                    Settlement Notes
+                  </span>
+                  <p className="text-ink">{viewingInvoice.adminNotes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-line">
+              <button
+                type="button"
+                onClick={() => setViewingInvoice(null)}
+                className="px-4 py-2 rounded-lg border border-line bg-surface text-xs font-semibold text-ink hover:bg-canvas transition-colors cursor-pointer shadow-xs"
+              >
+                Close
               </button>
             </div>
           </div>
