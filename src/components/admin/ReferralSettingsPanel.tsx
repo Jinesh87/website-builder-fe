@@ -146,7 +146,7 @@ export default function ReferralSettingsPanel({
         </div>
 
         {/* Global Commission Policy */}
-        <div className="space-y-2">
+        <div className="space-y-2" style={{ colorScheme: "light" }}>
           <label className="block text-xs font-semibold text-ink">
             Default Commission Policy (When does a partner earn?)
           </label>
@@ -158,14 +158,28 @@ export default function ReferralSettingsPanel({
                   : "border-line bg-canvas/40 hover:bg-canvas"
               }`}
             >
-              <input
-                type="radio"
-                name="defaultCommissionPolicy"
-                value="FIRST_PAYMENT"
-                checked={policy === "FIRST_PAYMENT"}
-                onChange={() => setPolicy("FIRST_PAYMENT")}
-                className="mt-0.5 text-brand"
-              />
+              <div className="pt-0.5 shrink-0">
+                <input
+                  type="radio"
+                  name="defaultCommissionPolicy"
+                  value="FIRST_PAYMENT"
+                  checked={policy === "FIRST_PAYMENT"}
+                  onChange={() => setPolicy("FIRST_PAYMENT")}
+                  className="sr-only"
+                />
+                <span
+                  aria-hidden="true"
+                  className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    policy === "FIRST_PAYMENT"
+                      ? "border-brand bg-white"
+                      : "border-slate-300 bg-white"
+                  }`}
+                >
+                  {policy === "FIRST_PAYMENT" && (
+                    <span className="size-2 rounded-full bg-brand" />
+                  )}
+                </span>
+              </div>
               <div>
                 <div className="text-xs font-semibold text-ink">First Payment Only (One-Time)</div>
                 <div className="text-[11px] text-ink-muted mt-0.5 leading-relaxed">
@@ -181,14 +195,28 @@ export default function ReferralSettingsPanel({
                   : "border-line bg-canvas/40 hover:bg-canvas"
               }`}
             >
-              <input
-                type="radio"
-                name="defaultCommissionPolicy"
-                value="EVERY_RENEWAL"
-                checked={policy === "EVERY_RENEWAL"}
-                onChange={() => setPolicy("EVERY_RENEWAL")}
-                className="mt-0.5 text-brand"
-              />
+              <div className="pt-0.5 shrink-0">
+                <input
+                  type="radio"
+                  name="defaultCommissionPolicy"
+                  value="EVERY_RENEWAL"
+                  checked={policy === "EVERY_RENEWAL"}
+                  onChange={() => setPolicy("EVERY_RENEWAL")}
+                  className="sr-only"
+                />
+                <span
+                  aria-hidden="true"
+                  className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                    policy === "EVERY_RENEWAL"
+                      ? "border-brand bg-white"
+                      : "border-slate-300 bg-white"
+                  }`}
+                >
+                  {policy === "EVERY_RENEWAL" && (
+                    <span className="size-2 rounded-full bg-brand" />
+                  )}
+                </span>
+              </div>
               <div>
                 <div className="text-xs font-semibold text-ink">Every Subscription Renewal (Recurring)</div>
                 <div className="text-[11px] text-ink-muted mt-0.5 leading-relaxed">
