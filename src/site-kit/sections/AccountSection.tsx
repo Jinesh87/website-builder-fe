@@ -113,7 +113,9 @@ const SAMPLE: ShopCustomerAccount = {
     {
       id: "w1",
       productId: "p10",
+      variantId: "pv10",
       productName: "Weekend hoodie",
+      variantName: "L / Charcoal",
       productSlug: "weekend-hoodie",
       categoryName: "Outerwear",
       pricePaise: 179900,
@@ -122,7 +124,9 @@ const SAMPLE: ShopCustomerAccount = {
     {
       id: "w2",
       productId: "p11",
+      variantId: "pv11",
       productName: "Trail sneakers",
+      variantName: "UK 8 / Slate",
       productSlug: "trail-sneakers",
       categoryName: "Footwear",
       pricePaise: 329900,
