@@ -832,7 +832,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       panel.hidden=panel.getAttribute("data-wb-account-panel")!==name;
     });
   }
-  function bind(root, base, loginHref){
+  function bind(root, base, loginHref, logoutHref){
     if(root.getAttribute("data-wb-account-bound")) return;
     root.setAttribute("data-wb-account-bound","1");
     var tabs=Array.prototype.slice.call(root.querySelectorAll("[data-wb-account-tab]"));
@@ -854,7 +854,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     activatePanel(root, tabs, preferredPanel(root));
     root.querySelectorAll("[data-wb-account-logout]").forEach(function(button){
       button.addEventListener("click", function(){
-        request(base, "/logout", "POST").catch(function(){}).then(function(){ window.location.href=siteHref(loginHref); });
+        request(base, "/logout", "POST").catch(function(){}).then(function(){ window.location.href=siteHref(logoutHref); });
       });
     });
     function refreshAccount(){
@@ -1612,6 +1612,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     root.setAttribute("data-wb-account-ready","1");
     var websiteId=root.getAttribute("data-wb-account");
     var loginHref=root.getAttribute("data-wb-account-login")||"/login";
+    var logoutHref=root.getAttribute("data-wb-account-logout")||loginHref;
     var redirect=root.getAttribute("data-wb-account-redirect")==="1";
     root.querySelectorAll("[data-wb-account-login]").forEach(function(link){ if(link.tagName==="A") link.setAttribute("href", siteHref(loginHref)); });
     if(!websiteId){ showState(root, "guest"); return; }
@@ -1620,7 +1621,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       .then(function(result){
         if(!result.ok) throw new Error("no-session");
         fill(root, result.json||{});
-        bind(root, base, loginHref);
+        bind(root, base, loginHref, logoutHref);
         showState(root, "member");
       })
       .catch(function(){

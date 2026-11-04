@@ -1574,11 +1574,11 @@ type MemberProps = {
   account: ShopCustomerAccount;
   websiteId?: string;
   interactive: boolean;
-  loginHref: string;
+  logoutRedirectHref: string;
   shopHref: string;
 };
 
-function MemberView({ data, variant, account, websiteId, interactive, loginHref, shopHref }: MemberProps) {
+function MemberView({ data, variant, account, websiteId, interactive, logoutRedirectHref, shopHref }: MemberProps) {
   const panels = panelsOf(data);
   const tabbed = TABBED[variant];
   const [active, setActive] = useState<Panel>(() => {
@@ -1611,7 +1611,7 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
   async function logout() {
     if (!interactive || !websiteId) return;
     await shopAuthApi.logout(websiteId);
-    window.location.href = siteHref(loginHref);
+    window.location.href = siteHref(logoutRedirectHref);
   }
 
   async function refreshAfterPay(order: ShopOrderSummary) {
@@ -1834,6 +1834,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
   const websiteId = catalog?.live ? catalog.websiteId : undefined;
   const variant: AccountVariant = data.variant in TABBED ? data.variant : "sidebar-tabs";
   const loginHref = data.loginHref?.trim() || catalog?.authHref || "/login";
+  const logoutRedirectHref = data.logoutRedirectHref?.trim() || loginHref;
   const shopHref = data.shopHref?.trim() || "/shop";
   const preview = data.preview ?? "member";
 
@@ -1855,6 +1856,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
           className={classes}
           data-wb-account={websiteId ?? ""}
           data-wb-account-login={loginHref}
+          data-wb-account-logout={logoutRedirectHref}
           data-wb-account-redirect={data.redirectWhenLoggedOut ? "1" : undefined}
           data-wb-success-variant={data.successPopupVariant ?? "celebration"}
           data-wb-order-detail-variant={data.orderDetailVariant ?? "timeline"}
@@ -1877,7 +1879,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
               account={{ customer: { ...SAMPLE.customer, fullName: "", email: "", phone: "" }, orders: [], cartItems: [], addresses: [] }}
               websiteId={websiteId}
               interactive={false}
-              loginHref={loginHref}
+              logoutRedirectHref={logoutRedirectHref}
               shopHref={shopHref}
             />
           </div>
@@ -1893,7 +1895,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
       <GuestView data={data} loginHref={loginHref} />
     ) : (
       <>
-        <MemberView data={data} variant={variant} account={SAMPLE} interactive={false} loginHref={loginHref} shopHref={shopHref} />
+        <MemberView data={data} variant={variant} account={SAMPLE} interactive={false} logoutRedirectHref={logoutRedirectHref} shopHref={shopHref} />
         {preview === "success" && (
           <SuccessPopup order={SAMPLE.orders[0]!} data={data} onClose={() => undefined} onView={() => undefined} />
         )}
