@@ -165,6 +165,7 @@ const SAMPLE_ORDER_DETAIL: ShopOrderDetail = {
     country: "IN",
   },
   paidAt: "2026-10-21T10:12:00.000Z",
+  canDownloadInvoice: true,
   updatedAt: "2026-10-23T14:30:00.000Z",
 };
 
@@ -444,6 +445,18 @@ function OrderDetailView({
           <StatusBadge status={order.status} />
           <RefundBadge status={order.refundStatus} />
         </div>
+        {(order.canDownloadInvoice || !!order.paidAt) && websiteId && (
+          <div className="wb-acct-invoice-actions">
+            <a
+              className="wb-acct-invoice-download"
+              href={shopAuthApi.orderInvoiceHref(websiteId, order.id)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Download invoice
+            </a>
+          </div>
+        )}
         <div className="wb-acct-order-items">
           {order.items.map((item) => (
             <div key={item.id} className="wb-acct-order-item">
@@ -674,6 +687,7 @@ function OrdersPanel({
           cancelReason: null,
           returnReason: null,
           paidAt: null,
+          canDownloadInvoice: false,
           updatedAt: summary.createdAt,
         });
       }
@@ -684,6 +698,23 @@ function OrdersPanel({
       setDetail(await shopAuthApi.getOrder(websiteId, orderId));
     } catch {
       setDetail(null);
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
+  async function openInvoice(orderId: string) {
+    if (!interactive || !websiteId) return;
+    setLoadingId(orderId);
+    try {
+      const full = await shopAuthApi.getOrder(websiteId, orderId);
+      if (!(full.canDownloadInvoice || full.paidAt)) {
+        window.alert("Invoice is available after payment.");
+        return;
+      }
+      window.open(shopAuthApi.orderInvoiceHref(websiteId, orderId), "_blank", "noopener,noreferrer");
+    } catch {
+      window.alert("Could not open invoice right now.");
     } finally {
       setLoadingId(null);
     }
@@ -714,6 +745,18 @@ function OrdersPanel({
             <div className="wb-acct-badges">
               <StatusBadge status={order.status} />
               <RefundBadge status={order.refundStatus} />
+              {order.canDownloadInvoice && interactive && websiteId && (
+                <button
+                  type="button"
+                  className="wb-acct-row-invoice"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void openInvoice(order.id);
+                  }}
+                >
+                  Invoice
+                </button>
+              )}
               {order.canCancel && interactive && websiteId && (
                 <button
                   type="button"

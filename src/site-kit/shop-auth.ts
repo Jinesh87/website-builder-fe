@@ -32,6 +32,7 @@ export type ShopOrderSummary = {
   canCancel?: boolean;
   canReturn?: boolean;
   returnUntil?: string | null;
+  canDownloadInvoice?: boolean;
 };
 
 export type ShopOrderTimelineEvent = {
@@ -69,6 +70,8 @@ export type ShopOrderDetail = ShopOrderSummary & {
   returnReason: string | null;
   shippingAddress?: ShopOrderShippingAddress | null;
   paidAt: string | null;
+  /** True when payment was captured and an invoice can be downloaded. */
+  canDownloadInvoice?: boolean;
   updatedAt: string;
 };
 
@@ -382,6 +385,10 @@ export const shopAuthApi = {
     return (result.body as { order: ShopOrderDetail }).order;
   },
 
+  /** Opens in a new tab; uses the shop session cookie on a top-level navigation. */
+  orderInvoiceHref: (websiteId: string, orderId: string) =>
+    `${apiBase()}/shop/${websiteId}/auth/orders/${orderId}/invoice`,
+
   cancelOrder: async (websiteId: string, orderId: string, reason: string) => {
     const result = await shopAuthFetch(websiteId, `/orders/${orderId}/cancel`, {
       method: "POST",
@@ -637,6 +644,12 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
           returnBtn.setAttribute("type","button");
           returnBtn.setAttribute("data-wb-order-return", String(order.id||""));
           badges.appendChild(returnBtn);
+        }
+        if(order.canDownloadInvoice){
+          var invoiceBtn=el("button","wb-acct-row-invoice","Invoice");
+          invoiceBtn.setAttribute("type","button");
+          invoiceBtn.setAttribute("data-wb-order-invoice", String(order.id||""));
+          badges.appendChild(invoiceBtn);
         }
         row.appendChild(badges);
         row.appendChild(el("strong","wb-acct-row-amount",money(order.totalPaise)));
@@ -1178,6 +1191,10 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         else if(refund==="processed") badgesHtml+='<span class="wb-acct-badge is-refund-processed">Refunded</span>';
         else if(refund==="failed") badgesHtml+='<span class="wb-acct-badge is-refund-failed">Refund failed</span>';
         badgesHtml+="</div>";
+        var invoiceBlock="";
+        if(order.canDownloadInvoice || order.paidAt){
+          invoiceBlock='<div class="wb-acct-invoice-actions"><a class="wb-acct-invoice-download" href="'+base+"/orders/"+encodeURIComponent(String(order.id||""))+'/invoice" target="_blank" rel="noreferrer">Download invoice</a></div>';
+        }
         var cancelBlock="";
         if(order.canCancel){
           cancelBlock=
@@ -1231,6 +1248,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
             '<p class="wb-acct-success-text">Placed '+day(order.createdAt)+"</p></div>"+
             '<button type="button" class="wb-acct-order-close" aria-label="Close">×</button></div>'+
             badgesHtml+
+            invoiceBlock+
             '<div class="wb-acct-order-items">'+items+"</div>"+
             '<p class="wb-acct-success-meta"><strong>Total '+money(order.totalPaise)+"</strong></p>"+
             cancelBlock+
@@ -1389,6 +1407,20 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         document.body.appendChild(modal);
       });
     }
+    function openInvoice(orderId){
+      if(!orderId) return;
+      request(base, "/orders/"+orderId, "GET").then(function(result){
+        if(!result.ok){ alert("Could not open invoice right now."); return; }
+        var order=(result.json&&result.json.order)||{};
+        if(!(order.canDownloadInvoice || order.paidAt)){
+          alert("Invoice is available after payment.");
+          return;
+        }
+        window.open(base+"/orders/"+encodeURIComponent(String(orderId))+"/invoice", "_blank", "noopener,noreferrer");
+      }).catch(function(){
+        alert("Could not open invoice right now.");
+      });
+    }
     function showSuccessModal(rootNode, apiBase, order){
       var existing=document.querySelector("body > [data-wb-account-success-modal]");
       if(existing) existing.remove();
@@ -1434,6 +1466,13 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         event.preventDefault();
         event.stopPropagation();
         openOrderDetail(returnBtn.getAttribute("data-wb-order-return")||"", { startReturn:true });
+        return;
+      }
+      var invoiceBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-order-invoice]");
+      if(invoiceBtn && root.contains(invoiceBtn)){
+        event.preventDefault();
+        event.stopPropagation();
+        openInvoice(invoiceBtn.getAttribute("data-wb-order-invoice")||"");
         return;
       }
       var row=event.target&&event.target.closest&&event.target.closest("[data-wb-order-id]");
