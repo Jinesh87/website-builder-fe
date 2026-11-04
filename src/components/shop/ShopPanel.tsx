@@ -7,6 +7,7 @@ import { errorMessage } from "../../api/http.ts";
 import { formatPaise } from "../../api/wallet.ts";
 import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
 import ShopCustomersPanel from "./ShopCustomersPanel.tsx";
+import ShopInvoiceTemplatePanel from "./ShopInvoiceTemplatePanel.tsx";
 import { ShopInventoryLogPanel, ShopInventoryPanel } from "./ShopInventoryPanel.tsx";
 import ShopOrderEmailsPanel from "./ShopOrderEmailsPanel.tsx";
 import ShopOrdersPanel from "./ShopOrdersPanel.tsx";
@@ -283,6 +284,7 @@ type ShopSection =
   | "products"
   | "customers"
   | "orders"
+  | "invoice-template"
   | "order-emails"
   | "inventory"
   | "inventory-log"
@@ -294,6 +296,7 @@ const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "products", label: "Products" },
   { id: "customers", label: "Customers" },
   { id: "orders", label: "Orders" },
+  { id: "invoice-template", label: "Invoice template" },
   { id: "order-emails", label: "Order emails" },
   { id: "inventory", label: "Inventory" },
   { id: "inventory-log", label: "Inventory log" },
@@ -597,6 +600,7 @@ export default function ShopPanel({
         section === "products" ||
         section === "customers" ||
         section === "orders" ||
+        section === "invoice-template" ||
         section === "order-emails" ||
         section === "inventory" ||
         section === "inventory-log") &&
@@ -611,6 +615,15 @@ export default function ShopPanel({
 
       {section === "customers" && website.shopEnabled && <ShopCustomersPanel websiteId={website.id} />}
       {section === "orders" && website.shopEnabled && <ShopOrdersPanel websiteId={website.id} />}
+      {section === "invoice-template" && website.shopEnabled && (
+        <ShopInvoiceTemplatePanel
+          websiteId={website.id}
+          clientId={website.clientId}
+          websiteName={website.name}
+          businessName={website.info.businessName}
+          businessAddress={website.info.address}
+        />
+      )}
       {section === "order-emails" && website.shopEnabled && (
         <ShopOrderEmailsPanel websiteId={website.id} clientId={website.clientId} />
       )}

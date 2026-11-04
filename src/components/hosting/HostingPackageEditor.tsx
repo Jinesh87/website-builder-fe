@@ -21,6 +21,7 @@ type Form = {
   yearly: string;
   defaultQuarterly: string;
   defaultYearly: string;
+  websiteBackupDays: string;
   featured: boolean;
   active: boolean;
 };
@@ -36,6 +37,7 @@ function toForm(pkg: AdminHostingPackage): Form {
     yearly: pkg.isCustom ? "" : paiseToRupeesInput(pkg.prices.YEARLY),
     defaultQuarterly: paiseToRupeesInput(pkg.defaultPrices.QUARTERLY),
     defaultYearly: paiseToRupeesInput(pkg.defaultPrices.YEARLY),
+    websiteBackupDays: pkg.websiteBackupDays ? String(pkg.websiteBackupDays) : "",
     featured: pkg.featured,
     active: pkg.active,
   };
@@ -65,6 +67,7 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
   const yearly = pkg.isCustom ? 0 : rupeesInputToPaise(form.yearly) ?? 0;
   const defaultQuarterly = pkg.isCustom ? rupeesInputToPaise(form.defaultQuarterly) ?? 0 : 0;
   const defaultYearly = pkg.isCustom ? rupeesInputToPaise(form.defaultYearly) ?? 0 : 0;
+  const backupDays = form.websiteBackupDays.trim() ? Number(form.websiteBackupDays) : null;
   const features = form.features.map((feature) => feature.trim()).filter(Boolean);
   const errors = {
     name: form.name.trim() ? undefined : "Enter a name",
@@ -73,6 +76,10 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
     yearly: Number.isNaN(yearly) ? "Enter an amount like 7000 or 7000.50" : undefined,
     defaultQuarterly: Number.isNaN(defaultQuarterly) ? "Enter an amount like 7500 or 7500.50" : undefined,
     defaultYearly: Number.isNaN(defaultYearly) ? "Enter an amount like 24000 or 24000.50" : undefined,
+    websiteBackupDays:
+      backupDays === null || (Number.isInteger(backupDays) && backupDays >= 1 && backupDays <= 365)
+        ? undefined
+        : "Enter 1 to 365 days, or leave empty",
   };
   const invalid = Object.values(errors).some(Boolean);
   const pricesChanged = pkg.isCustom
@@ -84,6 +91,7 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
     form.description.trim() !== pkg.description ||
     form.featured !== pkg.featured ||
     form.active !== pkg.active ||
+    backupDays !== (pkg.websiteBackupDays ?? null) ||
     features.join("\n") !== pkg.features.join("\n");
   const yearlySaving = yearlySavingPercent({ QUARTERLY: quarterly || null, YEARLY: yearly || null });
 
@@ -107,6 +115,7 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
           quarterlyPricePaise: quarterly,
           yearlyPricePaise: yearly,
           ...(pkg.isCustom ? { defaultQuarterlyPaise: defaultQuarterly, defaultYearlyPaise: defaultYearly } : {}),
+          websiteBackupDays: backupDays,
           featured: form.featured,
           active: form.active,
         }),
@@ -217,6 +226,17 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
               />
             </div>
           )}
+
+          <TextInput
+            label="Automatic backup every (days)"
+            name={`backup-days-${pkg.id}`}
+            value={form.websiteBackupDays}
+            onChange={(value) => update("websiteBackupDays", value.replace(/\D/g, "").slice(0, 3))}
+            placeholder="Disabled"
+            description="Used by the backup worker for websites on this package. Leave empty to disable."
+            error={errors.websiteBackupDays}
+            isDisabled={saving}
+          />
 
           <fieldset className="pt-1">
             <div className="flex items-center justify-between mb-1.5">

@@ -223,6 +223,9 @@ export const SHOP_DETAIL_SCRIPT = `(function(){
         if(variant.out || stock<=0) btn.setAttribute("aria-disabled","true");
         else btn.removeAttribute("aria-disabled");
       });
+      root.querySelectorAll("[data-wb-wishlist-toggle]").forEach(function(btn){
+        if(variant.id) btn.setAttribute("data-wb-variant-id", variant.id);
+      });
       var msg=root.querySelector("[data-wb-cart-msg]");
       if(msg){ msg.hidden=true; msg.textContent=""; msg.classList.remove("is-ok","is-error","is-login"); }
     }

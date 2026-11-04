@@ -285,6 +285,7 @@ export type WebsiteVersion = {
   id: string;
   version: number;
   status: "PENDING" | "SUCCEEDED" | "FAILED";
+  source: "MANUAL" | "BACKUP";
   isLive: boolean;
   publishedByName: string | null;
   createdAt: string;
@@ -372,6 +373,11 @@ export const websitesApi = {
 
   versions: (id: string) =>
     request<{ versions: WebsiteVersion[] }>(`${BASE}/${id}/versions`).then((data) => data.versions),
+
+  restoreVersion: (id: string, versionId: string) =>
+    request<WebsiteResponse>(`${BASE}/${id}/versions/${encodeURIComponent(versionId)}/restore`, { method: "POST" }).then(
+      (data) => data.website,
+    ),
 
   domains: (id: string) => request<DomainList>(`${BASE}/${id}/domains`),
 

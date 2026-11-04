@@ -19,6 +19,8 @@ export type HostingPackage = {
   description: string;
   features: string[];
   featured: boolean;
+  /** Automatic backup cadence in days for websites on this package. Null = disabled. */
+  websiteBackupDays: number | null;
   /** Priced per website: the website's own price, else `defaultPrices`. */
   isCustom: boolean;
   prices: CyclePrices;
@@ -186,6 +188,8 @@ export type HostingPackageInput = {
   /** Custom package only: the default price; 0 = none. */
   defaultQuarterlyPaise?: number;
   defaultYearlyPaise?: number;
+  /** Automatic backup cadence in days for websites on this package. Null = disabled. */
+  websiteBackupDays?: number | null;
   featured: boolean;
   active: boolean;
 };
@@ -209,7 +213,14 @@ export type ClientHostingWebsite = {
 };
 
 export type ClientHosting = {
-  client: { id: string; businessName: string; source: ClientSource; createdAt: string; owner: ClientOwner | null };
+  client: {
+    id: string;
+    businessName: string;
+    source: ClientSource;
+    createdAt: string;
+    owner: ClientOwner | null;
+    websiteBackupDaysOverride: number | null;
+  };
   balance: number;
   websites: ClientHostingWebsite[];
   payments: HostingPayment[];
@@ -360,6 +371,11 @@ export const adminHostingApi = {
   clients: (params: ClientOverviewParams) => request<ClientOverviewList>(`/admin/hosting/clients${toQuery(params)}`),
   client: (clientId: string) =>
     request<{ hosting: ClientHosting }>(`/admin/hosting/clients/${encodeURIComponent(clientId)}`).then((data) => data.hosting),
+  updateClientBackupPolicy: (clientId: string, websiteBackupDaysOverride: number | null) =>
+    request<{ hosting: ClientHosting }>(`/admin/hosting/clients/${encodeURIComponent(clientId)}/backup-policy`, {
+      method: "PATCH",
+      body: { websiteBackupDaysOverride },
+    }).then((data) => data.hosting),
   subscriptions: (params: SubscriptionListParams) => request<SubscriptionList>(`/admin/hosting/subscriptions${toQuery(params)}`),
   payments: (params: PaymentListParams) => request<PaymentList>(`/admin/hosting/payments${toQuery(params)}`),
   paymentsCsv: (params: Omit<PaymentListParams, "page" | "pageSize">) =>
