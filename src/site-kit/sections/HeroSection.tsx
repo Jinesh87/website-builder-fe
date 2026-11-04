@@ -1218,7 +1218,7 @@ export default function HeroSection({
               >
                 {(card.icon || card.iconImage?.url) && (
                   <span className="wb-hero-floating-card-icon">
-                    <SiteIcon name={card.icon} image={card.iconImage} />
+                    <SiteIcon name={card.icon} image={card.iconImage} inline size={20} />
                   </span>
                 )}
                 <span className="wb-hero-floating-card-text">

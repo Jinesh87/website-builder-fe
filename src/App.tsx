@@ -53,6 +53,7 @@ const ClientsPage = lazy(() => import("./pages/admin/ClientsPage.tsx"));
 const EnquiriesPage = lazy(() => import("./pages/admin/EnquiriesPage.tsx"));
 const QuestionnairesPage = lazy(() => import("./pages/admin/QuestionnairesPage.tsx"));
 const PartnersAdminPage = lazy(() => import("./pages/admin/PartnersPage.tsx"));
+const PartnerProfileAdminPage = lazy(() => import("./pages/admin/PartnerProfileAdminPage.tsx"));
 const ClientFormPage = lazy(() => import("./pages/admin/ClientFormPage.tsx"));
 const AllWebsitesPage = lazy(() => import("./pages/admin/AllWebsitesPage.tsx"));
 const ClientWebsitesPage = lazy(() => import("./pages/admin/ClientWebsitesPage.tsx"));
@@ -146,6 +147,7 @@ export default function App() {
                 <Route path="enquiries" element={<EnquiriesPage />} />
                 <Route path="questionnaires" element={<QuestionnairesPage />} />
                 <Route path="partners" element={<PartnersAdminPage />} />
+                <Route path="partners/:id" element={<PartnerProfileAdminPage />} />
                 <Route path="clients/new" element={<ClientFormPage />} />
                 <Route path="clients/:id" element={<ClientFormPage />} />
                 <Route path="websites" element={<AllWebsitesPage />} />

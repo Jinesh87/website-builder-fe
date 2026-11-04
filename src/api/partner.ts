@@ -5,6 +5,56 @@ export type PartnerReferralStatus = "REGISTERED" | "CONVERTED";
 export type CommissionStatus = "PENDING" | "APPROVED" | "PAID" | "CANCELLED";
 export type CommissionSource = "WALLET_TOPUP" | "HOSTING" | "SHOP_ORDER";
 export type PartnerCommissionPolicy = "GLOBAL_DEFAULT" | "FIRST_PAYMENT" | "EVERY_RENEWAL";
+export type PayoutRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type PayoutMethod = "BANK_TRANSFER" | "UPI";
+
+export type PartnerPayoutDetails = {
+  accountHolderName?: string;
+  bankAccountNumber?: string;
+  ifscCode?: string;
+  upiId?: string;
+  panNumber?: string;
+};
+
+export type PartnerPayoutRequest = {
+  id: string;
+  requestNumber: number;
+  formattedId: string;
+  partnerId: string;
+  partnerName?: string;
+  partnerContact?: string;
+  partnerEmail?: string;
+  partnerPhone?: string;
+  partnerReferralCode?: string;
+  amountPaise: number;
+  status: PayoutRequestStatus;
+  requestedAt: string;
+  processedAt: string | null;
+  payoutMethod: PayoutMethod;
+  accountHolderName?: string | null;
+  bankAccountNumber?: string | null;
+  ifscCode?: string | null;
+  upiId?: string | null;
+  transactionReference?: string | null;
+  invoiceNumber?: string | null;
+  adminNotes?: string | null;
+  rejectionReason?: string | null;
+  actorName?: string | null;
+};
+
+export type PayoutRequestsListResponse = {
+  items: PartnerPayoutRequest[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  counts: {
+    ALL: number;
+    PENDING: number;
+    APPROVED: number;
+    REJECTED: number;
+  };
+};
 
 export type PartnerProgramConfig = {
   defaultCommissionRate: number;
@@ -128,6 +178,39 @@ export type PartnerDetail = PartnerSummary & {
   suspendedAt: string | null;
   userId: string | null;
   inviteLink?: string;
+  bankDetails?: PartnerPayoutDetails;
+  payoutRequests?: PartnerPayoutRequest[];
+  stats?: {
+    totalReferrals: number;
+    convertedReferrals: number;
+    totalEarnedPaise: number;
+    approvedCommissionPaise: number;
+    paidCommissionPaise: number;
+    pendingPayoutRequestsPaise: number;
+    availableForWithdrawalPaise: number;
+  };
+  referrals?: {
+    id: string;
+    customerName: string;
+    customerEmail: string;
+    status: PartnerReferralStatus | "REGISTERED" | "CONVERTED";
+    planName: string;
+    totalSpentPaise: number;
+    paymentAmountPaise: number | null;
+    commissionAmountPaise: number | null;
+    registeredAt: string;
+    convertedAt: string | null;
+  }[];
+  commissions?: {
+    id: string;
+    orderAmountPaise: number;
+    commissionRate: number;
+    commissionAmountPaise: number;
+    status: CommissionStatus;
+    customerName: string;
+    createdAt: string;
+    paidAt: string | null;
+  }[];
   activities: {
     id: string;
     kind: string;
@@ -167,7 +250,12 @@ export type PartnerDashboardData = {
     pendingCommissionPaise: number;
     approvedCommissionPaise: number;
     paidCommissionPaise: number;
+    pendingPayoutRequestsPaise?: number;
+    availableForWithdrawalPaise?: number;
+    hasPayoutMethod?: boolean;
   };
+  bankDetails?: PartnerPayoutDetails;
+  payoutRequests?: PartnerPayoutRequest[];
   referrals: {
     id: string;
     customerName: string;
@@ -241,9 +329,47 @@ export const partnerApi = {
 
   getCommissions: (page = 1, pageSize = 20) =>
     request<PartnerCommissionsResponse>(`${BASE}/commissions${toQuery({ page, pageSize })}`),
+
+  updatePayoutDetails: (data: PartnerPayoutDetails) =>
+    request<PartnerPayoutDetails>(`${BASE}/payout-details`, {
+      method: "PUT",
+      body: data,
+    }),
+
+  requestPayout: (data: { amountPaise: number; payoutMethod?: PayoutMethod }) =>
+    request<PartnerPayoutRequest>(`${BASE}/payout-requests`, {
+      method: "POST",
+      body: data,
+    }),
 };
 
 export const adminPartnerApi = {
+  listPayoutRequests: (params?: {
+    status?: string;
+    search?: string;
+    page?: number;
+    pageSize?: number;
+  }) =>
+    request<PayoutRequestsListResponse>(
+      `${ADMIN_BASE}/payout-requests${toQuery(params || {})}`,
+    ),
+
+  resolvePayoutRequest: (
+    requestId: string,
+    data: {
+      status: "APPROVED" | "REJECTED";
+      payoutMethod?: PayoutMethod;
+      transactionReference?: string;
+      invoiceNumber?: string;
+      adminNotes?: string;
+      rejectionReason?: string;
+    },
+  ) =>
+    request<PartnerPayoutRequest>(`${ADMIN_BASE}/payout-requests/${requestId}`, {
+      method: "PATCH",
+      body: data,
+    }),
+
   getProgramConfig: () => request<PartnerProgramConfig>(`${ADMIN_BASE}/config/program`),
 
   updateProgramConfig: (data: {

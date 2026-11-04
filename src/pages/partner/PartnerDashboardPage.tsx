@@ -132,9 +132,9 @@ export default function PartnerDashboardPage() {
   const isSuspended = partnerInfo.status === "SUSPENDED";
   const firstName = partnerInfo.contactName.split(" ")[0] || "Partner";
 
-  const brandHost =
-    typeof window !== "undefined" ? window.location.host : "yourbrand.com";
-  const referralUrl = `https://${brandHost}/r/${partnerInfo.referralCode}`;
+  const brandOrigin =
+    typeof window !== "undefined" ? window.location.origin : "https://yourbrand.com";
+  const referralUrl = `${brandOrigin}/r/${partnerInfo.referralCode}`;
 
   function handleCopyCode() {
     if (isSuspended || !partnerInfo.referralCode) return;
@@ -491,31 +491,31 @@ export default function PartnerDashboardPage() {
 
       {/* Row 2: 3 Commission Stage Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Pending */}
-        <div className="rounded-2xl bg-surface border border-line p-5 shadow-xs">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600">
-            <span className="size-2 rounded-full bg-amber-500" />
-            Pending
-          </div>
-          <p className="text-2xl font-bold text-ink mt-2">
-            {formatCurrency(Math.round((data?.stats?.pendingCommissionPaise ?? 0) / 100))}
-          </p>
-          <p className="text-ed-2xs text-ink-muted mt-1">
-            In the 15-day refund window
-          </p>
-        </div>
-
-        {/* Approved */}
+        {/* Approved & Ready */}
         <div className="rounded-2xl bg-surface border border-line p-5 shadow-xs">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600">
             <span className="size-2 rounded-full bg-blue-500" />
-            Approved
+            Approved Balance
           </div>
           <p className="text-2xl font-bold text-ink mt-2">
-            {formatCurrency(Math.round((data?.stats?.approvedCommissionPaise ?? 0) / 100))}
+            {formatCurrency(Math.round((data?.stats?.availableForWithdrawalPaise ?? data?.stats?.approvedCommissionPaise ?? 0) / 100))}
           </p>
           <p className="text-ed-2xs text-ink-muted mt-1">
-            Will be paid on [10th of next month]
+            Available for withdrawal
+          </p>
+        </div>
+
+        {/* Payout Requests Pending */}
+        <div className="rounded-2xl bg-surface border border-line p-5 shadow-xs">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600">
+            <span className="size-2 rounded-full bg-amber-500" />
+            Pending Processing
+          </div>
+          <p className="text-2xl font-bold text-ink mt-2">
+            {formatCurrency(Math.round((data?.stats?.pendingPayoutRequestsPaise ?? data?.stats?.pendingCommissionPaise ?? 0) / 100))}
+          </p>
+          <p className="text-ed-2xs text-ink-muted mt-1">
+            In payout withdrawal queue
           </p>
         </div>
 
@@ -523,13 +523,13 @@ export default function PartnerDashboardPage() {
         <div className="rounded-2xl bg-surface border border-line p-5 shadow-xs">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
             <span className="size-2 rounded-full bg-emerald-500" />
-            Paid
+            Paid to Date
           </div>
           <p className="text-2xl font-bold text-ink mt-2">
             {formatCurrency(Math.round((data?.stats?.paidCommissionPaise ?? 0) / 100))}
           </p>
           <p className="text-ed-2xs text-ink-muted mt-1">
-            Sent to your bank account
+            Directly transferred to bank or UPI
           </p>
         </div>
       </div>

@@ -137,21 +137,21 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
   }
 
   return (
-    <article className={`rounded-xl border bg-surface p-5 shadow-xs ${form.featured ? "border-brand/40" : "border-line"}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-ink">{pkg.name}</h3>
-          {pkg.isCustom && <Chip size="sm" variant="soft">Priced per website</Chip>}
-          {!pkg.active && <Chip size="sm">Hidden</Chip>}
+    <article className={`rounded-xl border bg-surface p-5 shadow-xs flex flex-col justify-between h-full ${form.featured ? "border-brand ring-1 ring-brand/20" : "border-line"}`}>
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-line">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-ink">{pkg.name}</h3>
+            {pkg.isCustom && <Chip size="sm" variant="soft">Priced per website</Chip>}
+            {!pkg.active && <Chip size="sm">Hidden</Chip>}
+          </div>
+          <span className="text-[11px] text-ink-muted font-medium">
+            {pkg.plans} {pkg.plans === 1 ? "website" : "websites"} active
+          </span>
         </div>
-        <span className="text-xs text-ink-muted">
-          {pkg.plans} {pkg.plans === 1 ? "website" : "websites"} on this package
-        </span>
-      </div>
 
-      <div className="mt-4 grid gap-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextInput label="Name" name={`name-${pkg.id}`} value={form.name} onChange={(value) => update("name", value)} error={errors.name} isDisabled={saving} />
+        <div className="mt-4 grid gap-3">
+          <TextInput label="Plan Name" name={`name-${pkg.id}`} value={form.name} onChange={(value) => update("name", value)} error={errors.name} isDisabled={saving} />
           <TextAreaInput
             label="Description"
             name={`description-${pkg.id}`}
@@ -161,135 +161,136 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
             rows={2}
             isDisabled={saving}
           />
-        </div>
 
-        {pkg.isCustom ? (
-          <div className="grid gap-3">
-            <div className="grid gap-4 sm:grid-cols-2">
+          {pkg.isCustom ? (
+            <div className="grid gap-2">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <RupeesInput
+                  id={`default-quarterly-${pkg.id}`}
+                  label="Quarterly (3 mo)"
+                  value={form.defaultQuarterly}
+                  onChange={(value) => update("defaultQuarterly", value)}
+                  placeholder="No default"
+                  hint={
+                    defaultQuarterly > 0
+                      ? `~${formatPaise(Math.round(defaultQuarterly / 3))}/mo`
+                      : "Optional default"
+                  }
+                  error={errors.defaultQuarterly}
+                  isDisabled={saving}
+                />
+                <RupeesInput
+                  id={`default-yearly-${pkg.id}`}
+                  label="Yearly (12 mo)"
+                  value={form.defaultYearly}
+                  onChange={(value) => update("defaultYearly", value)}
+                  placeholder="No default"
+                  hint={
+                    defaultYearly > 0
+                      ? `~${formatPaise(Math.round(defaultYearly / 12))}/mo`
+                      : "Optional default"
+                  }
+                  error={errors.defaultYearly}
+                  isDisabled={saving}
+                />
+              </div>
+              <p className="rounded-lg bg-canvas px-2.5 py-1.5 text-[11px] text-ink-muted">
+                Per-website customized pricing unless default is set.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
               <RupeesInput
-                id={`default-quarterly-${pkg.id}`}
-                label="Default price, quarterly (3 months)"
-                value={form.defaultQuarterly}
-                onChange={(value) => update("defaultQuarterly", value)}
-                placeholder="No default"
-                hint={
-                  defaultQuarterly > 0
-                    ? `About ${formatPaise(Math.round(defaultQuarterly / 3))} a month`
-                    : "Empty = quarterly only with a website's own price"
-                }
-                error={errors.defaultQuarterly}
+                id={`quarterly-${pkg.id}`}
+                label="Quarterly (3 mo)"
+                value={form.quarterly}
+                onChange={(value) => update("quarterly", value)}
+                placeholder="Not offered"
+                hint={quarterly > 0 ? `~${formatPaise(Math.round(quarterly / 3))}/mo` : "Not offered"}
+                error={errors.quarterly}
                 isDisabled={saving}
               />
               <RupeesInput
-                id={`default-yearly-${pkg.id}`}
-                label="Default price, yearly (12 months)"
-                value={form.defaultYearly}
-                onChange={(value) => update("defaultYearly", value)}
-                placeholder="No default"
+                id={`yearly-${pkg.id}`}
+                label="Yearly (12 mo)"
+                value={form.yearly}
+                onChange={(value) => update("yearly", value)}
+                placeholder="Not offered"
                 hint={
-                  defaultYearly > 0
-                    ? `About ${formatPaise(Math.round(defaultYearly / 12))} a month`
-                    : "Empty = yearly only with a website's own price"
+                  yearly > 0
+                    ? `~${formatPaise(Math.round(yearly / 12))}/mo${yearlySaving > 0 ? ` (${yearlySaving}% off)` : ""}`
+                    : "Not offered"
                 }
-                error={errors.defaultYearly}
+                error={errors.yearly}
                 isDisabled={saving}
               />
             </div>
-            <p className="rounded-lg bg-canvas px-3 py-2 text-xs text-ink-muted">
-              Every website on {form.name.trim() || pkg.name} pays this unless you set its own price with "Adjust price" (when publishing,
-              or from its Hosting tab). A paid plan keeps the price it paid, so changing the default only affects new and unpaid plans.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <RupeesInput
-              id={`quarterly-${pkg.id}`}
-              label="Quarterly price (3 months)"
-              value={form.quarterly}
-              onChange={(value) => update("quarterly", value)}
-              placeholder="Not offered"
-              hint={quarterly > 0 ? `About ${formatPaise(Math.round(quarterly / 3))} a month` : "Empty = not offered quarterly"}
-              error={errors.quarterly}
-              isDisabled={saving}
-            />
-            <RupeesInput
-              id={`yearly-${pkg.id}`}
-              label="Yearly price (12 months)"
-              value={form.yearly}
-              onChange={(value) => update("yearly", value)}
-              placeholder="Not offered"
-              hint={
-                yearly > 0
-                  ? `About ${formatPaise(Math.round(yearly / 12))} a month${yearlySaving > 0 ? ` · saves ${yearlySaving}% vs quarterly` : ""}`
-                  : "Empty = not offered yearly"
-              }
-              error={errors.yearly}
-              isDisabled={saving}
-            />
-          </div>
-        )}
+          )}
 
-        <TextInput
-          label="Automatic backup every (days)"
-          name={`backup-days-${pkg.id}`}
-          value={form.websiteBackupDays}
-          onChange={(value) => update("websiteBackupDays", value.replace(/\D/g, "").slice(0, 3))}
-          placeholder="Disabled"
-          description="Used by the backup worker for websites on this package. Leave empty to disable."
-          error={errors.websiteBackupDays}
-          isDisabled={saving}
-        />
+          <TextInput
+            label="Automatic backup every (days)"
+            name={`backup-days-${pkg.id}`}
+            value={form.websiteBackupDays}
+            onChange={(value) => update("websiteBackupDays", value.replace(/\D/g, "").slice(0, 3))}
+            placeholder="Disabled"
+            description="Used by the backup worker for websites on this package. Leave empty to disable."
+            error={errors.websiteBackupDays}
+            isDisabled={saving}
+          />
 
-        <fieldset>
-          <legend className="mb-1.5 text-sm font-medium text-ink">Features</legend>
-          <ul className="flex flex-col gap-2">
-            {form.features.map((feature, index) => (
-              <li key={index} className="flex items-center gap-2">
-                <input
-                  aria-label={`Feature ${index + 1}`}
-                  value={feature}
-                  maxLength={120}
-                  disabled={saving}
-                  onChange={(event) => setFeature(index, event.target.value)}
-                  placeholder="e.g. Free SSL certificate"
-                  className="h-9 w-full rounded-lg border border-ed-border bg-surface px-3 text-sm text-ink shadow-ed-xs placeholder:text-ink-muted/50 focus:border-ed-accent focus:outline-none focus:ring-2 focus:ring-ed-accent/15"
-                />
+          <fieldset className="pt-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <legend className="text-xs font-semibold text-ink">Features ({features.length})</legend>
+              {form.features.length < MAX_FEATURES && (
                 <button
                   type="button"
-                  aria-label={`Remove feature ${index + 1}`}
                   disabled={saving}
-                  onClick={() => update("features", form.features.filter((_, i) => i !== index))}
-                  className="grid size-8 shrink-0 place-items-center rounded-md text-ink-muted hover:bg-canvas hover:text-ink"
+                  onClick={() => update("features", [...form.features, ""])}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline cursor-pointer"
                 >
-                  <X className="size-4" aria-hidden />
+                  <Plus className="size-3" aria-hidden /> Add
                 </button>
-              </li>
-            ))}
-          </ul>
-          {form.features.length < MAX_FEATURES && (
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => update("features", [...form.features, ""])}
-              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
-            >
-              <Plus className="size-3.5" aria-hidden /> Add feature
-            </button>
-          )}
-        </fieldset>
+              )}
+            </div>
+            <ul className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+              {form.features.map((feature, index) => (
+                <li key={index} className="flex items-center gap-1.5">
+                  <input
+                    aria-label={`Feature ${index + 1}`}
+                    value={feature}
+                    maxLength={120}
+                    disabled={saving}
+                    onChange={(event) => setFeature(index, event.target.value)}
+                    placeholder="e.g. Free SSL certificate"
+                    className="h-8 w-full rounded-lg border border-ed-border bg-surface px-2.5 text-xs text-ink shadow-ed-xs placeholder:text-ink-muted/50 focus:border-ed-accent focus:outline-none focus:ring-1 focus:ring-ed-accent/20"
+                  />
+                  <button
+                    type="button"
+                    aria-label={`Remove feature ${index + 1}`}
+                    disabled={saving}
+                    onClick={() => update("features", form.features.filter((_, i) => i !== index))}
+                    className="grid size-7 shrink-0 place-items-center rounded-md text-ink-muted hover:bg-canvas hover:text-ink cursor-pointer"
+                  >
+                    <X className="size-3.5" aria-hidden />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </fieldset>
+        </div>
+      </div>
 
-        <div className="flex flex-wrap gap-6">
-          <SwitchField label="Show on pricing page and checkout" isSelected={form.active} onChange={(value) => update("active", value)} isDisabled={saving} />
+      <div className="mt-4 pt-3 border-t border-line flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
+          <SwitchField label="Show on pricing and checkout" isSelected={form.active} onChange={(value) => update("active", value)} isDisabled={saving} />
           <SwitchField label="Highlight as most popular" isSelected={form.featured} onChange={(value) => update("featured", value)} isDisabled={saving} />
         </div>
 
         {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
 
-        <div>
-          <Button size="sm" onPress={handleSave} isPending={saving} isDisabled={!changed || invalid}>
-            Save {pkg.name}
-          </Button>
-        </div>
+        <Button size="sm" onPress={handleSave} isPending={saving} isDisabled={!changed || invalid} className="w-full">
+          Save {pkg.name}
+        </Button>
       </div>
 
       <ConfirmModal

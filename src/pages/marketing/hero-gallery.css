@@ -1,14 +1,14 @@
-/* Hero Gallery Banner CSS - Pixel perfect replica */
+/* Hero Gallery Banner CSS */
 .ghero {
   padding-block: 64px 72px;
   background:
-    radial-gradient(600px 380px at 0% 0%, #3A2C0C, transparent 70%),
-    radial-gradient(640px 460px at 100% 0%, #271E4D, transparent 70%),
-    radial-gradient(600px 360px at 50% 120%, #0F3127, transparent 70%),
-    #0F1220;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    radial-gradient(700px 420px at 0% 0%, #FFF7ED, transparent 70%),
+    radial-gradient(700px 450px at 100% 0%, #EEF2FF, transparent 70%),
+    radial-gradient(600px 360px at 50% 120%, #ECFDF5, transparent 70%),
+    #FAFAFC;
+  border-bottom: 1px solid #E2E8F0;
   overflow: hidden;
-  color: #E9ECF7;
+  color: #0F172A;
   font-family: var(--sans, 'IBM Plex Sans', system-ui, -apple-system, sans-serif);
 }
 
@@ -43,9 +43,9 @@
   font: 600 12px / 1 var(--mono, 'IBM Plex Mono', monospace);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #B3C0FF;
-  background: #1A1E2E;
-  border: 1px solid #272C3C;
+  color: #3730A3;
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
   padding: 8px 14px;
   border-radius: 999px;
   width: max-content;
@@ -56,8 +56,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #4FD6AE;
-  box-shadow: 0 0 8px #4FD6AE;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
 }
 
 .ghero h1 {
@@ -66,28 +66,28 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.12;
-  color: #F8FAFC;
+  color: #0F172A;
   margin: 0;
   text-align: left;
 }
 
 .ghero h1 span {
-  color: #8096FF;
-  background: linear-gradient(transparent 62%, #3A2C0C 62%);
+  color: #2448C8;
+  background: linear-gradient(transparent 62%, #E0E7FF 62%);
   display: inline;
 }
 
 .ghero .lead {
   font-size: 17.5px;
   line-height: 1.55;
-  color: #AAB1C9;
+  color: #475569;
   max-width: 580px;
   margin: 0;
   text-align: left;
 }
 
 .ghero .lead b {
-  color: #F8FAFC;
+  color: #0F172A;
   font-weight: 700;
 }
 
@@ -104,7 +104,7 @@
   transform: translateY(-50%);
   width: 20px;
   height: 20px;
-  color: #8C93AE;
+  color: #64748B;
   pointer-events: none;
 }
 
@@ -113,19 +113,19 @@
   min-height: 54px;
   padding: 0 16px 0 50px;
   border-radius: 14px;
-  border: 1px solid #272C3C;
-  background: #1A1E2E;
-  color: #E9ECF7;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
+  color: #0F172A;
   font: 15px / 1 var(--sans, 'IBM Plex Sans', system-ui, sans-serif);
-  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.08);
   transition: border-color .15s, box-shadow .15s;
   box-sizing: border-box;
 }
 
 .ghero .search .in:focus {
-  outline: 2px solid #8096FF;
+  outline: 2px solid #2448C8;
   outline-offset: 0;
-  border-color: #8096FF;
+  border-color: #2448C8;
 }
 
 .ghero .popular {
@@ -134,24 +134,25 @@
   flex-wrap: wrap;
   align-items: center;
   font-size: 13.5px;
-  color: #AAB1C9;
+  color: #64748B;
 }
 
 .ghero .popular button {
-  border: 1px solid #272C3C;
-  background: #1A1E2E;
+  border: 1px solid #E2E8F0;
+  background: #FFFFFF;
   border-radius: 999px;
   padding: 6px 14px;
   font: 500 13px var(--sans, 'IBM Plex Sans', system-ui, sans-serif);
-  color: #E9ECF7;
+  color: #334155;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: all .15s ease;
 }
 
 .ghero .popular button:hover {
-  border-color: #8096FF;
-  color: #B3C0FF;
-  background: #1E2752;
+  border-color: #2448C8;
+  color: #2448C8;
+  background: #EEF2FF;
 }
 
 .ghero .gstats {
@@ -169,7 +170,7 @@
 
 .ghero .gstats b {
   font: 800 30px / 1 var(--display, 'Bricolage Grotesque', system-ui, sans-serif);
-  background: linear-gradient(120deg, #8096FF, #A892FF);
+  background: linear-gradient(120deg, #2448C8, #6366F1);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -177,7 +178,7 @@
 
 .ghero .gstats span {
   font-size: 13px;
-  color: #AAB1C9;
+  color: #64748B;
 }
 
 /* Fan Deck */
@@ -192,9 +193,9 @@
   width: 64%;
   aspect-ratio: 4 / 3;
   border-radius: 12px;
-  box-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.65), 0 0 0 1px #272C3C;
+  box-shadow: 0 24px 50px -16px rgba(15, 23, 42, 0.18), 0 0 0 1px #E2E8F0;
   overflow: hidden;
-  background: #1A1E2E;
+  background: #FFFFFF;
 }
 
 .fan .tframe:nth-child(1) {
@@ -215,7 +216,7 @@
   left: 18%;
   top: 0;
   z-index: 2;
-  box-shadow: 0 36px 70px -24px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 30px 60px -20px rgba(15, 23, 42, 0.22), 0 0 0 1px #CBD5E1;
 }
 
 .fan .tframe > .ts {
@@ -231,16 +232,16 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: rgba(26, 30, 46, 0.94);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid #272C3C;
+  border: 1px solid #E2E8F0;
   border-radius: 14px;
   padding: 10px 16px;
-  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.04);
   font-size: 13.5px;
   font-weight: 600;
-  color: #E9ECF7;
+  color: #0F172A;
   animation: fan-bob 6s ease-in-out infinite;
 }
 
@@ -268,7 +269,7 @@
 .fan .badge2 small {
   display: block;
   font-weight: 400;
-  color: #AAB1C9;
+  color: #64748B;
   font-size: 11.5px;
   margin-top: 2px;
 }
