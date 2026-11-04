@@ -500,46 +500,55 @@ export default function PartnerProfilePage() {
               Email notifications
             </span>
 
-            <div className="space-y-2.5">
-              <label className="flex items-center gap-3 text-xs text-ink cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={payoutForm.notifyNewReferral}
-                  onChange={(e) => setPayoutForm({ ...payoutForm, notifyNewReferral: e.target.checked })}
-                  className="rounded border-line text-brand focus:ring-brand size-4 cursor-pointer"
-                />
-                <span>New referral signs up</span>
-              </label>
-
-              <label className="flex items-center gap-3 text-xs text-ink cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={payoutForm.notifyCommissionApproved}
-                  onChange={(e) => setPayoutForm({ ...payoutForm, notifyCommissionApproved: e.target.checked })}
-                  className="rounded border-line text-brand focus:ring-brand size-4 cursor-pointer"
-                />
-                <span>Commission approved</span>
-              </label>
-
-              <label className="flex items-center gap-3 text-xs text-ink cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={payoutForm.notifyPayoutSent}
-                  onChange={(e) => setPayoutForm({ ...payoutForm, notifyPayoutSent: e.target.checked })}
-                  className="rounded border-line text-brand focus:ring-brand size-4 cursor-pointer"
-                />
-                <span>Payout sent</span>
-              </label>
-
-              <label className="flex items-center gap-3 text-xs text-ink cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={payoutForm.notifyProductUpdates}
-                  onChange={(e) => setPayoutForm({ ...payoutForm, notifyProductUpdates: e.target.checked })}
-                  className="rounded border-line text-brand focus:ring-brand size-4 cursor-pointer"
-                />
-                <span>Product updates & offers</span>
-              </label>
+            <div className="space-y-2.5" style={{ colorScheme: "light" }}>
+              {[
+                {
+                  key: "notifyNewReferral" as const,
+                  label: "New referral signs up",
+                },
+                {
+                  key: "notifyCommissionApproved" as const,
+                  label: "Commission approved",
+                },
+                {
+                  key: "notifyPayoutSent" as const,
+                  label: "Payout sent",
+                },
+                {
+                  key: "notifyProductUpdates" as const,
+                  label: "Product updates & offers",
+                },
+              ].map(({ key, label }) => {
+                const isChecked = payoutForm[key];
+                return (
+                  <label
+                    key={key}
+                    className="flex items-center gap-2.5 text-xs text-ink cursor-pointer select-none group"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) =>
+                        setPayoutForm({ ...payoutForm, [key]: e.target.checked })
+                      }
+                      className="sr-only"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className={`size-4 rounded flex items-center justify-center border transition-all ${
+                        isChecked
+                          ? "bg-brand border-brand text-white shadow-xs"
+                          : "bg-white border-slate-300 group-hover:border-slate-400"
+                      }`}
+                    >
+                      {isChecked && (
+                        <Check className="size-3 text-white stroke-[3]" />
+                      )}
+                    </span>
+                    <span>{label}</span>
+                  </label>
+                );
+              })}
             </div>
           </div>
 
