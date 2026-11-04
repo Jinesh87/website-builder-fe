@@ -16,6 +16,7 @@ import {
   type ShopOrderDetail,
   type ShopOrderShippingAddress,
   type ShopOrderSummary,
+  type ShopWishlistItemSummary,
 } from "../shop-auth.ts";
 import { formatInr, useShopCatalog } from "../shop-catalog.tsx";
 import type { AccountData, AccountOrderDetailVariant, AccountSuccessPopupVariant, AccountVariant, SectionOf } from "../types.ts";
@@ -77,7 +78,7 @@ function trackingStepClass(
  * member view is filled with sample data so every template can be styled before anyone signs in.
  */
 
-type Panel = "orders" | "cart" | "profile" | "addresses" | "password";
+type Panel = "orders" | "cart" | "wishlist" | "profile" | "addresses" | "password";
 
 /** Templates that switch between panels; the others stack every panel on one screen. */
 const TABBED: Record<AccountVariant, boolean> = {
@@ -106,6 +107,26 @@ const SAMPLE: ShopCustomerAccount = {
   cartItems: [
     { id: "c1", productId: "p1", variantId: "v1", productName: "Everyday tee", variantName: "M / Blue", quantity: 2, pricePaise: 99900 },
     { id: "c2", productId: "p2", variantId: "v2", productName: "Canvas tote", variantName: "Natural", quantity: 1, pricePaise: 59900 },
+  ],
+  wishlistItems: [
+    {
+      id: "w1",
+      productId: "p10",
+      productName: "Weekend hoodie",
+      productSlug: "weekend-hoodie",
+      categoryName: "Outerwear",
+      pricePaise: 179900,
+      addedAt: "2026-10-20T10:20:00.000Z",
+    },
+    {
+      id: "w2",
+      productId: "p11",
+      productName: "Trail sneakers",
+      productSlug: "trail-sneakers",
+      categoryName: "Footwear",
+      pricePaise: 329900,
+      addedAt: "2026-10-19T08:00:00.000Z",
+    },
   ],
   addresses: [
     {
@@ -172,6 +193,7 @@ const SAMPLE_ORDER_DETAIL: ShopOrderDetail = {
 const LABELS = {
   orders: "Orders",
   cart: "Cart",
+  wishlist: "Wishlist",
   profile: "Profile",
   addresses: "Addresses",
   password: "Password",
@@ -220,6 +242,7 @@ function panelsOf(data: AccountData): Panel[] {
     [
       data.showOrders !== false ? "orders" : null,
       data.showCart !== false ? "cart" : null,
+      data.showWishlist !== false ? "wishlist" : null,
       data.showProfile !== false ? "profile" : null,
       data.showAddresses !== false ? "addresses" : null,
       data.showPassword !== false ? "password" : null,
@@ -235,6 +258,8 @@ function labelOf(data: AccountData, panel: Panel): string {
       return data.cartLabel?.trim() || LABELS.cart;
     case "profile":
       return data.profileLabel?.trim() || LABELS.profile;
+    case "wishlist":
+      return data.wishlistLabel?.trim() || LABELS.wishlist;
     case "addresses":
       return data.addressesLabel?.trim() || LABELS.addresses;
     case "password":
@@ -1128,6 +1153,80 @@ function CartPanel({
   );
 }
 
+function WishlistPanel({
+  account,
+  websiteId,
+  interactive,
+  shopHref,
+  onWishlistChange,
+}: {
+  account: ShopCustomerAccount;
+  websiteId?: string;
+  interactive: boolean;
+  shopHref: string;
+  onWishlistChange?: (items: ShopWishlistItemSummary[]) => void;
+}) {
+  const [items, setItems] = useState(account.wishlistItems);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+
+  useEffect(() => {
+    setItems(account.wishlistItems);
+  }, [account.wishlistItems]);
+
+  async function remove(variantId: string) {
+    if (!interactive || !websiteId || busyId) return;
+    setBusyId(variantId);
+    setMessage(null);
+    try {
+      const next = await shopAuthApi.removeFromWishlist(websiteId, variantId);
+      setItems(next);
+      onWishlistChange?.(next);
+      setMessage({ text: "Removed from wishlist.", ok: true });
+    } catch (error) {
+      setMessage({ text: errorMessage(error), ok: false });
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div className="wb-acct-wishlist">
+      <ul className="wb-acct-list" data-wb-account-list="wishlist" hidden={items.length === 0}>
+        {items.map((item) => (
+          <li key={item.id} className="wb-acct-row">
+            {item.imageUrl ? <img className="wb-acct-thumb" src={item.imageUrl} alt="" /> : <span className="wb-acct-thumb is-blank" aria-hidden="true" />}
+            <div className="wb-acct-row-main">
+              <strong>{item.productName}</strong>
+              <span className="wb-acct-row-sub">{item.categoryName || "Product"}</span>
+            </div>
+            <strong className="wb-acct-row-amount">{formatInr(item.pricePaise)}</strong>
+            <div className="wb-acct-address-actions">
+              <button
+                type="button"
+                className="wb-acct-cart-remove"
+                onClick={interactive ? () => void remove(item.variantId) : undefined}
+                disabled={busyId === item.variantId}
+              >
+                Remove
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="wb-acct-empty" data-wb-account-empty="wishlist" hidden={items.length > 0}>
+        <p>No saved wishlist items yet.</p>
+        <a className="wb-acct-link" href={safeHref(shopHref)}>
+          Browse the shop
+        </a>
+      </div>
+      <p className={`wb-acct-message${message ? (message.ok ? " is-ok" : " is-error") : ""}`} hidden={!message}>
+        {parseRichText(message?.text ?? "")}
+      </p>
+    </div>
+  );
+}
+
 function ProfilePanel({
   data,
   account,
@@ -1636,6 +1735,7 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
     return panels[0] ?? "profile";
   });
   const [cartItems, setCartItems] = useState(account.cartItems);
+  const [wishlistItems, setWishlistItems] = useState(account.wishlistItems);
   const [orders, setOrders] = useState(account.orders);
   const [addresses, setAddresses] = useState(account.addresses);
   const [successOrder, setSuccessOrder] = useState<ShopOrderSummary | null>(null);
@@ -1643,13 +1743,14 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
   const current = panels.includes(active) ? active : (panels[0] ?? "profile");
   const heading = data.heading?.trim();
   const subheading = data.subheading?.trim();
-  const liveAccount = { ...account, cartItems, orders, addresses };
+  const liveAccount = { ...account, cartItems, wishlistItems, orders, addresses };
 
   useEffect(() => {
     setCartItems(account.cartItems);
+    setWishlistItems(account.wishlistItems);
     setOrders(account.orders);
     setAddresses(account.addresses);
-  }, [account.cartItems, account.orders, account.addresses]);
+  }, [account.cartItems, account.wishlistItems, account.orders, account.addresses]);
 
   async function logout() {
     if (!interactive || !websiteId) return;
@@ -1663,6 +1764,7 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
     try {
       const next = await shopAuthApi.account(websiteId);
       setCartItems(next.cartItems);
+      setWishlistItems(next.wishlistItems);
       setOrders(next.orders);
     } catch {
       /* keep local cart clear */
@@ -1691,6 +1793,11 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
           {panel === "cart" && (
             <span className="wb-acct-tab-count" data-wb-account-count="cart">
               {cartCount}
+            </span>
+          )}
+          {panel === "wishlist" && (
+            <span className="wb-acct-tab-count" data-wb-account-count="wishlist">
+              {liveAccount.wishlistItems.length}
             </span>
           )}
         </button>
@@ -1733,6 +1840,16 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
         );
       case "profile":
         return <ProfilePanel data={data} account={liveAccount} websiteId={websiteId} interactive={interactive} />;
+      case "wishlist":
+        return (
+          <WishlistPanel
+            account={liveAccount}
+            websiteId={websiteId}
+            interactive={interactive}
+            shopHref={shopHref}
+            onWishlistChange={setWishlistItems}
+          />
+        );
       case "addresses":
         return (
           <AddressesPanel
@@ -1919,7 +2036,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
             <MemberView
               data={data}
               variant={variant}
-              account={{ customer: { ...SAMPLE.customer, fullName: "", email: "", phone: "" }, orders: [], cartItems: [], addresses: [] }}
+              account={{ customer: { ...SAMPLE.customer, fullName: "", email: "", phone: "" }, orders: [], cartItems: [], wishlistItems: [], addresses: [] }}
               websiteId={websiteId}
               interactive={false}
               logoutRedirectHref={logoutRedirectHref}

@@ -81,7 +81,7 @@ export const SHOP_CSS = `
 .wb-shop-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .wb-shop-grid.is-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .wb-shop-card {
-  display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+  position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
   border: 1px solid var(--wb-border); border-radius: 16px; background: var(--wb-surface, var(--wb-bg));
   color: inherit;
 }
@@ -90,7 +90,7 @@ export const SHOP_CSS = `
   display: flex; flex-direction: column; min-width: 0; flex: 1;
   color: inherit; text-decoration: none;
 }
-.wb-shop-media { aspect-ratio: 1; background: color-mix(in srgb, var(--wb-text) 6%, transparent); overflow: hidden; }
+.wb-shop-media { position: relative; aspect-ratio: 1; background: color-mix(in srgb, var(--wb-text) 6%, transparent); overflow: hidden; }
 .wb-shop-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .wb-shop-fallback {
   width: 100%; height: 100%; display: grid; place-items: center;
@@ -129,6 +129,45 @@ export const SHOP_CSS = `
 }
 .wb-shop-btn.is-buy:hover:not(:disabled) {
   filter: brightness(1.05);
+}
+.wb-shop-btn.is-wishlist {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+  color: #878787;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+.wb-shop-btn.is-wishlist:hover:not(:disabled) {
+  background: #fff;
+  color: #e41f5a;
+  border-color: rgba(228, 31, 90, 0.28);
+}
+.wb-shop-btn.is-wishlist.is-active {
+  background: #fff;
+  border-color: rgba(228, 31, 90, 0.35);
+  color: #e41f5a;
+}
+.wb-shop-btn.is-wishlist .wb-wish-heart {
+  font-size: 1.05rem;
+  line-height: 1;
+  transform: translateY(0.5px);
+}
+.wb-shop-card > .wb-shop-btn.is-wishlist.is-overlay,
+.wb-product-hero .wb-shop-btn.is-wishlist.is-overlay {
+  top: 10px;
+  right: 10px;
 }
 .wb-shop-cart-msg {
   margin: 0; font-size: 0.78rem; line-height: 1.4; color: var(--wb-muted);

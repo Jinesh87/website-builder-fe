@@ -182,6 +182,15 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
           }}
         >
           {hero ? <img data-wb-hero="" src={hero.url} alt={hero.alt || product.name} /> : <span className="wb-shop-fallback">{product.name.slice(0, 1)}</span>}
+          <button
+            type="button"
+            className="wb-shop-btn is-wishlist is-overlay"
+            data-wb-wishlist-toggle=""
+            data-wb-variant-id={selected.id}
+            aria-label="Add to wishlist"
+          >
+            <span className="wb-wish-heart" aria-hidden="true">♡</span>
+          </button>
           <button type="button" className="wb-product-nav is-prev" data-wb-photo="prev" aria-label="Previous photo" hidden={photos.length < 2} onClick={stat ? undefined : () => stepPhoto(-1)}>
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4 L6 10 L12 16" /></svg>
           </button>

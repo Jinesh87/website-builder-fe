@@ -1820,11 +1820,13 @@ export type AccountData = {
   subheading?: string;
   showOrders?: boolean;
   showCart?: boolean;
+  showWishlist?: boolean;
   showProfile?: boolean;
   showAddresses?: boolean;
   showPassword?: boolean;
   ordersLabel?: string;
   cartLabel?: string;
+  wishlistLabel?: string;
   profileLabel?: string;
   addressesLabel?: string;
   passwordLabel?: string;
