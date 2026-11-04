@@ -14,6 +14,7 @@ import {
   type ShopCustomerAddress,
   type ShopCustomerAddressInput,
   type ShopOrderDetail,
+  type ShopOrderShippingAddress,
   type ShopOrderSummary,
 } from "../shop-auth.ts";
 import { formatInr, useShopCatalog } from "../shop-catalog.tsx";
@@ -152,6 +153,17 @@ const SAMPLE_ORDER_DETAIL: ShopOrderDetail = {
   failureReason: null,
   cancelReason: null,
   returnReason: null,
+  shippingAddress: {
+    label: "Home",
+    fullName: "Alex Shopper",
+    phone: "9876543210",
+    line1: "12 Market Street",
+    line2: null,
+    city: "Bengaluru",
+    state: "KA",
+    postalCode: "560001",
+    country: "IN",
+  },
   paidAt: "2026-10-21T10:12:00.000Z",
   updatedAt: "2026-10-23T14:30:00.000Z",
 };
@@ -185,7 +197,7 @@ const EMPTY_ADDRESS: ShopCustomerAddressInput = {
   isDefault: false,
 };
 
-function formatAddressLines(address: ShopCustomerAddress): string {
+function formatAddressLines(address: ShopOrderShippingAddress): string {
   return [address.line1, address.line2, `${address.city}, ${address.state} ${address.postalCode}`, address.country]
     .filter(Boolean)
     .join(", ");
@@ -446,6 +458,16 @@ function OrderDetailView({
             </div>
           ))}
         </div>
+        {order.shippingAddress && (
+          <div className="wb-acct-order-shipping">
+            <p className="wb-acct-checkout-label">Delivery address</p>
+            <p className="wb-acct-success-text">
+              <strong>{order.shippingAddress.fullName}</strong>
+              {order.shippingAddress.phone ? ` · ${order.shippingAddress.phone}` : ""}
+            </p>
+            <p className="wb-acct-success-text">{formatAddressLines(order.shippingAddress)}</p>
+          </div>
+        )}
         <p className="wb-acct-success-meta">
           <strong>Total {formatInr(order.totalPaise)}</strong>
         </p>
@@ -755,6 +777,7 @@ function CartPanel({
   interactive,
   onCartChange,
   onPaid,
+  onGoAddresses,
 }: {
   data: AccountData;
   account: ShopCustomerAccount;
@@ -763,9 +786,15 @@ function CartPanel({
   interactive: boolean;
   onCartChange?: (items: ShopCustomerAccount["cartItems"]) => void;
   onPaid?: (order: ShopOrderSummary) => void;
+  onGoAddresses?: () => void;
 }) {
   const empty = data.emptyCartText?.trim() || LABELS.emptyCart;
   const [items, setItems] = useState(account.cartItems);
+  const [addresses, setAddresses] = useState(account.addresses);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(() => {
+    const preferred = account.addresses.find((row) => row.isDefault) ?? account.addresses[0];
+    return preferred?.id ?? null;
+  });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -776,6 +805,15 @@ function CartPanel({
   useEffect(() => {
     setItems(account.cartItems);
   }, [account.cartItems]);
+
+  useEffect(() => {
+    setAddresses(account.addresses);
+    setSelectedAddressId((current) => {
+      if (current && account.addresses.some((row) => row.id === current)) return current;
+      const preferred = account.addresses.find((row) => row.isDefault) ?? account.addresses[0];
+      return preferred?.id ?? null;
+    });
+  }, [account.addresses]);
 
   useEffect(() => {
     if (!pendingRemove) return;
@@ -811,11 +849,15 @@ function CartPanel({
 
   async function payNow() {
     if (!interactive || !websiteId || paying || items.length === 0) return;
+    if (!selectedAddressId) {
+      setError("Choose a delivery address before paying.");
+      return;
+    }
     setPaying(true);
     setError(null);
     setPayMessage(null);
     try {
-      const checkout = await shopAuthApi.startCheckout(websiteId);
+      const checkout = await shopAuthApi.startCheckout(websiteId, { addressId: selectedAddressId });
       const confirmation = await openRazorpayCheckout(
         {
           orderId: checkout.razorpayOrderId,
@@ -961,11 +1003,65 @@ function CartPanel({
         <strong data-wb-account-field="cartTotal">{formatInr(total)}</strong>
       </div>
       <div className="wb-acct-checkout" data-wb-account-checkout hidden={items.length === 0}>
+        <div className="wb-acct-checkout-address" data-wb-account-checkout-address>
+          <p className="wb-acct-checkout-label">Delivery address</p>
+          {/* Keep both nodes in the DOM so the live account script can fill addresses after login. */}
+          <div className="wb-acct-checkout-empty" data-wb-account-checkout-no-address hidden={addresses.length > 0}>
+            <p>Add a delivery address before you pay.</p>
+            <button
+              type="button"
+              className="wb-acct-linkish"
+              data-wb-account-go-addresses
+              onClick={interactive ? onGoAddresses : undefined}
+            >
+              Add address
+            </button>
+          </div>
+          <ul
+            className="wb-acct-checkout-address-list"
+            data-wb-account-checkout-address-list
+            hidden={addresses.length === 0}
+          >
+            {addresses.map((address) => (
+              <li key={address.id}>
+                <label className={`wb-acct-checkout-option${selectedAddressId === address.id ? " is-selected" : ""}`}>
+                  <input
+                    type="radio"
+                    name="checkoutAddress"
+                    value={address.id}
+                    data-wb-checkout-address={address.id}
+                    checked={selectedAddressId === address.id}
+                    onChange={interactive ? () => setSelectedAddressId(address.id) : undefined}
+                  />
+                  <span className="wb-acct-checkout-option-body">
+                    <strong>
+                      {address.label?.trim() || "Address"}
+                      {address.isDefault ? <span className="wb-acct-badge is-default">Default</span> : null}
+                    </strong>
+                    <span>
+                      {address.fullName} · {address.phone}
+                    </span>
+                    <span>{formatAddressLines(address)}</span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            className="wb-acct-linkish"
+            data-wb-account-go-addresses
+            hidden={addresses.length === 0}
+            onClick={interactive ? onGoAddresses : undefined}
+          >
+            Manage addresses
+          </button>
+        </div>
         <button
           type="button"
           className="wb-acct-button is-pay"
           data-wb-account-pay
-          disabled={paying || (interactive && !websiteId)}
+          disabled={paying || (interactive && (!websiteId || !selectedAddressId))}
           onClick={interactive ? () => void payNow() : undefined}
         >
           {paying ? "Opening payment…" : "Pay now"}
@@ -1055,10 +1151,12 @@ function AddressesPanel({
   account,
   websiteId,
   interactive,
+  onAddressesChange,
 }: {
   account: ShopCustomerAccount;
   websiteId?: string;
   interactive: boolean;
+  onAddressesChange?: (addresses: ShopCustomerAccount["addresses"]) => void;
 }) {
   const [addresses, setAddresses] = useState(account.addresses);
   const [draft, setDraft] = useState<ShopCustomerAddressInput>(EMPTY_ADDRESS);
@@ -1070,6 +1168,11 @@ function AddressesPanel({
   useEffect(() => {
     setAddresses(account.addresses);
   }, [account.addresses]);
+
+  function commitAddresses(next: ShopCustomerAccount["addresses"]) {
+    setAddresses(next);
+    onAddressesChange?.(next);
+  }
 
   function openCreate() {
     setEditingId(null);
@@ -1122,7 +1225,7 @@ function AddressesPanel({
       const next = editingId
         ? await shopAuthApi.updateAddress(websiteId, editingId, input)
         : await shopAuthApi.createAddress(websiteId, input);
-      setAddresses(next);
+      commitAddresses(next);
       setShowForm(false);
       setEditingId(null);
       setMessage({ text: editingId ? "Address updated." : "Address saved.", ok: true });
@@ -1138,7 +1241,7 @@ function AddressesPanel({
     setBusy(true);
     setMessage(null);
     try {
-      setAddresses(await shopAuthApi.deleteAddress(websiteId, addressId));
+      commitAddresses(await shopAuthApi.deleteAddress(websiteId, addressId));
       if (editingId === addressId) {
         setShowForm(false);
         setEditingId(null);
@@ -1471,11 +1574,11 @@ type MemberProps = {
   account: ShopCustomerAccount;
   websiteId?: string;
   interactive: boolean;
-  loginHref: string;
+  logoutRedirectHref: string;
   shopHref: string;
 };
 
-function MemberView({ data, variant, account, websiteId, interactive, loginHref, shopHref }: MemberProps) {
+function MemberView({ data, variant, account, websiteId, interactive, logoutRedirectHref, shopHref }: MemberProps) {
   const panels = panelsOf(data);
   const tabbed = TABBED[variant];
   const [active, setActive] = useState<Panel>(() => {
@@ -1491,22 +1594,24 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
   });
   const [cartItems, setCartItems] = useState(account.cartItems);
   const [orders, setOrders] = useState(account.orders);
+  const [addresses, setAddresses] = useState(account.addresses);
   const [successOrder, setSuccessOrder] = useState<ShopOrderSummary | null>(null);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const current = panels.includes(active) ? active : (panels[0] ?? "profile");
   const heading = data.heading?.trim();
   const subheading = data.subheading?.trim();
-  const liveAccount = { ...account, cartItems, orders };
+  const liveAccount = { ...account, cartItems, orders, addresses };
 
   useEffect(() => {
     setCartItems(account.cartItems);
     setOrders(account.orders);
-  }, [account.cartItems, account.orders]);
+    setAddresses(account.addresses);
+  }, [account.cartItems, account.orders, account.addresses]);
 
   async function logout() {
     if (!interactive || !websiteId) return;
     await shopAuthApi.logout(websiteId);
-    window.location.href = siteHref(loginHref);
+    window.location.href = siteHref(logoutRedirectHref);
   }
 
   async function refreshAfterPay(order: ShopOrderSummary) {
@@ -1580,12 +1685,20 @@ function MemberView({ data, variant, account, websiteId, interactive, loginHref,
             interactive={interactive}
             onCartChange={setCartItems}
             onPaid={(order) => void refreshAfterPay(order)}
+            onGoAddresses={() => setActive("addresses")}
           />
         );
       case "profile":
         return <ProfilePanel data={data} account={liveAccount} websiteId={websiteId} interactive={interactive} />;
       case "addresses":
-        return <AddressesPanel account={liveAccount} websiteId={websiteId} interactive={interactive} />;
+        return (
+          <AddressesPanel
+            account={liveAccount}
+            websiteId={websiteId}
+            interactive={interactive}
+            onAddressesChange={setAddresses}
+          />
+        );
       case "password":
         return <PasswordPanel websiteId={websiteId} interactive={interactive} />;
     }
@@ -1721,6 +1834,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
   const websiteId = catalog?.live ? catalog.websiteId : undefined;
   const variant: AccountVariant = data.variant in TABBED ? data.variant : "sidebar-tabs";
   const loginHref = data.loginHref?.trim() || catalog?.authHref || "/login";
+  const logoutRedirectHref = data.logoutRedirectHref?.trim() || loginHref;
   const shopHref = data.shopHref?.trim() || "/shop";
   const preview = data.preview ?? "member";
 
@@ -1742,6 +1856,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
           className={classes}
           data-wb-account={websiteId ?? ""}
           data-wb-account-login={loginHref}
+          data-wb-account-logout={logoutRedirectHref}
           data-wb-account-redirect={data.redirectWhenLoggedOut ? "1" : undefined}
           data-wb-success-variant={data.successPopupVariant ?? "celebration"}
           data-wb-order-detail-variant={data.orderDetailVariant ?? "timeline"}
@@ -1764,7 +1879,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
               account={{ customer: { ...SAMPLE.customer, fullName: "", email: "", phone: "" }, orders: [], cartItems: [], addresses: [] }}
               websiteId={websiteId}
               interactive={false}
-              loginHref={loginHref}
+              logoutRedirectHref={logoutRedirectHref}
               shopHref={shopHref}
             />
           </div>
@@ -1780,7 +1895,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
       <GuestView data={data} loginHref={loginHref} />
     ) : (
       <>
-        <MemberView data={data} variant={variant} account={SAMPLE} interactive={false} loginHref={loginHref} shopHref={shopHref} />
+        <MemberView data={data} variant={variant} account={SAMPLE} interactive={false} logoutRedirectHref={logoutRedirectHref} shopHref={shopHref} />
         {preview === "success" && (
           <SuccessPopup order={SAMPLE.orders[0]!} data={data} onClose={() => undefined} onView={() => undefined} />
         )}

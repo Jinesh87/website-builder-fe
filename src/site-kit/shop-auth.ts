@@ -42,6 +42,18 @@ export type ShopOrderTimelineEvent = {
   createdAt: string;
 };
 
+export type ShopOrderShippingAddress = {
+  label: string | null;
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+};
+
 export type ShopOrderDetail = ShopOrderSummary & {
   items: {
     id: string;
@@ -55,6 +67,7 @@ export type ShopOrderDetail = ShopOrderSummary & {
   failureReason: string | null;
   cancelReason: string | null;
   returnReason: string | null;
+  shippingAddress?: ShopOrderShippingAddress | null;
   paidAt: string | null;
   updatedAt: string;
 };
@@ -342,8 +355,11 @@ export const shopAuthApi = {
     return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
   },
 
-  startCheckout: async (websiteId: string) => {
-    const result = await shopAuthFetch(websiteId, "/checkout", { method: "POST" });
+  startCheckout: async (websiteId: string, input: { addressId: string }) => {
+    const result = await shopAuthFetch(websiteId, "/checkout", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
     if (!result.ok) throw asError(result.status, result.body);
     return (result.body as { checkout: ShopCheckoutSession }).checkout;
   },
@@ -555,6 +571,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     }
     if(empty) empty.hidden=(addresses||[]).length>0;
     root.querySelectorAll("[data-wb-address-add]").forEach(function(btn){ btn.hidden=false; });
+    fillCheckoutAddresses(root, addresses||[]);
     if(form){
       form.hidden=true;
       form.removeAttribute("data-wb-editing-id");
@@ -668,10 +685,126 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     setText(root, "cartTotal", money(total));
     if(cartEmpty) cartEmpty.hidden=cart.length>0;
     root.querySelectorAll("[data-wb-account-checkout]").forEach(function(node){ node.hidden=cart.length===0; });
+    fillCheckoutAddresses(root, addressCache);
+  }
+  function ensureCheckoutAddressShell(root){
+    var checkout=root.querySelector("[data-wb-account-checkout]");
+    if(!checkout) return null;
+    var shell=checkout.querySelector("[data-wb-account-checkout-address]");
+    if(shell) return shell;
+    shell=el("div","wb-acct-checkout-address");
+    shell.setAttribute("data-wb-account-checkout-address","");
+    shell.appendChild(el("p","wb-acct-checkout-label","Delivery address"));
+    var empty=el("div","wb-acct-checkout-empty");
+    empty.setAttribute("data-wb-account-checkout-no-address","");
+    empty.appendChild(el("p","","Add a delivery address before you pay."));
+    var addBtn=el("button","wb-acct-linkish","Add address");
+    addBtn.type="button";
+    addBtn.setAttribute("data-wb-account-go-addresses","");
+    empty.appendChild(addBtn);
+    shell.appendChild(empty);
+    var list=el("ul","wb-acct-checkout-address-list");
+    list.setAttribute("data-wb-account-checkout-address-list","");
+    shell.appendChild(list);
+    var manage=el("button","wb-acct-linkish","Manage addresses");
+    manage.type="button";
+    manage.setAttribute("data-wb-account-go-addresses","");
+    shell.appendChild(manage);
+    var pay=checkout.querySelector("[data-wb-account-pay]");
+    if(pay) checkout.insertBefore(shell, pay);
+    else checkout.insertBefore(shell, checkout.firstChild);
+    return shell;
+  }
+  function fillCheckoutAddresses(root, addresses){
+    var shell=ensureCheckoutAddressShell(root);
+    var list=root.querySelector("[data-wb-account-checkout-address-list]");
+    // Older SSR only rendered the empty state; create the list node so we can fill it.
+    if(!list && shell){
+      list=el("ul","wb-acct-checkout-address-list");
+      list.setAttribute("data-wb-account-checkout-address-list","");
+      var emptyNode=shell.querySelector("[data-wb-account-checkout-no-address]");
+      if(emptyNode&&emptyNode.nextSibling) shell.insertBefore(list, emptyNode.nextSibling);
+      else shell.appendChild(list);
+    }
+    var empty=root.querySelector("[data-wb-account-checkout-no-address]");
+    if(!empty && shell){
+      empty=el("div","wb-acct-checkout-empty");
+      empty.setAttribute("data-wb-account-checkout-no-address","");
+      empty.appendChild(el("p","","Add a delivery address before you pay."));
+      var addBtn=el("button","wb-acct-linkish","Add address");
+      addBtn.type="button";
+      addBtn.setAttribute("data-wb-account-go-addresses","");
+      empty.appendChild(addBtn);
+      var label=shell.querySelector(".wb-acct-checkout-label");
+      if(label&&label.nextSibling) shell.insertBefore(empty, label.nextSibling);
+      else shell.insertBefore(empty, shell.firstChild);
+    }
+    var selected=(root.querySelector('input[name="checkoutAddress"]:checked')||{}).value||"";
+    if(list){
+      list.innerHTML="";
+      var preferred="";
+      (addresses||[]).forEach(function(address){
+        var id=String(address.id||"");
+        if(!preferred) preferred=id;
+        if(address.isDefault) preferred=id;
+      });
+      if(!selected || !(addresses||[]).some(function(address){ return String(address.id)===selected; })) selected=preferred;
+      (addresses||[]).forEach(function(address){
+        var id=String(address.id||"");
+        var item=el("li");
+        var label=el("label","wb-acct-checkout-option"+(id===selected?" is-selected":""));
+        var input=document.createElement("input");
+        input.type="radio";
+        input.name="checkoutAddress";
+        input.value=id;
+        input.setAttribute("data-wb-checkout-address", id);
+        if(id===selected) input.checked=true;
+        input.addEventListener("change", function(){
+          list.querySelectorAll(".wb-acct-checkout-option").forEach(function(node){ node.classList.remove("is-selected"); });
+          label.classList.add("is-selected");
+          syncCheckoutPay(root);
+        });
+        var body=el("span","wb-acct-checkout-option-body");
+        var title=el("strong","", String(address.label||"Address"));
+        if(address.isDefault){
+          var badge=el("span","wb-acct-badge is-default","Default");
+          title.appendChild(document.createTextNode(" "));
+          title.appendChild(badge);
+        }
+        body.appendChild(title);
+        body.appendChild(el("span","", String(address.fullName||"")+" · "+String(address.phone||"")));
+        body.appendChild(el("span","", addressLine(address)));
+        label.appendChild(input);
+        label.appendChild(body);
+        item.appendChild(label);
+        list.appendChild(item);
+      });
+      if((addresses||[]).length===0) list.setAttribute("hidden","");
+      else list.removeAttribute("hidden");
+    }
+    if(empty){
+      if((addresses||[]).length>0) empty.setAttribute("hidden","");
+      else empty.removeAttribute("hidden");
+    }
+    root.querySelectorAll("[data-wb-account-checkout-address] > [data-wb-account-go-addresses]").forEach(function(btn){
+      if((btn.textContent||"").indexOf("Manage")>=0){
+        if((addresses||[]).length===0) btn.setAttribute("hidden","");
+        else btn.removeAttribute("hidden");
+      }
+    });
+    syncCheckoutPay(root);
+  }
+  function selectedCheckoutAddressId(root){
+    var checked=root.querySelector('input[name="checkoutAddress"]:checked');
+    return checked?String(checked.value||""):"";
+  }
+  function syncCheckoutPay(root){
+    var cartEmpty=!(root.querySelector('[data-wb-account-list="cart"] li'));
+    var hasAddress=!!selectedCheckoutAddressId(root);
     root.querySelectorAll("[data-wb-account-pay]").forEach(function(btn){
-      btn.disabled=cart.length===0;
+      btn.disabled=cartEmpty || !hasAddress;
       if(!btn.getAttribute("data-wb-pay-label")) btn.setAttribute("data-wb-pay-label", btn.textContent||"Pay now");
-      btn.textContent=btn.getAttribute("data-wb-pay-label")||"Pay now";
+      if(!root.getAttribute("data-wb-paying")) btn.textContent=btn.getAttribute("data-wb-pay-label")||"Pay now";
     });
   }
   function preferredPanel(root){
@@ -699,7 +832,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       panel.hidden=panel.getAttribute("data-wb-account-panel")!==name;
     });
   }
-  function bind(root, base, loginHref){
+  function bind(root, base, loginHref, logoutHref){
     if(root.getAttribute("data-wb-account-bound")) return;
     root.setAttribute("data-wb-account-bound","1");
     var tabs=Array.prototype.slice.call(root.querySelectorAll("[data-wb-account-tab]"));
@@ -721,7 +854,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     activatePanel(root, tabs, preferredPanel(root));
     root.querySelectorAll("[data-wb-account-logout]").forEach(function(button){
       button.addEventListener("click", function(){
-        request(base, "/logout", "POST").catch(function(){}).then(function(){ window.location.href=siteHref(loginHref); });
+        request(base, "/logout", "POST").catch(function(){}).then(function(){ window.location.href=siteHref(logoutHref); });
       });
     });
     function refreshAccount(){
@@ -895,10 +1028,15 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     }
     function payNow(){
       if(root.getAttribute("data-wb-paying")) return;
+      var addressId=selectedCheckoutAddressId(root);
+      if(!addressId){
+        payMessage("Choose a delivery address before paying.", false);
+        return;
+      }
       root.setAttribute("data-wb-paying","1");
       setPayBusy(true);
       payMessage("", true);
-      request(base, "/checkout", "POST").then(function(result){
+      request(base, "/checkout", "POST", { addressId: addressId }).then(function(result){
         if(!result.ok){
           setPayBusy(false);
           root.removeAttribute("data-wb-paying");
@@ -936,6 +1074,17 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         event.preventDefault();
         payNow();
       });
+    });
+    root.addEventListener("click", function(event){
+      var button=event.target&&event.target.closest&&event.target.closest("[data-wb-account-go-addresses]");
+      if(!button || !root.contains(button)) return;
+      event.preventDefault();
+      if(tabs.length){
+        activatePanel(root, tabs, "addresses");
+        return;
+      }
+      var stat=root.querySelector('[data-wb-account-stat="addresses"]');
+      if(stat) stat.click();
     });
     function trackingSteps(status){
       var steps=[
@@ -1463,6 +1612,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     root.setAttribute("data-wb-account-ready","1");
     var websiteId=root.getAttribute("data-wb-account");
     var loginHref=root.getAttribute("data-wb-account-login")||"/login";
+    var logoutHref=root.getAttribute("data-wb-account-logout")||loginHref;
     var redirect=root.getAttribute("data-wb-account-redirect")==="1";
     root.querySelectorAll("[data-wb-account-login]").forEach(function(link){ if(link.tagName==="A") link.setAttribute("href", siteHref(loginHref)); });
     if(!websiteId){ showState(root, "guest"); return; }
@@ -1471,7 +1621,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       .then(function(result){
         if(!result.ok) throw new Error("no-session");
         fill(root, result.json||{});
-        bind(root, base, loginHref);
+        bind(root, base, loginHref, logoutHref);
         showState(root, "member");
       })
       .catch(function(){

@@ -3299,6 +3299,13 @@ function AccountForm({ data, onChange }: DataFormProps<AccountData>) {
           hint="The page that has the login section, usually /login."
         />
         <TextField
+          label="After logout address"
+          value={data.logoutRedirectHref ?? ""}
+          onChange={(logoutRedirectHref) => set({ logoutRedirectHref })}
+          maxLength={200}
+          hint="Where customers go after logging out. Leave empty to use Login page address."
+        />
+        <TextField
           label="Shop page address"
           value={data.shopHref ?? ""}
           onChange={(shopHref) => set({ shopHref })}
