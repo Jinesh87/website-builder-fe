@@ -6,6 +6,7 @@ import { SectionShell } from "../primitives.tsx";
 import { useStaticRender } from "../render-mode.tsx";
 import {
   SHOP_ACCOUNT_SCRIPT,
+  SHOP_WISHLIST_UI_ENABLED,
   shopAuthApi,
   siteHref,
   type ShopAuthError,
@@ -242,7 +243,7 @@ function panelsOf(data: AccountData): Panel[] {
     [
       data.showOrders !== false ? "orders" : null,
       data.showCart !== false ? "cart" : null,
-      data.showWishlist !== false ? "wishlist" : null,
+      SHOP_WISHLIST_UI_ENABLED && data.showWishlist !== false ? "wishlist" : null,
       data.showProfile !== false ? "profile" : null,
       data.showAddresses !== false ? "addresses" : null,
       data.showPassword !== false ? "password" : null,

@@ -1,3 +1,6 @@
+/** Flip to true when the customer wishlist UI should be visible again. */
+export const SHOP_WISHLIST_UI_ENABLED = false;
+
 export type ShopCustomer = {
   id: string;
   websiteId: string;
