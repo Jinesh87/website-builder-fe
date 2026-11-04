@@ -1,3 +1,6 @@
+/** Flip to true when the customer wishlist UI should be visible again. */
+export const SHOP_WISHLIST_UI_ENABLED = false;
+
 export type ShopCustomer = {
   id: string;
   websiteId: string;
@@ -32,6 +35,7 @@ export type ShopOrderSummary = {
   canCancel?: boolean;
   canReturn?: boolean;
   returnUntil?: string | null;
+  canDownloadInvoice?: boolean;
 };
 
 export type ShopOrderTimelineEvent = {
@@ -69,6 +73,8 @@ export type ShopOrderDetail = ShopOrderSummary & {
   returnReason: string | null;
   shippingAddress?: ShopOrderShippingAddress | null;
   paidAt: string | null;
+  /** True when payment was captured and an invoice can be downloaded. */
+  canDownloadInvoice?: boolean;
   updatedAt: string;
 };
 
@@ -92,6 +98,19 @@ export type ShopCartItemSummary = {
   quantity: number;
   pricePaise: number;
   imageUrl?: string;
+};
+
+export type ShopWishlistItemSummary = {
+  id: string;
+  productId: string;
+  variantId: string;
+  productName: string;
+  variantName: string;
+  productSlug: string;
+  categoryName: string;
+  pricePaise: number;
+  imageUrl?: string;
+  addedAt: string;
 };
 
 export type ShopCustomerAddress = {
@@ -126,6 +145,7 @@ export type ShopCustomerAccount = {
   customer: ShopCustomer;
   orders: ShopOrderSummary[];
   cartItems: ShopCartItemSummary[];
+  wishlistItems: ShopWishlistItemSummary[];
   addresses: ShopCustomerAddress[];
   cancelUntilStatus?: "paid" | "processing" | "shipped" | null;
 };
@@ -355,6 +375,27 @@ export const shopAuthApi = {
     return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
   },
 
+  listWishlist: async (websiteId: string) => {
+    const result = await shopAuthFetch(websiteId, "/wishlist");
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { wishlistItems: ShopWishlistItemSummary[] }).wishlistItems;
+  },
+
+  addToWishlist: async (websiteId: string, variantId: string) => {
+    const result = await shopAuthFetch(websiteId, "/wishlist", {
+      method: "POST",
+      body: JSON.stringify({ variantId }),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { wishlistItems: ShopWishlistItemSummary[] }).wishlistItems;
+  },
+
+  removeFromWishlist: async (websiteId: string, variantId: string) => {
+    const result = await shopAuthFetch(websiteId, `/wishlist/${variantId}`, { method: "DELETE" });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { wishlistItems: ShopWishlistItemSummary[] }).wishlistItems;
+  },
+
   startCheckout: async (websiteId: string, input: { addressId: string }) => {
     const result = await shopAuthFetch(websiteId, "/checkout", {
       method: "POST",
@@ -381,6 +422,10 @@ export const shopAuthApi = {
     if (!result.ok) throw asError(result.status, result.body);
     return (result.body as { order: ShopOrderDetail }).order;
   },
+
+  /** Opens in a new tab; uses the shop session cookie on a top-level navigation. */
+  orderInvoiceHref: (websiteId: string, orderId: string) =>
+    `${apiBase()}/shop/${websiteId}/auth/orders/${orderId}/invoice`,
 
   cancelOrder: async (websiteId: string, orderId: string, reason: string) => {
     const result = await shopAuthFetch(websiteId, `/orders/${orderId}/cancel`, {
@@ -414,7 +459,7 @@ export function siteHref(href: string): string {
 /** Account page URL that opens a specific panel (e.g. cart). */
 export function accountPanelHref(
   accountHref: string,
-  panel: "orders" | "cart" | "profile" | "addresses" | "password",
+  panel: "orders" | "cart" | "wishlist" | "profile" | "addresses" | "password",
 ): string {
   const raw = (accountHref || "/account").trim() || "/account";
   if (/^(https?:\/\/|mailto:|tel:)/i.test(raw)) {
@@ -592,6 +637,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     var customer=account.customer||{};
     var orders=account.orders||[];
     var cart=account.cartItems||[];
+    var wishlist=account.wishlistItems||[];
     var addresses=account.addresses||[];
     setText(root, "fullName", customer.fullName||"");
     setText(root, "email", customer.email||"");
@@ -600,6 +646,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     root.querySelectorAll('[data-wb-account-count="orders"]').forEach(function(node){ node.textContent=String(orders.length); });
     var count=0; cart.forEach(function(item){ count+=Number(item.quantity||1); });
     root.querySelectorAll('[data-wb-account-count="cart"]').forEach(function(node){ node.textContent=String(count); });
+    root.querySelectorAll('[data-wb-account-count="wishlist"]').forEach(function(node){ node.textContent=String(wishlist.length); });
     root.querySelectorAll('[data-wb-account-profile] input[name="fullName"]').forEach(function(input){ input.value=customer.fullName||""; });
     root.querySelectorAll('[data-wb-account-profile] input[name="phone"]').forEach(function(input){ input.value=customer.phone||""; });
     root.querySelectorAll('input[name="email"]').forEach(function(input){ input.value=customer.email||""; });
@@ -638,6 +685,12 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
           returnBtn.setAttribute("data-wb-order-return", String(order.id||""));
           badges.appendChild(returnBtn);
         }
+        if(order.canDownloadInvoice){
+          var invoiceBtn=el("button","wb-acct-row-invoice","Invoice");
+          invoiceBtn.setAttribute("type","button");
+          invoiceBtn.setAttribute("data-wb-order-invoice", String(order.id||""));
+          badges.appendChild(invoiceBtn);
+        }
         row.appendChild(badges);
         row.appendChild(el("strong","wb-acct-row-amount",money(order.totalPaise)));
         orderList.appendChild(row);
@@ -645,6 +698,36 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       orderList.hidden=orders.length===0;
     }
     if(orderEmpty) orderEmpty.hidden=orders.length>0;
+
+    var wishlistList=root.querySelector('[data-wb-account-list="wishlist"]');
+    var wishlistEmpty=root.querySelector('[data-wb-account-empty="wishlist"]');
+    if(wishlistList){
+      wishlistList.innerHTML="";
+      wishlist.forEach(function(item){
+        var row=el("li","wb-acct-row");
+        if(item.imageUrl){
+          var img=document.createElement("img");
+          img.className="wb-acct-thumb"; img.alt=""; img.src=item.imageUrl;
+          row.appendChild(img);
+        } else {
+          row.appendChild(el("span","wb-acct-thumb is-blank"));
+        }
+        var main=el("div","wb-acct-row-main");
+        main.appendChild(el("strong","",String(item.productName||"Item")));
+        main.appendChild(el("span","wb-acct-row-sub",String(item.variantName||item.categoryName||"Variant")));
+        row.appendChild(main);
+        row.appendChild(el("strong","wb-acct-row-amount",money(item.pricePaise)));
+        var actions=el("div","wb-acct-address-actions");
+        var remove=el("button","wb-acct-cart-remove","Remove");
+        remove.type="button";
+        remove.setAttribute("data-wb-wishlist-remove", String(item.variantId||""));
+        actions.appendChild(remove);
+        row.appendChild(actions);
+        wishlistList.appendChild(row);
+      });
+      wishlistList.hidden=wishlist.length===0;
+    }
+    if(wishlistEmpty) wishlistEmpty.hidden=wishlist.length>0;
 
     var cartList=root.querySelector('[data-wb-account-list="cart"]');
     var cartEmpty=root.querySelector('[data-wb-account-empty="cart"]');
@@ -923,6 +1006,19 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       });
     }
     root.addEventListener("click", function(event){
+      var wishRemove=event.target&&event.target.closest&&event.target.closest("[data-wb-wishlist-remove]");
+      if(wishRemove && root.contains(wishRemove)){
+        event.preventDefault();
+        var variantId=wishRemove.getAttribute("data-wb-wishlist-remove")||"";
+        if(!variantId || wishRemove.disabled) return;
+        wishRemove.disabled=true;
+        request(base, "/wishlist/"+variantId, "DELETE").then(function(result){
+          wishRemove.disabled=false;
+          if(!result.ok) return;
+          return refreshAccount();
+        }).catch(function(){ wishRemove.disabled=false; });
+        return;
+      }
       var button=event.target&&event.target.closest&&event.target.closest("[data-wb-cart-remove]");
       if(!button || !root.contains(button)) return;
       event.preventDefault();
@@ -1178,6 +1274,10 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         else if(refund==="processed") badgesHtml+='<span class="wb-acct-badge is-refund-processed">Refunded</span>';
         else if(refund==="failed") badgesHtml+='<span class="wb-acct-badge is-refund-failed">Refund failed</span>';
         badgesHtml+="</div>";
+        var invoiceBlock="";
+        if(order.canDownloadInvoice || order.paidAt){
+          invoiceBlock='<div class="wb-acct-invoice-actions"><a class="wb-acct-invoice-download" href="'+base+"/orders/"+encodeURIComponent(String(order.id||""))+'/invoice" target="_blank" rel="noreferrer">Download invoice</a></div>';
+        }
         var cancelBlock="";
         if(order.canCancel){
           cancelBlock=
@@ -1231,6 +1331,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
             '<p class="wb-acct-success-text">Placed '+day(order.createdAt)+"</p></div>"+
             '<button type="button" class="wb-acct-order-close" aria-label="Close">×</button></div>'+
             badgesHtml+
+            invoiceBlock+
             '<div class="wb-acct-order-items">'+items+"</div>"+
             '<p class="wb-acct-success-meta"><strong>Total '+money(order.totalPaise)+"</strong></p>"+
             cancelBlock+
@@ -1389,6 +1490,20 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         document.body.appendChild(modal);
       });
     }
+    function openInvoice(orderId){
+      if(!orderId) return;
+      request(base, "/orders/"+orderId, "GET").then(function(result){
+        if(!result.ok){ alert("Could not open invoice right now."); return; }
+        var order=(result.json&&result.json.order)||{};
+        if(!(order.canDownloadInvoice || order.paidAt)){
+          alert("Invoice is available after payment.");
+          return;
+        }
+        window.open(base+"/orders/"+encodeURIComponent(String(orderId))+"/invoice", "_blank", "noopener,noreferrer");
+      }).catch(function(){
+        alert("Could not open invoice right now.");
+      });
+    }
     function showSuccessModal(rootNode, apiBase, order){
       var existing=document.querySelector("body > [data-wb-account-success-modal]");
       if(existing) existing.remove();
@@ -1434,6 +1549,13 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         event.preventDefault();
         event.stopPropagation();
         openOrderDetail(returnBtn.getAttribute("data-wb-order-return")||"", { startReturn:true });
+        return;
+      }
+      var invoiceBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-order-invoice]");
+      if(invoiceBtn && root.contains(invoiceBtn)){
+        event.preventDefault();
+        event.stopPropagation();
+        openInvoice(invoiceBtn.getAttribute("data-wb-order-invoice")||"");
         return;
       }
       var row=event.target&&event.target.closest&&event.target.closest("[data-wb-order-id]");
@@ -2002,6 +2124,12 @@ export const SHOP_CART_SCRIPT = `(function(){
     box.classList.toggle("is-error", kind==="error");
     box.classList.toggle("is-ok", kind==="ok");
   }
+  function setWishlistButton(button, on){
+    button.classList.toggle("is-active", !!on);
+    button.setAttribute("aria-pressed", on?"true":"false");
+    button.setAttribute("aria-label", on?"Remove from wishlist":"Add to wishlist");
+    button.innerHTML='<span class="wb-wish-heart" aria-hidden="true">'+(on?"♥":"♡")+"</span>";
+  }
   function closeModal(modal){
     if(!modal) return;
     modal.classList.remove("is-open");
@@ -2052,6 +2180,34 @@ export const SHOP_CART_SCRIPT = `(function(){
   function setBusy(button, busy){
     button.disabled=!!busy;
     button.classList.toggle("is-busy", !!busy);
+  }
+  var wishlistBySite={};
+  function applyWishlist(root, id){
+    var wished=wishlistBySite[id]||{};
+    root.querySelectorAll("[data-wb-wishlist-toggle]").forEach(function(button){
+      var variantId=button.getAttribute("data-wb-variant-id")||"";
+      setWishlistButton(button, !!wished[variantId]);
+    });
+  }
+  function refreshWishlist(id){
+    if(!id) return Promise.resolve();
+    return shopFetch(id, "/wishlist", { method:"GET" })
+      .then(function(response){
+        if(!response.ok) return null;
+        return response.json().catch(function(){ return {}; });
+      })
+      .then(function(json){
+        if(!json) return;
+        var next={};
+        (json.wishlistItems||[]).forEach(function(item){
+          var variantId=String(item.variantId||"");
+          if(variantId) next[variantId]=1;
+        });
+        wishlistBySite[id]=next;
+        document.querySelectorAll('[data-wb-shop-website="'+id+'"], [data-wb-detail][data-wb-shop-website]').forEach(function(root){
+          applyWishlist(root, id);
+        });
+      });
   }
   function stockOf(button){
     var stock=Number(button.getAttribute("data-wb-stock")||0);
@@ -2205,6 +2361,54 @@ export const SHOP_CART_SCRIPT = `(function(){
     }
   }
   document.addEventListener("click", function(event){
+    var wish=event.target&&event.target.closest&&event.target.closest("[data-wb-wishlist-toggle]");
+    if(wish){
+      event.preventDefault();
+      event.stopPropagation();
+      var wishWebsiteId=websiteId(wish);
+      var variantId=wish.getAttribute("data-wb-variant-id")||"";
+      if(!wishWebsiteId || !variantId){
+        showMessage(wish, "Shop is not connected yet.", "error");
+        return;
+      }
+      if(wish.disabled) return;
+      var active=wish.classList.contains("is-active");
+      setBusy(wish, true);
+      showMessage(wish, "", "");
+      var path=active?"/wishlist/"+encodeURIComponent(variantId):"/wishlist";
+      var init=active
+        ? { method:"DELETE" }
+        : { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ variantId:variantId }) };
+      shopFetch(wishWebsiteId, path, init).then(function(response){
+        return response.json().catch(function(){ return {}; }).then(function(json){
+          if(response.status===401){
+            var modal=loginModal(wish);
+            if(modal) modal.setAttribute("data-variant", loginVariant(wish));
+            openModal(modal);
+            return;
+          }
+          if(!response.ok){
+            showMessage(wish, (json.error&&json.error.message)||"Could not update wishlist.", "error");
+            return;
+          }
+          var next={};
+          (json.wishlistItems||[]).forEach(function(item){
+            var id=String(item.variantId||"");
+            if(id) next[id]=1;
+          });
+          wishlistBySite[wishWebsiteId]=next;
+          document.querySelectorAll('[data-wb-shop-website="'+wishWebsiteId+'"], [data-wb-detail][data-wb-shop-website]').forEach(function(root){
+            applyWishlist(root, wishWebsiteId);
+          });
+          showMessage(wish, active?"Removed from wishlist.":"Saved to wishlist.", "ok");
+        });
+      }).catch(function(){
+        showMessage(wish, "Can't reach the server. Try again.", "error");
+      }).finally(function(){
+        setBusy(wish, false);
+      });
+      return;
+    }
     var button=event.target&&event.target.closest&&event.target.closest("[data-wb-cart-action]");
     if(!button) return;
     event.preventDefault();
@@ -2214,7 +2418,12 @@ export const SHOP_CART_SCRIPT = `(function(){
     }
     askQuantity(button, button.getAttribute("data-wb-cart-action")==="buy");
   });
+  document.querySelectorAll("[data-wb-wishlist-toggle]").forEach(function(button){ setWishlistButton(button, false); });
   refreshCartLinks();
+  document.querySelectorAll("[data-wb-shop-website]").forEach(function(root){
+    var id=root.getAttribute("data-wb-shop-website");
+    if(id) refreshWishlist(id);
+  });
 })();`;
 
 /** Hides header Login CTAs on published pages once a shop customer session is active. */

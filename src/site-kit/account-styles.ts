@@ -444,6 +444,14 @@ export const ACCOUNT_CSS = `
 .wb-acct-order-close {
   flex: none; border: 0; background: transparent; font: inherit; font-size: 1.4rem; line-height: 1; cursor: pointer; color: var(--wb-muted);
 }
+.wb-acct-invoice-actions { margin: 10px 0 4px; }
+.wb-acct-invoice-download {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--wb-border); border-radius: 999px;
+  padding: 7px 12px; font-size: 0.86rem; font-weight: 600;
+  color: var(--wb-text); text-decoration: none; background: var(--wb-surface, #fff);
+}
+.wb-acct-invoice-download:hover { border-color: var(--wb-text); }
 .wb-acct-order-items { display: grid; gap: 8px; margin: 16px 0; }
 .wb-acct-order-item { display: flex; justify-content: space-between; gap: 12px; font-size: 0.92rem; }
 .wb-acct-order-item span { color: var(--wb-muted); }
@@ -491,6 +499,12 @@ export const ACCOUNT_CSS = `
   line-height: 1.2; text-decoration: underline; text-underline-offset: 2px;
 }
 .wb-acct-row-cancel:hover { color: #991b1b; }
+.wb-acct-row-invoice {
+  appearance: none; margin: 0; border: 1px solid var(--wb-border); background: var(--wb-surface, #fff);
+  color: var(--wb-text); font: inherit; font-size: 0.72rem; font-weight: 600;
+  padding: 0.15rem 0.55rem; border-radius: 999px; cursor: pointer; line-height: 1.2;
+}
+.wb-acct-row-invoice:hover { border-color: var(--wb-text); }
 .wb-acct-cancel { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--wb-border); }
 .wb-acct-cancel-open {
   appearance: none; margin: 0; padding: 0; border: 0; background: transparent;

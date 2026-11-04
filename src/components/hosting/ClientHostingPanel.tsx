@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Button } from "@heroui/react";
 import { Spinner } from "@heroui/react";
 import { ArrowUpRight, Server } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -22,6 +23,9 @@ import {
 export default function ClientHostingPanel({ clientId }: { clientId: string }) {
   const [data, setData] = useState<ClientHosting | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [overrideDays, setOverrideDays] = useState("");
+  const [savingPolicy, setSavingPolicy] = useState(false);
+  const [policyFeedback, setPolicyFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,6 +37,31 @@ export default function ClientHostingPanel({ clientId }: { clientId: string }) {
       cancelled = true;
     };
   }, [clientId]);
+
+  useEffect(() => {
+    if (!data) return;
+    setOverrideDays(data.client.websiteBackupDaysOverride ? String(data.client.websiteBackupDaysOverride) : "");
+  }, [data]);
+
+  async function saveBackupPolicy() {
+    if (!data) return;
+    const value = overrideDays.trim() ? Number(overrideDays) : null;
+    if (value !== null && (!Number.isInteger(value) || value < 1 || value > 365)) {
+      setPolicyFeedback("Enter 1 to 365 days, or leave empty to use package defaults.");
+      return;
+    }
+    setSavingPolicy(true);
+    setPolicyFeedback(null);
+    try {
+      const updated = await adminHostingApi.updateClientBackupPolicy(clientId, value);
+      setData(updated);
+      setPolicyFeedback("Backup policy saved.");
+    } catch (err) {
+      setPolicyFeedback(errorMessage(err));
+    } finally {
+      setSavingPolicy(false);
+    }
+  }
 
   if (loadError) return <FormAlert status="danger">{loadError}</FormAlert>;
   if (!data) {
@@ -60,6 +89,28 @@ export default function ClientHostingPanel({ clientId }: { clientId: string }) {
           </div>
         </div>
         <p className="text-xs text-ink-muted">Custom prices are set per website, on its Hosting tab.</p>
+      </div>
+
+      <div className="border-b border-line px-6 py-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="text-sm text-ink">
+            <span className="mb-1 block text-xs text-ink-muted">Company backup override (days)</span>
+            <input
+              value={overrideDays}
+              onChange={(event) => {
+                setOverrideDays(event.target.value.replace(/\D/g, "").slice(0, 3));
+                setPolicyFeedback(null);
+              }}
+              className="h-9 w-40 rounded-lg border border-ed-border bg-surface px-3 text-sm text-ink shadow-ed-xs focus:border-ed-accent focus:outline-none focus:ring-2 focus:ring-ed-accent/15"
+              placeholder="Use package defaults"
+            />
+          </label>
+          <Button size="sm" variant="outline" onPress={() => void saveBackupPolicy()} isPending={savingPolicy}>
+            Save backup policy
+          </Button>
+          <p className="text-xs text-ink-muted">Empty = use each website package's backup interval.</p>
+        </div>
+        {policyFeedback && <p className={`mt-2 text-xs ${policyFeedback === "Backup policy saved." ? "text-emerald-700" : "text-rose-700"}`}>{policyFeedback}</p>}
       </div>
 
       {data.websites.length === 0 ? (
