@@ -1810,9 +1810,48 @@ em, i {
   background: color-mix(in srgb, var(--wb-primary) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--wb-primary) 18%, transparent);
   color: var(--wb-primary);
+  line-height: 0;
+  overflow: hidden;
 }
-.wb-hero-floating-card-icon svg { width: 20px; height: 20px; stroke-width: 2; }
-.wb-hero-floating-card-icon img { width: 22px; height: 22px; object-fit: contain; }
+.wb-hero-floating-card-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 2;
+  display: block;
+  margin: 0 auto;
+}
+.wb-hero-floating-card-icon img {
+  width: 22px !important;
+  height: 22px !important;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+.wb-hero-floating-card-icon .wb-icon,
+.wb-hero-floating-card-icon .wb-icon-inline {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  line-height: 1 !important;
+}
+.wb-hero-floating-card-icon .wb-icon svg,
+.wb-hero-floating-card-icon .wb-icon-inline svg {
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+  margin: 0 auto !important;
+}
 .wb-hero-floating-card-text {
   display: flex;
   flex-direction: column;
