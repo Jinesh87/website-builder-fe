@@ -11,7 +11,7 @@ import AuthSplitLayout from "../../layouts/AuthSplitLayout.tsx";
 import type { VerifyEmailState } from "./VerifyEmailPage.tsx";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { user: currentUser, login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,8 +39,15 @@ export default function LoginPage() {
 
     setSubmitting(true);
     try {
-      // On success the guest-only route guard redirects to the right home screen.
-      await login({ identifier: trimmed, password, remember });
+      const user = await login({ identifier: trimmed, password, remember });
+      if (user.role === "PARTNER") {
+        await logout();
+        setError(
+          "This account is registered as a Partner. Please sign in via the Partner Portal below."
+        );
+        setSubmitting(false);
+        return;
+      }
     } catch (err) {
       if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
         setUnverifiedEmail(trimmed.toLowerCase());
@@ -82,6 +89,15 @@ export default function LoginPage() {
           Create an account
         </Link>
       </p>
+
+      {currentUser && currentUser.role === "PARTNER" && (
+        <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 text-xs text-amber-800">
+          You are currently signed in as a Partner (<strong>{currentUser.email}</strong>). Please sign in with a Client or Admin account below, or visit the{" "}
+          <Link to="/partner/dashboard" className="font-semibold underline">
+            Partner Dashboard →
+          </Link>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} noValidate className="mt-7 flex flex-col gap-4">
         <TextInput
