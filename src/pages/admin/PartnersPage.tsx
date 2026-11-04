@@ -1206,7 +1206,10 @@ export default function PartnersPage() {
       {/* ======================================================== */}
       {approvingPartner && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5">
+          <div
+            className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5"
+            style={{ colorScheme: "light" }}
+          >
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-ink flex items-center gap-2">
                 <CheckCircle2 className="size-5 text-emerald-600" />
@@ -1241,15 +1244,35 @@ export default function PartnersPage() {
                   Commission Policy (When does this partner earn?)
                 </label>
                 <div className="space-y-1.5">
-                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
-                    <input
-                      type="radio"
-                      name="approvePolicy"
-                      value="GLOBAL_DEFAULT"
-                      checked={approvePolicy === "GLOBAL_DEFAULT"}
-                      onChange={() => setApprovePolicy("GLOBAL_DEFAULT")}
-                      className="mt-0.5 text-brand"
-                    />
+                  <label
+                    className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                      approvePolicy === "GLOBAL_DEFAULT"
+                        ? "border-brand bg-brand/5"
+                        : "border-line bg-canvas/40 hover:bg-canvas"
+                    }`}
+                  >
+                    <div className="pt-0.5 shrink-0">
+                      <input
+                        type="radio"
+                        name="approvePolicy"
+                        value="GLOBAL_DEFAULT"
+                        checked={approvePolicy === "GLOBAL_DEFAULT"}
+                        onChange={() => setApprovePolicy("GLOBAL_DEFAULT")}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          approvePolicy === "GLOBAL_DEFAULT"
+                            ? "border-brand bg-white"
+                            : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {approvePolicy === "GLOBAL_DEFAULT" && (
+                          <span className="size-2 rounded-full bg-brand" />
+                        )}
+                      </span>
+                    </div>
                     <div>
                       <div className="font-semibold text-ink text-xs">Use Global Default</div>
                       <div className="text-[11px] text-ink-muted">
@@ -1257,31 +1280,71 @@ export default function PartnersPage() {
                       </div>
                     </div>
                   </label>
-                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
-                    <input
-                      type="radio"
-                      name="approvePolicy"
-                      value="FIRST_PAYMENT"
-                      checked={approvePolicy === "FIRST_PAYMENT"}
-                      onChange={() => setApprovePolicy("FIRST_PAYMENT")}
-                      className="mt-0.5 text-brand"
-                    />
+                  <label
+                    className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                      approvePolicy === "FIRST_PAYMENT"
+                        ? "border-brand bg-brand/5"
+                        : "border-line bg-canvas/40 hover:bg-canvas"
+                    }`}
+                  >
+                    <div className="pt-0.5 shrink-0">
+                      <input
+                        type="radio"
+                        name="approvePolicy"
+                        value="FIRST_PAYMENT"
+                        checked={approvePolicy === "FIRST_PAYMENT"}
+                        onChange={() => setApprovePolicy("FIRST_PAYMENT")}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          approvePolicy === "FIRST_PAYMENT"
+                            ? "border-brand bg-white"
+                            : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {approvePolicy === "FIRST_PAYMENT" && (
+                          <span className="size-2 rounded-full bg-brand" />
+                        )}
+                      </span>
+                    </div>
                     <div>
                       <div className="font-semibold text-ink text-xs">First Payment Only (One-Time)</div>
                       <div className="text-[11px] text-ink-muted">
-                        Earns commission on customer's initial payment only.
+                        Earns commission on customer&apos;s initial payment only.
                       </div>
                     </div>
                   </label>
-                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
-                    <input
-                      type="radio"
-                      name="approvePolicy"
-                      value="EVERY_RENEWAL"
-                      checked={approvePolicy === "EVERY_RENEWAL"}
-                      onChange={() => setApprovePolicy("EVERY_RENEWAL")}
-                      className="mt-0.5 text-brand"
-                    />
+                  <label
+                    className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                      approvePolicy === "EVERY_RENEWAL"
+                        ? "border-brand bg-brand/5"
+                        : "border-line bg-canvas/40 hover:bg-canvas"
+                    }`}
+                  >
+                    <div className="pt-0.5 shrink-0">
+                      <input
+                        type="radio"
+                        name="approvePolicy"
+                        value="EVERY_RENEWAL"
+                        checked={approvePolicy === "EVERY_RENEWAL"}
+                        onChange={() => setApprovePolicy("EVERY_RENEWAL")}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          approvePolicy === "EVERY_RENEWAL"
+                            ? "border-brand bg-white"
+                            : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {approvePolicy === "EVERY_RENEWAL" && (
+                          <span className="size-2 rounded-full bg-brand" />
+                        )}
+                      </span>
+                    </div>
                     <div>
                       <div className="font-semibold text-ink text-xs">Every Subscription Renewal (Recurring)</div>
                       <div className="text-[11px] text-ink-muted">
@@ -1345,7 +1408,10 @@ export default function PartnersPage() {
       {/* ======================================================== */}
       {approvedSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5">
+          <div
+            className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5"
+            style={{ colorScheme: "light" }}
+          >
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-ink flex items-center gap-2">
                 <CheckCircle2 className="size-5 text-emerald-600" />
@@ -1416,7 +1482,10 @@ export default function PartnersPage() {
       )}
       {rejectingPartner && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5">
+          <div
+            className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5"
+            style={{ colorScheme: "light" }}
+          >
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-ink flex items-center gap-2">
                 <XCircle className="size-5 text-rose-600" />
@@ -1464,7 +1533,10 @@ export default function PartnersPage() {
       {/* ======================================================== */}
       {suspendingPartner && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5">
+          <div
+            className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5"
+            style={{ colorScheme: "light" }}
+          >
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-ink flex items-center gap-2">
                 <AlertCircle className="size-5 text-amber-600" />
@@ -1512,7 +1584,10 @@ export default function PartnersPage() {
       {/* ======================================================== */}
       {editingCommissionPartner && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5">
+          <div
+            className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5"
+            style={{ colorScheme: "light" }}
+          >
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-ink flex items-center gap-2">
                 <Sliders className="size-5 text-brand" />
@@ -1547,15 +1622,35 @@ export default function PartnersPage() {
                   Commission Policy (When does this partner earn?)
                 </label>
                 <div className="space-y-1.5">
-                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
-                    <input
-                      type="radio"
-                      name="editCommissionPolicy"
-                      value="GLOBAL_DEFAULT"
-                      checked={newCommissionPolicy === "GLOBAL_DEFAULT"}
-                      onChange={() => setNewCommissionPolicy("GLOBAL_DEFAULT")}
-                      className="mt-0.5 text-brand"
-                    />
+                  <label
+                    className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                      newCommissionPolicy === "GLOBAL_DEFAULT"
+                        ? "border-brand bg-brand/5"
+                        : "border-line bg-canvas/40 hover:bg-canvas"
+                    }`}
+                  >
+                    <div className="pt-0.5 shrink-0">
+                      <input
+                        type="radio"
+                        name="editCommissionPolicy"
+                        value="GLOBAL_DEFAULT"
+                        checked={newCommissionPolicy === "GLOBAL_DEFAULT"}
+                        onChange={() => setNewCommissionPolicy("GLOBAL_DEFAULT")}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          newCommissionPolicy === "GLOBAL_DEFAULT"
+                            ? "border-brand bg-white"
+                            : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {newCommissionPolicy === "GLOBAL_DEFAULT" && (
+                          <span className="size-2 rounded-full bg-brand" />
+                        )}
+                      </span>
+                    </div>
                     <div>
                       <div className="font-semibold text-ink text-xs">Use Global Default</div>
                       <div className="text-[11px] text-ink-muted">
@@ -1563,31 +1658,71 @@ export default function PartnersPage() {
                       </div>
                     </div>
                   </label>
-                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
-                    <input
-                      type="radio"
-                      name="editCommissionPolicy"
-                      value="FIRST_PAYMENT"
-                      checked={newCommissionPolicy === "FIRST_PAYMENT"}
-                      onChange={() => setNewCommissionPolicy("FIRST_PAYMENT")}
-                      className="mt-0.5 text-brand"
-                    />
+                  <label
+                    className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                      newCommissionPolicy === "FIRST_PAYMENT"
+                        ? "border-brand bg-brand/5"
+                        : "border-line bg-canvas/40 hover:bg-canvas"
+                    }`}
+                  >
+                    <div className="pt-0.5 shrink-0">
+                      <input
+                        type="radio"
+                        name="editCommissionPolicy"
+                        value="FIRST_PAYMENT"
+                        checked={newCommissionPolicy === "FIRST_PAYMENT"}
+                        onChange={() => setNewCommissionPolicy("FIRST_PAYMENT")}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          newCommissionPolicy === "FIRST_PAYMENT"
+                            ? "border-brand bg-white"
+                            : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {newCommissionPolicy === "FIRST_PAYMENT" && (
+                          <span className="size-2 rounded-full bg-brand" />
+                        )}
+                      </span>
+                    </div>
                     <div>
                       <div className="font-semibold text-ink text-xs">First Payment Only (One-Time)</div>
                       <div className="text-[11px] text-ink-muted">
-                        Earns commission on customer's initial payment only.
+                        Earns commission on customer&apos;s initial payment only.
                       </div>
                     </div>
                   </label>
-                  <label className="flex items-start gap-2 p-2 rounded-lg border border-line bg-canvas/40 hover:bg-canvas cursor-pointer">
-                    <input
-                      type="radio"
-                      name="editCommissionPolicy"
-                      value="EVERY_RENEWAL"
-                      checked={newCommissionPolicy === "EVERY_RENEWAL"}
-                      onChange={() => setNewCommissionPolicy("EVERY_RENEWAL")}
-                      className="mt-0.5 text-brand"
-                    />
+                  <label
+                    className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                      newCommissionPolicy === "EVERY_RENEWAL"
+                        ? "border-brand bg-brand/5"
+                        : "border-line bg-canvas/40 hover:bg-canvas"
+                    }`}
+                  >
+                    <div className="pt-0.5 shrink-0">
+                      <input
+                        type="radio"
+                        name="editCommissionPolicy"
+                        value="EVERY_RENEWAL"
+                        checked={newCommissionPolicy === "EVERY_RENEWAL"}
+                        onChange={() => setNewCommissionPolicy("EVERY_RENEWAL")}
+                        className="sr-only"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                          newCommissionPolicy === "EVERY_RENEWAL"
+                            ? "border-brand bg-white"
+                            : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {newCommissionPolicy === "EVERY_RENEWAL" && (
+                          <span className="size-2 rounded-full bg-brand" />
+                        )}
+                      </span>
+                    </div>
                     <div>
                       <div className="font-semibold text-ink text-xs">Every Subscription Renewal (Recurring)</div>
                       <div className="text-[11px] text-ink-muted">
@@ -1604,7 +1739,7 @@ export default function PartnersPage() {
                   id="isCommissionActive"
                   checked={isCommissionActive}
                   onChange={(e) => setIsCommissionActive(e.target.checked)}
-                  className="size-4 rounded text-brand border-line focus:ring-0 cursor-pointer"
+                  className="size-4 rounded text-brand border-slate-300 bg-white accent-brand focus:ring-0 cursor-pointer"
                 />
                 <label htmlFor="isCommissionActive" className="text-ink font-medium cursor-pointer">
                   Commission Eligibility Active (can earn commission on payments)
