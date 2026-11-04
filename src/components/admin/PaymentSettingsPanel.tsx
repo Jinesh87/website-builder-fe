@@ -150,19 +150,23 @@ export default function PaymentSettingsPanel({ onLoaded }: { onLoaded?: (config:
   }
 
   return (
-    <div className="grid max-w-2xl gap-6">
-      <form onSubmit={handleSave} noValidate className="rounded-xl border border-line bg-surface p-6 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
-            <CreditCard className="size-5" aria-hidden />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+      {/* Left Column: Razorpay Credentials Form */}
+      <form onSubmit={handleSave} noValidate className="lg:col-span-7 xl:col-span-8 rounded-xl border border-line bg-surface p-6 shadow-xs">
+        <div className="flex items-center justify-between pb-4 border-b border-line">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <CreditCard className="size-5" aria-hidden />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-ink">Razorpay Gateway</h2>
+              <p className="text-xs text-ink-muted">Clients buy connects and pay hosting subscriptions via Razorpay Checkout.</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-ink">Razorpay</h2>
-            <p className="text-xs text-ink-muted">Clients buy connects through Razorpay Checkout.</p>
-          </div>
+          <PaymentStatusChip config={config} />
         </div>
 
-        <div className="mt-6 flex flex-col gap-4">
+        <div className="mt-5 flex flex-col gap-4">
           <TextInput
             label="Key ID"
             name="razorpayKeyId"
@@ -214,38 +218,85 @@ export default function PaymentSettingsPanel({ onLoaded }: { onLoaded?: (config:
             />
           </div>
 
-          <div className="rounded-lg border border-line bg-canvas/60 p-3.5 text-xs text-ink-body">
-            <p className="font-semibold text-ink">Webhook</p>
-            <p className="mt-1">
-              In Razorpay Dashboard → Webhooks, add this URL with the events <span className="font-mono">payment.captured</span>,{" "}
-              <span className="font-mono">order.paid</span> and <span className="font-mono">payment.failed</span>:
-            </p>
-            <div className="mt-2 flex items-center gap-2">
-              <code className="min-w-0 flex-1 truncate rounded-md border border-line bg-surface px-2 py-1.5 font-mono text-[11px]">
-                {WEBHOOK_URL}
-              </code>
-              <Button size="sm" variant="outline" onPress={() => void copyWebhookUrl()}>
-                {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
-            </div>
-            <p className="mt-2 text-ink-muted">Razorpay must be able to reach this URL, so it only works once the API is public.</p>
-          </div>
-
-          <div className="flex items-start gap-2.5 rounded-lg border border-line p-3.5 text-xs text-ink-body">
+          <div className="flex items-start gap-2.5 rounded-lg border border-line bg-surface-muted/20 p-3.5 text-xs text-ink-body">
             <Check className="mt-0.5 size-4 shrink-0 text-emerald-500" aria-hidden />
             <span>Secrets are encrypted at rest with AES-256-GCM. Only a super admin can reveal them, with the eye button.</span>
           </div>
 
           {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
 
-          <div>
+          <div className="pt-2">
             <Button type="submit" isPending={saving}>
               Save payment settings
             </Button>
           </div>
         </div>
       </form>
+
+      {/* Right Column: Webhook Integration & Guides */}
+      <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
+        <div className="rounded-xl border border-line bg-surface p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-ink">Webhook Integration</h3>
+            {config.webhookConfigured ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                <Check className="size-3" /> Configured
+              </span>
+            ) : (
+              <span className="text-[11px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                Secret pending
+              </span>
+            )}
+          </div>
+
+          <p className="text-xs text-ink-muted leading-relaxed">
+            In Razorpay Dashboard → <strong>Account & Settings → Webhooks</strong>, add this URL with the specified events to ensure automatic order fulfillment:
+          </p>
+
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-semibold text-ink">Webhook Endpoint URL</span>
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 truncate rounded-lg border border-line bg-canvas px-3 py-2 font-mono text-[11px] text-ink select-all">
+                {WEBHOOK_URL}
+              </code>
+              <Button size="sm" variant="outline" onPress={() => void copyWebhookUrl()} className="shrink-0">
+                {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+            <p className="text-[10px] text-ink-muted">Razorpay must be able to reach this URL, so it only works once the API is public.</p>
+          </div>
+
+          <div className="border-t border-line pt-3 space-y-2">
+            <span className="text-xs font-semibold text-ink">Required Webhook Events</span>
+            <div className="flex flex-wrap gap-1.5">
+              <span className="rounded-md border border-line bg-canvas px-2.5 py-1 font-mono text-[11px] text-ink-body font-medium">
+                payment.captured
+              </span>
+              <span className="rounded-md border border-line bg-canvas px-2.5 py-1 font-mono text-[11px] text-ink-body font-medium">
+                order.paid
+              </span>
+              <span className="rounded-md border border-line bg-canvas px-2.5 py-1 font-mono text-[11px] text-ink-body font-medium">
+                payment.failed
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-line bg-surface p-5 shadow-xs space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">Integration Modes</h3>
+          <div className="space-y-2.5 text-xs text-ink-body">
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-ink shrink-0">Test Mode:</span>
+              <span className="text-ink-muted">Use <code className="font-mono text-ink">rzp_test_...</code> keys for sandbox testing without real charges.</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-semibold text-ink shrink-0">Live Mode:</span>
+              <span className="text-ink-muted">Use <code className="font-mono text-ink">rzp_live_...</code> keys to accept real customer transactions across UPI, cards, and Netbanking.</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

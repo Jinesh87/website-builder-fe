@@ -229,7 +229,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className={`px-6 py-8 sm:px-8 ${activeTab === "ai" ? "" : "max-w-5xl"}`}>
+    <div className="px-6 py-8 sm:px-8 w-full">
       <PageHeader
         title="Settings"
         description="Manage system communications, the AI Copilot generation engine, payments, hosting plans and referral settings."
@@ -350,16 +350,22 @@ export default function SettingsPage() {
           )}
 
           {emailConfig && (
-            <div className="grid max-w-2xl gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+              {/* Left: Resend Configuration & Notification Inboxes */}
               <form
                 onSubmit={handleEmailSave}
                 noValidate
-                className="rounded-xl border border-line bg-surface p-6 shadow-xs"
+                className="lg:col-span-7 xl:col-span-8 rounded-xl border border-line bg-surface p-6 shadow-xs"
               >
-                <h2 className="text-base font-semibold text-ink">Resend Configuration</h2>
-                <p className="mt-1 text-sm text-ink-body">
-                  The API key is encrypted at rest using AES-256-GCM and never displayed in plain text.
-                </p>
+                <div className="flex items-center justify-between pb-4 border-b border-line">
+                  <div>
+                    <h2 className="text-base font-semibold text-ink">Resend Configuration</h2>
+                    <p className="mt-0.5 text-xs text-ink-muted">
+                      Transactional email provider for signups, password resets, and notifications.
+                    </p>
+                  </div>
+                  {emailConfig && <EmailStatusChip config={emailConfig} />}
+                </div>
 
                 <div className="mt-5 flex flex-col gap-4">
                   <TextInput
@@ -393,60 +399,65 @@ export default function SettingsPage() {
                       label="From name"
                       name="fromName"
                       placeholder="WebBuilder"
+                      description="Sender name displayed in inboxes."
                       value={emailForm.fromName}
                       onChange={updateEmail("fromName")}
                       error={emailErrors.fromName}
                     />
                   </div>
 
-                  <Switch isSelected={emailForm.enabled} onChange={updateEmail("enabled")}>
-                    <Switch.Content>
-                      <Switch.Control>
-                        <Switch.Thumb />
-                      </Switch.Control>
-                      <Label className="text-sm text-ink">Send platform emails</Label>
-                    </Switch.Content>
-                  </Switch>
+                  <div className="pt-1">
+                    <Switch isSelected={emailForm.enabled} onChange={updateEmail("enabled")}>
+                      <Switch.Content>
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                        <Label className="text-sm font-medium text-ink">Send platform emails</Label>
+                      </Switch.Content>
+                    </Switch>
+                  </div>
 
                   <div className="border-t border-line pt-5">
                     <h3 className="text-sm font-semibold text-ink">Notification & Sales Inboxes</h3>
-                    <p className="mt-1 text-xs text-ink-body">
-                      Configure where submission notifications and leads are sent. Leave blank to use the default inbox (support@bytezoracoders.com).
+                    <p className="mt-1 text-xs text-ink-muted">
+                      Where inquiries, client questionnaires, and partner leads are delivered.
                     </p>
 
-                    <div className="mt-4 flex flex-col gap-4">
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
                       <TextInput
                         label="Contact form sales email"
                         name="contactSalesEmail"
                         type="email"
                         placeholder="support@bytezoracoders.com"
-                        description="Receives inquiries submitted through the contact page."
+                        description="Website contact page submissions."
                         value={emailForm.contactSalesEmail ?? ""}
                         onChange={updateEmail("contactSalesEmail")}
                         error={emailErrors.contactSalesEmail}
                       />
 
                       <TextInput
-                        label="Website questionnaire sales email"
+                        label="Questionnaire sales email"
                         name="questionnaireSalesEmail"
                         type="email"
                         placeholder="support@bytezoracoders.com"
-                        description="Receives client website project questionnaires."
+                        description="Client website project submissions."
                         value={emailForm.questionnaireSalesEmail ?? ""}
                         onChange={updateEmail("questionnaireSalesEmail")}
                         error={emailErrors.questionnaireSalesEmail}
                       />
 
-                      <TextInput
-                        label="Partner application sales email"
-                        name="partnerSalesEmail"
-                        type="email"
-                        placeholder="support@bytezoracoders.com"
-                        description="Receives partner & agency applications."
-                        value={emailForm.partnerSalesEmail ?? ""}
-                        onChange={updateEmail("partnerSalesEmail")}
-                        error={emailErrors.partnerSalesEmail}
-                      />
+                      <div className="sm:col-span-2">
+                        <TextInput
+                          label="Partner application sales email"
+                          name="partnerSalesEmail"
+                          type="email"
+                          placeholder="support@bytezoracoders.com"
+                          description="Inbound partner & agency applications."
+                          value={emailForm.partnerSalesEmail ?? ""}
+                          onChange={updateEmail("partnerSalesEmail")}
+                          error={emailErrors.partnerSalesEmail}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -456,7 +467,7 @@ export default function SettingsPage() {
                     </FormAlert>
                   )}
 
-                  <div>
+                  <div className="pt-2">
                     <Button type="submit" isPending={emailSaving}>
                       Save settings
                     </Button>
@@ -464,46 +475,71 @@ export default function SettingsPage() {
                 </div>
               </form>
 
-              <form
-                onSubmit={handleTestEmail}
-                noValidate
-                className="rounded-xl border border-line bg-surface p-6 shadow-xs"
-              >
-                <h2 className="text-base font-semibold text-ink">Send a test email</h2>
-                <p className="mt-1 text-sm text-ink-body">
-                  Uses the saved settings, even while sending is turned off.
-                </p>
-                <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start">
-                  <div className="flex-1">
+              {/* Right: Test Email Tool & Setup Verification */}
+              <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
+                <form
+                  onSubmit={handleTestEmail}
+                  noValidate
+                  className="rounded-xl border border-line bg-surface p-6 shadow-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <Send className="size-4 text-brand" />
+                    <h2 className="text-base font-semibold text-ink">Send a test email</h2>
+                  </div>
+                  <p className="mt-1 text-xs text-ink-muted">
+                    Quickly verify your Resend credentials and domain deliverability.
+                  </p>
+                  <div className="mt-4 flex flex-col gap-3">
                     <TextInput
-                      label="Send to"
+                      label="Recipient email"
                       name="testTo"
                       type="email"
+                      placeholder="admin@yourdomain.com"
                       value={testTo}
                       onChange={setTestTo}
                       error={testError}
                       isDisabled={!emailConfig.configured}
                     />
+                    <Button
+                      type="submit"
+                      variant="outline"
+                      className="w-full mt-1"
+                      isPending={testing}
+                      isDisabled={!emailConfig.configured}
+                    >
+                      <Send className="size-3.5 mr-1" aria-hidden /> Send test email
+                    </Button>
                   </div>
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    className="sm:mt-6"
-                    isPending={testing}
-                    isDisabled={!emailConfig.configured}
-                  >
-                    <Send className="size-4" aria-hidden /> Send test
-                  </Button>
+                  {!emailConfig.configured && (
+                    <p className="mt-3 text-xs text-amber-600">Save a valid Resend API key first to enable testing.</p>
+                  )}
+                  {testFeedback && (
+                    <div className="mt-4">
+                      <FormAlert status={testFeedback.status}>{testFeedback.message}</FormAlert>
+                    </div>
+                  )}
+                </form>
+
+                <div className="rounded-xl border border-line bg-surface p-5 shadow-xs space-y-3">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
+                    Deliverability Checklist
+                  </h3>
+                  <ul className="space-y-2.5 text-xs text-ink-body">
+                    <li className="flex items-start gap-2">
+                      <Check className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>Verify your sender domain with DKIM and SPF records in Resend DNS settings.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>API keys are encrypted at rest with AES-256-GCM.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="size-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>Notification inboxes receive immediate alerts upon customer form submissions.</span>
+                    </li>
+                  </ul>
                 </div>
-                {!emailConfig.configured && (
-                  <p className="mt-3 text-xs text-ink-muted">Save a Resend API key first.</p>
-                )}
-                {testFeedback && (
-                  <div className="mt-4">
-                    <FormAlert status={testFeedback.status}>{testFeedback.message}</FormAlert>
-                  </div>
-                )}
-              </form>
+              </div>
             </div>
           )}
         </div>
