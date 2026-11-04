@@ -149,7 +149,8 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
   }
 
   return (
-    <div className="grid max-w-4xl gap-6">
+    <div className="space-y-6 w-full">
+      {/* 1. Hosting Packages Section */}
       <section className="rounded-xl border border-line bg-surface p-6 shadow-xs">
         <div className="flex items-center gap-2.5">
           <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
@@ -158,143 +159,153 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
           <div className="flex-1">
             <h2 className="text-base font-semibold text-ink">Hosting packages</h2>
             <p className="text-xs text-ink-muted">
-              Shown on the pricing page and when publishing, in this order. Prices are per website, in rupees.
+              Displayed on public pricing pages and publishing checkout. Configured in real-time.
             </p>
           </div>
         </div>
-        <div className="mt-5 grid gap-4">
+        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
           {settings.packages.map((pkg) => (
             <HostingPackageEditor key={pkg.id} pkg={pkg} onSaved={apply} />
           ))}
         </div>
       </section>
 
-      <form onSubmit={handleSubmit} noValidate className="rounded-xl border border-line bg-surface p-6 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
-            <Server className="size-5" aria-hidden />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-base font-semibold text-ink">Billing rules</h2>
-            <p className="text-xs text-ink-muted">Clients pay online through Razorpay. Connects stay for AI unless you allow them here.</p>
-          </div>
-          {settings.enabled ? <Chip color="success">Billing on</Chip> : <Chip>Billing off</Chip>}
-        </div>
-
-        {!settings.razorpayConfigured && (
-          <div className="mt-5">
-            <FormAlert status="warning">
-              Razorpay isn't set up, so clients can't pay hosting online.{" "}
-              <Link to="/admin/settings?tab=payments" className="font-medium underline">
-                Add the keys in Payments
-              </Link>
-              .
-            </FormAlert>
-          </div>
-        )}
-
-        <div className="mt-6 flex flex-col gap-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <DaysInput
-              id="hosting-reminder"
-              label="Reminder before expiry"
-              value={form.reminderDays}
-              onChange={update("reminderDays")}
-              hint="Email and notification to the client and admins. 0 = no reminder."
-              error={errors.reminderDays}
-              isDisabled={saving}
-            />
-            <DaysInput
-              id="hosting-grace"
-              label="Grace period after expiry"
-              value={form.graceDays}
-              onChange={update("graceDays")}
-              hint="The site stays live this long unpaid, then goes offline (draft kept)."
-              error={errors.graceDays}
-              isDisabled={saving}
-            />
+      {/* 2. Billing Rules & Existing Live Websites Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Billing Rules Form */}
+        <form onSubmit={handleSubmit} noValidate className="lg:col-span-7 xl:col-span-7 rounded-xl border border-line bg-surface p-6 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <Server className="size-5" aria-hidden />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-base font-semibold text-ink">Billing rules</h2>
+              <p className="text-xs text-ink-muted">Clients pay online through Razorpay. Connects stay for AI unless allowed below.</p>
+            </div>
+            {settings.enabled ? <Chip color="success">Billing on</Chip> : <Chip>Billing off</Chip>}
           </div>
 
-          <div>
-            <SwitchField label="Require a paid hosting plan to publish" isSelected={form.enabled} onChange={update("enabled")} isDisabled={saving} />
-            <p className="mt-1 text-xs text-ink-muted">
-              When on, publishing needs a plan, and unpaid sites go offline after the grace period.
-            </p>
-          </div>
-
-          <div>
-            <SwitchField
-              label="Let clients pay hosting with connects"
-              isSelected={form.allowConnectsPayment}
-              onChange={update("allowConnectsPayment")}
-              isDisabled={saving}
-            />
-            <p className="mt-1 text-xs text-ink-muted">
-              Optional, next to online payment, at {settings.connectsPerRupee} connects per ₹1. Clients can also turn on auto-renewal
-              from connects.
-            </p>
-          </div>
-
-          {form.enabled && !settings.enabled && settings.liveSitesWithoutPlan > 0 && (
-            <FormAlert status="warning">
-              {settings.liveSitesWithoutPlan} live {settings.liveSitesWithoutPlan === 1 ? "website has" : "websites have"} no
-              plan yet. They stay online but can't be republished until they get one. Give them a free period below first.
-            </FormAlert>
+          {!settings.razorpayConfigured && (
+            <div className="mt-5">
+              <FormAlert status="warning">
+                Razorpay isn't set up, so clients can't pay hosting online.{" "}
+                <Link to="/admin/settings?tab=payments" className="font-medium underline">
+                  Add the keys in Payments
+                </Link>
+                .
+              </FormAlert>
+            </div>
           )}
 
-          {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
-
-          <div>
-            <Button type="submit" isPending={saving}>
-              Save billing rules
-            </Button>
-          </div>
-        </div>
-      </form>
-
-      <section className="rounded-xl border border-line bg-surface p-6 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-            <CalendarClock className="size-5" aria-hidden />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-ink">Existing live websites</h2>
-            <p className="text-xs text-ink-muted">
-              {settings.liveSitesWithoutPlan === 0
-                ? "Every published website has a hosting plan."
-                : `${settings.liveSitesWithoutPlan} published ${settings.liveSitesWithoutPlan === 1 ? "website has" : "websites have"} no hosting plan.`}
-            </p>
-          </div>
-        </div>
-        {settings.liveSitesWithoutPlan > 0 &&
-          (listed.length === 0 ? (
-            <div className="mt-5">
-              <FormAlert status="warning">Price a package first, so these websites can renew after the free days.</FormAlert>
-            </div>
-          ) : (
-            <div className="mt-5 flex flex-wrap items-end gap-3">
-              <div>
-                <DaysInput id="hosting-free-days" label="Free days" value={freeDays} onChange={setFreeDays} isDisabled={backfilling} />
-              </div>
-              <SelectInput
-                label="Then renews on"
-                value={backfillPackageId}
-                onChange={setBackfillPackageId}
-                options={listed.map((pkg) => ({ value: pkg.id, label: pkg.name }))}
-                className="w-40"
+          <div className="mt-6 flex flex-col gap-5">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <DaysInput
+                id="hosting-reminder"
+                label="Reminder before expiry"
+                value={form.reminderDays}
+                onChange={update("reminderDays")}
+                hint="Email & notification alert. 0 = disabled."
+                error={errors.reminderDays}
+                isDisabled={saving}
               />
-              <SelectInput label="Billed" value={backfillCycle} onChange={setBackfillCycle} options={CYCLE_OPTIONS} className="w-36" />
-              <Button variant="outline" onPress={handleBackfill} isPending={backfilling} isDisabled={!backfillPackageId}>
-                Give free plan to {settings.liveSitesWithoutPlan}
+              <DaysInput
+                id="hosting-grace"
+                label="Grace period after expiry"
+                value={form.graceDays}
+                onChange={update("graceDays")}
+                hint="Site stays live unpaid before going offline."
+                error={errors.graceDays}
+                isDisabled={saving}
+              />
+            </div>
+
+            <div>
+              <SwitchField label="Require a paid hosting plan to publish" isSelected={form.enabled} onChange={update("enabled")} isDisabled={saving} />
+              <p className="mt-1 text-xs text-ink-muted">
+                When on, publishing needs a plan, and unpaid sites go offline after the grace period.
+              </p>
+            </div>
+
+            <div>
+              <SwitchField
+                label="Let clients pay hosting with connects"
+                isSelected={form.allowConnectsPayment}
+                onChange={update("allowConnectsPayment")}
+                isDisabled={saving}
+              />
+              <p className="mt-1 text-xs text-ink-muted">
+                Optional, next to online payment, at {settings.connectsPerRupee} connects per ₹1.
+              </p>
+            </div>
+
+            {form.enabled && !settings.enabled && settings.liveSitesWithoutPlan > 0 && (
+              <FormAlert status="warning">
+                {settings.liveSitesWithoutPlan} live {settings.liveSitesWithoutPlan === 1 ? "website has" : "websites have"} no
+                plan yet. Give them a free period before enforcing.
+              </FormAlert>
+            )}
+
+            {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
+
+            <div className="pt-2">
+              <Button type="submit" isPending={saving}>
+                Save billing rules
               </Button>
             </div>
-          ))}
-        {backfillFeedback && (
-          <div className="mt-4">
-            <FormAlert status={backfillFeedback.status}>{backfillFeedback.message}</FormAlert>
           </div>
-        )}
-      </section>
+        </form>
+
+        {/* Existing Live Websites Provisioning */}
+        <section className="lg:col-span-5 xl:col-span-5 rounded-xl border border-line bg-surface p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+              <CalendarClock className="size-5" aria-hidden />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-ink">Active Sites Status</h2>
+              <p className="text-xs text-ink-muted">
+                {settings.liveSitesWithoutPlan === 0
+                  ? "Every published website has a valid hosting plan."
+                  : `${settings.liveSitesWithoutPlan} published ${settings.liveSitesWithoutPlan === 1 ? "website has" : "websites have"} no hosting plan.`}
+              </p>
+            </div>
+          </div>
+
+          {settings.liveSitesWithoutPlan > 0 &&
+            (listed.length === 0 ? (
+              <div className="mt-3">
+                <FormAlert status="warning">Price a package first, so these websites can renew after the free days.</FormAlert>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <DaysInput id="hosting-free-days" label="Free days" value={freeDays} onChange={setFreeDays} isDisabled={backfilling} />
+                  <SelectInput label="Billed" value={backfillCycle} onChange={setBackfillCycle} options={CYCLE_OPTIONS} />
+                </div>
+                <SelectInput
+                  label="Then renews on"
+                  value={backfillPackageId}
+                  onChange={setBackfillPackageId}
+                  options={listed.map((pkg) => ({ value: pkg.id, label: pkg.name }))}
+                />
+                <Button variant="outline" onPress={handleBackfill} isPending={backfilling} isDisabled={!backfillPackageId} className="w-full mt-1">
+                  Grant free period to {settings.liveSitesWithoutPlan} {settings.liveSitesWithoutPlan === 1 ? "site" : "sites"}
+                </Button>
+              </div>
+            ))}
+
+          {backfillFeedback && (
+            <div className="mt-3">
+              <FormAlert status={backfillFeedback.status}>{backfillFeedback.message}</FormAlert>
+            </div>
+          )}
+
+          <div className="rounded-lg border border-line bg-canvas p-3.5 text-xs text-ink-muted space-y-2">
+            <p className="font-semibold text-ink">Subscription Lifecycle</p>
+            <p>Unpaid expired websites keep all their page data and drafts safely intact while offline, ready to instantly re-activate upon payment.</p>
+          </div>
+        </section>
+      </div>
 
       <section className="rounded-xl border border-line bg-surface shadow-xs">
         <div className="flex items-center gap-2 border-b border-line px-6 py-4">

@@ -46,6 +46,13 @@ export function GuestOnly() {
       // so they can log in with a partner account instead of being bounced to /dashboard.
       return <Outlet />;
     }
+    if (location.pathname === "/login") {
+      if (user.role === "PARTNER") {
+        // If a partner visits /login, allow them to view the page so LoginPage can show
+        // the validation rejection message or partner notice instead of bouncing them.
+        return <Outlet />;
+      }
+    }
     const from = (location.state as RedirectState | null)?.from;
     return <Navigate to={from ?? homeForRole(user)} replace />;
   }

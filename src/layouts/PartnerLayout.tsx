@@ -66,7 +66,7 @@ export default function PartnerLayout() {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-canvas">
+    <div className="fixed inset-0 flex overflow-hidden bg-canvas text-ink [color-scheme:light]">
       {/* Sidebar */}
       <aside className="flex h-full w-64 shrink-0 flex-col border-r border-slate-800/80 bg-[#0D111C] px-3.5 py-5 select-none">
         {/* Brand & Partner Label */}
@@ -151,7 +151,7 @@ export default function PartnerLayout() {
       </aside>
 
       {/* Main Content Area: Always Light Mode */}
-      <main className="flex-1 min-w-0 overflow-y-auto bg-canvas text-ink">
+      <main className="flex-1 min-w-0 h-full overflow-y-auto bg-canvas text-ink">
         <Outlet context={{ partner: partnerData }} />
       </main>
     </div>

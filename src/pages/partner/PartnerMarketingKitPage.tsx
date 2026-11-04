@@ -74,9 +74,10 @@ export default function PartnerMarketingKitPage() {
   }, [data, outletCtx, user]);
 
   const isSuspended = partnerInfo.status === "SUSPENDED";
-  const brandHost = typeof window !== "undefined" ? window.location.host : "yourbrand.com";
+  const brandOrigin =
+    typeof window !== "undefined" ? window.location.origin : "https://yourbrand.com";
   const brandName = "Bytezora";
-  const referralUrl = `https://${brandHost}/r/${partnerInfo.referralCode}`;
+  const referralUrl = `${brandOrigin}/r/${partnerInfo.referralCode}`;
 
   // Generate QR Code data URL dynamically
   const qrCodeDataUrl = useMemo(() => {

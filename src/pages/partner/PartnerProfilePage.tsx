@@ -29,10 +29,6 @@ type PayoutSettings = {
   ifscCode: string;
   upiId: string;
   panNumber: string;
-  notifyNewReferral: boolean;
-  notifyCommissionApproved: boolean;
-  notifyPayoutSent: boolean;
-  notifyProductUpdates: boolean;
 };
 
 const PAYOUT_STORAGE_KEY = "byz_partner_payout_settings";
@@ -52,10 +48,6 @@ export default function PartnerProfilePage() {
     ifscCode: "",
     upiId: "",
     panNumber: "",
-    notifyNewReferral: true,
-    notifyCommissionApproved: true,
-    notifyPayoutSent: true,
-    notifyProductUpdates: false,
   });
   const [payoutSaved, setPayoutSaved] = useState(false);
   const [savingPayout, setSavingPayout] = useState(false);
@@ -113,8 +105,23 @@ export default function PartnerProfilePage() {
 
   const isSuspended = partnerInfo.status === "SUSPENDED";
 
-  // Initialize payout form from saved settings or defaults
+  // Initialize payout form from backend bank details or defaults
   useEffect(() => {
+    const backendBank = data?.bankDetails;
+    if (backendBank && (backendBank.bankAccountNumber || backendBank.upiId || backendBank.accountHolderName)) {
+      setPayoutForm((prev) => ({
+        ...prev,
+        phone: partnerInfo.phone,
+        alternatePhone: partnerInfo.alternatePhone,
+        accountHolderName: backendBank.accountHolderName || partnerInfo.companyName,
+        bankAccountNumber: backendBank.bankAccountNumber || "",
+        ifscCode: backendBank.ifscCode || "",
+        upiId: backendBank.upiId || "",
+        panNumber: backendBank.panNumber || "",
+      }));
+      return;
+    }
+
     try {
       const saved = localStorage.getItem(PAYOUT_STORAGE_KEY);
       if (saved) {
@@ -141,17 +148,24 @@ export default function PartnerProfilePage() {
       upiId: "",
       panNumber: "",
     }));
-  }, [partnerInfo]);
+  }, [partnerInfo, data?.bankDetails]);
 
-  function handleSavePayout(e: FormEvent) {
+  async function handleSavePayout(e: FormEvent) {
     e.preventDefault();
     setSavingPayout(true);
     try {
+      await partnerApi.updatePayoutDetails({
+        accountHolderName: payoutForm.accountHolderName,
+        bankAccountNumber: payoutForm.bankAccountNumber,
+        ifscCode: payoutForm.ifscCode,
+        upiId: payoutForm.upiId,
+        panNumber: payoutForm.panNumber,
+      });
       localStorage.setItem(PAYOUT_STORAGE_KEY, JSON.stringify(payoutForm));
       setPayoutSaved(true);
       setTimeout(() => setPayoutSaved(false), 3000);
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error("Failed to save payout details", err);
     } finally {
       setSavingPayout(false);
     }
@@ -202,7 +216,7 @@ export default function PartnerProfilePage() {
   }
 
   return (
-    <div className="p-5 sm:p-7 lg:p-8 space-y-6 max-w-6xl mx-auto bg-canvas min-h-screen text-ink">
+    <div className="p-5 sm:p-7 lg:p-8 space-y-6 max-w-6xl mx-auto pb-12 text-ink">
       {/* Suspended Alert Banner */}
       {isSuspended && (
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-amber-900 shadow-xs">
@@ -470,55 +484,6 @@ export default function PartnerProfilePage() {
               className="w-full rounded-xl bg-surface border border-line px-3.5 py-2.5 text-xs text-ink font-mono uppercase focus:outline-none focus:border-brand transition-colors"
               placeholder="ABCPK1234F"
             />
-          </div>
-
-          {/* Email notifications checkboxes */}
-          <div className="pt-3 border-t border-line space-y-3">
-            <span className="block text-xs font-bold text-ink">
-              Email notifications
-            </span>
-
-            <div className="space-y-2.5">
-              <label className="flex items-center gap-3 text-xs text-ink cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={payoutForm.notifyNewReferral}
-                  onChange={(e) => setPayoutForm({ ...payoutForm, notifyNewReferral: e.target.checked })}
-                  className="rounded border-line text-brand focus:ring-brand size-4 cursor-pointer"
-                />
-                <span>New referral signs up</span>
-              </label>
-
-              <label className="flex items-center gap-3 text-xs text-ink cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={payoutForm.notifyCommissionApproved}
-                  onChange={(e) => setPayoutForm({ ...payoutForm, notifyCommissionApproved: e.target.checked })}
-                  className="rounded border-line text-brand focus:ring-brand size-4 cursor-pointer"
-                />
-                <span>Commission approved</span>
-              </label>
-
-              <label className="flex items-center gap-3 text-xs text-ink cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={payoutForm.notifyPayoutSent}
-                  onChange={(e) => setPayoutForm({ ...payoutForm, notifyPayoutSent: e.target.checked })}
-                  className="rounded border-line text-brand focus:ring-brand size-4 cursor-pointer"
-                />
-                <span>Payout sent</span>
-              </label>
-
-              <label className="flex items-center gap-3 text-xs text-ink cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={payoutForm.notifyProductUpdates}
-                  onChange={(e) => setPayoutForm({ ...payoutForm, notifyProductUpdates: e.target.checked })}
-                  className="rounded border-line text-brand focus:ring-brand size-4 cursor-pointer"
-                />
-                <span>Product updates & offers</span>
-              </label>
-            </div>
           </div>
 
           <div className="pt-2">

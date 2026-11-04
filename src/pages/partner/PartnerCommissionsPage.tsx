@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Spinner } from "@heroui/react";
-import { Download, ShieldAlert, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, ShieldAlert, Wallet, X } from "lucide-react";
 import { Link, useOutletContext } from "react-router-dom";
 import { partnerApi, type PartnerDashboardData } from "../../api/partner.ts";
 import { useAuth } from "../../auth/auth-context.ts";
@@ -42,6 +42,11 @@ type PayoutRecord = {
   tds: number;
   netPaid: number;
   reference: string;
+  status?: string;
+  invoiceNumber?: string;
+  payoutMethod?: string;
+  upiId?: string | null;
+  bankAccountNumber?: string | null;
 };
 
 export default function PartnerCommissionsPage() {
@@ -55,6 +60,15 @@ export default function PartnerCommissionsPage() {
   // Statement modal state
   const [selectedStatement, setSelectedStatement] =
     useState<PayoutRecord | null>(null);
+
+  // Withdrawal modal state
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [withdrawMode, setWithdrawMode] = useState<"FULL" | "CUSTOM">("FULL");
+  const [customAmountStr, setCustomAmountStr] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState<"BANK_TRANSFER" | "UPI">("BANK_TRANSFER");
+  const [isSubmittingWithdraw, setIsSubmittingWithdraw] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [withdrawSuccess, setWithdrawSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,19 +121,37 @@ export default function PartnerCommissionsPage() {
   const isSuspended = partnerInfo.status === "SUSPENDED";
 
   // Calculate live stats
-  const stats = useMemo(() => {
-    const nextPayout = Math.round((data?.stats?.approvedCommissionPaise || 0) / 100);
-    const pending = Math.round((data?.stats?.pendingCommissionPaise || 0) / 100);
-    const paidToDate = Math.round((data?.stats?.paidCommissionPaise || 0) / 100);
+  const availableBalance = Math.round(
+    (data?.stats?.availableForWithdrawalPaise ??
+      data?.stats?.approvedCommissionPaise ??
+      0) / 100,
+  );
+  const totalApproved = Math.round(
+    (data?.stats?.approvedCommissionPaise || 0) / 100,
+  );
+  const pendingRequests = Math.round(
+    (data?.stats?.pendingPayoutRequestsPaise || 0) / 100,
+  );
+  const paidToDate = Math.round((data?.stats?.paidCommissionPaise || 0) / 100);
 
+  const hasBankDetails = Boolean(
+    data?.bankDetails?.upiId ||
+      (data?.bankDetails?.bankAccountNumber && data?.bankDetails?.ifscCode),
+  );
+
+  const stats = useMemo(() => {
     return {
-      nextPayout,
-      pending,
+      availableBalance,
+      totalApproved,
+      pendingRequests,
       paidToDate,
-      payoutCount: data?.commissions?.filter((c) => c.status === "PAID").length ?? 0,
+      payoutCount:
+        data?.payoutRequests?.filter((pr) => pr.status === "APPROVED").length ??
+        data?.commissions?.filter((c) => c.status === "PAID").length ??
+        0,
       commissionRate: partnerInfo.commissionRate,
     };
-  }, [data, partnerInfo.commissionRate]);
+  }, [data, partnerInfo.commissionRate, availableBalance, totalApproved, pendingRequests, paidToDate]);
 
   // Map real transactions from backend
   const transactions = useMemo<CommissionRow[]>(() => {
@@ -148,8 +180,31 @@ export default function PartnerCommissionsPage() {
     });
   }, [data?.commissions, partnerInfo.commissionRate]);
 
-  // Real payout history derived from paid commissions
+  // Real payout history derived from payout requests & paid commissions
   const payoutHistory = useMemo<PayoutRecord[]>(() => {
+    if (data?.payoutRequests && data.payoutRequests.length > 0) {
+      return data.payoutRequests.map((pr) => {
+        const comm = Math.round(pr.amountPaise / 100);
+        const tds = Math.round(comm * 0.05);
+        const net = comm - tds;
+        return {
+          id: pr.id,
+          payoutId: pr.formattedId,
+          forMonth: formatDate(pr.requestedAt),
+          paidOn: pr.processedAt ? formatDate(pr.processedAt) : "Pending Review",
+          commission: comm,
+          tds,
+          netPaid: net,
+          reference: pr.transactionReference || (pr.payoutMethod === "UPI" ? "UPI Payout" : "Bank Transfer"),
+          status: pr.status,
+          invoiceNumber: pr.invoiceNumber || pr.formattedId,
+          payoutMethod: pr.payoutMethod,
+          upiId: pr.upiId,
+          bankAccountNumber: pr.bankAccountNumber,
+        };
+      });
+    }
+
     if (!data?.commissions) return [];
     return data.commissions
       .filter((c) => c.status === "PAID")
@@ -166,9 +221,55 @@ export default function PartnerCommissionsPage() {
           tds,
           netPaid: net,
           reference: "Bank Transfer",
+          status: "APPROVED",
+          invoiceNumber: `INV-PO-2026-${String(1001 + i).slice(-4)}`,
+          payoutMethod: "BANK_TRANSFER",
         };
       });
-  }, [data?.commissions]);
+  }, [data?.payoutRequests, data?.commissions]);
+
+  async function handleSubmitWithdrawal() {
+    setWithdrawError(null);
+    let amountRupees = availableBalance;
+    if (withdrawMode === "CUSTOM") {
+      const parsed = parseFloat(customAmountStr);
+      if (isNaN(parsed) || parsed <= 0) {
+        setWithdrawError("Please enter a valid amount greater than ₹0.");
+        return;
+      }
+      if (parsed > availableBalance) {
+        setWithdrawError(`Amount cannot exceed available balance (₹${availableBalance}).`);
+        return;
+      }
+      amountRupees = Math.round(parsed);
+    }
+
+    if (amountRupees <= 0) {
+      setWithdrawError("Withdrawal amount must be greater than zero.");
+      return;
+    }
+
+    setIsSubmittingWithdraw(true);
+    try {
+      await partnerApi.requestPayout({
+        amountPaise: Math.round(amountRupees * 100),
+        payoutMethod: selectedMethod,
+      });
+
+      const fresh = await partnerApi.getDashboard();
+      if (fresh) setData(fresh);
+
+      setIsWithdrawOpen(false);
+      setWithdrawSuccess(
+        `Withdrawal request for ₹${amountRupees.toLocaleString("en-IN")} submitted! Admin will process your payout.`,
+      );
+      setTimeout(() => setWithdrawSuccess(null), 5000);
+    } catch (err: any) {
+      setWithdrawError(err.message || "Failed to submit withdrawal request.");
+    } finally {
+      setIsSubmittingWithdraw(false);
+    }
+  }
 
   function handlePrintStatement() {
     window.print();
@@ -231,34 +332,81 @@ export default function PartnerCommissionsPage() {
         </div>
       </div>
 
+      {/* Withdraw Success Banner */}
+      {withdrawSuccess && (
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-start gap-3 text-emerald-900 shadow-xs animate-in fade-in duration-200">
+          <CheckCircle2 className="size-5 shrink-0 text-emerald-600 mt-0.5" />
+          <div className="flex-1 text-xs">
+            <p className="font-semibold text-emerald-900 text-sm">Withdrawal Request Received</p>
+            <p className="mt-0.5 text-emerald-800 leading-relaxed">{withdrawSuccess}</p>
+          </div>
+        </div>
+      )}
+
       {/* Row 1: 4 Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Next payout (Accent card) */}
+        {/* Card 1: Available to withdraw (Accent card) */}
         <div className="rounded-2xl bg-blue-50/70 border border-blue-200 p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <p className="text-xs font-semibold text-blue-900">Next payout</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-blue-900">Available to withdraw</p>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-200/60 text-blue-800">
+                Instant
+              </span>
+            </div>
             <p className="text-3xl font-extrabold text-blue-600 mt-1.5">
-              {formatCurrency(stats.nextPayout)}
+              {formatCurrency(availableBalance)}
             </p>
           </div>
-          <p className="text-ed-2xs text-blue-700/80 mt-2">
-            On [10 Nov 2026] to bank ****4821
-          </p>
+          <div className="mt-3 pt-3 border-t border-blue-200/60 flex items-center justify-between gap-2">
+            <p className="text-ed-2xs text-blue-700/80 truncate">
+              {hasBankDetails
+                ? (data?.bankDetails?.upiId
+                    ? `UPI: ${data.bankDetails.upiId}`
+                    : `Bank: ****${data?.bankDetails?.bankAccountNumber?.slice(-4)}`)
+                : "Bank setup required"}
+            </p>
+            {hasBankDetails ? (
+              <button
+                type="button"
+                disabled={availableBalance <= 0 || isSuspended}
+                onClick={() => {
+                  setWithdrawMode("FULL");
+                  setCustomAmountStr("");
+                  setWithdrawError(null);
+                  setSelectedMethod(data?.bankDetails?.upiId ? "UPI" : "BANK_TRANSFER");
+                  setIsWithdrawOpen(true);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors cursor-pointer shrink-0 shadow-xs"
+              >
+                Withdraw
+              </button>
+            ) : (
+              <Link
+                to="/partner/profile"
+                className="px-3 py-1.5 rounded-lg border border-blue-300 bg-white hover:bg-blue-50 text-blue-700 text-xs font-semibold transition-colors shrink-0 shadow-2xs"
+              >
+                Add Bank / UPI
+              </Link>
+            )}
+          </div>
         </div>
 
-        {/* Card 2: Pending */}
+        {/* Card 2: Approved total */}
         <div className="rounded-2xl bg-surface border border-line p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600">
-              <span className="size-1.5 rounded-full bg-amber-500" />
-              Pending
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+              <span className="size-1.5 rounded-full bg-emerald-500" />
+              Approved Total
             </div>
             <p className="text-3xl font-bold text-ink mt-1.5">
-              {formatCurrency(stats.pending)}
+              {formatCurrency(totalApproved)}
             </p>
           </div>
           <p className="text-ed-2xs text-ink-muted mt-2">
-            Becomes approved after 15 days
+            {pendingRequests > 0
+              ? `${formatCurrency(pendingRequests)} in processing queue`
+              : "No holding window · Direct payout"}
           </p>
         </div>
 
@@ -270,11 +418,11 @@ export default function PartnerCommissionsPage() {
               Paid to date
             </div>
             <p className="text-3xl font-bold text-ink mt-1.5">
-              {formatCurrency(stats.paidToDate)}
+              {formatCurrency(paidToDate)}
             </p>
           </div>
           <p className="text-ed-2xs text-ink-muted mt-2">
-            {stats.payoutCount} payouts
+            {stats.payoutCount} payouts disbursed
           </p>
         </div>
 
@@ -300,7 +448,7 @@ export default function PartnerCommissionsPage() {
       <div className="rounded-2xl bg-surface border border-line p-6 shadow-xs">
         <h2 className="text-sm font-bold text-ink mb-5">How you get paid</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {/* Step 1 */}
           <div className="space-y-2">
             <span className="grid size-7 place-items-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold font-mono">
@@ -308,7 +456,7 @@ export default function PartnerCommissionsPage() {
             </span>
             <p className="text-xs font-bold text-ink">Customer pays</p>
             <p className="text-ed-2xs text-ink-muted leading-relaxed">
-              A referred customer completes a payment.
+              A referred customer completes an order or subscription payment.
             </p>
           </div>
 
@@ -317,9 +465,9 @@ export default function PartnerCommissionsPage() {
             <span className="grid size-7 place-items-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold font-mono">
               2
             </span>
-            <p className="text-xs font-bold text-ink">Pending · 15 days</p>
+            <p className="text-xs font-bold text-ink">Instant Approval</p>
             <p className="text-ed-2xs text-ink-muted leading-relaxed">
-              Held during the refund window.
+              Commission is immediately approved and credited to your available balance.
             </p>
           </div>
 
@@ -328,20 +476,9 @@ export default function PartnerCommissionsPage() {
             <span className="grid size-7 place-items-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold font-mono">
               3
             </span>
-            <p className="text-xs font-bold text-ink">Approved</p>
+            <p className="text-xs font-bold text-ink">Direct Manual Payout</p>
             <p className="text-ed-2xs text-ink-muted leading-relaxed">
-              Added to the next monthly payout.
-            </p>
-          </div>
-
-          {/* Step 4 */}
-          <div className="space-y-2">
-            <span className="grid size-7 place-items-center rounded-full bg-blue-100 text-blue-700 text-xs font-bold font-mono">
-              4
-            </span>
-            <p className="text-xs font-bold text-ink">Paid on the [10th]</p>
-            <p className="text-ed-2xs text-ink-muted leading-relaxed">
-              Sent to your bank or UPI, with a statement.
+              Request full or custom withdrawal anytime. Admin directly transfers payment to your Bank or UPI.
             </p>
           </div>
         </div>
@@ -446,11 +583,11 @@ export default function PartnerCommissionsPage() {
               <thead>
                 <tr className="bg-canvas/60 border-b border-line text-ed-2xs font-mono uppercase tracking-wider text-ink-muted">
                   <th className="px-5 py-3.5 font-semibold">PAYOUT ID</th>
-                  <th className="px-5 py-3.5 font-semibold">FOR</th>
-                  <th className="px-5 py-3.5 font-semibold">PAID ON</th>
-                  <th className="px-5 py-3.5 font-semibold">COMMISSION</th>
+                  <th className="px-5 py-3.5 font-semibold">REQUESTED</th>
+                  <th className="px-5 py-3.5 font-semibold">STATUS</th>
+                  <th className="px-5 py-3.5 font-semibold">AMOUNT</th>
                   <th className="px-5 py-3.5 font-semibold">TDS (5%)</th>
-                  <th className="px-5 py-3.5 font-semibold">NET PAID</th>
+                  <th className="px-5 py-3.5 font-semibold">NET</th>
                   <th className="px-5 py-3.5 font-semibold">REFERENCE</th>
                   <th className="px-5 py-3.5 font-semibold text-right">
                     STATEMENT
@@ -461,7 +598,7 @@ export default function PartnerCommissionsPage() {
                 {payoutHistory.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-5 py-10 text-center text-ink-muted">
-                      No payouts disbursed yet. Once monthly payouts are initiated to your bank or UPI, statements will appear here.
+                      No payout requests yet. When you request a withdrawal or a payout is settled, details appear here.
                     </td>
                   </tr>
                 ) : (
@@ -476,8 +613,25 @@ export default function PartnerCommissionsPage() {
                       <td className="px-5 py-3.5 text-ink-body whitespace-nowrap font-medium">
                         {payout.forMonth}
                       </td>
-                      <td className="px-5 py-3.5 text-ink-muted font-mono text-ed-2xs whitespace-nowrap">
-                        {payout.paidOn}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        {payout.status === "PENDING" && (
+                          <span className="inline-flex items-center gap-1.5 text-amber-600 font-semibold">
+                            <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Processing
+                          </span>
+                        )}
+                        {payout.status === "APPROVED" && (
+                          <span className="inline-flex items-center gap-1.5 text-emerald-600 font-semibold">
+                            <span className="size-1.5 rounded-full bg-emerald-500" />
+                            Settled / Paid
+                          </span>
+                        )}
+                        {payout.status === "REJECTED" && (
+                          <span className="inline-flex items-center gap-1.5 text-rose-600 font-semibold">
+                            <span className="size-1.5 rounded-full bg-rose-500" />
+                            Rejected
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 text-ink font-mono font-medium whitespace-nowrap">
                         {formatCurrency(payout.commission)}
@@ -497,7 +651,7 @@ export default function PartnerCommissionsPage() {
                           onClick={() => setSelectedStatement(payout)}
                           className="px-3 py-1.5 rounded-lg border border-line bg-surface hover:bg-canvas text-ink text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                         >
-                          Statement
+                          Invoice / Receipt
                         </button>
                       </td>
                     </tr>
@@ -510,16 +664,198 @@ export default function PartnerCommissionsPage() {
 
         {/* Footer Note */}
         <p className="text-xs text-ink-muted leading-relaxed pt-1">
-          Payouts go to the bank account or UPI ID in your{" "}
+          Payouts are transferred directly to your Bank account or UPI ID configured in your{" "}
           <Link
             to="/partner/profile"
             className="text-brand font-medium hover:underline"
           >
             Profile
           </Link>
-          . Minimum payout [₹500]; smaller amounts roll over to the next month.
+          .
         </p>
       </div>
+
+      {/* Withdraw Commission Modal */}
+      {isWithdrawOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div
+            className="w-full max-w-md rounded-2xl bg-surface border border-line shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150"
+            style={{ colorScheme: "light" }}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-line">
+              <div className="flex items-center gap-2.5">
+                <div className="size-9 rounded-xl bg-blue-50 text-brand flex items-center justify-center">
+                  <Wallet className="size-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-ink">Withdraw Commission</h3>
+                  <p className="text-xs text-ink-muted">Request manual payout directly to your account</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsWithdrawOpen(false)}
+                className="p-1 rounded-lg text-ink-muted hover:text-ink hover:bg-canvas transition-colors cursor-pointer"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            {withdrawError && (
+              <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-start gap-2">
+                <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                <span>{withdrawError}</span>
+              </div>
+            )}
+
+            <div className="space-y-4 text-xs">
+              <div className="p-3.5 rounded-xl bg-canvas/60 border border-line flex items-center justify-between">
+                <div>
+                  <p className="text-ink-muted font-medium">Available Balance</p>
+                  <p className="text-xl font-extrabold text-brand mt-0.5">
+                    {formatCurrency(availableBalance)}
+                  </p>
+                </div>
+                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+                  Instant reset upon request
+                </span>
+              </div>
+
+              {/* Amount Selection */}
+              <div>
+                <label className="block font-semibold text-ink mb-1.5">Withdrawal Amount</label>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => setWithdrawMode("FULL")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                      withdrawMode === "FULL"
+                        ? "border-brand bg-brand/5 text-brand shadow-2xs"
+                        : "border-line bg-surface text-ink hover:bg-canvas"
+                    }`}
+                  >
+                    Full ({formatCurrency(availableBalance)})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWithdrawMode("CUSTOM")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                      withdrawMode === "CUSTOM"
+                        ? "border-brand bg-brand/5 text-brand shadow-2xs"
+                        : "border-line bg-surface text-ink hover:bg-canvas"
+                    }`}
+                  >
+                    Custom Amount
+                  </button>
+                </div>
+
+                {withdrawMode === "CUSTOM" && (
+                  <div className="relative mt-2">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted font-semibold text-sm">₹</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max={availableBalance}
+                      placeholder={`Enter amount (max ₹${availableBalance})`}
+                      value={customAmountStr}
+                      onChange={(e) => setCustomAmountStr(e.target.value)}
+                      className="w-full pl-8 pr-3 py-2.5 rounded-xl bg-surface border border-line text-ink font-semibold focus:outline-none focus:border-brand shadow-xs text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Payout Destination */}
+              <div>
+                <label className="block font-semibold text-ink mb-1.5">Payout Destination</label>
+                <div className="space-y-2">
+                  {data?.bankDetails?.upiId && (
+                    <label
+                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        selectedMethod === "UPI"
+                          ? "border-brand bg-brand/5"
+                          : "border-line bg-surface hover:bg-canvas"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="withdrawMethod"
+                        value="UPI"
+                        checked={selectedMethod === "UPI"}
+                        onChange={() => setSelectedMethod("UPI")}
+                        className="sr-only"
+                      />
+                      <span
+                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          selectedMethod === "UPI" ? "border-brand bg-white" : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {selectedMethod === "UPI" && <span className="size-2 rounded-full bg-brand" />}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-ink">UPI ID</div>
+                        <div className="text-[11px] text-ink-muted truncate font-mono">
+                          {data.bankDetails.upiId}
+                        </div>
+                      </div>
+                    </label>
+                  )}
+
+                  {data?.bankDetails?.bankAccountNumber && (
+                    <label
+                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        selectedMethod === "BANK_TRANSFER"
+                          ? "border-brand bg-brand/5"
+                          : "border-line bg-surface hover:bg-canvas"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="withdrawMethod"
+                        value="BANK_TRANSFER"
+                        checked={selectedMethod === "BANK_TRANSFER"}
+                        onChange={() => setSelectedMethod("BANK_TRANSFER")}
+                        className="sr-only"
+                      />
+                      <span
+                        className={`size-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          selectedMethod === "BANK_TRANSFER" ? "border-brand bg-white" : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {selectedMethod === "BANK_TRANSFER" && <span className="size-2 rounded-full bg-brand" />}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-ink">Bank Account</div>
+                        <div className="text-[11px] text-ink-muted font-mono truncate">
+                          A/C: ****{data.bankDetails.bankAccountNumber.slice(-4)} · IFSC: {data.bankDetails.ifscCode}
+                        </div>
+                      </div>
+                    </label>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-line">
+              <button
+                type="button"
+                onClick={() => setIsWithdrawOpen(false)}
+                className="px-4 py-2 rounded-lg border border-line bg-surface text-xs font-semibold text-ink hover:bg-canvas transition-colors cursor-pointer shadow-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingWithdraw}
+                onClick={handleSubmitWithdrawal}
+                className="px-4 py-2 rounded-lg bg-brand hover:bg-brand-hover disabled:opacity-50 text-white text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+              >
+                {isSubmittingWithdraw ? "Submitting..." : "Submit Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Payout Statement Modal */}
       {selectedStatement && (
