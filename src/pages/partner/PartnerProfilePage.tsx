@@ -29,10 +29,6 @@ type PayoutSettings = {
   ifscCode: string;
   upiId: string;
   panNumber: string;
-  notifyNewReferral: boolean;
-  notifyCommissionApproved: boolean;
-  notifyPayoutSent: boolean;
-  notifyProductUpdates: boolean;
 };
 
 const PAYOUT_STORAGE_KEY = "byz_partner_payout_settings";
@@ -52,10 +48,6 @@ export default function PartnerProfilePage() {
     ifscCode: "",
     upiId: "",
     panNumber: "",
-    notifyNewReferral: true,
-    notifyCommissionApproved: true,
-    notifyPayoutSent: true,
-    notifyProductUpdates: false,
   });
   const [payoutSaved, setPayoutSaved] = useState(false);
   const [savingPayout, setSavingPayout] = useState(false);
@@ -224,7 +216,7 @@ export default function PartnerProfilePage() {
   }
 
   return (
-    <div className="p-5 sm:p-7 lg:p-8 space-y-6 max-w-6xl mx-auto bg-canvas min-h-screen text-ink">
+    <div className="p-5 sm:p-7 lg:p-8 space-y-6 max-w-6xl mx-auto pb-12 text-ink">
       {/* Suspended Alert Banner */}
       {isSuspended && (
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-amber-900 shadow-xs">
@@ -492,64 +484,6 @@ export default function PartnerProfilePage() {
               className="w-full rounded-xl bg-surface border border-line px-3.5 py-2.5 text-xs text-ink font-mono uppercase focus:outline-none focus:border-brand transition-colors"
               placeholder="ABCPK1234F"
             />
-          </div>
-
-          {/* Email notifications checkboxes */}
-          <div className="pt-3 border-t border-line space-y-3">
-            <span className="block text-xs font-bold text-ink">
-              Email notifications
-            </span>
-
-            <div className="space-y-2.5" style={{ colorScheme: "light" }}>
-              {[
-                {
-                  key: "notifyNewReferral" as const,
-                  label: "New referral signs up",
-                },
-                {
-                  key: "notifyCommissionApproved" as const,
-                  label: "Commission approved",
-                },
-                {
-                  key: "notifyPayoutSent" as const,
-                  label: "Payout sent",
-                },
-                {
-                  key: "notifyProductUpdates" as const,
-                  label: "Product updates & offers",
-                },
-              ].map(({ key, label }) => {
-                const isChecked = payoutForm[key];
-                return (
-                  <label
-                    key={key}
-                    className="flex items-center gap-2.5 text-xs text-ink cursor-pointer select-none group"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) =>
-                        setPayoutForm({ ...payoutForm, [key]: e.target.checked })
-                      }
-                      className="sr-only"
-                    />
-                    <span
-                      aria-hidden="true"
-                      className={`size-4 rounded flex items-center justify-center border transition-all ${
-                        isChecked
-                          ? "bg-brand border-brand text-white shadow-xs"
-                          : "bg-white border-slate-300 group-hover:border-slate-400"
-                      }`}
-                    >
-                      {isChecked && (
-                        <Check className="size-3 text-white stroke-[3]" />
-                      )}
-                    </span>
-                    <span>{label}</span>
-                  </label>
-                );
-              })}
-            </div>
           </div>
 
           <div className="pt-2">
