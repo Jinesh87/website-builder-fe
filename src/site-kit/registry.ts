@@ -825,6 +825,7 @@ export function accountData(variant: AccountData["variant"], overrides: Partial<
     emptyOrdersText: "You haven't placed any orders yet.",
     emptyCartText: "Your cart is empty.",
     loginHref: "/login",
+    logoutRedirectHref: "/login",
     shopHref: "/shop",
     redirectWhenLoggedOut: false,
     guestHeading: "Sign in to see your account",
