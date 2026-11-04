@@ -132,9 +132,9 @@ export default function PartnerDashboardPage() {
   const isSuspended = partnerInfo.status === "SUSPENDED";
   const firstName = partnerInfo.contactName.split(" ")[0] || "Partner";
 
-  const brandHost =
-    typeof window !== "undefined" ? window.location.host : "yourbrand.com";
-  const referralUrl = `https://${brandHost}/r/${partnerInfo.referralCode}`;
+  const brandOrigin =
+    typeof window !== "undefined" ? window.location.origin : "https://yourbrand.com";
+  const referralUrl = `${brandOrigin}/r/${partnerInfo.referralCode}`;
 
   function handleCopyCode() {
     if (isSuspended || !partnerInfo.referralCode) return;
