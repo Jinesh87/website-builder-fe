@@ -28,7 +28,6 @@ const NAV = [
 ] as const;
 
 const NO_CTA = ["/contact", "/legal", "/templates", "/partner", "/start"];
-const LIGHT_ONLY = ["/partner"];
 const SITE_TITLE = "Website Builder";
 
 export function MarketingHeader({
@@ -645,7 +644,7 @@ export default function MarketingLayout() {
 
   return (
     <MarketingContext.Provider value={context}>
-      <div className="mk" data-theme={LIGHT_ONLY.includes(pathname) ? "light" : undefined}>
+      <div className="mk" data-theme="light">
         <MarketingHeader shortlist={shortlist} onOpenShortlist={openShortlist} />
         <main id="app">
           <Suspense fallback={null}>
