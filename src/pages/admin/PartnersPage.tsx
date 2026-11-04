@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Spinner } from "@heroui/react";
 import {
   AlertCircle,
@@ -206,8 +206,6 @@ export default function PartnersPage() {
 
   // Global Program Config
   const [programConfig, setProgramConfig] = useState<PartnerProgramConfig | null>(null);
-  const [savingProgramConfig, setSavingProgramConfig] = useState(false);
-  const [programConfigSaved, setProgramConfigSaved] = useState(false);
 
   // Fetch partners list
   useEffect(() => {
@@ -278,21 +276,6 @@ export default function PartnersPage() {
       .then(setProgramConfig)
       .catch(() => undefined);
   }, [refreshKey]);
-
-  async function handleUpdateGlobalPolicy(policy: "FIRST_PAYMENT" | "EVERY_RENEWAL") {
-    setSavingProgramConfig(true);
-    try {
-      const res = await adminPartnerApi.updateProgramConfig({ defaultCommissionPolicy: policy });
-      setProgramConfig(res);
-      setProgramConfigSaved(true);
-      setTimeout(() => setProgramConfigSaved(false), 2500);
-      refresh();
-    } catch (err) {
-      alert(errorMessage(err));
-    } finally {
-      setSavingProgramConfig(false);
-    }
-  }
 
   function refresh() {
     setRefreshKey((k) => k + 1);
@@ -759,62 +742,24 @@ export default function PartnersPage() {
       {/* ======================================================== */}
       {currentMainTab === "commission" && (
         <div className="space-y-6">
-          {/* Global Commission Policy Control Card */}
-          <div className="rounded-xl border border-line bg-surface p-5 shadow-xs">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="max-w-xl">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-ink flex items-center gap-2">
-                    <Sliders className="size-4 text-brand" />
-                    Global Platform Commission Policy
-                  </h3>
-                  {programConfigSaved && (
-                    <span className="text-xs font-semibold text-emerald-600 animate-fade-in">
-                      ✓ Saved!
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 text-xs text-ink-muted leading-relaxed">
-                  Default commission rule applied to newly approved partners and any partner configured to use the global setting. Admin can still override rules for individual partners below.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex rounded-lg border border-line bg-canvas p-1 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateGlobalPolicy("FIRST_PAYMENT")}
-                    disabled={savingProgramConfig}
-                    className={`px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
-                      (programConfig?.defaultCommissionPolicy ?? "FIRST_PAYMENT") === "FIRST_PAYMENT"
-                        ? "bg-surface text-ink font-semibold shadow-xs border border-line"
-                        : "text-ink-muted hover:text-ink"
-                    }`}
-                  >
-                    First payment only (One-Time)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateGlobalPolicy("EVERY_RENEWAL")}
-                    disabled={savingProgramConfig}
-                    className={`px-3 py-1.5 rounded-md font-medium transition-all cursor-pointer ${
-                      programConfig?.defaultCommissionPolicy === "EVERY_RENEWAL"
-                        ? "bg-surface text-ink font-semibold shadow-xs border border-line"
-                        : "text-ink-muted hover:text-ink"
-                    }`}
-                  >
-                    Every renewal (Recurring)
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1.5 border-l border-line pl-3 text-xs">
-                  <span className="text-ink-muted">Default rate:</span>
-                  <span className="font-bold text-ink">
-                    {programConfig?.defaultCommissionRate ?? 15}%
-                  </span>
-                </div>
-              </div>
+          {/* Global Commission Policy Notice with Link to Admin Settings */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-line bg-surface p-4 text-xs text-ink-muted shadow-xs">
+            <div className="flex items-center gap-2">
+              <Sliders className="size-4 text-brand shrink-0" />
+              <span>
+                <strong className="text-ink font-semibold">Global Platform Policy:</strong>{" "}
+                {programConfig?.defaultCommissionRate ?? 15}% per transaction •{" "}
+                {programConfig?.defaultCommissionPolicy === "EVERY_RENEWAL"
+                  ? "Every renewal (Recurring)"
+                  : "First payment only (One-Time)"}
+              </span>
             </div>
+            <Link
+              to="/admin/settings?tab=referral"
+              className="inline-flex items-center gap-1 font-semibold text-brand hover:underline shrink-0"
+            >
+              Configure in Admin Settings →
+            </Link>
           </div>
 
           {/* Blue Info Notice Banner */}

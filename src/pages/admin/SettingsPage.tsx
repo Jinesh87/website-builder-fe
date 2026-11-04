@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button, Chip, Label, Spinner, Switch } from "@heroui/react";
-import { Check, CreditCard, Eye, EyeOff, Mail, Send, Server, Sliders } from "lucide-react";
+import { Check, CreditCard, Eye, EyeOff, Gift, Mail, Send, Server, Sliders } from "lucide-react";
 import AiSparklesIcon from "../../components/icons/AiSparklesIcon.tsx";
 import { adminAiApi, type AiConfig, type AiConfigInput } from "../../api/admin-ai.ts";
 import AiModelPicker from "../../components/ai/AiModelPicker.tsx";
@@ -18,10 +18,12 @@ import AiBillingRatePanel from "../../components/admin/AiBillingRatePanel.tsx";
 import type { PaymentConfig } from "../../api/wallet.ts";
 import HostingSettingsPanel from "../../components/hosting/HostingSettingsPanel.tsx";
 import type { HostingSettings } from "../../api/hosting.ts";
+import ReferralSettingsPanel, { ReferralStatusChip } from "../../components/admin/ReferralSettingsPanel.tsx";
+import type { PartnerProgramConfig } from "../../api/partner.ts";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
-type SettingsTab = "email" | "ai" | "payments" | "hosting";
-const SETTINGS_TABS: readonly SettingsTab[] = ["email", "ai", "payments", "hosting"];
+type SettingsTab = "email" | "ai" | "payments" | "hosting" | "referral";
+const SETTINGS_TABS: readonly SettingsTab[] = ["email", "ai", "payments", "hosting", "referral"];
 type EmailConfigErrors = Partial<Record<keyof EmailConfigInput, string>>;
 type AiConfigErrors = Partial<Record<keyof AiConfigInput, string>>;
 
@@ -59,6 +61,7 @@ export default function SettingsPage() {
   const activeTab: SettingsTab = SETTINGS_TABS.find((tab) => tab === tabParam) ?? "email";
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
   const [hostingSettings, setHostingSettings] = useState<HostingSettings | null>(null);
+  const [referralConfig, setReferralConfig] = useState<PartnerProgramConfig | null>(null);
 
   // EMAIL CONFIG STATE
   const [emailConfig, setEmailConfig] = useState<EmailConfig | null>(null);
@@ -229,7 +232,7 @@ export default function SettingsPage() {
     <div className={`px-6 py-8 sm:px-8 ${activeTab === "ai" ? "" : "max-w-5xl"}`}>
       <PageHeader
         title="Settings"
-        description="Manage system communications, the AI Copilot generation engine, payments and hosting plans."
+        description="Manage system communications, the AI Copilot generation engine, payments, hosting plans and referral settings."
         actions={
           activeTab === "email" ? (
             emailConfig && <EmailStatusChip config={emailConfig} />
@@ -237,6 +240,8 @@ export default function SettingsPage() {
             aiConfig && <AiStatusChip config={aiConfig} />
           ) : activeTab === "hosting" ? (
             hostingSettings && (hostingSettings.enabled ? <Chip color="success">Billing on</Chip> : <Chip>Billing off</Chip>)
+          ) : activeTab === "referral" ? (
+            referralConfig && <ReferralStatusChip config={referralConfig} />
           ) : (
             paymentConfig && <PaymentStatusChip config={paymentConfig} />
           )
@@ -296,7 +301,26 @@ export default function SettingsPage() {
           <Server className="size-4" />
           <span>Hosting</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setTab("referral")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-t-lg border-b-2 -mb-px ${
+            activeTab === "referral"
+              ? "border-primary text-ink bg-surface shadow-xs font-semibold"
+              : "border-transparent text-ink-muted hover:text-ink hover:bg-surface/50"
+          }`}
+        >
+          <Gift className="size-4" />
+          <span>Referral Settings</span>
+        </button>
       </div>
+
+      {activeTab === "referral" && (
+        <div className="mt-8">
+          <ReferralSettingsPanel onLoaded={setReferralConfig} />
+        </div>
+      )}
 
       {activeTab === "payments" && (
         <div className="mt-8">
