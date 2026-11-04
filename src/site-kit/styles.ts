@@ -4658,6 +4658,7 @@ em, i {
 }
 .wb-service-numbered-card:hover { border-color: var(--wb-primary); }
 .wb-numbered-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.wb-numbered-top-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .wb-numbered-index {
   font-size: 28px;
   font-weight: 900;
@@ -4665,6 +4666,14 @@ em, i {
   color: color-mix(in srgb, var(--wb-text) 30%, transparent);
 }
 .wb-service-numbered-card:hover .wb-numbered-index { color: var(--wb-primary); }
+.wb-service-numbered-image-wrap {
+  border-radius: var(--wb-radius, 8px);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.wb-service-numbered-card:hover .wb-service-image {
+  transform: scale(1.04);
+}
 
 /* Bottom CTA Row */
 .wb-services-bottom-cta {

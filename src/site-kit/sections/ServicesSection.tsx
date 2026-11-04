@@ -583,12 +583,28 @@ export default function ServicesSection({
               >
                 <div className="wb-numbered-top">
                   <span className="wb-numbered-index">{num}</span>
-                  {showBadges && item.badge && (
-                    <span className={`wb-service-badge ${colorClass}`}>
-                      {item.badge}
-                    </span>
-                  )}
+                  <div className="wb-numbered-top-meta">
+                    {showBadges && item.badge && (
+                      <span className={`wb-service-badge ${colorClass}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                    {(!item.image || !showImages) && showPrices && item.price && (
+                      <span className="wb-service-price-pill">{item.price}</span>
+                    )}
+                  </div>
                 </div>
+
+                {showImages && item.image && (
+                  <div
+                    className={`wb-service-image-wrap wb-service-numbered-image-wrap ${aspectClass}`}
+                  >
+                    <SiteImage image={item.image} className="wb-service-image" />
+                    {item.price && showPrices && (
+                      <span className="wb-service-floating-price">{item.price}</span>
+                    )}
+                  </div>
+                )}
 
                 <h3 className="wb-service-title">{parseRichText(item.title)}</h3>
                 <p className="wb-service-desc">{parseRichText(item.description)}</p>
