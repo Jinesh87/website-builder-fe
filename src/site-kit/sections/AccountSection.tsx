@@ -1163,24 +1163,27 @@ function WishlistPanel({
   interactive,
   shopHref,
   onWishlistChange,
+  onCartChange,
 }: {
   account: ShopCustomerAccount;
   websiteId?: string;
   interactive: boolean;
   shopHref: string;
   onWishlistChange?: (items: ShopWishlistItemSummary[]) => void;
+  onCartChange?: (items: ShopCartItemSummary[]) => void;
 }) {
   const [items, setItems] = useState(account.wishlistItems);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const busy = busyKey !== null;
 
   useEffect(() => {
     setItems(account.wishlistItems);
   }, [account.wishlistItems]);
 
   async function remove(variantId: string) {
-    if (!interactive || !websiteId || busyId) return;
-    setBusyId(variantId);
+    if (!interactive || !websiteId || busy) return;
+    setBusyKey(`remove:${variantId}`);
     setMessage(null);
     try {
       const next = await shopAuthApi.removeFromWishlist(websiteId, variantId);
@@ -1190,29 +1193,95 @@ function WishlistPanel({
     } catch (error) {
       setMessage({ text: errorMessage(error), ok: false });
     } finally {
-      setBusyId(null);
+      setBusyKey(null);
     }
+  }
+
+  async function addToCart(variantId: string) {
+    if (!interactive || !websiteId || busy) return;
+    setBusyKey(`add:${variantId}`);
+    setMessage(null);
+    try {
+      const next = await shopAuthApi.addToCart(websiteId, { variantId, quantity: 1 });
+      onCartChange?.(next);
+      setMessage({ text: "Added to cart.", ok: true });
+    } catch (error) {
+      setMessage({ text: errorMessage(error), ok: false });
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  async function addAllToCart() {
+    if (!interactive || !websiteId || busy || items.length === 0) return;
+    setBusyKey("add-all");
+    setMessage(null);
+    let cart = account.cartItems;
+    let added = 0;
+    let failed = 0;
+    for (const item of items) {
+      try {
+        cart = await shopAuthApi.addToCart(websiteId, { variantId: item.variantId, quantity: 1 });
+        added += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    onCartChange?.(cart);
+    setBusyKey(null);
+    if (failed === 0) {
+      setMessage({ text: `Added ${added} ${added === 1 ? "item" : "items"} to cart.`, ok: true });
+      return;
+    }
+    if (added === 0) {
+      setMessage({ text: "Could not add items to cart.", ok: false });
+      return;
+    }
+    setMessage({ text: `Added ${added}, ${failed} failed.`, ok: false });
   }
 
   return (
     <div className="wb-acct-wishlist">
+      <div className="wb-acct-wishlist-toolbar" data-wb-wishlist-toolbar="" hidden={items.length === 0}>
+        <button
+          type="button"
+          className="wb-acct-button"
+          data-wb-wishlist-add-all=""
+          disabled={busy}
+          onClick={interactive ? () => void addAllToCart() : undefined}
+        >
+          {busyKey === "add-all" ? "Adding…" : "Add all to cart"}
+        </button>
+      </div>
       <ul className="wb-acct-list" data-wb-account-list="wishlist" hidden={items.length === 0}>
         {items.map((item) => (
           <li key={item.id} className="wb-acct-row">
             {item.imageUrl ? <img className="wb-acct-thumb" src={item.imageUrl} alt="" /> : <span className="wb-acct-thumb is-blank" aria-hidden="true" />}
             <div className="wb-acct-row-main">
               <strong>{item.productName}</strong>
-              <span className="wb-acct-row-sub">{item.categoryName || "Product"}</span>
+              <span className="wb-acct-row-sub">
+                {[item.variantName, item.categoryName].filter(Boolean).join(" · ") || "Product"}
+              </span>
             </div>
             <strong className="wb-acct-row-amount">{formatInr(item.pricePaise)}</strong>
             <div className="wb-acct-address-actions">
               <button
                 type="button"
-                className="wb-acct-cart-remove"
-                onClick={interactive ? () => void remove(item.variantId) : undefined}
-                disabled={busyId === item.variantId}
+                className="wb-acct-cart-add"
+                data-wb-wishlist-add={item.variantId}
+                onClick={interactive ? () => void addToCart(item.variantId) : undefined}
+                disabled={busy}
               >
-                Remove
+                {busyKey === `add:${item.variantId}` ? "Adding…" : "Add to cart"}
+              </button>
+              <button
+                type="button"
+                className="wb-acct-cart-remove"
+                data-wb-wishlist-remove={item.variantId}
+                onClick={interactive ? () => void remove(item.variantId) : undefined}
+                disabled={busy}
+              >
+                {busyKey === `remove:${item.variantId}` ? "Removing…" : "Remove"}
               </button>
             </div>
           </li>
@@ -1852,6 +1921,7 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
             interactive={interactive}
             shopHref={shopHref}
             onWishlistChange={setWishlistItems}
+            onCartChange={setCartItems}
           />
         );
       case "addresses":
