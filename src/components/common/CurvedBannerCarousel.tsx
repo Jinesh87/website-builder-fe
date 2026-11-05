@@ -47,7 +47,7 @@ export const DEFAULT_BANNER_ITEMS: CurvedBannerItem[] = [
     image:
       "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=700&h=1050&q=85",
     videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      "/videos/scifi-trailer.mp4",
     author: "@marco_travels",
     alt: "Person sitting on rocky coastal cliffs looking at azure sea",
   },

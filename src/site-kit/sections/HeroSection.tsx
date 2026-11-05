@@ -157,6 +157,16 @@ export function normalizeVideoSrc(src?: string): string {
   ) {
     return DEFAULT_CAMPAIGN_VIDEO;
   }
+  // Migrate dead googleapis sample bucket or unwanted scifi video to working clean video
+  if (
+    trimmed.includes("commondatastorage.googleapis.com") ||
+    trimmed.includes("scifi-trailer.mp4")
+  ) {
+    if (trimmed.includes("ForBiggerEscapes") || trimmed.includes("oceans")) {
+      return "https://vjs.zencdn.net/v/oceans.mp4";
+    }
+    return DEFAULT_CAMPAIGN_VIDEO;
+  }
   return trimmed.startsWith("http") || trimmed.startsWith("/") || trimmed.startsWith("blob:")
     ? trimmed
     : `/${trimmed}`;
@@ -175,6 +185,11 @@ function CampaignVideoPlayer({
   const resolvedSrc = normalizeVideoSrc(src);
   const activeSrc = loadError ? DEFAULT_CAMPAIGN_VIDEO : resolvedSrc;
 
+  // Reset load error whenever the user changes or selects a new video source
+  useEffect(() => {
+    setLoadError(false);
+  }, [src]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -183,6 +198,12 @@ function CampaignVideoPlayer({
     video.muted = true;
     video.defaultMuted = true;
     video.playsInline = true;
+
+    try {
+      video.load();
+    } catch {
+      // ignore
+    }
 
     const playVideo = () => {
       const promise = video.play();
@@ -214,6 +235,7 @@ function CampaignVideoPlayer({
 
   return (
     <video
+      key={activeSrc}
       ref={videoRef}
       src={activeSrc}
       poster={poster}
@@ -224,7 +246,9 @@ function CampaignVideoPlayer({
       preload="auto"
       className="wb-campaign-video"
       onError={() => {
-        if (!loadError) setLoadError(true);
+        if (!loadError && activeSrc !== DEFAULT_CAMPAIGN_VIDEO) {
+          setLoadError(true);
+        }
       }}
     />
   );
@@ -523,19 +547,14 @@ export default function HeroSection({
     const defaultPoster = getCuratedFallbackImage(campaignContext);
 
     const rawVideo = data.backgroundVideoUrl || data.videoUrl;
-    const isPlaceholderOrExternal =
-      !rawVideo ||
-      rawVideo.includes("commondatastorage") ||
-      rawVideo.includes("mixkit.co") ||
-      rawVideo.includes("example.com");
-
-    const bgVideoUrl = isPlaceholderOrExternal
-      ? DEFAULT_CAMPAIGN_VIDEO
-      : normalizeVideoSrc(rawVideo);
+    const hasVideo = Boolean(rawVideo && rawVideo.trim().length > 0);
+    const bgVideoUrl = hasVideo
+      ? normalizeVideoSrc(rawVideo)
+      : DEFAULT_CAMPAIGN_VIDEO;
 
     const bgEmbedUrl =
-      data.videoUrl && !data.videoUrl.match(/\.(mp4|webm|ogg)/i)
-        ? getEmbedUrl(data.videoUrl, true) || undefined
+      rawVideo && !rawVideo.match(/\.(mp4|webm|ogg)/i)
+        ? getEmbedUrl(rawVideo, true) || undefined
         : undefined;
     const posterUrl =
       (bgImage?.url && normalizeImageUrl(bgImage.url, campaignContext)) ||
@@ -676,9 +695,9 @@ export default function HeroSection({
                   className="wb-hero-bg-iframe"
                 />
               </div>
-            ) : (
+            ) : hasVideo ? (
               <CampaignVideoPlayer src={bgVideoUrl} poster={posterUrl} />
-            )}
+            ) : null}
 
             {/* Gradient / Overlay Layer */}
             {data.bgOverlayType !== "none" && (
@@ -752,118 +771,102 @@ export default function HeroSection({
             </div>
           )}
 
-          {/* Optional Floating Cards Row (Hidden by default; simple buttons design used instead) */}
+          {/* Unified Floating Milestone & Trust Dock (Single sleek modern pill instead of two bulky blocks) */}
           {data.showCampaignCards && (
-            <div className="wb-campaign-cards-row">
-              {/* Card 1: Stats Widget */}
-              <div className="wb-campaign-stat-card">
-                {stats.map((stat, idx) => (
-                  <div key={idx} className="wb-campaign-stat-col">
-                    <div className="wb-campaign-stat-icon-wrap">
-                      {stat.icon === "users" ? (
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="wb-campaign-stat-svg"
-                        >
-                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                          <circle cx="9" cy="7" r="4" />
-                          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                        </svg>
-                      ) : stat.icon === "pin" ? (
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          className="wb-campaign-stat-svg"
-                        >
-                          <path d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
-                        </svg>
-                      ) : stat.icon === "award" || stat.icon === "star" ? (
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="wb-campaign-stat-svg"
-                        >
-                          <circle cx="12" cy="8" r="7" />
-                          <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
-                        </svg>
-                      ) : (
-                        <span className="wb-campaign-stat-custom-icon">
-                          {stat.icon || "👥"}
+            <div className="wb-campaign-dock-wrap">
+              <div className="wb-campaign-dock">
+                {/* Milestone Progress Core */}
+                <div className="wb-campaign-dock-progress">
+                  <div className="wb-campaign-dock-progress-header">
+                    <div className="wb-campaign-dock-amount">
+                      <span className="wb-campaign-dock-currency">
+                        {progress.currency ?? "$"}
+                      </span>
+                      <span className="wb-campaign-dock-value">
+                        {progress.raisedAmount ?? "285,000"}
+                      </span>
+                      <span className="wb-campaign-dock-label">
+                        {progress.raisedLabel ?? "funded"}
+                      </span>
+                    </div>
+                    <div className="wb-campaign-dock-meta">
+                      <span className="wb-campaign-dock-badge">
+                        {percentage}%
+                      </span>
+                      <span className="wb-campaign-dock-target">
+                        {progress.targetLabel ??
+                          `of ${progress.currency ?? "$"}${progress.targetAmount ?? "300,000"} milestone`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="wb-campaign-dock-track">
+                    <div
+                      className="wb-campaign-dock-fill"
+                      style={{
+                        width: `${Math.min(100, Math.max(4, percentage))}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Vertical Divider */}
+                <div className="wb-campaign-dock-divider" />
+
+                {/* Live Stats & Trust Highlights */}
+                <div className="wb-campaign-dock-stats">
+                  {stats.map((stat, idx) => (
+                    <div key={idx} className="wb-campaign-dock-stat-item">
+                      <div className="wb-campaign-dock-stat-icon">
+                        {stat.icon === "users" ? (
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="wb-campaign-dock-svg"
+                          >
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                          </svg>
+                        ) : stat.icon === "pin" ? (
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            className="wb-campaign-dock-svg"
+                          >
+                            <path d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" />
+                          </svg>
+                        ) : (
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="wb-campaign-dock-svg"
+                          >
+                            <circle cx="12" cy="8" r="7" />
+                            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="wb-campaign-dock-stat-content">
+                        <span className="wb-campaign-dock-stat-val">
+                          {stat.value}
                         </span>
-                      )}
+                        <span className="wb-campaign-dock-stat-lbl">
+                          {stat.label}
+                        </span>
+                      </div>
                     </div>
-                    <div className="wb-campaign-stat-info">
-                      <span className="wb-campaign-stat-label">
-                        {stat.label}
-                      </span>
-                      <span className="wb-campaign-stat-value">
-                        {stat.value}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Card 2: Campaign Target / Raised Widget */}
-              <div className="wb-campaign-progress-card">
-                <div className="wb-campaign-progress-header">
-                  <div className="wb-campaign-raised-amount">
-                    <span className="wb-campaign-currency">
-                      {progress.currency ?? "€"}
-                    </span>
-                    <span className="wb-campaign-raised-val">
-                      {progress.raisedAmount ?? "279,585"}
-                    </span>
-                    <span className="wb-campaign-raised-label">
-                      {progress.raisedLabel ?? "raised"}
-                    </span>
-                  </div>
-                  <div className="wb-campaign-target-val">
-                    {progress.targetLabel ??
-                      `of ${progress.currency ?? "€"}${progress.targetAmount ?? "300,000"} target`}
-                  </div>
+                  ))}
                 </div>
-
-                {/* Animated Progress Bar */}
-                <div className="wb-campaign-progress-track">
-                  <div
-                    className="wb-campaign-progress-fill"
-                    style={{
-                      width: `${Math.min(100, Math.max(4, percentage))}%`,
-                    }}
-                  />
-                </div>
-
-                {(progress.donateButton || progress.registerButton) && (
-                  <div className="wb-campaign-progress-actions">
-                    {progress.donateButton && (
-                      <SiteLink
-                        link={progress.donateButton}
-                        className="wb-campaign-btn-donate"
-                      >
-                        <span>{progress.donateButton.label}</span>
-                      </SiteLink>
-                    )}
-                    {progress.registerButton && (
-                      <SiteLink
-                        link={progress.registerButton}
-                        className="wb-campaign-btn-register"
-                      >
-                        <span>{progress.registerButton.label}</span>
-                      </SiteLink>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           )}

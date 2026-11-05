@@ -15,7 +15,7 @@ import {
   type SectionSettings,
 } from "./types.ts";
 
-const DEFAULT_DEMO_VIDEO_URL = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+const DEFAULT_DEMO_VIDEO_URL = "https://media.w3.org/2010/05/bunny/trailer.mp4";
 
 export type HeroCtas = { primary?: LinkRef; secondary?: LinkRef; video?: LinkRef };
 
