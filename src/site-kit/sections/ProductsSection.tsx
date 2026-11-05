@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
 import ShopCartActions from "../ShopCartActions.tsx";
 import { formatInr, listingSelection, productHref, shopListings, SHOP_LIST_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
-import { accountPanelHref, SHOP_CART_SCRIPT, siteHref } from "../shop-auth.ts";
+import { accountPanelHref, SHOP_CART_SCRIPT, SHOP_WISHLIST_UI_ENABLED, siteHref } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ProductsData, SectionOf, ShopCatalogProduct } from "../types.ts";
 
@@ -281,6 +281,22 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
             const href = productHref(data.detailBase, listing.product.slug, listingSelection(listing));
             const price = listingPrice(listing);
             const variant = listing.variants.find((item) => item.quantity > 0) ?? listing.variants[0];
+            const wish = SHOP_WISHLIST_UI_ENABLED && variant?.id ? (
+              <button
+                type="button"
+                className="wb-shop-btn is-wishlist is-overlay"
+                data-wb-wishlist-toggle=""
+                data-wb-variant-id={variant.id}
+                aria-label="Add to wishlist"
+              >
+                <span className="wb-wish-heart" aria-hidden="true">♡</span>
+              </button>
+            ) : null;
+            const media = (
+              <div className="wb-shop-media">
+                {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
+              </div>
+            );
             const cart = (
               <ShopCartActions
                 variantId={variant?.id}
@@ -306,10 +322,9 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
             if (data.design === "editorial") {
               return (
                 <article key={listing.key} className="wb-shop-card wb-shop-card-editorial" {...attrs}>
+                  {wish}
                   <a className="wb-shop-card-link" href={href}>
-                    <div className="wb-shop-media">
-                      {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
-                    </div>
+                    {media}
                     <div className="wb-shop-body">
                       <h3 className="wb-shop-name">{listing.product.name}</h3>
                       <p className="wb-shop-variant">{listing.label || listing.product.categoryName}</p>
@@ -324,10 +339,9 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
             if (data.design === "showcase") {
               return (
                 <article key={listing.key} className="wb-shop-card wb-shop-card-showcase" {...attrs}>
+                  {wish}
                   <a className="wb-shop-card-link" href={href}>
-                    <div className="wb-shop-media">
-                      {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
-                    </div>
+                    {media}
                     <div className="wb-shop-body">
                       <span className={`wb-shop-category${listing.product.categoryName ? "" : " is-empty"}`} aria-hidden={listing.product.categoryName ? undefined : true}>
                         {listing.product.categoryName || "\u00A0"}
@@ -346,10 +360,9 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
 
             return (
               <article key={listing.key} className="wb-shop-card" {...attrs}>
+                {wish}
                 <a className="wb-shop-card-link" href={href}>
-                  <div className="wb-shop-media">
-                    {image ? <img src={image.url} alt={image.alt || listing.product.name} /> : <span className="wb-shop-fallback">{listing.product.name.slice(0, 1)}</span>}
-                  </div>
+                  {media}
                   <div className="wb-shop-body">
                     <span className={`wb-shop-category${listing.product.categoryName ? "" : " is-empty"}`} aria-hidden={listing.product.categoryName ? undefined : true}>
                       {listing.product.categoryName || "\u00A0"}

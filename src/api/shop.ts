@@ -109,6 +109,28 @@ export type ShopOrderEmailLayoutOption = {
   defaultAccent: string;
 };
 
+export type ShopInvoiceLayout = "classic" | "minimal" | "bold" | "modern";
+
+export type ShopInvoiceLayoutOption = {
+  id: ShopInvoiceLayout;
+  label: string;
+  description: string;
+};
+
+export type ShopInvoiceDesign = {
+  layout: ShopInvoiceLayout;
+  showLogo: boolean;
+  logoMediaId: string | null;
+  logoUrl: string | null;
+  websiteLogoUrl: string | null;
+};
+
+export type ShopInvoiceDesignInput = {
+  layout: ShopInvoiceLayout;
+  showLogo: boolean;
+  logoMediaId?: string | null;
+};
+
 export type ShopOrderEmailDesign = {
   layout: ShopOrderEmailLayout;
   accentColor: string;
@@ -449,4 +471,16 @@ export const shopApi = {
     request<{ template: ShopOrderEmailTemplate }>(`${base(websiteId)}/order-emails/${status}/reset`, {
       method: "POST",
     }).then((data) => data.template),
+
+  invoiceTemplate: (websiteId: string) =>
+    request<{
+      design: ShopInvoiceDesign;
+      layouts: ShopInvoiceLayoutOption[];
+    }>(`${base(websiteId)}/invoice-template`),
+
+  updateInvoiceTemplate: (websiteId: string, input: ShopInvoiceDesignInput) =>
+    request<{ design: ShopInvoiceDesign }>(`${base(websiteId)}/invoice-template`, {
+      method: "PUT",
+      body: input,
+    }).then((data) => data.design),
 };

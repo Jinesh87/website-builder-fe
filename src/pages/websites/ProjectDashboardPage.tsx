@@ -141,6 +141,9 @@ export default function ProjectDashboardPage() {
   const [confirmUnpublish, setConfirmUnpublish] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
   const [unpublishError, setUnpublishError] = useState<string | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<WebsiteVersion | null>(null);
+  const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   const loadVersions = useCallback(
     () => websitesApi.versions(id).then(setVersions),
@@ -259,6 +262,22 @@ export default function ProjectDashboardPage() {
     }
   }
 
+  async function handleRestoreVersion() {
+    if (!website || !restoreTarget) return;
+    setRestoringVersionId(restoreTarget.id);
+    setRestoreError(null);
+    try {
+      setWebsite(await websitesApi.restoreVersion(website.id, restoreTarget.id));
+      await Promise.all([loadVersions(), loadHosting()]);
+      setRestoreTarget(null);
+      setSuccess({ title: "Version restored" });
+    } catch (err) {
+      setRestoreError(errorMessage(err));
+    } finally {
+      setRestoringVersionId(null);
+    }
+  }
+
   const refreshWebsite = useCallback(() => {
     websitesApi.get(id).then(setWebsite).catch(() => {});
   }, [id]);
@@ -318,6 +337,7 @@ export default function ProjectDashboardPage() {
   const liveSiteUrl = getLiveSiteUrl(website.subdomain, website.customDomain);
   const needsPublish =
     website.status !== "PUBLISHED" || website.hasUnpublishedChanges;
+  const backupVersions = versions.filter((version) => version.source === "BACKUP");
   const visiblePages = website.draft.pages.filter((page) => page.visible);
 
   return (
@@ -504,9 +524,9 @@ export default function ProjectDashboardPage() {
               </Panel>
 
               <Panel
-                title="Recent deployments"
+                title="Recent backups"
                 action={
-                  versions.length > RECENT_DEPLOYMENTS && (
+                  backupVersions.length > RECENT_DEPLOYMENTS && (
                     <button
                       type="button"
                       onClick={() => setTab("deployments")}
@@ -518,15 +538,33 @@ export default function ProjectDashboardPage() {
                 }
               >
                 <DeploymentList
-                  versions={versions.slice(0, RECENT_DEPLOYMENTS)}
+                  versions={backupVersions.slice(0, RECENT_DEPLOYMENTS)}
                   embedded
+                  onRestore={(version) => {
+                    setRestoreError(null);
+                    setRestoreTarget(version);
+                  }}
+                  restoringVersionId={restoringVersionId}
+                  emptyTitle="No backups yet"
+                  emptyText="System backups will appear here after the first backup run."
                 />
               </Panel>
             </div>
           </div>
         )}
 
-        {tab === "deployments" && <DeploymentList versions={versions} />}
+        {tab === "deployments" && (
+          <DeploymentList
+            versions={backupVersions}
+            onRestore={(version) => {
+              setRestoreError(null);
+              setRestoreTarget(version);
+            }}
+            restoringVersionId={restoringVersionId}
+            emptyTitle="No backups yet"
+            emptyText="System backups will appear here after the first backup run."
+          />
+        )}
 
         {tab === "domains" && (
           <DomainsPanel website={website} onChanged={refreshWebsite} />
@@ -664,6 +702,34 @@ export default function ProjectDashboardPage() {
           {unpublishError && (
             <FormAlert status="danger">{unpublishError}</FormAlert>
           )}
+        </div>
+      </CommonModal>
+
+      <CommonModal
+        isOpen={restoreTarget !== null}
+        onClose={() => restoringVersionId === null && setRestoreTarget(null)}
+        headerDetails={{
+          icon: <Rocket className="size-4.5" />,
+          title: "Restore deployment",
+          description: restoreTarget ? `Version v${restoreTarget.version}` : website.name,
+        }}
+        size="sm"
+        primaryAction={{
+          label: "Restore",
+          onPress: handleRestoreVersion,
+          isPending: restoringVersionId !== null,
+        }}
+        secondaryAction={{
+          label: "Cancel",
+          onPress: () => setRestoreTarget(null),
+          isDisabled: restoringVersionId !== null,
+        }}
+      >
+        <div className="space-y-2.5">
+          <p>
+            The live website will switch to this snapshot. Your current draft stays unchanged.
+          </p>
+          {restoreError && <FormAlert status="danger">{restoreError}</FormAlert>}
         </div>
       </CommonModal>
 
