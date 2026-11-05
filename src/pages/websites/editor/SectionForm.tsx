@@ -83,7 +83,7 @@ import AuthSectionForm from "./AuthSectionForm.tsx";
 import CardsSectionForm from "./CardsSectionForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
-import { Bold, Italic } from "lucide-react";
+import { Bold, Italic, Film, Waves, Compass, Sparkles } from "lucide-react";
 import { isVintageHero, VintageHeroFields } from "./VintageHeroFields.tsx";
 import { HeroFloatingCardsFields } from "./HeroFloatingCardsFields.tsx";
 import ClapperContactFields from "./ClapperContactFields.tsx";
@@ -747,11 +747,15 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             />
             <div className="flex flex-wrap items-center gap-1.5 -mt-1 mb-2">
               <span className="text-xs text-slate-500 font-medium mr-1">
-                Videos:
+                Preset loops:
               </span>
               <button
                 type="button"
-                className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-100 hover:bg-blue-200 text-blue-800 border border-blue-300 transition"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md border transition cursor-pointer ${
+                  (data.backgroundVideoUrl ?? data.videoUrl) === "/bannervid.mp4"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
+                }`}
                 onClick={() => {
                   onChange({
                     ...data,
@@ -760,14 +764,18 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                   });
                 }}
               >
-                🎬 Local /bannervid.mp4
+                <Film className="size-3.5" />
+                <span>Studio Banner</span>
               </button>
               <button
                 type="button"
-                className="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition cursor-pointer ${
+                  (data.backgroundVideoUrl ?? data.videoUrl) === "https://vjs.zencdn.net/v/oceans.mp4"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
+                }`}
                 onClick={() => {
-                  const url =
-                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4";
+                  const url = "https://vjs.zencdn.net/v/oceans.mp4";
                   onChange({
                     ...data,
                     backgroundVideoUrl: url,
@@ -775,14 +783,20 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                   });
                 }}
               >
-                🌊 Scenic Escapes
+                <Waves className="size-3.5" />
+                <span>Ocean Waves</span>
               </button>
               <button
                 type="button"
-                className="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition cursor-pointer ${
+                  (data.backgroundVideoUrl ?? data.videoUrl) ===
+                  "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
+                }`}
                 onClick={() => {
                   const url =
-                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+                    "https://cdn.plyr.io/static/demo/View_From_A_Blue_Moon_Trailer-576p.mp4";
                   onChange({
                     ...data,
                     backgroundVideoUrl: url,
@@ -790,14 +804,18 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                   });
                 }}
               >
-                🔥 Dynamic Demo
+                <Compass className="size-3.5" />
+                <span>Coastal Aerial</span>
               </button>
               <button
                 type="button"
-                className="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition"
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition cursor-pointer ${
+                  (data.backgroundVideoUrl ?? data.videoUrl) === "/videos/nature-loop.mp4"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
+                }`}
                 onClick={() => {
-                  const url =
-                    "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+                  const url = "/videos/nature-loop.mp4";
                   onChange({
                     ...data,
                     backgroundVideoUrl: url,
@@ -805,7 +823,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                   });
                 }}
               >
-                🎬 Nature Clip
+                <Sparkles className="size-3.5" />
+                <span>Botanical Bloom</span>
               </button>
             </div>
             <ImageField
@@ -1101,9 +1120,9 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
           onChange={(tertiaryCta) => onChange({ ...data, tertiaryCta })}
           fallback={{
             label: "Watch 2-min demo",
-            href: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            href: "/videos/scifi-trailer.mp4",
             actionType: "video",
-            videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            videoUrl: "/videos/scifi-trailer.mp4",
             icon: "play",
           }}
         />

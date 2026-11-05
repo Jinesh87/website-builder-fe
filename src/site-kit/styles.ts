@@ -2266,7 +2266,179 @@ em, i {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
 }
 
-/* Floating Cards Row */
+/* Unified Floating Milestone & Trust Dock */
+.wb-campaign-dock-wrap {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: 0 24px 56px;
+  margin: auto auto 0;
+  max-width: 980px;
+}
+
+.wb-campaign-dock {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f172a;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 9999px;
+  box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.06);
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.wb-campaign-dock:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.26), 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.wb-campaign-dock-progress {
+  flex: 1.25;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wb-campaign-dock-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wb-campaign-dock-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.wb-campaign-dock-currency {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.wb-campaign-dock-value {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.wb-campaign-dock-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 2px;
+}
+
+.wb-campaign-dock-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-campaign-dock-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.wb-campaign-dock-target {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.wb-campaign-dock-track {
+  width: 100%;
+  height: 7px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.wb-campaign-dock-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.45);
+}
+
+.wb-campaign-dock-divider {
+  width: 1px;
+  height: 38px;
+  background: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.wb-campaign-dock-stats {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.wb-campaign-dock-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wb-campaign-dock-stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.wb-campaign-dock-svg {
+  width: 18px;
+  height: 18px;
+}
+
+.wb-campaign-dock-stat-content {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.wb-campaign-dock-stat-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.wb-campaign-dock-stat-lbl {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* Floating Cards Row (Legacy fallback) */
 .wb-campaign-cards-row {
   position: relative;
   z-index: 10;
@@ -2484,6 +2656,26 @@ em, i {
 
 /* Campaign Banner Responsive */
 @container wb-site (max-width: 900px) {
+  .wb-campaign-dock-wrap {
+    padding-bottom: 40px;
+  }
+  .wb-campaign-dock {
+    border-radius: 20px;
+    flex-direction: column;
+    padding: 18px 24px;
+    gap: 16px;
+  }
+  .wb-campaign-dock-divider {
+    width: 100%;
+    height: 1px;
+  }
+  .wb-campaign-dock-progress,
+  .wb-campaign-dock-stats {
+    width: 100%;
+  }
+  .wb-campaign-dock-stats {
+    justify-content: space-around;
+  }
   .wb-campaign-cards-row {
     padding-bottom: 40px;
     gap: 16px;

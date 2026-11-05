@@ -274,7 +274,7 @@ export default function PartnerMarketingKitPage() {
 
   const socialCaptionText = `Need a website for your business? 🌐 Build it in a day with ${brandName}: no coding, mobile-ready, with WhatsApp and enquiry forms built in. Use code ${partnerInfo.referralCode} or the link in my bio.`;
 
-  const clientEmailText = `Subject: A simple way to get your business online\n\nHi [Name],\n\nAs we discussed, ${brandName} lets you create and manage your own business website, with enquiry forms, WhatsApp and online payments.\n\nYou can sign up here: ${referralUrl}\n\nHappy to help you set it up.\n\nRegards,\n${partnerInfo.contactName}\n${partnerInfo.companyName}`;
+  const clientEmailText = `Subject: A simple way to get your business online\n\nHi,\n\nAs we discussed, ${brandName} lets you create and manage your own business website, with enquiry forms, WhatsApp and online payments.\n\nYou can sign up here: ${referralUrl}\n\nHappy to help you set it up.\n\nRegards,\n${partnerInfo.contactName}\n${partnerInfo.companyName}`;
 
   if (loading) {
     return (
@@ -548,7 +548,7 @@ export default function PartnerMarketingKitPage() {
 
               <div className="text-xs text-ink-body leading-relaxed space-y-2">
                 <p className="font-semibold text-ink">Subject: A simple way to get your business online</p>
-                <p>Hi [Name],</p>
+                <p>Hi,</p>
                 <p>As we discussed, {brandName} lets you create and manage your own business website, with enquiry forms, WhatsApp and online payments.</p>
                 <p>You can sign up here: <span className="font-mono text-brand break-all font-medium">{referralUrl}</span></p>
                 <p>Happy to help you set it up.</p>
@@ -599,7 +599,7 @@ export default function PartnerMarketingKitPage() {
                   </p>
                 </div>
                 <p className="font-bold text-xs text-blue-200/90 mt-4 tracking-wide">
-                  [{brandName}]
+                  {brandName}
                 </p>
               </div>
             </div>
@@ -645,7 +645,7 @@ export default function PartnerMarketingKitPage() {
                   </p>
                 </div>
                 <p className="font-bold text-xs text-blue-200/90 mt-4 tracking-wide">
-                  [{brandName}]
+                  {brandName}
                 </p>
               </div>
             </div>
@@ -691,7 +691,7 @@ export default function PartnerMarketingKitPage() {
                   </p>
                 </div>
                 <p className="font-bold text-xs text-blue-200/90 mt-3 tracking-wide">
-                  [{brandName}]
+                  {brandName}
                 </p>
               </div>
             </div>
@@ -750,7 +750,7 @@ export default function PartnerMarketingKitPage() {
             </li>
             <li className="flex items-start gap-2.5">
               <span className="text-rose-600 font-bold shrink-0 mt-0.5">✕</span>
-              <span>Run ads on "[{brandName}]" search keywords.</span>
+              <span>Run ads on "{brandName}" search keywords.</span>
             </li>
             <li className="flex items-start gap-2.5">
               <span className="text-rose-600 font-bold shrink-0 mt-0.5">✕</span>
