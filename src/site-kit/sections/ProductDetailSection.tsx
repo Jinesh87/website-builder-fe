@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
 import ShopCartActions from "../ShopCartActions.tsx";
 import { coverImage, formatInr, shopCancelPolicyText, shopReturnPolicyText, SHOP_DETAIL_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
-import { SHOP_CART_SCRIPT, SHOP_WISHLIST_UI_ENABLED } from "../shop-auth.ts";
+import { SHOP_CART_SCRIPT } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ProductDetailData, SectionOf, ShopCatalogProduct, ShopCatalogVariant } from "../types.ts";
 
@@ -182,17 +182,15 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
           }}
         >
           {hero ? <img data-wb-hero="" src={hero.url} alt={hero.alt || product.name} /> : <span className="wb-shop-fallback">{product.name.slice(0, 1)}</span>}
-          {SHOP_WISHLIST_UI_ENABLED ? (
-            <button
-              type="button"
-              className="wb-shop-btn is-wishlist is-overlay"
-              data-wb-wishlist-toggle=""
-              data-wb-variant-id={selected.id}
-              aria-label="Add to wishlist"
-            >
-              <span className="wb-wish-heart" aria-hidden="true">♡</span>
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="wb-shop-btn is-wishlist is-overlay"
+            data-wb-wishlist-toggle=""
+            data-wb-variant-id={selected.id}
+            aria-label="Add to wishlist"
+          >
+            <span className="wb-wish-heart" aria-hidden="true">♡</span>
+          </button>
           <button type="button" className="wb-product-nav is-prev" data-wb-photo="prev" aria-label="Previous photo" hidden={photos.length < 2} onClick={stat ? undefined : () => stepPhoto(-1)}>
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 4 L6 10 L12 16" /></svg>
           </button>

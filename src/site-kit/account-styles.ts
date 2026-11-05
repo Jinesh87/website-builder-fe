@@ -17,7 +17,7 @@ export const ACCOUNT_CSS = `
   position: relative; width: 100%; color: var(--wb-text);
 }
 .wb-acct-state[hidden], .wb-acct-panel[hidden], .wb-acct-list[hidden], .wb-acct-empty[hidden],
-.wb-acct-message[hidden], .wb-acct-cart-total[hidden], .wb-acct-checkout[hidden] { display: none !important; }
+.wb-acct-message[hidden], .wb-acct-cart-total[hidden], .wb-acct-checkout[hidden], .wb-acct-wishlist-toolbar[hidden] { display: none !important; }
 
 .wb-acct-loading { display: grid; place-items: center; min-height: 240px; }
 .wb-acct-spinner {
@@ -134,6 +134,20 @@ export const ACCOUNT_CSS = `
 }
 .wb-acct-button.is-pay:hover:not(:disabled) { filter: brightness(0.96); }
 .wb-acct-button.is-pay:disabled { opacity: 0.6; cursor: not-allowed; }
+.wb-acct-wishlist-toolbar {
+  display: flex; justify-content: flex-end; margin-bottom: 12px;
+}
+.wb-acct-wishlist-toolbar .wb-acct-button {
+  min-height: 38px; padding: 0 1rem; font-size: 0.84rem;
+  box-shadow: none;
+}
+.wb-acct-cart-add {
+  flex: none; margin: 0; padding: 0.4rem 0.7rem; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--wb-acct-accent) 40%, var(--wb-border));
+  background: transparent; color: var(--wb-acct-accent); font: inherit; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+}
+.wb-acct-cart-add:hover:not(:disabled) { background: color-mix(in srgb, var(--wb-acct-accent) 8%, transparent); }
+.wb-acct-cart-add:disabled { opacity: 0.55; cursor: not-allowed; }
 .wb-acct-cart-remove {
   flex: none; margin: 0; padding: 0.4rem 0.7rem; border-radius: 8px;
   border: 1px solid color-mix(in srgb, #b91c1c 35%, var(--wb-border));
@@ -141,7 +155,7 @@ export const ACCOUNT_CSS = `
 }
 .wb-acct-cart-remove:hover:not(:disabled) { background: color-mix(in srgb, #dc2626 8%, transparent); }
 .wb-acct-cart-remove:disabled { opacity: 0.55; cursor: not-allowed; }
-.wb-acct-row:has(.wb-acct-cart-remove) { align-items: center; gap: 10px; }
+.wb-acct-row:has(.wb-acct-cart-remove), .wb-acct-row:has(.wb-acct-cart-add) { align-items: center; gap: 10px; }
 .wb-acct-empty {
   display: grid; gap: 10px; justify-items: start; padding: 22px; border: 1px dashed var(--wb-border);
   border-radius: var(--wb-acct-field-r); color: var(--wb-muted);

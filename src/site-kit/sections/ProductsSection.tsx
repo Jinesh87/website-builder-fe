@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
 import ShopCartActions from "../ShopCartActions.tsx";
 import { formatInr, listingSelection, productHref, shopListings, SHOP_LIST_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
-import { accountPanelHref, SHOP_CART_SCRIPT, SHOP_WISHLIST_UI_ENABLED, siteHref } from "../shop-auth.ts";
+import { accountPanelHref, SHOP_CART_SCRIPT, siteHref } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ProductsData, SectionOf, ShopCatalogProduct } from "../types.ts";
 
@@ -281,7 +281,7 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
             const href = productHref(data.detailBase, listing.product.slug, listingSelection(listing));
             const price = listingPrice(listing);
             const variant = listing.variants.find((item) => item.quantity > 0) ?? listing.variants[0];
-            const wish = SHOP_WISHLIST_UI_ENABLED && variant?.id ? (
+            const wish = variant?.id ? (
               <button
                 type="button"
                 className="wb-shop-btn is-wishlist is-overlay"
