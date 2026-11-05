@@ -8,10 +8,17 @@ import { validateEmail, validatePassword } from "../../auth/validation.ts";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import AuthSplitLayout from "../../layouts/AuthSplitLayout.tsx";
-import { captureReferralCodeFromUrl, getReferralCode } from "../../utils/referral.ts";
+import {
+  captureReferralCodeFromUrl,
+  clearReferralCode,
+  getReferralCode,
+  saveReferralCode,
+} from "../../utils/referral.ts";
 import type { VerifyEmailState } from "./VerifyEmailPage.tsx";
 
-type SignupForm = Required<Omit<SignupInput, "referralCode">> & { referralCode?: string };
+type SignupForm = Required<Omit<SignupInput, "referralCode">> & {
+  referralCode?: string;
+};
 type SignupErrors = Partial<Record<keyof SignupForm, string>>;
 
 const INITIAL_FORM: SignupForm = {
@@ -27,13 +34,16 @@ const INITIAL_FORM: SignupForm = {
 function validate(form: SignupForm): SignupErrors {
   const errors: SignupErrors = {};
   if (form.fullName.trim().length < 2) errors.fullName = "Enter your full name";
-  if (form.businessName.trim().length < 2) errors.businessName = "Enter your business name";
+  if (form.businessName.trim().length < 2)
+    errors.businessName = "Enter your business name";
   errors.email = validateEmail(form.email);
   errors.password = validatePassword(form.password);
   if (form.phone.trim() && !/^\+?[0-9 ()-]{7,20}$/.test(form.phone.trim())) {
     errors.phone = "Enter a valid phone number";
   }
-  if (!form.acceptTerms) errors.acceptTerms = "You must accept the Terms of Service and Privacy Policy";
+  if (!form.acceptTerms)
+    errors.acceptTerms =
+      "You must accept the Terms of Service and Privacy Policy";
   return errors;
 }
 
@@ -42,18 +52,24 @@ const SIGNUP_STEPS = ["Create account", "Verify email", "Open your dashboard"];
 function SignupSteps() {
   return (
     <div>
-      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/50">Sign up steps</p>
+      <p className="font-mono text-ed-2xs uppercase tracking-[0.18em] text-white/50">
+        Sign up steps
+      </p>
       <ol className="mt-4 space-y-3">
         {SIGNUP_STEPS.map((step, index) => (
           <li key={step} className="flex items-center gap-3 text-sm">
             <span
               className={`grid size-6 place-items-center rounded-full text-xs ${
-                index === 0 ? "bg-brand text-white" : "border border-white/30 text-white/70"
+                index === 0
+                  ? "bg-brand text-white"
+                  : "border border-white/30 text-white/70"
               }`}
             >
               {index + 1}
             </span>
-            <span className={index === 0 ? "text-white" : "text-white/70"}>{step}</span>
+            <span className={index === 0 ? "text-white" : "text-white/70"}>
+              {step}
+            </span>
           </li>
         ))}
       </ol>
@@ -64,18 +80,21 @@ function SignupSteps() {
 export default function SignupPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { notice, from } = (location.state as { notice?: string; from?: string } | null) ?? {};
+  const { notice, from } =
+    (location.state as { notice?: string; from?: string } | null) ?? {};
   const [form, setForm] = useState<SignupForm>(INITIAL_FORM);
   const [errors, setErrors] = useState<SignupErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [emailTaken, setEmailTaken] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [appliedRefCode] = useState<string | null>(() => {
+  const [appliedRefCode, setAppliedRefCode] = useState<string | null>(() => {
     return captureReferralCodeFromUrl() || getReferralCode();
   });
+  const [showManualRefInput, setShowManualRefInput] = useState(false);
 
   function update<K extends keyof SignupForm>(key: K) {
-    return (value: SignupForm[K]) => setForm((current) => ({ ...current, [key]: value }));
+    return (value: SignupForm[K]) =>
+      setForm((current) => ({ ...current, [key]: value }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -88,14 +107,19 @@ export default function SignupPage() {
 
     setSubmitting(true);
     try {
-      const refCode = appliedRefCode || getReferralCode();
+      const rawRefCode =
+        form.referralCode?.trim() || appliedRefCode || getReferralCode() || "";
+      const refCode = rawRefCode ? rawRefCode.toUpperCase() : undefined;
+      if (refCode) {
+        saveReferralCode(refCode);
+      }
       const result = await authApi.signup({
         ...form,
         fullName: form.fullName.trim(),
         businessName: form.businessName.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || undefined,
-        referralCode: refCode || undefined,
+        referralCode: refCode,
       });
       const state: VerifyEmailState = {
         email: result.email,
@@ -122,21 +146,25 @@ export default function SignupPage() {
       <h2 className="text-2xl font-semibold text-ink">Sign up</h2>
       <p className="mt-1 text-sm text-ink-body">
         Already have an account?{" "}
-        <Link to="/login" state={from ? { from } : undefined} className="font-medium text-brand hover:underline">
+        <Link
+          to="/login"
+          state={from ? { from } : undefined}
+          className="font-medium text-brand hover:underline"
+        >
           Log in
         </Link>
       </p>
 
-      <form onSubmit={handleSubmit} noValidate className="mt-7 flex flex-col gap-4">
-        {appliedRefCode && (
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium">
-            <Check className="size-4 shrink-0 text-emerald-600" />
-            <span>
-              Partner referral code <strong className="font-mono font-bold text-emerald-900">{appliedRefCode}</strong> applied
-            </span>
-          </div>
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="mt-7 flex flex-col gap-4"
+      >
+        {notice && (
+          <p className="rounded-lg bg-canvas px-4 py-3 text-sm text-ink-body">
+            {notice}
+          </p>
         )}
-        {notice && <p className="rounded-lg bg-canvas px-4 py-3 text-sm text-ink-body">{notice}</p>}
         <TextInput
           label="Full name"
           name="fullName"
@@ -189,6 +217,66 @@ export default function SignupPage() {
           />
         </div>
 
+        {/* Partner referral code section */}
+        {appliedRefCode ? (
+          <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium">
+            <div className="flex items-center gap-2 truncate">
+              <Check className="size-4 shrink-0 text-emerald-600" />
+              <span className="truncate">
+                Partner referral code{" "}
+                <strong className="font-mono font-bold text-emerald-900">
+                  {appliedRefCode}
+                </strong>{" "}
+                applied
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                clearReferralCode();
+                setAppliedRefCode(null);
+                setShowManualRefInput(true);
+                update("referralCode")("");
+              }}
+              className="text-ed-2xs font-semibold text-emerald-700 hover:text-emerald-900 underline shrink-0 cursor-pointer"
+            >
+              Change
+            </button>
+          </div>
+        ) : showManualRefInput ? (
+          <div className="relative">
+            <div className="absolute right-0 top-0 z-10">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowManualRefInput(false);
+                  update("referralCode")("");
+                }}
+                className="text-ed-2xs text-ink-muted hover:text-ink cursor-pointer"
+              >
+                Hide
+              </button>
+            </div>
+            <TextInput
+              label="Partner referral code (optional)"
+              name="referralCode"
+              placeholder="e.g. TES-9Y6Y"
+              value={form.referralCode ?? ""}
+              onChange={(v) => update("referralCode")(v.toUpperCase())}
+            />
+          </div>
+        ) : (
+          <div className="text-left -mt-1">
+            <button
+              type="button"
+              onClick={() => setShowManualRefInput(true)}
+              className="text-xs font-medium text-brand hover:underline cursor-pointer inline-flex items-center gap-1"
+            >
+              Have a partner referral code?
+            </button>
+          </div>
+        )}
+
         <Checkbox
           isSelected={form.acceptTerms}
           onChange={update("acceptTerms")}
@@ -216,7 +304,11 @@ export default function SignupPage() {
             {emailTaken && (
               <>
                 {" "}
-                <Link to="/login" state={from ? { from } : undefined} className="font-medium underline">
+                <Link
+                  to="/login"
+                  state={from ? { from } : undefined}
+                  className="font-medium underline"
+                >
                   Log in instead
                 </Link>
               </>
