@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bookmark, BookmarkPlus, LayoutTemplate, Plus, Trash2 } from "lucide-react";
+import { Bookmark, BookmarkPlus, BookUp, LayoutTemplate, Plus, Trash2 } from "lucide-react";
 import { ApiError, errorMessage, type FieldIssue } from "../../../../api/http.ts";
 import { websitesApi, type SavedSection } from "../../../../api/websites.ts";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog.tsx";
@@ -24,7 +24,7 @@ function sectionSaveError(err: unknown): Error {
 }
 
 export default function TemplatesPanel() {
-  const { website, savedSections, setSavedSections, autosave, notify } = useEditor();
+  const { website, savedSections, setSavedSections, autosave, notify, setLeftPanel } = useEditor();
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const selectedIndex = useBuilderPuck((state) => state.appState.ui.itemSelector?.index ?? null);
   const selectedItem = useBuilderPuck((state) =>
@@ -96,11 +96,26 @@ export default function TemplatesPanel() {
           </button>
           <button
             type="button"
-            onClick={() => void openTemplateDialog()}
+            onClick={() => {
+              if (website.isTemplateStudio) {
+                setLeftPanel("publish-template");
+              } else {
+                void openTemplateDialog();
+              }
+            }}
             className="flex h-8 items-center gap-2 rounded-ed border border-ed-border bg-ed-panel px-2.5 text-ed-sm text-ed-text shadow-ed-xs hover:bg-ed-hover"
           >
-            <LayoutTemplate className="size-3.5 text-ed-muted" aria-hidden />
-            Save website as template
+            {website.isTemplateStudio ? (
+              <>
+                <BookUp className="size-3.5 text-ed-accent" aria-hidden />
+                Save to template gallery
+              </>
+            ) : (
+              <>
+                <LayoutTemplate className="size-3.5 text-ed-muted" aria-hidden />
+                Save website as template
+              </>
+            )}
           </button>
         </div>
 

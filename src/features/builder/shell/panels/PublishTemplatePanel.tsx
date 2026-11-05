@@ -59,6 +59,18 @@ export default function PublishTemplatePanel() {
   const archived = template?.status === "ARCHIVED";
   const live = template?.status === "LIVE";
   const nameError = form.name.trim().length < 2 ? "Use at least 2 characters" : undefined;
+
+  // Check if form fields differ from the loaded template
+  const formDirty = !template
+    ? true
+    : form.name.trim() !== template.name.trim() ||
+      form.categoryId !== (template.categoryId ?? "") ||
+      form.description.trim() !== (template.description?.trim() ?? "");
+
+  // Check if the website canvas design has changes that haven't been saved to the template
+  const canvasDirty = Boolean(template?.hasUnpublishedChanges) || autosave.status === "unsaved" || autosave.status === "saving";
+  const isDirty = formDirty || canvasDirty;
+
   const canSubmit = load.status === "ready" && !archived && !nameError && form.categoryId !== "" && saving === null;
 
   function update<K extends keyof Form>(key: K, value: Form[K]) {
@@ -84,10 +96,10 @@ export default function PublishTemplatePanel() {
       setForm(formFrom(saved, website.name));
       notify(
         mode === "draft"
-          ? `“${saved.name}” saved as a draft. Clients can't see it yet.`
+          ? `Saved: “${saved.name}” saved as a draft`
           : live
-            ? `“${saved.name}” updated for new websites`
-            : `“${saved.name}” is live in the gallery`,
+            ? `Saved: “${saved.name}” updated for new websites`
+            : `Saved: “${saved.name}” is live in the gallery`,
       );
     } catch (err) {
       if (err instanceof ApiError) setFieldErrors(err.fieldErrors());
@@ -199,7 +211,7 @@ export default function PublishTemplatePanel() {
               <fieldset disabled={archived || saving !== null} className="flex flex-col gap-3">
                 <div className="flex flex-col gap-1">
                   <label htmlFor={ids.name} className="text-ed-xs font-medium text-ed-text">
-                    Template name
+                    Template name <span className="text-rose-500 ml-0.5">*</span>
                   </label>
                   <input
                     id={ids.name}
@@ -217,7 +229,7 @@ export default function PublishTemplatePanel() {
 
                 <div className="flex flex-col gap-1">
                   <label htmlFor={ids.category} className="text-ed-xs font-medium text-ed-text">
-                    Category
+                    Category <span className="text-rose-500 ml-0.5">*</span>
                   </label>
                   <select
                     id={ids.category}
@@ -238,6 +250,9 @@ export default function PublishTemplatePanel() {
                   </select>
                   {(fieldErrors.categoryId ?? categoriesError) && (
                     <p className="text-ed-2xs text-ed-danger">{fieldErrors.categoryId ?? categoriesError}</p>
+                  )}
+                  {!form.categoryId && (
+                    <p className="text-ed-2xs text-amber-600 font-medium">Please select a category to publish.</p>
                   )}
                   <p className="text-ed-2xs text-ed-faint">
                     Add or rename categories under{" "}
@@ -277,22 +292,35 @@ export default function PublishTemplatePanel() {
                 {!live && (
                   <button
                     type="button"
-                    disabled={!canSubmit}
+                    disabled={!canSubmit || (template !== null && !isDirty)}
                     onClick={() => void save("draft")}
-                    className={`${buttonClass} border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-hover`}
+                    className={`${buttonClass} border border-ed-border bg-ed-panel text-ed-text hover:bg-ed-hover disabled:opacity-50`}
                   >
                     <Save className="size-3.5" aria-hidden />
-                    {saving === "draft" ? "Saving…" : "Save draft"}
+                    {saving === "draft" ? "Saving…" : template !== null && !isDirty ? "Draft saved" : "Save draft"}
                   </button>
                 )}
                 <button
                   type="button"
-                  disabled={!canSubmit}
+                  disabled={!canSubmit || (template !== null && !isDirty)}
                   onClick={() => void save("publish")}
-                  className={`${buttonClass} bg-ed-accent text-white hover:bg-ed-accent-hover`}
+                  className={`${buttonClass} ${
+                    template !== null && !isDirty
+                      ? "bg-ed-subtle border border-ed-border text-ed-muted cursor-not-allowed opacity-60"
+                      : "bg-ed-accent text-white hover:bg-ed-accent-hover"
+                  }`}
                 >
-                  <BookUp className="size-3.5" aria-hidden />
-                  {saving === "publish" ? "Publishing…" : live ? "Update live template" : "Publish to gallery"}
+                  {template !== null && !isDirty ? (
+                    <>
+                      <Check className="size-3.5 text-emerald-600" aria-hidden />
+                      <span>Saved</span>
+                    </>
+                  ) : (
+                    <>
+                      <BookUp className="size-3.5" aria-hidden />
+                      <span>{saving === "publish" ? "Publishing…" : live ? "Update live template" : "Publish to gallery"}</span>
+                    </>
+                  )}
                 </button>
               </div>
               {live && (
