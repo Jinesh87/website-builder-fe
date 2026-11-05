@@ -8,7 +8,7 @@ import { validateEmail, validatePassword } from "../../auth/validation.ts";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import AuthSplitLayout from "../../layouts/AuthSplitLayout.tsx";
-import { captureReferralCodeFromUrl, getReferralCode } from "../../utils/referral.ts";
+import { captureReferralCodeFromUrl, clearReferralCode, getReferralCode, saveReferralCode } from "../../utils/referral.ts";
 import type { VerifyEmailState } from "./VerifyEmailPage.tsx";
 
 type SignupForm = Required<Omit<SignupInput, "referralCode">> & { referralCode?: string };
@@ -70,9 +70,10 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [emailTaken, setEmailTaken] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [appliedRefCode] = useState<string | null>(() => {
+  const [appliedRefCode, setAppliedRefCode] = useState<string | null>(() => {
     return captureReferralCodeFromUrl() || getReferralCode();
   });
+  const [showManualRefInput, setShowManualRefInput] = useState(false);
 
   function update<K extends keyof SignupForm>(key: K) {
     return (value: SignupForm[K]) => setForm((current) => ({ ...current, [key]: value }));
@@ -88,14 +89,18 @@ export default function SignupPage() {
 
     setSubmitting(true);
     try {
-      const refCode = appliedRefCode || getReferralCode();
+      const rawRefCode = form.referralCode?.trim() || appliedRefCode || getReferralCode() || "";
+      const refCode = rawRefCode ? rawRefCode.toUpperCase() : undefined;
+      if (refCode) {
+        saveReferralCode(refCode);
+      }
       const result = await authApi.signup({
         ...form,
         fullName: form.fullName.trim(),
         businessName: form.businessName.trim(),
         email: form.email.trim(),
         phone: form.phone.trim() || undefined,
-        referralCode: refCode || undefined,
+        referralCode: refCode,
       });
       const state: VerifyEmailState = {
         email: result.email,
@@ -128,14 +133,6 @@ export default function SignupPage() {
       </p>
 
       <form onSubmit={handleSubmit} noValidate className="mt-7 flex flex-col gap-4">
-        {appliedRefCode && (
-          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium">
-            <Check className="size-4 shrink-0 text-emerald-600" />
-            <span>
-              Partner referral code <strong className="font-mono font-bold text-emerald-900">{appliedRefCode}</strong> applied
-            </span>
-          </div>
-        )}
         {notice && <p className="rounded-lg bg-canvas px-4 py-3 text-sm text-ink-body">{notice}</p>}
         <TextInput
           label="Full name"
@@ -188,6 +185,62 @@ export default function SignupPage() {
             error={errors.phone}
           />
         </div>
+
+        {/* Partner referral code section */}
+        {appliedRefCode ? (
+          <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium">
+            <div className="flex items-center gap-2 truncate">
+              <Check className="size-4 shrink-0 text-emerald-600" />
+              <span className="truncate">
+                Partner referral code <strong className="font-mono font-bold text-emerald-900">{appliedRefCode}</strong> applied
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                clearReferralCode();
+                setAppliedRefCode(null);
+                setShowManualRefInput(true);
+                update("referralCode")("");
+              }}
+              className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 underline shrink-0 cursor-pointer"
+            >
+              Change
+            </button>
+          </div>
+        ) : showManualRefInput ? (
+          <div className="relative">
+            <div className="absolute right-0 top-0 z-10">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowManualRefInput(false);
+                  update("referralCode")("");
+                }}
+                className="text-[11px] text-ink-muted hover:text-ink cursor-pointer"
+              >
+                Hide
+              </button>
+            </div>
+            <TextInput
+              label="Partner referral code (optional)"
+              name="referralCode"
+              placeholder="e.g. TES-9Y6Y"
+              value={form.referralCode ?? ""}
+              onChange={(v) => update("referralCode")(v.toUpperCase())}
+            />
+          </div>
+        ) : (
+          <div className="text-left -mt-1">
+            <button
+              type="button"
+              onClick={() => setShowManualRefInput(true)}
+              className="text-xs font-medium text-brand hover:underline cursor-pointer inline-flex items-center gap-1"
+            >
+              Have a partner referral code?
+            </button>
+          </div>
+        )}
 
         <Checkbox
           isSelected={form.acceptTerms}
