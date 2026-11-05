@@ -25,6 +25,10 @@ export type ShopProduct = {
   categoryId: string | null;
   categoryName: string;
   listed: boolean;
+  /** Null = use the shop default GST percent. */
+  gstPercent: number | null;
+  /** Null = use the shop default include/add GST mode. */
+  priceIncludesGst: boolean | null;
   returnsEnabled: boolean;
   /** Null = use the shop default return window. */
   returnDays: number | null;
@@ -62,6 +66,10 @@ export type ShopProductInput = {
   description?: string;
   categoryId?: string | null;
   listed?: boolean;
+  /** Null = use the shop default. */
+  gstPercent?: number | null;
+  /** Null = use the shop default. */
+  priceIncludesGst?: boolean | null;
   returnsEnabled?: boolean;
   returnDays?: number | null;
   optionSets: {

@@ -63,6 +63,10 @@ export type WebsiteSummary = {
   shopReturnDays: number | null;
   /** Guideline bullets shown with the return policy. */
   shopReturnGuidelines: string[];
+  /** Default GST percent (0–100) for products without their own override. */
+  shopGstPercent: number;
+  /** Default: prices include GST unless a product overrides it. */
+  shopPriceIncludesGst: boolean;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -235,6 +239,8 @@ export type UpdateWebsiteInput = {
   shopCancelUntilStatus?: "paid" | "processing" | "shipped" | null;
   shopReturnDays?: number | null;
   shopReturnGuidelines?: string[];
+  shopGstPercent?: number;
+  shopPriceIncludesGst?: boolean;
 } & { [K in keyof WebsiteInfo]?: string | null };
 
 export const GENERATION_TONES = ["professional", "friendly", "luxury", "playful", "bold", "minimal"] as const;

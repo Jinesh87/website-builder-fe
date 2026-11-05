@@ -44,17 +44,31 @@ function sharedValuePhotos(product: ShopProduct, variantName: string): { url: st
   return [];
 }
 
-function toCatalogProduct(product: ShopProduct, shopReturnDays: number | null | undefined): ShopCatalogProduct {
+function payableUnitPaise(pricePaise: number, gstPercent: number, priceIncludesGst: boolean): number {
+  const percent = Math.max(0, Math.min(100, Math.floor(gstPercent || 0)));
+  if (percent <= 0 || priceIncludesGst) return pricePaise;
+  return Math.round(pricePaise * (1 + percent / 100));
+}
+
+function toCatalogProduct(
+  product: ShopProduct,
+  shop: { shopReturnDays?: number | null; shopGstPercent?: number; shopPriceIncludesGst?: boolean },
+): ShopCatalogProduct {
+  const shopReturnDays = shop.shopReturnDays;
   const returnDays =
     !shopReturnDays || shopReturnDays < 1 || product.returnsEnabled === false
       ? null
       : product.returnDays ?? shopReturnDays;
+  const gstPercent = product.gstPercent ?? shop.shopGstPercent ?? 0;
+  const priceIncludesGst = (product.priceIncludesGst ?? shop.shopPriceIncludesGst) !== false;
   return {
     id: product.id,
     name: product.name,
     slug: product.slug,
     description: product.description,
     categoryName: product.categoryName,
+    gstPercent,
+    priceIncludesGst,
     returnDays,
     images: (product.images ?? []).map(({ url, alt }) => ({ url, alt })),
     variants: product.variants.map((variant) => {
@@ -62,7 +76,7 @@ function toCatalogProduct(product: ShopProduct, shopReturnDays: number | null | 
       return {
         id: variant.id,
         name: variant.name,
-        pricePaise: variant.pricePaise,
+        pricePaise: payableUnitPaise(variant.pricePaise, gstPercent, priceIncludesGst),
         quantity: variant.quantity,
         images: own.length > 0 ? own : sharedValuePhotos(product, variant.name),
         options: variantOptions(product, variant.name),
@@ -78,6 +92,8 @@ type ShopWebsite = {
   shopCancelUntilStatus?: ShopCancelUntilStatus | null;
   shopReturnDays?: number | null;
   shopReturnGuidelines?: string[];
+  shopGstPercent?: number;
+  shopPriceIncludesGst?: boolean;
 };
 
 /** Loads a website’s shop catalogue for editor canvas and draft preview. */
@@ -110,7 +126,7 @@ export function WebsiteShopCatalogProvider({
           const next = await shopApi.products(website.id, { page, pageSize });
           loaded.push(...next.products);
         }
-        if (!cancel) setProducts(loaded.map((product) => toCatalogProduct(product, website.shopReturnDays)));
+        if (!cancel) setProducts(loaded.map((product) => toCatalogProduct(product, website)));
       })
       .catch(() => {
         if (!cancel) setProducts([]);
