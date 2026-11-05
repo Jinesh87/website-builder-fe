@@ -1441,11 +1441,14 @@ export function VideoField({
       ? "https://www.youtube.com/watch?v=..."
       : "https://www.youtube.com/watch?v=... or https://.../video.mp4");
   const isDirectVideo =
-    videoUrl.endsWith(".mp4") ||
-    videoUrl.endsWith(".webm") ||
+    videoUrl.includes(".mp4") ||
+    videoUrl.includes(".webm") ||
+    videoUrl.includes(".ogg") ||
     videoUrl.includes("/media/") ||
     videoUrl.includes("blob:") ||
-    videoUrl.includes("linodeobjects.com");
+    videoUrl.includes("linodeobjects.com") ||
+    videoUrl.startsWith("/videos/") ||
+    videoUrl.startsWith("/bannervid");
   const isYouTube = Boolean(savedYouTube);
   const isYouTubeOrVimeo =
     isYouTube ||
@@ -1529,7 +1532,15 @@ export function VideoField({
           {isDirectVideo ? (
             <div className="relative">
               <video
-                src={videoUrl}
+                key={videoUrl}
+                src={
+                  videoUrl.includes("commondatastorage.googleapis.com") ||
+                  videoUrl.includes("scifi-trailer.mp4")
+                    ? videoUrl.includes("ForBiggerEscapes") || videoUrl.includes("oceans")
+                      ? "https://vjs.zencdn.net/v/oceans.mp4"
+                      : "/bannervid.mp4"
+                    : videoUrl
+                }
                 controls
                 preload="metadata"
                 playsInline

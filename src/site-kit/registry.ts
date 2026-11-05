@@ -2270,7 +2270,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
         data: {
           variant: "video-bg",
           videoUrl:
-            "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            "https://media.w3.org/2010/05/bunny/trailer.mp4",
           imageStyle: "glow",
           bgOverlayType: "dark",
           overlayOpacity: 65,
