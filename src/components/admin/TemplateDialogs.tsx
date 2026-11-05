@@ -139,6 +139,7 @@ export function NewTemplateDialog({
           description="You can change it when you save the template."
           error={name ? nameProblem(name) : undefined}
           autoFocus={!initialTemplate}
+          isRequired
         />
 
         <fieldset>

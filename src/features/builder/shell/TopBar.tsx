@@ -46,7 +46,7 @@ type TopBarProps = {
 };
 
 export default function TopBar({ backTo, onPublish }: TopBarProps) {
-  const { website, draft, page, selectPage, role, device, setDevice, autosave, aiLock, setLeftPanel } = useEditor();
+  const { website, draft, page, selectPage, role, device, setDevice, autosave, aiLock, leftPanel, setLeftPanel } = useEditor();
   const { startTour } = useTour();
   const history = useBuilderPuck((state) => state.history);
   const [downloadOpen, setDownloadOpen] = useState(false);
@@ -246,10 +246,10 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
       {website.isTemplateStudio ? (
         <button
           type="button"
-          onClick={() => setLeftPanel("publish-template")}
+          onClick={() => setLeftPanel(leftPanel === "publish-template" ? null : "publish-template")}
           disabled={autosave.status === "conflict" || aiLock !== null}
-          title="Template Studio websites are saved as templates, not published"
-          className="inline-flex h-8 items-center gap-1.5 rounded-ed bg-ed-accent px-3 text-ed-sm font-medium text-white shadow-ed-xs hover:bg-ed-accent-hover disabled:opacity-50"
+          title="Save or update this template in the gallery"
+          className="inline-flex h-8 items-center gap-1.5 rounded-ed bg-ed-accent px-3 text-ed-sm font-medium text-white shadow-ed-xs hover:bg-ed-accent-hover disabled:opacity-50 cursor-pointer"
         >
           <BookUp className="size-3.5" aria-hidden /> Save template
         </button>
