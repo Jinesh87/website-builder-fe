@@ -13,9 +13,28 @@ import { optimizeImageToWebP } from "../../utils/image-optimizer.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 
 const SAMPLE_ITEMS = [
-  { name: "Everyday tee (M / Blue)", qty: 2, unit: "Rs 999", amount: "Rs 1,998" },
-  { name: "Canvas tote (Natural)", qty: 1, unit: "Rs 501", amount: "Rs 501" },
+  { name: "Everyday tee (M / Blue)", qty: 2, taxable: "Rs 1,693", gstPercent: "18%", gst: "Rs 305", amount: "Rs 1,998" },
+  { name: "Canvas tote (Natural)", qty: 1, taxable: "Rs 425", gstPercent: "18%", gst: "Rs 76", amount: "Rs 501" },
 ] as const;
+
+function PreviewTotals({ compact }: { compact?: boolean }) {
+  return (
+    <div className={`ml-auto text-right ${compact ? "mt-1.5 max-w-[140px] text-[9px]" : "mt-3 max-w-[220px] text-sm"}`}>
+      <div className="flex justify-between gap-4 text-ink-muted">
+        <span>Taxable value</span>
+        <span>Rs 2,118</span>
+      </div>
+      <div className="mt-0.5 flex justify-between gap-4 text-ink-muted">
+        <span>GST (18%)</span>
+        <span>Rs 381</span>
+      </div>
+      <div className={`flex justify-between gap-4 border-t border-line font-semibold text-ink ${compact ? "mt-1 pt-1" : "mt-2 pt-2"}`}>
+        <span>Grand total</span>
+        <span>Rs 2,499</span>
+      </div>
+    </div>
+  );
+}
 
 type PreviewProps = {
   design: ShopInvoiceDesign;
@@ -43,7 +62,7 @@ function LogoMark({
   );
 }
 
-/** Classic: bordered table with Item / Qty / Rate / Amount columns. */
+/** Classic: bordered table with taxable / GST / amount columns. */
 function ClassicInvoice({ design, companyName, companyAddress, compact }: PreviewProps) {
   return (
     <div className={`border border-line bg-white text-ink ${compact ? "rounded-lg p-2" : "rounded-2xl p-5"}`}>
@@ -73,7 +92,9 @@ function ClassicInvoice({ design, companyName, companyAddress, compact }: Previe
           <tr className="bg-canvas">
             <th className={`border border-line text-left font-semibold ${compact ? "px-1 py-0.5" : "px-2 py-1.5"}`}>Item</th>
             <th className={`border border-line text-center font-semibold ${compact ? "px-1 py-0.5" : "px-2 py-1.5"}`}>Qty</th>
-            {!compact && <th className="border border-line px-2 py-1.5 text-right font-semibold">Rate</th>}
+            {!compact && <th className="border border-line px-2 py-1.5 text-right font-semibold">Taxable</th>}
+            {!compact && <th className="border border-line px-2 py-1.5 text-center font-semibold">GST %</th>}
+            {!compact && <th className="border border-line px-2 py-1.5 text-right font-semibold">GST</th>}
             <th className={`border border-line text-right font-semibold ${compact ? "px-1 py-0.5" : "px-2 py-1.5"}`}>Amount</th>
           </tr>
         </thead>
@@ -82,13 +103,15 @@ function ClassicInvoice({ design, companyName, companyAddress, compact }: Previe
             <tr key={item.name}>
               <td className={`border border-line ${compact ? "px-1 py-0.5" : "px-2 py-1.5"}`}>{compact ? "Everyday tee" : item.name}</td>
               <td className={`border border-line text-center ${compact ? "px-1 py-0.5" : "px-2 py-1.5"}`}>{item.qty}</td>
-              {!compact && <td className="border border-line px-2 py-1.5 text-right">{item.unit}</td>}
+              {!compact && <td className="border border-line px-2 py-1.5 text-right">{item.taxable}</td>}
+              {!compact && <td className="border border-line px-2 py-1.5 text-center">{item.gstPercent}</td>}
+              {!compact && <td className="border border-line px-2 py-1.5 text-right">{item.gst}</td>}
               <td className={`border border-line text-right ${compact ? "px-1 py-0.5" : "px-2 py-1.5"}`}>{item.amount}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className={`text-right font-semibold ${compact ? "mt-1.5 text-[10px]" : "mt-3 text-base"}`}>Total Rs 2,499</p>
+      <PreviewTotals compact={compact} />
     </div>
   );
 }
@@ -121,23 +144,27 @@ function MinimalInvoice({ design, companyName, companyAddress, compact }: Previe
         <thead>
           <tr className="border-b border-ink/20 text-ink-muted">
             <th className={`pb-1 text-left font-normal ${compact ? "" : "pb-2"}`}>Description</th>
-            <th className={`pb-1 text-right font-normal ${compact ? "" : "pb-2"}`}>Qty</th>
-            <th className={`pb-1 text-right font-normal ${compact ? "" : "pb-2"}`}>Price</th>
+            <th className={`pb-1 text-center font-normal ${compact ? "" : "pb-2"}`}>Qty</th>
+            {!compact && <th className="pb-2 text-right font-normal">Taxable</th>}
+            {!compact && <th className="pb-2 text-center font-normal">GST %</th>}
+            {!compact && <th className="pb-2 text-right font-normal">GST</th>}
+            <th className={`pb-1 text-right font-normal ${compact ? "" : "pb-2"}`}>Amount</th>
           </tr>
         </thead>
         <tbody>
           {(compact ? SAMPLE_ITEMS.slice(0, 1) : SAMPLE_ITEMS).map((item) => (
             <tr key={item.name} className="border-b border-line/70">
               <td className={compact ? "py-0.5" : "py-2"}>{compact ? "Everyday tee" : item.name}</td>
-              <td className={`text-right ${compact ? "py-0.5" : "py-2"}`}>{item.qty}</td>
+              <td className={`text-center ${compact ? "py-0.5" : "py-2"}`}>{item.qty}</td>
+              {!compact && <td className="py-2 text-right">{item.taxable}</td>}
+              {!compact && <td className="py-2 text-center">{item.gstPercent}</td>}
+              {!compact && <td className="py-2 text-right">{item.gst}</td>}
               <td className={`text-right ${compact ? "py-0.5" : "py-2"}`}>{item.amount}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className={`text-right ${compact ? "mt-1.5 text-[10px] font-medium" : "mt-4 text-sm"}`}>
-        Total <span className="font-semibold">Rs 2,499</span>
-      </p>
+      <PreviewTotals compact={compact} />
     </div>
   );
 }
@@ -175,7 +202,9 @@ function BoldInvoice({ design, companyName, companyAddress, compact }: PreviewPr
             <tr className="bg-ink text-white">
               <th className={`text-left font-semibold ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>Item</th>
               <th className={`text-center font-semibold ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>Qty</th>
-              {!compact && <th className="px-3 py-2 text-right font-semibold">Unit price</th>}
+              {!compact && <th className="px-3 py-2 text-right font-semibold">Taxable</th>}
+              {!compact && <th className="px-3 py-2 text-center font-semibold">GST %</th>}
+              {!compact && <th className="px-3 py-2 text-right font-semibold">GST</th>}
               <th className={`text-right font-semibold ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>Total</th>
             </tr>
           </thead>
@@ -184,13 +213,15 @@ function BoldInvoice({ design, companyName, companyAddress, compact }: PreviewPr
               <tr key={item.name} className={index % 2 === 0 ? "bg-canvas/60" : "bg-white"}>
                 <td className={compact ? "px-1 py-0.5" : "px-3 py-2"}>{compact ? "Everyday tee" : item.name}</td>
                 <td className={`text-center ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>{item.qty}</td>
-                {!compact && <td className="px-3 py-2 text-right">{item.unit}</td>}
+                {!compact && <td className="px-3 py-2 text-right">{item.taxable}</td>}
+                {!compact && <td className="px-3 py-2 text-center">{item.gstPercent}</td>}
+                {!compact && <td className="px-3 py-2 text-right">{item.gst}</td>}
                 <td className={`text-right font-medium ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>{item.amount}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p className={`text-right font-semibold ${compact ? "mt-1 text-[10px]" : "mt-3 text-base"}`}>Amount due Rs 2,499</p>
+        <PreviewTotals compact={compact} />
       </div>
     </div>
   );
@@ -230,7 +261,9 @@ function ModernInvoice({ design, companyName, companyAddress, compact }: Preview
               <tr className="bg-brand/10 text-ink">
                 <th className={`text-left font-semibold ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>Product</th>
                 <th className={`text-center font-semibold ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>Qty</th>
-                {!compact && <th className="px-3 py-2 text-right font-semibold">Price</th>}
+                {!compact && <th className="px-3 py-2 text-right font-semibold">Taxable</th>}
+                {!compact && <th className="px-3 py-2 text-center font-semibold">GST %</th>}
+                {!compact && <th className="px-3 py-2 text-right font-semibold">GST</th>}
                 <th className={`text-right font-semibold ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>Line total</th>
               </tr>
             </thead>
@@ -239,7 +272,9 @@ function ModernInvoice({ design, companyName, companyAddress, compact }: Preview
                 <tr key={item.name} className="border-t border-line">
                   <td className={compact ? "px-1 py-0.5" : "px-3 py-2"}>{compact ? "Everyday tee" : item.name}</td>
                   <td className={`text-center ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>{item.qty}</td>
-                  {!compact && <td className="px-3 py-2 text-right">{item.unit}</td>}
+                  {!compact && <td className="px-3 py-2 text-right">{item.taxable}</td>}
+                  {!compact && <td className="px-3 py-2 text-center">{item.gstPercent}</td>}
+                  {!compact && <td className="px-3 py-2 text-right">{item.gst}</td>}
                   <td className={`text-right ${compact ? "px-1 py-0.5" : "px-3 py-2"}`}>{item.amount}</td>
                 </tr>
               ))}
@@ -247,9 +282,8 @@ function ModernInvoice({ design, companyName, companyAddress, compact }: Preview
           </table>
         </div>
         <div className={`flex justify-end ${compact ? "mt-1.5" : "mt-3"}`}>
-          <div className={`rounded-lg bg-surface text-right ring-1 ring-line ${compact ? "px-2 py-1 text-[10px]" : "px-3 py-2"}`}>
-            <p className="text-ink-muted">Grand total</p>
-            <p className="font-semibold">Rs 2,499</p>
+          <div className={`rounded-lg bg-surface ring-1 ring-line ${compact ? "px-2 py-1" : "px-3 py-2"}`}>
+            <PreviewTotals compact={compact} />
           </div>
         </div>
       </div>
@@ -272,10 +306,10 @@ function InvoicePreviewByLayout(props: PreviewProps) {
 }
 
 const LAYOUT_HINT: Record<ShopInvoiceLayout, string> = {
-  classic: "Bordered table · Item / Qty / Rate / Amount",
-  minimal: "Open rows · Description / Qty / Price",
-  bold: "Dark header · filled column titles",
-  modern: "Accent bar · Product / Qty / Price cards",
+  classic: "Bordered table · Taxable / GST % / Amount",
+  minimal: "Open rows · Taxable / GST / Grand total",
+  bold: "Dark header · GST columns",
+  modern: "Accent bar · GST breakdown card",
 };
 
 export default function ShopInvoiceTemplatePanel({

@@ -1736,6 +1736,8 @@ export type ShopCatalogProduct = {
   slug: string;
   description: string | null;
   categoryName: string;
+  gstPercent?: number;
+  priceIncludesGst?: boolean;
   /** Effective return window in days. Null = returns not offered for this product. */
   returnDays?: number | null;
   images: ShopCatalogImage[];

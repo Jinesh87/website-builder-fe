@@ -1,6 +1,3 @@
-/** Flip to true when the customer wishlist UI should be visible again. */
-export const SHOP_WISHLIST_UI_ENABLED = false;
-
 export type ShopCustomer = {
   id: string;
   websiteId: string;
@@ -578,6 +575,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
   }
   var addressCache=[];
   var addressCustomer={};
+  var wishlistCache=[];
   function fillAddresses(root, addresses, customer){
     addressCache=addresses||[];
     addressCustomer=customer||{};
@@ -699,8 +697,11 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     }
     if(orderEmpty) orderEmpty.hidden=orders.length>0;
 
+    wishlistCache=wishlist;
     var wishlistList=root.querySelector('[data-wb-account-list="wishlist"]');
     var wishlistEmpty=root.querySelector('[data-wb-account-empty="wishlist"]');
+    var wishlistToolbar=root.querySelector("[data-wb-wishlist-toolbar]");
+    if(wishlistToolbar) wishlistToolbar.hidden=wishlist.length===0;
     if(wishlistList){
       wishlistList.innerHTML="";
       wishlist.forEach(function(item){
@@ -714,13 +715,18 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         }
         var main=el("div","wb-acct-row-main");
         main.appendChild(el("strong","",String(item.productName||"Item")));
-        main.appendChild(el("span","wb-acct-row-sub",String(item.variantName||item.categoryName||"Variant")));
+        var subParts=[item.variantName, item.categoryName].filter(Boolean);
+        main.appendChild(el("span","wb-acct-row-sub", subParts.length?subParts.join(" · "):"Product"));
         row.appendChild(main);
         row.appendChild(el("strong","wb-acct-row-amount",money(item.pricePaise)));
         var actions=el("div","wb-acct-address-actions");
+        var add=el("button","wb-acct-cart-add","Add to cart");
+        add.type="button";
+        add.setAttribute("data-wb-wishlist-add", String(item.variantId||""));
         var remove=el("button","wb-acct-cart-remove","Remove");
         remove.type="button";
         remove.setAttribute("data-wb-wishlist-remove", String(item.variantId||""));
+        actions.appendChild(add);
         actions.appendChild(remove);
         row.appendChild(actions);
         wishlistList.appendChild(row);
@@ -1005,18 +1011,81 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         button.textContent="Remove";
       });
     }
+    function setWishlistBusy(on){
+      root.querySelectorAll("[data-wb-wishlist-add], [data-wb-wishlist-remove], [data-wb-wishlist-add-all]").forEach(function(node){
+        node.disabled=!!on;
+      });
+    }
+    function addWishlistVariant(variantId){
+      return request(base, "/cart", "POST", { variantId:variantId, quantity:1 });
+    }
     root.addEventListener("click", function(event){
+      var wishAddAll=event.target&&event.target.closest&&event.target.closest("[data-wb-wishlist-add-all]");
+      if(wishAddAll && root.contains(wishAddAll)){
+        event.preventDefault();
+        if(wishAddAll.disabled || !wishlistCache.length) return;
+        setWishlistBusy(true);
+        wishAddAll.textContent="Adding…";
+        var chain=Promise.resolve();
+        wishlistCache.forEach(function(item){
+          var variantId=String(item.variantId||"");
+          if(!variantId) return;
+          chain=chain.then(function(){
+            return addWishlistVariant(variantId).catch(function(){});
+          });
+        });
+        chain.then(function(){
+          return refreshAccount();
+        }).finally(function(){
+          setWishlistBusy(false);
+          wishAddAll.textContent="Add all to cart";
+        });
+        return;
+      }
+      var wishAdd=event.target&&event.target.closest&&event.target.closest("[data-wb-wishlist-add]");
+      if(wishAdd && root.contains(wishAdd)){
+        event.preventDefault();
+        var addVariantId=wishAdd.getAttribute("data-wb-wishlist-add")||"";
+        if(!addVariantId || wishAdd.disabled) return;
+        setWishlistBusy(true);
+        wishAdd.textContent="Adding…";
+        addWishlistVariant(addVariantId).then(function(result){
+          if(!result.ok){
+            setWishlistBusy(false);
+            wishAdd.textContent="Add to cart";
+            return;
+          }
+          return refreshAccount().finally(function(){
+            setWishlistBusy(false);
+            wishAdd.textContent="Add to cart";
+          });
+        }).catch(function(){
+          setWishlistBusy(false);
+          wishAdd.textContent="Add to cart";
+        });
+        return;
+      }
       var wishRemove=event.target&&event.target.closest&&event.target.closest("[data-wb-wishlist-remove]");
       if(wishRemove && root.contains(wishRemove)){
         event.preventDefault();
         var variantId=wishRemove.getAttribute("data-wb-wishlist-remove")||"";
         if(!variantId || wishRemove.disabled) return;
-        wishRemove.disabled=true;
+        setWishlistBusy(true);
+        wishRemove.textContent="Removing…";
         request(base, "/wishlist/"+variantId, "DELETE").then(function(result){
-          wishRemove.disabled=false;
-          if(!result.ok) return;
-          return refreshAccount();
-        }).catch(function(){ wishRemove.disabled=false; });
+          if(!result.ok){
+            setWishlistBusy(false);
+            wishRemove.textContent="Remove";
+            return;
+          }
+          return refreshAccount().finally(function(){
+            setWishlistBusy(false);
+            wishRemove.textContent="Remove";
+          });
+        }).catch(function(){
+          setWishlistBusy(false);
+          wishRemove.textContent="Remove";
+        });
         return;
       }
       var button=event.target&&event.target.closest&&event.target.closest("[data-wb-cart-remove]");

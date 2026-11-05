@@ -38,12 +38,24 @@ type ProductDraft = {
   description: string;
   categoryId: string;
   listed: boolean;
+  /** When false, product uses shop GST defaults. */
+  gstOverride: boolean;
+  /** Whole percent, as a string for the input (only when gstOverride). */
+  gstPercent: string;
+  /** When true, entered prices already include GST (only when gstOverride). */
+  priceIncludesGst: boolean;
   returnsEnabled: boolean;
   /** Empty string = use shop default. */
   returnDays: string;
   sets: SetDraft[];
   images: ShopImage[];
 };
+
+function payablePaise(pricePaise: number, gstPercent: number, priceIncludesGst: boolean): number {
+  const percent = Math.max(0, Math.min(100, Math.floor(gstPercent || 0)));
+  if (percent <= 0 || priceIncludesGst) return pricePaise;
+  return Math.round(pricePaise * (1 + percent / 100));
+}
 
 function blankOption(): OptionDraft {
   return { key: crypto.randomUUID(), name: "", values: [], listOnShop: false, images: {} };
@@ -59,6 +71,9 @@ function blankProduct(categoryId = ""): ProductDraft {
     description: "",
     categoryId,
     listed: true,
+    gstOverride: false,
+    gstPercent: "0",
+    priceIncludesGst: true,
     returnsEnabled: true,
     returnDays: "",
     sets: [blankSet()],
@@ -147,22 +162,59 @@ function priceLabel(product: ShopProduct): string {
   return low === high ? formatPaise(low) : `${formatPaise(low)} – ${formatPaise(high)}`;
 }
 
-function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: string } {
-  if (!draft.name.trim()) return { error: "Enter a product name" };
+type ProductFieldErrors = {
+  name?: string;
+  priceBySet?: Record<string, string>;
+  gstPercent?: string;
+  returnDays?: string;
+};
+
+type ProductParseResult =
+  | { input: ShopProductInput }
+  | { error: string; fieldErrors?: ProductFieldErrors };
+
+function toInput(draft: ProductDraft): ProductParseResult {
+  if (!draft.name.trim()) {
+    return { error: "Enter a product name", fieldErrors: { name: "Enter a product name" } };
+  }
+  let gstPercent: number | null = null;
+  let priceIncludesGst: boolean | null = null;
+  if (draft.gstOverride) {
+    const gstRaw = draft.gstPercent.trim();
+    const parsed = gstRaw === "" ? NaN : Number(gstRaw);
+    if (!Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
+      return {
+        error: "GST percent must be a whole number from 0 to 100.",
+        fieldErrors: { gstPercent: "Enter a whole number from 0 to 100" },
+      };
+    }
+    gstPercent = parsed;
+    priceIncludesGst = draft.priceIncludesGst;
+  }
   const returnDaysRaw = draft.returnDays.trim();
   let returnDays: number | null = null;
   if (returnDaysRaw) {
     const parsed = Number(returnDaysRaw);
     if (!Number.isInteger(parsed) || parsed < 1 || parsed > 365) {
-      return { error: "Return days must be between 1 and 365, or left blank for the shop default." };
+      return {
+        error: "Return days must be between 1 and 365, or left blank for the shop default.",
+        fieldErrors: { returnDays: "Enter 1–365, or leave blank" },
+      };
     }
     returnDays = parsed;
   }
   const seen = new Set<string>();
   const optionSets = [];
+  const priceBySet: Record<string, string> = {};
   for (const set of draft.sets) {
     const pricePaise = rupeesToPaise(set.price);
-    if (pricePaise === null) return { error: "Enter a price for each combination" };
+    if (pricePaise === null) {
+      priceBySet[set.key] = set.price.trim() ? "Enter a valid amount like 999 or 999.50" : "Enter a price";
+      return {
+        error: "Enter a price for each combination",
+        fieldErrors: { priceBySet },
+      };
+    }
     const options = set.options.filter((option) => option.name.trim() || option.values.length > 0);
     for (const option of options) {
       if (!option.name.trim()) return { error: "Name each option, such as Size or Colour" };
@@ -220,6 +272,8 @@ function toInput(draft: ProductDraft): { input: ShopProductInput } | { error: st
       description: draft.description.trim(),
       categoryId: draft.categoryId || null,
       listed: draft.listed,
+      gstPercent,
+      priceIncludesGst,
       returnsEnabled: draft.returnsEnabled,
       returnDays,
       optionSets,
@@ -333,6 +387,11 @@ export default function ShopPanel({
   const [returnGuidelinesDraft, setReturnGuidelinesDraft] = useState<string[]>(
     website.shopReturnGuidelines.length > 0 ? website.shopReturnGuidelines : [""],
   );
+  const [savingGstPolicy, setSavingGstPolicy] = useState(false);
+  const [gstPolicyError, setGstPolicyError] = useState<string | null>(null);
+  const [gstPolicyMessage, setGstPolicyMessage] = useState<string | null>(null);
+  const [gstPercentDraft, setGstPercentDraft] = useState(String(website.shopGstPercent ?? 0));
+  const [priceIncludesGstDraft, setPriceIncludesGstDraft] = useState(website.shopPriceIncludesGst !== false);
 
   useEffect(() => {
     setCancelUntilDraft(website.shopCancelUntilStatus ?? "");
@@ -343,6 +402,11 @@ export default function ShopPanel({
     setReturnDaysDraft(String(website.shopReturnDays ?? 7));
     setReturnGuidelinesDraft(website.shopReturnGuidelines.length > 0 ? website.shopReturnGuidelines : [""]);
   }, [website.shopReturnDays, website.shopReturnGuidelines]);
+
+  useEffect(() => {
+    setGstPercentDraft(String(website.shopGstPercent ?? 0));
+    setPriceIncludesGstDraft(website.shopPriceIncludesGst !== false);
+  }, [website.shopGstPercent, website.shopPriceIncludesGst]);
 
   async function setShopEnabled(shopEnabled: boolean) {
     setTurning(true);
@@ -406,6 +470,34 @@ export default function ShopPanel({
     returnsEnabledDraft !== (website.shopReturnDays != null) ||
     (returnsEnabledDraft && Number(returnDaysDraft) !== (website.shopReturnDays ?? 7)) ||
     cleanedGuidelines.join("\n") !== savedGuidelines.join("\n");
+
+  async function saveGstPolicy() {
+    const percent = Number(gstPercentDraft);
+    if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
+      setGstPolicyError("GST percent must be a whole number from 0 to 100.");
+      return;
+    }
+    setSavingGstPolicy(true);
+    setGstPolicyError(null);
+    setGstPolicyMessage(null);
+    try {
+      onChange(
+        await websitesApi.update(website.id, {
+          shopGstPercent: percent,
+          shopPriceIncludesGst: priceIncludesGstDraft,
+        }),
+      );
+      setGstPolicyMessage("GST settings saved.");
+    } catch (err) {
+      setGstPolicyError(errorMessage(err));
+    } finally {
+      setSavingGstPolicy(false);
+    }
+  }
+
+  const gstPolicyDirty =
+    Number(gstPercentDraft) !== (website.shopGstPercent ?? 0) ||
+    priceIncludesGstDraft !== (website.shopPriceIncludesGst !== false);
 
   return (
     <div className="space-y-4">
@@ -591,6 +683,55 @@ export default function ShopPanel({
               </div>
             </section>
           )}
+
+          {website.shopEnabled && (
+            <section className="rounded-xl border border-line bg-surface p-6">
+              <div className="max-w-2xl">
+                <h2 className="text-base font-semibold text-ink">GST defaults</h2>
+                <p className="mt-1 text-sm text-ink-body">
+                  Default tax settings for this shop. Individual products can override them.
+                </p>
+              </div>
+              <div className="mt-5 max-w-xl space-y-4">
+                <Switch isSelected={priceIncludesGstDraft} onChange={setPriceIncludesGstDraft}>
+                  <Switch.Content>
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                    <Label className="text-sm text-ink">
+                      {priceIncludesGstDraft ? "Price includes GST" : "Price + GST"}
+                    </Label>
+                  </Switch.Content>
+                </Switch>
+                <p className="text-xs text-ink-muted">
+                  {priceIncludesGstDraft
+                    ? "Entered product prices already include GST. Customers pay the price you set."
+                    : "GST is added on top of entered product prices at checkout."}
+                </p>
+                <label className="grid gap-1 text-sm font-medium text-ink">
+                  Default GST percent
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={gstPercentDraft}
+                    onChange={(event) => setGstPercentDraft(event.target.value)}
+                    className="h-10 rounded-lg border border-ed-border bg-surface px-3 text-sm font-normal text-ink"
+                  />
+                </label>
+                {gstPolicyError && <FormAlert status="danger">{gstPolicyError}</FormAlert>}
+                {gstPolicyMessage && <FormAlert status="success">{gstPolicyMessage}</FormAlert>}
+                <Button
+                  size="sm"
+                  onPress={() => void saveGstPolicy()}
+                  isDisabled={savingGstPolicy || !gstPolicyDirty}
+                >
+                  {savingGstPolicy ? "Saving…" : "Save GST settings"}
+                </Button>
+              </div>
+            </section>
+          )}
         </div>
       )}
 
@@ -636,6 +777,8 @@ export default function ShopPanel({
           clientId={website.clientId}
           section={section}
           shopReturnDays={website.shopReturnDays}
+          shopGstPercent={website.shopGstPercent ?? 0}
+          shopPriceIncludesGst={website.shopPriceIncludesGst !== false}
         />
       )}
     </div>
@@ -647,11 +790,15 @@ function ShopCatalog({
   clientId,
   section,
   shopReturnDays,
+  shopGstPercent,
+  shopPriceIncludesGst,
 }: {
   websiteId: string;
   clientId: string;
   section: "category" | "products";
   shopReturnDays: number | null;
+  shopGstPercent: number;
+  shopPriceIncludesGst: boolean;
 }) {
   const [categories, setCategories] = useState<ShopCategory[] | null>(null);
   const [products, setProducts] = useState<ShopProduct[] | null>(null);
@@ -747,6 +894,7 @@ function ShopCatalog({
       setDraft(blankProduct(categoryId || ""));
       return;
     }
+    const customGst = product.gstPercent != null || product.priceIncludesGst != null;
     setDraft({
       id: product.id,
       originalCategoryId: product.categoryId,
@@ -754,6 +902,9 @@ function ShopCatalog({
       description: product.description ?? "",
       categoryId: product.categoryId ?? "",
       listed: product.listed !== false,
+      gstOverride: customGst,
+      gstPercent: String(product.gstPercent ?? shopGstPercent),
+      priceIncludesGst: product.priceIncludesGst ?? shopPriceIncludesGst,
       returnsEnabled: product.returnsEnabled !== false,
       returnDays: product.returnDays != null ? String(product.returnDays) : "",
       sets: setsFromProduct(product),
@@ -966,6 +1117,8 @@ function ShopCatalog({
             clientId={clientId}
             categories={categories}
             shopReturnDays={shopReturnDays}
+            shopGstPercent={shopGstPercent}
+            shopPriceIncludesGst={shopPriceIncludesGst}
             draft={draft}
             onChange={setDraft}
             onClose={() => setDraft(null)}
@@ -1106,6 +1259,8 @@ function ProductForm({
   clientId,
   categories,
   shopReturnDays,
+  shopGstPercent,
+  shopPriceIncludesGst,
   draft,
   onChange,
   onClose,
@@ -1116,22 +1271,42 @@ function ProductForm({
   clientId: string;
   categories: ShopCategory[];
   shopReturnDays: number | null;
+  shopGstPercent: number;
+  shopPriceIncludesGst: boolean;
   draft: ProductDraft;
   onChange: (draft: ProductDraft) => void;
   onClose: () => void;
   onSaved: (product: ShopProduct, previousCategoryId?: string | null) => void;
   onDeleted: (productId: string, categoryId: string | null) => void;
 }) {
+  const effectiveGstPercent = draft.gstOverride ? Number(draft.gstPercent) || 0 : shopGstPercent;
+  const effectiveIncludesGst = draft.gstOverride ? draft.priceIncludesGst : shopPriceIncludesGst;
   const draftRef = useRef(draft);
   draftRef.current = draft;
+  const errorRef = useRef<HTMLDivElement | null>(null);
   const [saving, setSaving] = useState(false);
   const [busyUploads, setBusyUploads] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<ProductFieldErrors>({});
+
+  function clearErrors() {
+    setError(null);
+    setFieldErrors({});
+  }
+
+  function showError(message: string, nextFields: ProductFieldErrors = {}) {
+    setError(message);
+    setFieldErrors(nextFields);
+    requestAnimationFrame(() => {
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }
 
   function commit(recipe: (current: ProductDraft) => ProductDraft) {
     const next = recipe(draftRef.current);
     draftRef.current = next;
     onChange(next);
+    clearErrors();
   }
 
   function updateSet(key: string, patch: Partial<SetDraft> | ((current: SetDraft) => Partial<SetDraft>)) {
@@ -1151,18 +1326,18 @@ function ProductForm({
   async function save() {
     const parsed = toInput(draft);
     if ("error" in parsed) {
-      setError(parsed.error);
+      showError(parsed.error, parsed.fieldErrors ?? {});
       return;
     }
     setSaving(true);
-    setError(null);
+    clearErrors();
     try {
       const product = draft.id
         ? await shopApi.updateProduct(websiteId, draft.id, parsed.input)
         : await shopApi.createProduct(websiteId, parsed.input);
       onSaved(product, draft.originalCategoryId);
     } catch (err) {
-      setError(errorMessage(err));
+      showError(errorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -1190,11 +1365,26 @@ function ProductForm({
       title={draft.id ? "Edit product" : "Add product"}
       subtitle="Options in one combination are paired together. Add another combination when a size or colour does not match the rest."
       subtitleClassName="whitespace-normal"
-      primaryAction={{ label: draft.id ? "Save product" : "Create product", onPress: save, isPending: saving || busyUploads > 0, isDisabled: busyUploads > 0 }}
+      primaryAction={{ label: draft.id ? "Save product" : "Create product", onPress: () => void save(), isPending: saving || busyUploads > 0, isDisabled: busyUploads > 0 }}
       secondaryAction={{ label: "Cancel", onPress: onClose }}
     >
+      {error && (
+        <div ref={errorRef} className="mb-4">
+          <FormAlert status="danger">{error}</FormAlert>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
-        <TextInput label="Product name" name="productName" value={draft.name} onChange={(name) => onChange({ ...draft, name })} isRequired />
+        <TextInput
+          label="Product name"
+          name="productName"
+          value={draft.name}
+          onChange={(name) => {
+            onChange({ ...draft, name });
+            clearErrors();
+          }}
+          error={fieldErrors.name}
+          isRequired
+        />
         <label className="block text-sm">
           <span className="mb-1 block font-medium text-ink">Category</span>
           <select
@@ -1240,6 +1430,87 @@ function ProductForm({
         <div className="sm:col-span-2 rounded-xl border border-line bg-canvas/40 p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
+              <p className="text-sm font-medium text-ink">GST</p>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                {draft.gstOverride
+                  ? effectiveIncludesGst
+                    ? "Custom: entered prices already include GST."
+                    : "Custom: GST is added on top of the entered price."
+                  : `Using shop default: ${shopGstPercent}% · ${shopPriceIncludesGst ? "price includes GST" : "price + GST"}.`}
+              </p>
+            </div>
+            <Switch
+              isSelected={draft.gstOverride}
+              onChange={(gstOverride) =>
+                onChange({
+                  ...draft,
+                  gstOverride,
+                  gstPercent: gstOverride ? draft.gstPercent || String(shopGstPercent) : draft.gstPercent,
+                  priceIncludesGst: gstOverride ? draft.priceIncludesGst : shopPriceIncludesGst,
+                })
+              }
+            >
+              <Switch.Content>
+                <Switch.Control>
+                  <Switch.Thumb />
+                </Switch.Control>
+                <Label className="text-sm text-ink">{draft.gstOverride ? "Custom GST" : "Use shop default"}</Label>
+              </Switch.Content>
+            </Switch>
+          </div>
+          {draft.gstOverride && (
+            <>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <Switch
+                  isSelected={draft.priceIncludesGst}
+                  onChange={(priceIncludesGst) => onChange({ ...draft, priceIncludesGst })}
+                >
+                  <Switch.Content>
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                    <Label className="text-sm text-ink">
+                      {draft.priceIncludesGst ? "Price includes GST" : "Price + GST"}
+                    </Label>
+                  </Switch.Content>
+                </Switch>
+              </div>
+              <label className="mt-3 grid max-w-xs gap-1 text-sm font-medium text-ink">
+                GST percent
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={draft.gstPercent}
+                  onChange={(event) => {
+                    onChange({ ...draft, gstPercent: event.target.value });
+                    clearErrors();
+                  }}
+                  aria-invalid={Boolean(fieldErrors.gstPercent)}
+                  className={`h-10 rounded-lg border bg-surface px-3 text-sm font-normal text-ink ${
+                    fieldErrors.gstPercent ? "border-danger" : "border-ed-border"
+                  }`}
+                />
+                {fieldErrors.gstPercent && <span className="text-xs font-normal text-danger">{fieldErrors.gstPercent}</span>}
+              </label>
+            </>
+          )}
+          {(() => {
+            const sample = rupeesToPaise(draft.sets[0]?.price ?? "");
+            if (sample === null || !Number.isInteger(effectiveGstPercent) || effectiveGstPercent <= 0) return null;
+            const pay = payablePaise(sample, effectiveGstPercent, effectiveIncludesGst);
+            return (
+              <p className="mt-2 text-xs text-ink-muted">
+                Example from first combination: entered {formatPaise(sample)} → customer pays {formatPaise(pay)}
+                {effectiveIncludesGst ? " (incl. GST)" : ` (+ ${effectiveGstPercent}% GST)`}.
+              </p>
+            );
+          })()}
+        </div>
+        <div className="sm:col-span-2 rounded-xl border border-line bg-canvas/40 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
               <p className="text-sm font-medium text-ink">Returns</p>
               <p className="mt-0.5 text-xs text-ink-muted">
                 {shopReturnDays
@@ -1269,9 +1540,16 @@ function ProductForm({
                 max={365}
                 value={draft.returnDays}
                 placeholder={String(shopReturnDays)}
-                onChange={(event) => onChange({ ...draft, returnDays: event.target.value })}
-                className="h-10 rounded-lg border border-ed-border bg-surface px-3 text-sm font-normal text-ink"
+                onChange={(event) => {
+                  onChange({ ...draft, returnDays: event.target.value });
+                  clearErrors();
+                }}
+                aria-invalid={Boolean(fieldErrors.returnDays)}
+                className={`h-10 rounded-lg border bg-surface px-3 text-sm font-normal text-ink ${
+                  fieldErrors.returnDays ? "border-danger" : "border-ed-border"
+                }`}
               />
+              {fieldErrors.returnDays && <span className="text-xs font-normal text-danger">{fieldErrors.returnDays}</span>}
             </label>
           )}
         </div>
@@ -1302,6 +1580,7 @@ function ProductForm({
             altText={draft.name}
             onError={setError}
             onBusy={trackUpload}
+            priceError={fieldErrors.priceBySet?.[set.key]}
             onChange={(patch) => updateSet(set.key, patch)}
             onRemove={() => commit((current) => ({ ...current, sets: current.sets.filter((item) => item.key !== set.key) }))}
           />
@@ -1310,12 +1589,6 @@ function ProductForm({
           <Plus className="size-3.5" aria-hidden /> Add a different combination
         </Button>
       </div>
-
-      {error && (
-        <div className="mt-4">
-          <FormAlert status="danger">{error}</FormAlert>
-        </div>
-      )}
 
       {draft.id && (
         <div className="mt-6 border-t border-line pt-4">
@@ -1337,6 +1610,7 @@ function OptionSetCard({
   altText,
   onError,
   onBusy,
+  priceError,
   onChange,
   onRemove,
 }: {
@@ -1348,6 +1622,7 @@ function OptionSetCard({
   altText: string;
   onError: (message: string) => void;
   onBusy: (busy: boolean) => void;
+  priceError?: string;
   onChange: (patch: Partial<SetDraft> | ((current: SetDraft) => Partial<SetDraft>)) => void;
   onRemove: () => void;
 }) {
@@ -1381,6 +1656,7 @@ function OptionSetCard({
           value={set.price}
           onChange={(price) => onChange({ price })}
           placeholder="0.00"
+          error={priceError}
           isRequired
         />
       </div>
