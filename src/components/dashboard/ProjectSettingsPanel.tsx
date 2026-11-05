@@ -14,6 +14,7 @@ type SettingsForm = {
   contactEmail: string;
   contactPhone: string;
   address: string;
+  gstin: string;
 };
 
 function toForm(website: WebsiteDetail): SettingsForm {
@@ -24,6 +25,7 @@ function toForm(website: WebsiteDetail): SettingsForm {
     contactEmail: website.info.contactEmail ?? "",
     contactPhone: website.info.contactPhone ?? "",
     address: website.info.address ?? "",
+    gstin: website.info.gstin ?? "",
   };
 }
 
@@ -134,6 +136,15 @@ export default function ProjectSettingsPanel({ website, onSaved, onDelete, onUnp
               error={errors.address}
             />
           </div>
+          <TextInput
+            label="GSTIN"
+            name="gstin"
+            value={form.gstin}
+            onChange={(value) => update("gstin", value)}
+            error={errors.gstin}
+            description="Optional. Shown on shop invoices when set."
+            placeholder="e.g. 22AAAAA0000A1Z5"
+          />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-canvas/50 px-6 py-3.5">
