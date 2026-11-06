@@ -85,6 +85,7 @@ import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
 import { Bold, Italic, Film, Waves, Compass, Sparkles } from "lucide-react";
 import { isVintageHero, VintageHeroFields } from "./VintageHeroFields.tsx";
+import { heroPlacementForVariant, heroVariantForPlacement } from "../../../site-kit/hero-layout.ts";
 import { HeroFloatingCardsFields } from "./HeroFloatingCardsFields.tsx";
 import ClapperContactFields from "./ClapperContactFields.tsx";
 
@@ -532,9 +533,14 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                 "Vintage Sunburst Nostalgia (Radiating ray banner, white shadow title & circular portrait)",
             },
           ]}
-          onChange={(variant) =>
-            onChange({ ...data, variant: variant as HeroData["variant"] })
-          }
+          onChange={(value) => {
+            const variant = value as HeroData["variant"];
+            onChange({
+              ...data,
+              variant,
+              imagePosition: heroPlacementForVariant(variant, data.imagePosition),
+            });
+          }}
         />
         {(data.variant === "split" ||
           data.variant === "split-left" ||
@@ -557,13 +563,14 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
                 label: "Left side (Mockup on left, headline on right)",
               },
             ]}
-            onChange={(side) =>
+            onChange={(side) => {
+              const pos = side as "left" | "right";
               onChange({
                 ...data,
-                variant: side === "left" ? "split-left" : "split",
-                imagePosition: side as "left" | "right",
-              })
-            }
+                variant: heroVariantForPlacement(data.variant, pos),
+                imagePosition: pos,
+              });
+            }}
             hint="Switch mockup and visual placement between the left and right side."
           />
         )}
@@ -1228,15 +1235,11 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
               },
             ]}
             onChange={(imagePosition) => {
-              const pos = imagePosition as HeroData["imagePosition"];
-              let variant = data.variant;
-              if (pos === "left") variant = "split-left";
-              else if (pos === "right" && data.variant === "split-left")
-                variant = "split";
+              const pos = imagePosition as NonNullable<HeroData["imagePosition"]>;
               onChange({
                 ...data,
                 imagePosition: pos,
-                variant,
+                variant: heroVariantForPlacement(data.variant, pos),
               });
             }}
             hint="Choose whether your media is positioned side-by-side (left/right), below headline/CTAs, or fills the background."

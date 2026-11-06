@@ -26,6 +26,7 @@ import {
   heroButtonShapeProps,
   heroCtas,
   heroElementAlign,
+  heroLayoutVariant,
   vintageHeroPolaroids,
 } from "../hero-layout.ts";
 import type { HeroAlign, HeroAlignElement, HeroData, SectionOf } from "../types.ts";
@@ -409,7 +410,10 @@ export default function HeroSection({
 }: {
   section: SectionOf<"hero">;
 }) {
-  const { data } = section;
+  const data: HeroData = {
+    ...section.data,
+    variant: heroLayoutVariant(section.data),
+  };
 
   const baseAlign = heroBaseAlign(data, section.settings);
   const alignOf = (element: HeroAlignElement) =>
@@ -1167,6 +1171,8 @@ export default function HeroSection({
   const hasAnyMedia =
     hasForegroundVideo ||
     hasForegroundImage ||
+    data.imagePosition === "bottom" ||
+    data.imagePosition === "card" ||
     data.variant === "split" ||
     data.variant === "split-left" ||
     data.variant === "asymmetric";

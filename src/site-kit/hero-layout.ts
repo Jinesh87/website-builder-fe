@@ -11,9 +11,71 @@ import {
   type HeroAlign,
   type HeroAlignElement,
   type HeroData,
+  type HeroVariant,
   type LinkRef,
   type SectionSettings,
 } from "./types.ts";
+
+type HeroMediaPlacement = NonNullable<HeroData["imagePosition"]>;
+
+const SIDE_BY_SIDE_HERO_VARIANTS: readonly HeroVariant[] = [
+  "split",
+  "split-left",
+  "asymmetric",
+  "floating-cards",
+];
+
+const BACKGROUND_HERO_VARIANTS: readonly HeroVariant[] = ["background-image", "video-bg"];
+
+/** Layouts that keep their own media treatment whatever placement is saved. */
+const PLACEMENT_LOCKED_HERO_VARIANTS: readonly HeroVariant[] = [
+  "soft-card",
+  "curved-carousel",
+  "campaign-banner",
+  "vintage-editorial",
+  "vintage-sunburst",
+];
+
+/** The hero variant whose layout matches a media placement, keeping the current variant when it already fits. */
+export function heroVariantForPlacement(
+  variant: HeroVariant,
+  placement: HeroMediaPlacement,
+): HeroVariant {
+  if (PLACEMENT_LOCKED_HERO_VARIANTS.includes(variant)) return variant;
+  const sideBySide = SIDE_BY_SIDE_HERO_VARIANTS.includes(variant);
+  switch (placement) {
+    case "left":
+      return sideBySide && variant !== "split" ? variant : "split-left";
+    case "right":
+      return sideBySide && variant !== "split-left" ? variant : "split";
+    case "background":
+      return BACKGROUND_HERO_VARIANTS.includes(variant) ? variant : "background-image";
+    case "bottom":
+    case "card":
+      return sideBySide || BACKGROUND_HERO_VARIANTS.includes(variant) ? "centered" : variant;
+  }
+}
+
+/** The media placement that matches a newly picked hero variant, so the variant is not overridden by a stale placement. */
+export function heroPlacementForVariant(
+  variant: HeroVariant,
+  placement: HeroData["imagePosition"],
+): HeroData["imagePosition"] {
+  if (PLACEMENT_LOCKED_HERO_VARIANTS.includes(variant)) return placement;
+  if (variant === "split-left") return "left";
+  if (SIDE_BY_SIDE_HERO_VARIANTS.includes(variant)) {
+    return placement === "left" || placement === "right" ? placement : "right";
+  }
+  if (BACKGROUND_HERO_VARIANTS.includes(variant)) return "background";
+  return placement && placement !== "card" ? "bottom" : placement;
+}
+
+/** The variant a hero renders with, so heroes saved with a mismatched variant and placement still lay out correctly. */
+export function heroLayoutVariant(data: HeroData): HeroVariant {
+  return data.imagePosition
+    ? heroVariantForPlacement(data.variant, data.imagePosition)
+    : data.variant;
+}
 
 const DEFAULT_DEMO_VIDEO_URL = "https://media.w3.org/2010/05/bunny/trailer.mp4";
 
