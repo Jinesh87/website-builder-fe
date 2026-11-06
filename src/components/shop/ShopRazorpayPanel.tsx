@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Button, Spinner } from "@heroui/react";
-import { Check, Copy, CreditCard, Eye, EyeOff } from "lucide-react";
+import { Check, Copy, CreditCard, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { shopApi, type ShopPaymentConfig, type ShopPaymentInput } from "../../api/shop.ts";
 import { PaymentStatusChip } from "../admin/PaymentSettingsPanel.tsx";
@@ -28,7 +28,21 @@ function RevealButton({ shown, disabled, onToggle }: { shown: boolean; disabled:
   );
 }
 
-function CopyRow({ label, value, hint }: { label: string; value: string; hint: string }) {
+const RAZORPAY_WEBHOOKS_URL = "https://dashboard.razorpay.com/app/website-app-settings/webhooks";
+
+function CopyRow({
+  label,
+  value,
+  hint,
+  actionHref,
+  actionLabel,
+}: {
+  label: string;
+  value: string;
+  hint: ReactNode;
+  actionHref?: string;
+  actionLabel?: string;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -41,12 +55,22 @@ function CopyRow({ label, value, hint }: { label: string; value: string; hint: s
     <div className="rounded-lg border border-line bg-canvas/60 p-3.5 text-xs text-ink-body">
       <p className="font-semibold text-ink">{label}</p>
       <p className="mt-1">{hint}</p>
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <code className="min-w-0 flex-1 truncate rounded-md border border-line bg-surface px-2 py-1.5 font-mono text-[11px]">{value}</code>
         <Button size="sm" variant="outline" onPress={() => void copy()}>
           {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
           {copied ? "Copied" : "Copy"}
         </Button>
+        {actionHref && actionLabel && (
+          <Button
+            size="sm"
+            variant="outline"
+            onPress={() => window.open(actionHref, "_blank", "noopener,noreferrer")}
+          >
+            <ExternalLink className="size-3.5" aria-hidden />
+            {actionLabel}
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -174,7 +198,23 @@ export default function ShopRazorpayPanel({ websiteId }: { websiteId: string }) 
         <CopyRow
           label="Webhook address"
           value={config.webhookUrl}
-          hint="In Razorpay Dashboard → Webhooks, add this URL. It is on this platform, not your website, and that is expected. Subscribe to payment.captured, order.paid, payment.failed, refund.created, refund.processed, and refund.failed."
+          hint={
+            <>
+              Open{" "}
+              <a
+                href={RAZORPAY_WEBHOOKS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-brand underline-offset-2 hover:underline"
+              >
+                Razorpay → Webhooks
+              </a>
+              , add this URL, then subscribe to payment.captured, order.paid, payment.failed, refund.created,
+              refund.processed, and refund.failed. It is on this platform, not your website, and that is expected.
+            </>
+          }
+          actionHref={RAZORPAY_WEBHOOKS_URL}
+          actionLabel="Open Razorpay"
         />
         <TextInput
           label="Key ID"
