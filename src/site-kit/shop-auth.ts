@@ -122,6 +122,7 @@ export type ShopCustomerAddress = {
   postalCode: string;
   country: string;
   isDefault: boolean;
+  email?: string | null;
   updatedAt: string;
 };
 
@@ -136,6 +137,7 @@ export type ShopCustomerAddressInput = {
   postalCode: string;
   country?: string;
   isDefault?: boolean;
+  email?: string;
 };
 
 export type ShopCustomerAccount = {
@@ -165,6 +167,9 @@ function apiBase(): string {
 
 /** Auth endpoints that must never trigger a refresh-and-retry loop. */
 const SKIP_SHOP_REFRESH = new Set([
+  "/guest/cart",
+  "/guest/checkout",
+  "/guest/checkout/confirm",
   "/login",
   "/signup",
   "/verify-email",
@@ -355,6 +360,77 @@ export const shopAuthApi = {
     });
     if (!result.ok) throw asError(result.status, result.body);
     return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  listGuestCart: async (websiteId: string) => {
+    const result = await shopAuthFetch(websiteId, "/guest/cart");
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  addGuestCart: async (websiteId: string, input: { variantId: string; quantity?: number }) => {
+    const result = await shopAuthFetch(websiteId, "/guest/cart", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  updateGuestCartItem: async (websiteId: string, itemId: string, quantity: number) => {
+    const result = await shopAuthFetch(websiteId, `/guest/cart/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ quantity }),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  removeGuestCartItem: async (websiteId: string, itemId: string) => {
+    const result = await shopAuthFetch(websiteId, `/guest/cart/${itemId}`, { method: "DELETE" });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { cartItems: ShopCartItemSummary[] }).cartItems;
+  },
+
+  startGuestCheckout: async (
+    websiteId: string,
+    input: {
+      email: string;
+      fullName: string;
+      phone?: string;
+      address: ShopCustomerAddressInput;
+    },
+  ) => {
+    const result = await shopAuthFetch(websiteId, "/guest/checkout", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (
+      result.body as {
+        checkout: ShopCheckoutSession & { trackToken?: string; trackUrl?: string };
+      }
+    ).checkout;
+  },
+
+  confirmGuestCheckout: async (
+    websiteId: string,
+    input: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string },
+  ) => {
+    const result = await shopAuthFetch(websiteId, "/guest/checkout/confirm", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (
+      result.body as { order: ShopOrderSummary & { trackToken?: string | null; trackUrl?: string | null } }
+    ).order;
+  },
+
+  trackOrder: async (websiteId: string, token: string) => {
+    const result = await shopAuthFetch(websiteId, `/track/${encodeURIComponent(token)}`);
+    if (!result.ok) throw asError(result.status, result.body);
+    return (result.body as { order: ShopOrderDetail & { trackUrl?: string } }).order;
   },
 
   updateCartItem: async (websiteId: string, itemId: string, quantity: number) => {
@@ -1580,6 +1656,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       var heading=rootNode.getAttribute("data-wb-success-heading")||"Order confirmed";
       var text=rootNode.getAttribute("data-wb-success-text")||"Thanks for your purchase. We'll update you as it moves along.";
       var button=rootNode.getAttribute("data-wb-success-button")||"View order";
+      var trackHref=order.trackUrl||(order.trackToken?("/?wbOrderTrack="+encodeURIComponent(String(order.trackToken))):"");
       var modal=document.createElement("div");
       modal.className="wb-acct-success-modal";
       modal.setAttribute("data-wb-account-success-modal","");
@@ -1592,6 +1669,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
           '<div class="wb-acct-success-meta"><strong>Order #'+String(order.number||"")+"</strong><span>"+money(order.totalPaise)+"</span></div>"+
           '<div class="wb-acct-success-actions">'+
             '<button type="button" class="wb-acct-button is-pay" data-wb-success-view>'+button+"</button>"+
+            (trackHref?'<a class="wb-acct-button" data-wb-success-track href="'+trackHref+'" style="text-decoration:none;text-align:center">Track order</a>':"")+
             '<button type="button" class="wb-acct-button" data-wb-success-close style="background:transparent;color:inherit;border:1px solid var(--wb-border)">Continue shopping</button>'+
           "</div></div>";
       themeModal(modal, rootNode);
@@ -1798,6 +1876,493 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       });
     }
   }
+  function bindGuestCheckout(root, websiteId, loginHref){
+    if(root.getAttribute("data-wb-account-bound")) return;
+    root.setAttribute("data-wb-account-bound","1");
+    root.setAttribute("data-wb-guest-session","1");
+    var base=apiBase()+"/shop/"+websiteId+"/auth";
+    var tabs=Array.prototype.slice.call(root.querySelectorAll("[data-wb-account-tab]"));
+    var guestAddress=null;
+    var guestWishlist=[];
+    var guestAddresses=[];
+    var cartItemCount=0;
+    setText(root, "fullName", "Guest");
+    setText(root, "email", "Checkout without an account");
+    setText(root, "initials", "G");
+    setText(root, "memberSince", "—");
+    root.querySelectorAll("[data-wb-account-logout]").forEach(function(btn){ btn.hidden=true; });
+    root.querySelectorAll("[data-wb-account-login]").forEach(function(link){
+      if(link.tagName==="A") link.setAttribute("href", siteHref(loginHref));
+    });
+    root.querySelectorAll("[data-wb-account-address-form]").forEach(function(form){ form.hidden=true; });
+    function applyGuestAddress(addr){
+      guestAddress=addr||null;
+      setText(root, "fullName", (guestAddress&&guestAddress.fullName)||"Guest");
+      setText(root, "email", (guestAddress&&guestAddress.email)||"Checkout without an account");
+      setText(root, "initials", initials((guestAddress&&guestAddress.fullName)||"Guest"));
+    }
+    function syncGuestPay(){
+      root.querySelectorAll("[data-wb-account-pay]").forEach(function(btn){
+        btn.disabled=cartItemCount===0 || !guestAddress || !!root.getAttribute("data-wb-paying");
+        if(!btn.getAttribute("data-wb-pay-label")) btn.setAttribute("data-wb-pay-label", btn.textContent||"Pay now");
+        if(!root.getAttribute("data-wb-paying")) btn.textContent=btn.getAttribute("data-wb-pay-label")||"Pay now";
+      });
+    }
+    function renderGuestAddressShell(){
+      var shell=ensureCheckoutAddressShell(root);
+      if(!shell) return;
+      if(!guestAddress){
+        shell.innerHTML=
+          '<p class="wb-acct-checkout-label">Delivery address</p>'+
+          '<div class="wb-acct-checkout-empty" data-wb-account-checkout-no-address="">'+
+            "<p>Add a delivery address before you pay.</p>"+
+            '<button type="button" class="wb-acct-linkish" data-wb-guest-add-address="">Add address</button>'+
+          "</div>";
+        syncGuestPay();
+        return;
+      }
+      var lines=[guestAddress.line1, guestAddress.line2, [guestAddress.city, guestAddress.state, guestAddress.postalCode].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
+      shell.innerHTML=
+        '<p class="wb-acct-checkout-label">Delivery address</p>'+
+        '<ul class="wb-acct-checkout-address-list" data-wb-account-checkout-address-list="">'+
+          "<li>"+
+            '<label class="wb-acct-checkout-option is-selected">'+
+              '<input type="radio" name="checkoutAddress" value="guest" checked data-wb-checkout-address="guest" />'+
+              '<span class="wb-acct-checkout-option-body">'+
+                "<strong>Delivery</strong>"+
+                "<span>"+String(guestAddress.fullName||"")+" · "+String(guestAddress.phone||"")+"</span>"+
+                "<span>"+String(guestAddress.email||"")+"</span>"+
+                "<span>"+lines+"</span>"+
+              "</span>"+
+            "</label>"+
+          "</li>"+
+        "</ul>"+
+        '<button type="button" class="wb-acct-linkish" data-wb-guest-add-address="">Change address</button>';
+      syncGuestPay();
+    }
+    function openGuestAddressModal(){
+      var existing=document.querySelector("body > [data-wb-guest-address-modal]");
+      if(existing) existing.remove();
+      function esc(value){ return String(value||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+      var modal=document.createElement("div");
+      modal.className="wb-guest-address-modal";
+      modal.setAttribute("data-wb-guest-address-modal","");
+      var site=root.closest(".wb-site");
+      if(site&&site.getAttribute("style")) modal.setAttribute("style", site.getAttribute("style"));
+      var a=guestAddress||{};
+      var editing=!!guestAddress;
+      modal.innerHTML=
+        '<button type="button" class="wb-guest-address-backdrop" aria-label="Close address form"></button>'+
+        '<div class="wb-guest-address-dialog" role="dialog" aria-modal="true" aria-labelledby="wb-guest-address-title">'+
+          '<div class="wb-guest-address-head">'+
+            '<div class="wb-guest-address-copy">'+
+              '<p class="wb-guest-address-kicker">Checkout</p>'+
+              '<h3 class="wb-guest-address-title" id="wb-guest-address-title">'+(editing?"Edit address":"Add address")+"</h3>"+
+            "</div>"+
+            '<button type="button" class="wb-guest-address-close" aria-label="Close">×</button>'+
+          "</div>"+
+          '<div class="wb-guest-address-body">'+
+            '<form id="wb-guest-address-form" data-wb-guest-address-form class="wb-guest-address-form">'+
+              '<label class="wb-guest-address-label">Full name<input class="wb-guest-address-input" required name="fullName" autocomplete="name" value="'+esc(a.fullName)+'" /></label>'+
+              '<label class="wb-guest-address-label">Email for invoice<input class="wb-guest-address-input" required type="email" name="email" autocomplete="email" value="'+esc(a.email)+'" /></label>'+
+              '<label class="wb-guest-address-label">Phone<input class="wb-guest-address-input" required name="phone" autocomplete="tel" value="'+esc(a.phone)+'" /></label>'+
+              '<label class="wb-guest-address-label">Address line 1<input class="wb-guest-address-input" required name="line1" autocomplete="address-line1" value="'+esc(a.line1)+'" /></label>'+
+              '<label class="wb-guest-address-label">Address line 2 <span style="font-weight:500;opacity:.75">(optional)</span><input class="wb-guest-address-input" name="line2" autocomplete="address-line2" value="'+esc(a.line2)+'" /></label>'+
+              '<div class="wb-guest-address-row">'+
+                '<label class="wb-guest-address-label">City<input class="wb-guest-address-input" required name="city" autocomplete="address-level2" value="'+esc(a.city)+'" /></label>'+
+                '<label class="wb-guest-address-label">State<input class="wb-guest-address-input" required name="state" autocomplete="address-level1" value="'+esc(a.state)+'" /></label>'+
+              "</div>"+
+              '<label class="wb-guest-address-label">PIN / postal code<input class="wb-guest-address-input" required name="postalCode" autocomplete="postal-code" value="'+esc(a.postalCode)+'" /></label>'+
+              '<p class="wb-guest-address-error" data-wb-guest-address-error hidden></p>'+
+            "</form>"+
+          "</div>"+
+          '<div class="wb-guest-address-actions">'+
+            '<button type="submit" form="wb-guest-address-form" class="wb-acct-button is-pay">Save address</button>'+
+            '<button type="button" class="wb-acct-button is-ghost" data-wb-guest-address-cancel>Cancel</button>'+
+          "</div>"+
+        "</div>";
+      function close(){ modal.remove(); }
+      var form=modal.querySelector("[data-wb-guest-address-form]");
+      modal.querySelectorAll(".wb-guest-address-backdrop,.wb-guest-address-close,[data-wb-guest-address-cancel]").forEach(function(btn){
+        btn.addEventListener("click", close);
+      });
+      var errorBox=modal.querySelector("[data-wb-guest-address-error]");
+      form.addEventListener("submit", function(event){
+        event.preventDefault();
+        if(typeof form.reportValidity==="function" && !form.reportValidity()) return;
+        var data=new FormData(form);
+        var payload={
+          email:String(data.get("email")||"").trim(),
+          fullName:String(data.get("fullName")||"").trim(),
+          phone:String(data.get("phone")||"").trim(),
+          line1:String(data.get("line1")||"").trim(),
+          line2:String(data.get("line2")||"").trim(),
+          city:String(data.get("city")||"").trim(),
+          state:String(data.get("state")||"").trim(),
+          postalCode:String(data.get("postalCode")||"").trim(),
+          country:"IN"
+        };
+        if(!payload.email || !payload.fullName || !payload.phone || !payload.line1 || !payload.city || !payload.state || !payload.postalCode){
+          errorBox.hidden=false;
+          errorBox.textContent="Please fill in all required fields.";
+          return;
+        }
+        errorBox.hidden=true;
+        var saveBtn=modal.querySelector('button[type="submit"]');
+        if(saveBtn) saveBtn.disabled=true;
+        request(base, "/guest/addresses", "POST", payload).then(function(result){
+          if(saveBtn) saveBtn.disabled=false;
+          if(!result.ok){
+            errorBox.hidden=false;
+            errorBox.textContent=(result.json&&result.json.error&&result.json.error.message)||"Could not save address.";
+            return;
+          }
+          guestAddresses=(result.json&&result.json.addresses)||[];
+          applyGuestAddress(guestAddresses[0]||null);
+          close();
+          refreshGuestAccount();
+          payMessage("", true);
+        }).catch(function(){
+          if(saveBtn) saveBtn.disabled=false;
+          errorBox.hidden=false;
+          errorBox.textContent="Can't reach the server. Try again.";
+        });
+      });
+      var cs=site?window.getComputedStyle(site):null;
+      var bg=(cs&&cs.getPropertyValue("--wb-bg").trim())||"#ffffff";
+      var fg=(cs&&cs.getPropertyValue("--wb-text").trim())||"#1a1d23";
+      var dialog=modal.querySelector(".wb-guest-address-dialog");
+      if(dialog){
+        dialog.style.setProperty("background-color", bg, "important");
+        dialog.style.setProperty("color", fg, "important");
+      }
+      document.body.appendChild(modal);
+      var first=form.querySelector("input");
+      if(first) setTimeout(function(){ first.focus(); }, 0);
+    }
+    function refreshGuestAccount(){
+      return Promise.all([
+        request(base, "/guest/cart", "GET"),
+        request(base, "/guest/wishlist", "GET"),
+        request(base, "/guest/addresses", "GET")
+      ]).then(function(results){
+        var cartResult=results[0];
+        var wishResult=results[1];
+        var addressResult=results[2];
+        guestWishlist=(wishResult.ok&&wishResult.json&&wishResult.json.wishlistItems)||[];
+        guestAddresses=(addressResult.ok&&addressResult.json&&addressResult.json.addresses)||[];
+        applyGuestAddress(guestAddresses[0]||null);
+        var customer={
+          fullName:(guestAddress&&guestAddress.fullName)||"Guest",
+          email:(guestAddress&&guestAddress.email)||"",
+          phone:(guestAddress&&guestAddress.phone)||null
+        };
+        var items=(cartResult.ok&&cartResult.json&&cartResult.json.cartItems)||[];
+        cartItemCount=items.length;
+        fill(root, { customer:customer, orders:[], cartItems:items, wishlistItems:guestWishlist, addresses:guestAddresses });
+        renderGuestAddressShell();
+        return items;
+      });
+    }
+    function refreshGuestCart(){ return refreshGuestAccount(); }
+    function guestPayNow(){
+      if(root.getAttribute("data-wb-paying")) return;
+      if(!guestAddress){
+        payMessage("Add a delivery address before paying.", false);
+        return;
+      }
+      if(cartItemCount===0){
+        payMessage("Your cart is empty.", false);
+        return;
+      }
+      var payload={
+        email:guestAddress.email,
+        fullName:guestAddress.fullName,
+        phone:guestAddress.phone,
+        address:{
+          fullName:guestAddress.fullName,
+          phone:guestAddress.phone,
+          line1:guestAddress.line1,
+          line2:guestAddress.line2||"",
+          city:guestAddress.city,
+          state:guestAddress.state,
+          postalCode:guestAddress.postalCode,
+          country:guestAddress.country||"IN"
+        }
+      };
+      root.setAttribute("data-wb-paying","1");
+      setPayBusy(true);
+      payMessage("", true);
+      request(base, "/guest/checkout", "POST", payload).then(function(result){
+        if(!result.ok){
+          setPayBusy(false);
+          root.removeAttribute("data-wb-paying");
+          payMessage((result.json&&result.json.error&&result.json.error.message)||"Could not start checkout.", false);
+          return;
+        }
+        var checkout=(result.json&&result.json.checkout)||{};
+        var trackUrl=checkout.trackUrl||"";
+        return openRazorpay(checkout).then(function(confirmation){
+          return request(base, "/guest/checkout/confirm", "POST", confirmation).then(function(confirmResult){
+            setPayBusy(false);
+            root.removeAttribute("data-wb-paying");
+            if(!confirmResult.ok){
+              payMessage((confirmResult.json&&confirmResult.json.error&&confirmResult.json.error.message)||"Payment received but order confirmation failed. Refresh in a moment.", false);
+              return;
+            }
+            var paidOrder=(confirmResult.json&&confirmResult.json.order)||{};
+            if(paidOrder.trackUrl||trackUrl){
+              paidOrder.trackUrl=paidOrder.trackUrl||trackUrl;
+              paidOrder.trackToken=paidOrder.trackToken||checkout.trackToken;
+            }
+            payMessage("Payment successful. Your order is confirmed.", true);
+            return refreshGuestCart().then(function(){
+              showSuccessModal(root, base, paidOrder);
+            });
+          });
+        }).catch(function(err){
+          setPayBusy(false);
+          root.removeAttribute("data-wb-paying");
+          payMessage((err&&err.message)||"Payment cancelled.", false);
+        });
+      }).catch(function(){
+        setPayBusy(false);
+        root.removeAttribute("data-wb-paying");
+        payMessage("Can't reach the server. Try again.", false);
+      });
+    }
+    function setPayBusy(busy){
+      if(busy) root.setAttribute("data-wb-paying","1");
+      else root.removeAttribute("data-wb-paying");
+      root.querySelectorAll("[data-wb-account-pay]").forEach(function(btn){
+        if(!btn.getAttribute("data-wb-pay-label")) btn.setAttribute("data-wb-pay-label", btn.textContent||"Pay now");
+        btn.textContent=busy?"Opening payment…":(btn.getAttribute("data-wb-pay-label")||"Pay now");
+      });
+      syncGuestPay();
+    }
+    function payMessage(text, ok){
+      var el=root.querySelector("[data-wb-account-pay-message]");
+      if(!el) return;
+      el.hidden=!text;
+      el.textContent=text||"";
+      el.classList.toggle("is-error", !!text && !ok);
+      el.classList.toggle("is-ok", !!text && !!ok);
+    }
+    function openRazorpay(checkout){
+      function load(){
+        if(window.Razorpay) return Promise.resolve();
+        return new Promise(function(resolve,reject){
+          var script=document.createElement("script");
+          script.src="https://checkout.razorpay.com/v1/checkout.js";
+          script.onload=function(){ resolve(); };
+          script.onerror=function(){ reject(new Error("Could not load Razorpay")); };
+          document.head.appendChild(script);
+        });
+      }
+      return load().then(function(){
+        return new Promise(function(resolve,reject){
+          var lastFailure="";
+          var instance=new window.Razorpay({
+            key: checkout.keyId,
+            amount: checkout.amountPaise,
+            currency: checkout.currency||"INR",
+            name: checkout.businessName||"Shop",
+            description: "Order #"+String(checkout.orderNumber||""),
+            order_id: checkout.razorpayOrderId,
+            prefill: checkout.prefill||{},
+            handler: function(response){
+              resolve({
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature
+              });
+            },
+            modal: { ondismiss: function(){ reject(lastFailure?new Error(lastFailure):new Error("Payment cancelled.")); } }
+          });
+          instance.on("payment.failed", function(response){
+            lastFailure=(response&&response.error&&response.error.description)||"The payment failed. Please try again.";
+          });
+          instance.open();
+        });
+      });
+    }
+    function showSuccessModal(rootNode, apiBaseUnused, order){
+      var existing=document.querySelector("body > [data-wb-account-success-modal]");
+      if(existing) existing.remove();
+      var heading=rootNode.getAttribute("data-wb-success-heading")||"Order confirmed";
+      var text=rootNode.getAttribute("data-wb-success-text")||"Thanks for your purchase. We'll update you as it moves along.";
+      var trackHref=order.trackUrl||(order.trackToken?siteHref("/?wbOrderTrack="+encodeURIComponent(String(order.trackToken))):"");
+      var modal=document.createElement("div");
+      modal.className="wb-acct-success-modal";
+      modal.setAttribute("data-wb-account-success-modal","");
+      modal.innerHTML=
+        '<button type="button" class="wb-acct-success-backdrop" aria-label="Close"></button>'+
+        '<div class="wb-acct-success-dialog is-celebration" role="dialog" aria-modal="true">'+
+          '<p class="wb-acct-success-kicker">Payment successful</p>'+
+          '<h3 class="wb-acct-success-title">'+heading+"</h3>"+
+          '<p class="wb-acct-success-text">'+text+"</p>"+
+          '<div class="wb-acct-success-meta"><strong>Order #'+String(order.number||"")+"</strong><span>"+money(order.totalPaise)+"</span></div>"+
+          '<div class="wb-acct-success-actions">'+
+            (trackHref?'<a class="wb-acct-button is-pay" href="'+trackHref+'" style="text-decoration:none;text-align:center">Track order</a>':"")+
+            '<button type="button" class="wb-acct-button" data-wb-success-close style="background:transparent;color:inherit;border:1px solid var(--wb-border)">Continue shopping</button>'+
+          "</div></div>";
+      function close(){ modal.remove(); }
+      modal.querySelectorAll(".wb-acct-success-backdrop,[data-wb-success-close]").forEach(function(btn){ btn.addEventListener("click", close); });
+      document.body.appendChild(modal);
+    }
+    tabs.forEach(function(tab){
+      tab.addEventListener("click", function(){
+        var name=tab.getAttribute("data-wb-account-tab");
+        if(name==="cart" || name==="wishlist" || name==="addresses"){
+          activatePanel(root, tabs, name);
+          if(name==="wishlist" || name==="addresses") refreshGuestCart();
+          return;
+        }
+        window.location.href=siteHref(loginHref);
+      });
+    });
+    function setGuestWishlistBusy(on){
+      root.querySelectorAll("[data-wb-wishlist-add], [data-wb-wishlist-remove], [data-wb-wishlist-add-all]").forEach(function(node){
+        node.disabled=!!on;
+      });
+    }
+    function addGuestWishlistVariant(variantId){
+      return request(base, "/guest/cart", "POST", { variantId:variantId, quantity:1 });
+    }
+    root.addEventListener("click", function(event){
+      var goAddresses=event.target&&event.target.closest&&event.target.closest("[data-wb-account-go-addresses]");
+      if(goAddresses && root.contains(goAddresses)){
+        event.preventDefault();
+        activatePanel(root, tabs, "addresses");
+        refreshGuestCart();
+        return;
+      }
+      var addAddress=event.target&&event.target.closest&&event.target.closest("[data-wb-guest-add-address], [data-wb-address-add]");
+      if(addAddress && root.contains(addAddress)){
+        event.preventDefault();
+        openGuestAddressModal();
+        return;
+      }
+      var editAddress=event.target&&event.target.closest&&event.target.closest("[data-wb-address-edit]");
+      if(editAddress && root.contains(editAddress)){
+        event.preventDefault();
+        openGuestAddressModal();
+        return;
+      }
+      var deleteAddress=event.target&&event.target.closest&&event.target.closest("[data-wb-address-delete]");
+      if(deleteAddress && root.contains(deleteAddress)){
+        event.preventDefault();
+        var deleteId=deleteAddress.getAttribute("data-wb-address-delete")||(guestAddress&&guestAddress.id)||"";
+        if(!deleteId || deleteAddress.disabled) return;
+        deleteAddress.disabled=true;
+        request(base, "/guest/addresses/"+deleteId, "DELETE").then(function(result){
+          deleteAddress.disabled=false;
+          if(!result.ok) return;
+          guestAddresses=(result.json&&result.json.addresses)||[];
+          applyGuestAddress(guestAddresses[0]||null);
+          return refreshGuestAccount();
+        }).catch(function(){ deleteAddress.disabled=false; });
+        return;
+      }
+      var wishAddAll=event.target&&event.target.closest&&event.target.closest("[data-wb-wishlist-add-all]");
+      if(wishAddAll && root.contains(wishAddAll)){
+        event.preventDefault();
+        if(wishAddAll.disabled || !guestWishlist.length) return;
+        setGuestWishlistBusy(true);
+        wishAddAll.textContent="Adding…";
+        var chain=Promise.resolve();
+        guestWishlist.forEach(function(item){
+          var variantId=String(item.variantId||"");
+          if(!variantId) return;
+          chain=chain.then(function(){ return addGuestWishlistVariant(variantId).catch(function(){}); });
+        });
+        chain.then(function(){ return refreshGuestAccount(); }).finally(function(){
+          setGuestWishlistBusy(false);
+          wishAddAll.textContent="Add all to cart";
+        });
+        return;
+      }
+      var wishAdd=event.target&&event.target.closest&&event.target.closest("[data-wb-wishlist-add]");
+      if(wishAdd && root.contains(wishAdd)){
+        event.preventDefault();
+        var addVariantId=wishAdd.getAttribute("data-wb-wishlist-add")||"";
+        if(!addVariantId || wishAdd.disabled) return;
+        setGuestWishlistBusy(true);
+        wishAdd.textContent="Adding…";
+        addGuestWishlistVariant(addVariantId).then(function(result){
+          if(!result.ok){
+            setGuestWishlistBusy(false);
+            wishAdd.textContent="Add to cart";
+            return;
+          }
+          return refreshGuestAccount().finally(function(){
+            setGuestWishlistBusy(false);
+            wishAdd.textContent="Add to cart";
+          });
+        }).catch(function(){
+          setGuestWishlistBusy(false);
+          wishAdd.textContent="Add to cart";
+        });
+        return;
+      }
+      var wishRemove=event.target&&event.target.closest&&event.target.closest("[data-wb-wishlist-remove]");
+      if(wishRemove && root.contains(wishRemove)){
+        event.preventDefault();
+        var removeVariantId=wishRemove.getAttribute("data-wb-wishlist-remove")||"";
+        if(!removeVariantId || wishRemove.disabled) return;
+        setGuestWishlistBusy(true);
+        wishRemove.textContent="Removing…";
+        request(base, "/guest/wishlist/"+removeVariantId, "DELETE").then(function(result){
+          if(!result.ok){
+            setGuestWishlistBusy(false);
+            wishRemove.textContent="Remove";
+            return;
+          }
+          return refreshGuestAccount().finally(function(){
+            setGuestWishlistBusy(false);
+            wishRemove.textContent="Remove";
+          });
+        }).catch(function(){
+          setGuestWishlistBusy(false);
+          wishRemove.textContent="Remove";
+        });
+        return;
+      }
+      var removeBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-cart-remove]");
+      if(removeBtn && root.contains(removeBtn)){
+        event.preventDefault();
+        var itemId=removeBtn.getAttribute("data-wb-cart-remove")||"";
+        if(!itemId||removeBtn.disabled) return;
+        removeBtn.disabled=true;
+        removeBtn.textContent="Removing…";
+        request(base, "/guest/cart/"+itemId, "DELETE").then(function(result){
+          if(!result.ok){
+            removeBtn.disabled=false;
+            removeBtn.textContent="Remove";
+            return;
+          }
+          return refreshGuestCart();
+        }).catch(function(){
+          removeBtn.disabled=false;
+          removeBtn.textContent="Remove";
+        });
+        return;
+      }
+      var payBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-account-pay]");
+      if(payBtn && root.contains(payBtn)){
+        event.preventDefault();
+        guestPayNow();
+      }
+    });
+    refreshGuestCart().then(function(){
+      showState(root, "member");
+      var panel=preferredPanel(root)||"cart";
+      if(panel!=="cart" && panel!=="wishlist" && panel!=="addresses") panel="cart";
+      activatePanel(root, tabs, panel);
+    }).catch(function(){
+      showState(root, "guest");
+    });
+  }
   document.querySelectorAll("[data-wb-account]").forEach(function(root){
     if(root.getAttribute("data-wb-account-ready")) return;
     root.setAttribute("data-wb-account-ready","1");
@@ -1805,6 +2370,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     var loginHref=root.getAttribute("data-wb-account-login")||"/login";
     var logoutHref=root.getAttribute("data-wb-account-logout")||loginHref;
     var redirect=root.getAttribute("data-wb-account-redirect")==="1";
+    var guestCheckout=root.getAttribute("data-wb-shop-guest")==="1";
     root.querySelectorAll("[data-wb-account-login]").forEach(function(link){ if(link.tagName==="A") link.setAttribute("href", siteHref(loginHref)); });
     if(!websiteId){ showState(root, "guest"); return; }
     var base=apiBase()+"/shop/"+websiteId+"/auth";
@@ -1816,6 +2382,10 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         showState(root, "member");
       })
       .catch(function(){
+        if(guestCheckout){
+          bindGuestCheckout(root, websiteId, loginHref);
+          return;
+        }
         if(redirect){ window.location.replace(siteHref(loginHref)); return; }
         showState(root, "guest");
       });
@@ -2113,6 +2683,10 @@ export const SHOP_CART_SCRIPT = `(function(){
     var root=shopRoot(node);
     return root.getAttribute("data-wb-shop-account-href")||"/account";
   }
+  function guestCheckoutEnabled(node){
+    var root=shopRoot(node);
+    return root.getAttribute("data-wb-shop-guest")==="1";
+  }
   function accountPanelHref(href, panel){
     var raw=(href||"/account").trim()||"/account";
     if(/^(https?:\\/\\/|mailto:|tel:)/i.test(raw)){
@@ -2128,7 +2702,7 @@ export const SHOP_CART_SCRIPT = `(function(){
     params.set("panel", panel);
     return (path||"/account")+"?"+params.toString()+(hash?"#"+hash:"");
   }
-  function setCartLink(root, count){
+  function setCartLink(root, count, opts){
     var link=root.querySelector("[data-wb-shop-cart-link]");
     if(!link) return;
     link.hidden=false;
@@ -2137,6 +2711,9 @@ export const SHOP_CART_SCRIPT = `(function(){
     var total=Math.max(0, Math.floor(Number(count)||0));
     badge.textContent=String(total);
     badge.hidden=total<=0;
+    var accountHrefAttr=link.getAttribute("data-wb-shop-cart-account");
+    // data-* hrefs are site-root paths from SSR; prefix /live/<subdomain> in local preview.
+    if(accountHrefAttr) link.setAttribute("href", siteHref(accountHrefAttr));
   }
   var refreshInFlight={};
   var lastRefreshAt={};
@@ -2163,16 +2740,24 @@ export const SHOP_CART_SCRIPT = `(function(){
       var id=root.getAttribute("data-wb-shop-website");
       var link=root.querySelector("[data-wb-shop-cart-link]");
       if(!id||!link) return;
+      var guest=root.getAttribute("data-wb-shop-guest")==="1";
       shopFetch(id, "/cart", { method:"GET" })
         .then(function(response){
-          if(!response.ok){ link.hidden=true; return null; }
-          return response.json().catch(function(){ return {}; });
+          if(response.ok) return response.json().then(function(json){ return { json:json, guest:false }; }).catch(function(){ return null; });
+          if(response.status===401 && guest){
+            return shopFetch(id, "/guest/cart", { method:"GET" }).then(function(guestResponse){
+              if(!guestResponse.ok){ link.hidden=true; return null; }
+              return guestResponse.json().then(function(json){ return { json:json, guest:true }; }).catch(function(){ return null; });
+            });
+          }
+          link.hidden=true;
+          return null;
         })
-        .then(function(json){
-          if(!json) return;
+        .then(function(result){
+          if(!result||!result.json) return;
           var total=0;
-          (json.cartItems||[]).forEach(function(item){ total+=Number(item.quantity||1); });
-          setCartLink(root, total);
+          (result.json.cartItems||[]).forEach(function(item){ total+=Number(item.quantity||1); });
+          setCartLink(root, total, { guest: !!result.guest });
         })
         .catch(function(){ link.hidden=true; });
     });
@@ -2251,6 +2836,22 @@ export const SHOP_CART_SCRIPT = `(function(){
     button.classList.toggle("is-busy", !!busy);
   }
   var wishlistBySite={};
+  function guestShopEnabled(id){
+    return !!document.querySelector(
+      '.wb-site[data-wb-shop-website="'+id+'"][data-wb-shop-guest="1"], [data-wb-shop-website="'+id+'"][data-wb-shop-guest="1"], [data-wb-detail][data-wb-shop-website="'+id+'"][data-wb-shop-guest="1"], [data-wb-account="'+id+'"][data-wb-shop-guest="1"]'
+    );
+  }
+  function applyWishlistMap(id, items){
+    var next={};
+    (items||[]).forEach(function(item){
+      var variantId=String(item.variantId||"");
+      if(variantId) next[variantId]=1;
+    });
+    wishlistBySite[id]=next;
+    document.querySelectorAll('[data-wb-shop-website="'+id+'"], [data-wb-detail][data-wb-shop-website]').forEach(function(root){
+      applyWishlist(root, id);
+    });
+  }
   function applyWishlist(root, id){
     var wished=wishlistBySite[id]||{};
     root.querySelectorAll("[data-wb-wishlist-toggle]").forEach(function(button){
@@ -2258,24 +2859,28 @@ export const SHOP_CART_SCRIPT = `(function(){
       setWishlistButton(button, !!wished[variantId]);
     });
   }
-  function refreshWishlist(id){
-    if(!id) return Promise.resolve();
-    return shopFetch(id, "/wishlist", { method:"GET" })
+  function refreshGuestWishlist(id){
+    return shopFetch(id, "/guest/wishlist", { method:"GET" })
       .then(function(response){
         if(!response.ok) return null;
         return response.json().catch(function(){ return {}; });
       })
       .then(function(json){
         if(!json) return;
-        var next={};
-        (json.wishlistItems||[]).forEach(function(item){
-          var variantId=String(item.variantId||"");
-          if(variantId) next[variantId]=1;
-        });
-        wishlistBySite[id]=next;
-        document.querySelectorAll('[data-wb-shop-website="'+id+'"], [data-wb-detail][data-wb-shop-website]').forEach(function(root){
-          applyWishlist(root, id);
-        });
+        applyWishlistMap(id, json.wishlistItems||[]);
+      });
+  }
+  function refreshWishlist(id){
+    if(!id) return Promise.resolve();
+    return shopFetch(id, "/wishlist", { method:"GET" })
+      .then(function(response){
+        if(response.ok) return response.json().catch(function(){ return {}; });
+        if(response.status===401 && guestShopEnabled(id)) return refreshGuestWishlist(id).then(function(){ return null; });
+        return null;
+      })
+      .then(function(json){
+        if(!json) return;
+        applyWishlistMap(id, json.wishlistItems||[]);
       });
   }
   function stockOf(button){
@@ -2393,12 +2998,24 @@ export const SHOP_CART_SCRIPT = `(function(){
       });
       var json=await response.json().catch(function(){ return {}; });
       if(response.status===401){
-        var modal=loginModal(button);
-        if(modal) modal.setAttribute("data-variant", loginVariant(button));
-        openModal(modal);
-        return;
-      }
-      if(!response.ok){
+        if(guestCheckoutEnabled(button)){
+          response=await shopFetch(id, "/guest/cart", {
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body:JSON.stringify({ variantId:variantId, quantity:qty })
+          });
+          json=await response.json().catch(function(){ return {}; });
+          if(!response.ok){
+            showMessage(button, (json.error&&json.error.message)||"Could not add to cart.", "error");
+            return;
+          }
+        } else {
+          var modal=loginModal(button);
+          if(modal) modal.setAttribute("data-variant", loginVariant(button));
+          openModal(modal);
+          return;
+        }
+      } else if(!response.ok){
         showMessage(button, (json.error&&json.error.message)||"Could not add to cart.", "error");
         return;
       }
@@ -2451,6 +3068,24 @@ export const SHOP_CART_SCRIPT = `(function(){
       shopFetch(wishWebsiteId, path, init).then(function(response){
         return response.json().catch(function(){ return {}; }).then(function(json){
           if(response.status===401){
+            if(guestCheckoutEnabled(wish) || guestShopEnabled(wishWebsiteId)){
+              var guestPath=active
+                ? "/guest/wishlist/"+encodeURIComponent(variantId)
+                : "/guest/wishlist";
+              var guestInit=active
+                ? { method:"DELETE" }
+                : { method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ variantId:variantId }) };
+              return shopFetch(wishWebsiteId, guestPath, guestInit).then(function(guestResponse){
+                return guestResponse.json().catch(function(){ return {}; }).then(function(guestJson){
+                  if(!guestResponse.ok){
+                    showMessage(wish, (guestJson.error&&guestJson.error.message)||"Could not update wishlist.", "error");
+                    return;
+                  }
+                  applyWishlistMap(wishWebsiteId, guestJson.wishlistItems||[]);
+                  showMessage(wish, active?"Removed from wishlist.":"Saved to wishlist.", "ok");
+                });
+              });
+            }
             var modal=loginModal(wish);
             if(modal) modal.setAttribute("data-variant", loginVariant(wish));
             openModal(modal);
@@ -2460,15 +3095,7 @@ export const SHOP_CART_SCRIPT = `(function(){
             showMessage(wish, (json.error&&json.error.message)||"Could not update wishlist.", "error");
             return;
           }
-          var next={};
-          (json.wishlistItems||[]).forEach(function(item){
-            var id=String(item.variantId||"");
-            if(id) next[id]=1;
-          });
-          wishlistBySite[wishWebsiteId]=next;
-          document.querySelectorAll('[data-wb-shop-website="'+wishWebsiteId+'"], [data-wb-detail][data-wb-shop-website]').forEach(function(root){
-            applyWishlist(root, wishWebsiteId);
-          });
+          applyWishlistMap(wishWebsiteId, json.wishlistItems||[]);
           showMessage(wish, active?"Removed from wishlist.":"Saved to wishlist.", "ok");
         });
       }).catch(function(){
@@ -2530,4 +3157,290 @@ export const SHOP_NAV_AUTH_SCRIPT = `(function(){
     }).catch(function(){ apply(false); return false; });
   }
   check();
+})();`;
+
+/** Guest checkout modal opened with ?wbGuestCheckout=1 */
+export const SHOP_GUEST_CHECKOUT_SCRIPT = `(function(){
+  if(window.__wbShopGuestCheckoutReady) return;
+  window.__wbShopGuestCheckoutReady=1;
+  function apiBase(){
+    var meta=document.querySelector('meta[name="wb-api"]');
+    var content=meta&&meta.getAttribute("content");
+    return content?String(content).replace(/\\/$/,""):"/api";
+  }
+  function params(){ try{ return new URLSearchParams(window.location.search||""); }catch(_e){ return new URLSearchParams(); } }
+  if(params().get("wbGuestCheckout")!=="1") return;
+  var root=document.querySelector("[data-wb-shop-website][data-wb-shop-guest='1']");
+  var websiteId=root&&root.getAttribute("data-wb-shop-website");
+  if(!websiteId) return;
+  function money(paise){
+    try{ return new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format((Number(paise)||0)/100); }
+    catch(_e){ return "₹"+((Number(paise)||0)/100).toFixed(2); }
+  }
+  function loadRazorpay(){
+    if(window.Razorpay) return Promise.resolve();
+    return new Promise(function(resolve,reject){
+      var script=document.createElement("script");
+      script.src="https://checkout.razorpay.com/v1/checkout.js";
+      script.onload=function(){ resolve(); };
+      script.onerror=function(){ reject(new Error("Could not load Razorpay")); };
+      document.head.appendChild(script);
+    });
+  }
+  var modal=document.createElement("div");
+  modal.className="wb-cart-login-modal is-open";
+  modal.setAttribute("data-wb-guest-checkout-modal","");
+  modal.innerHTML=
+    '<button type="button" class="wb-cart-login-backdrop" aria-label="Close checkout"></button>'+
+    '<div class="wb-cart-login-dialog" role="dialog" aria-modal="true" aria-label="Guest checkout" style="max-width:420px;text-align:left">'+
+      '<button type="button" class="wb-cart-login-close" aria-label="Close checkout">×</button>'+
+      '<p class="wb-cart-login-title">Checkout</p>'+
+      '<p class="wb-cart-login-text" data-wb-guest-summary>Loading your cart…</p>'+
+      '<form data-wb-guest-form class="wb-guest-checkout-form" style="display:grid;gap:8px;margin-top:12px">'+
+        '<input required name="fullName" placeholder="Full name" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
+        '<input required type="email" name="email" placeholder="Email for invoice" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
+        '<input required name="phone" placeholder="Phone" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
+        '<input required name="line1" placeholder="Address line 1" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
+        '<input name="line2" placeholder="Address line 2 (optional)" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+          '<input required name="city" placeholder="City" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
+          '<input required name="state" placeholder="State" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
+        "</div>"+
+        '<input required name="postalCode" placeholder="PIN / postal code" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
+        '<p data-wb-guest-error style="color:#b91c1c;font-size:13px;margin:0;display:none"></p>'+
+        '<button type="submit" class="wb-shop-btn is-buy" data-wb-guest-pay>Pay now</button>'+
+      "</form>"+
+      '<div data-wb-guest-success hidden style="margin-top:12px">'+
+        '<p class="wb-cart-login-title">Order placed</p>'+
+        '<p class="wb-cart-login-text" data-wb-guest-success-text></p>'+
+        '<a class="wb-shop-btn is-buy" data-wb-guest-track href="#">Track order</a>'+
+      "</div>"+
+    "</div>";
+  document.body.appendChild(modal);
+  function close(){
+    modal.remove();
+    try{
+      var url=new URL(window.location.href);
+      url.searchParams.delete("wbGuestCheckout");
+      window.history.replaceState({}, "", url.pathname+url.search+url.hash);
+    }catch(_e){}
+  }
+  modal.querySelectorAll(".wb-cart-login-backdrop,.wb-cart-login-close").forEach(function(btn){
+    btn.addEventListener("click", close);
+  });
+  var summary=modal.querySelector("[data-wb-guest-summary]");
+  var form=modal.querySelector("[data-wb-guest-form]");
+  var errorBox=modal.querySelector("[data-wb-guest-error]");
+  var payBtn=modal.querySelector("[data-wb-guest-pay]");
+  fetch(apiBase()+"/shop/"+websiteId+"/auth/guest/cart",{credentials:"include",cache:"no-store"})
+    .then(function(response){ return response.json().then(function(json){ return { ok:response.ok, json:json }; }); })
+    .then(function(result){
+      if(!result.ok){ summary.textContent=(result.json.error&&result.json.error.message)||"Could not load cart."; return; }
+      var items=result.json.cartItems||[];
+      if(!items.length){ summary.textContent="Your cart is empty."; form.hidden=true; return; }
+      var total=0;
+      var lines=items.map(function(item){
+        total+=Number(item.pricePaise||0)*Number(item.quantity||1);
+        return item.productName+" × "+item.quantity+" — "+money(Number(item.pricePaise||0)*Number(item.quantity||1));
+      });
+      summary.innerHTML=lines.map(function(line){ return "<div>"+line+"</div>"; }).join("")+"<strong style='display:block;margin-top:8px'>Total "+money(total)+"</strong>";
+    })
+    .catch(function(){ summary.textContent="Can't reach the server."; });
+  form.addEventListener("submit", function(event){
+    event.preventDefault();
+    errorBox.style.display="none";
+    payBtn.disabled=true;
+    payBtn.textContent="Starting payment…";
+    var data=new FormData(form);
+    var payload={
+      email:String(data.get("email")||"").trim(),
+      fullName:String(data.get("fullName")||"").trim(),
+      phone:String(data.get("phone")||"").trim(),
+      address:{
+        fullName:String(data.get("fullName")||"").trim(),
+        phone:String(data.get("phone")||"").trim(),
+        line1:String(data.get("line1")||"").trim(),
+        line2:String(data.get("line2")||"").trim(),
+        city:String(data.get("city")||"").trim(),
+        state:String(data.get("state")||"").trim(),
+        postalCode:String(data.get("postalCode")||"").trim(),
+        country:"IN"
+      }
+    };
+    fetch(apiBase()+"/shop/"+websiteId+"/auth/guest/checkout",{
+      method:"POST",
+      credentials:"include",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify(payload)
+    }).then(function(response){
+      return response.json().then(function(json){ return { ok:response.ok, json:json }; });
+    }).then(function(result){
+      if(!result.ok){
+        errorBox.textContent=(result.json.error&&result.json.error.message)||"Checkout failed.";
+        errorBox.style.display="block";
+        payBtn.disabled=false;
+        payBtn.textContent="Pay now";
+        return;
+      }
+      var checkout=result.json.checkout||{};
+      var trackUrl=checkout.trackUrl||"";
+      return loadRazorpay().then(function(){
+        return new Promise(function(resolve,reject){
+          var rzp=new window.Razorpay({
+            key:checkout.keyId,
+            amount:checkout.amountPaise,
+            currency:checkout.currency||"INR",
+            name:checkout.businessName||"Shop",
+            order_id:checkout.razorpayOrderId,
+            prefill:checkout.prefill||{},
+            handler:function(response){
+              fetch(apiBase()+"/shop/"+websiteId+"/auth/guest/checkout/confirm",{
+                method:"POST",
+                credentials:"include",
+                headers:{ "Content-Type":"application/json" },
+                body:JSON.stringify({
+                  razorpayOrderId:response.razorpay_order_id,
+                  razorpayPaymentId:response.razorpay_payment_id,
+                  razorpaySignature:response.razorpay_signature
+                })
+              }).then(function(confirmResponse){
+                return confirmResponse.json().then(function(json){ return { ok:confirmResponse.ok, json:json }; });
+              }).then(function(confirmResult){
+                if(!confirmResult.ok){
+                  reject(new Error((confirmResult.json.error&&confirmResult.json.error.message)||"Payment confirmation failed"));
+                  return;
+                }
+                resolve({ order:confirmResult.json.order, trackUrl: (confirmResult.json.order&&confirmResult.json.order.trackUrl)||trackUrl });
+              }).catch(reject);
+            },
+            modal:{ ondismiss:function(){ reject(new Error("Payment cancelled")); } }
+          });
+          rzp.open();
+        });
+      }).then(function(done){
+        form.hidden=true;
+        var success=modal.querySelector("[data-wb-guest-success]");
+        var successText=modal.querySelector("[data-wb-guest-success-text]");
+        var track=modal.querySelector("[data-wb-guest-track]");
+        success.hidden=false;
+        successText.textContent="Order #"+(done.order&&done.order.number?done.order.number:"")+" is confirmed. We emailed your invoice and tracking link.";
+        if(done.trackUrl){ track.href=done.trackUrl; track.hidden=false; }
+        else { track.hidden=true; }
+      }).catch(function(err){
+        errorBox.textContent=err&&err.message?err.message:"Payment failed.";
+        errorBox.style.display="block";
+        payBtn.disabled=false;
+        payBtn.textContent="Pay now";
+      });
+    }).catch(function(){
+      errorBox.textContent="Can't reach the server.";
+      errorBox.style.display="block";
+      payBtn.disabled=false;
+      payBtn.textContent="Pay now";
+    });
+  });
+})();`;
+
+/** Public order tracking overlay opened with ?wbOrderTrack=TOKEN */
+export const SHOP_TRACK_SCRIPT = `(function(){
+  if(window.__wbShopTrackReady) return;
+  window.__wbShopTrackReady=1;
+  function apiBase(){
+    var meta=document.querySelector('meta[name="wb-api"]');
+    var content=meta&&meta.getAttribute("content");
+    return content?String(content).replace(/\\/$/,""):"/api";
+  }
+  function params(){ try{ return new URLSearchParams(window.location.search||""); }catch(_e){ return new URLSearchParams(); } }
+  function esc(value){
+    return String(value==null?"":value)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  var token=params().get("wbOrderTrack");
+  if(!token) return;
+  var root=document.querySelector("[data-wb-shop-website]");
+  var websiteId=root&&root.getAttribute("data-wb-shop-website");
+  if(!websiteId) return;
+  function money(paise){
+    try{ return new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format((Number(paise)||0)/100); }
+    catch(_e){ return "₹"+((Number(paise)||0)/100).toFixed(2); }
+  }
+  var modal=document.createElement("div");
+  modal.className="wb-order-track-modal";
+  modal.setAttribute("data-wb-order-track-modal","");
+  var site=document.querySelector(".wb-site");
+  if(site&&site.getAttribute("style")) modal.setAttribute("style", site.getAttribute("style"));
+  modal.innerHTML=
+    '<button type="button" class="wb-order-track-backdrop" aria-label="Close order tracking"></button>'+
+    '<div class="wb-order-track-dialog" role="dialog" aria-modal="true" aria-labelledby="wb-order-track-title">'+
+      '<div class="wb-order-track-head">'+
+        '<div class="wb-order-track-copy">'+
+          '<p class="wb-order-track-kicker">Order tracking</p>'+
+          '<h3 class="wb-order-track-title" id="wb-order-track-title">Order status</h3>'+
+        "</div>"+
+        '<button type="button" class="wb-order-track-close" aria-label="Close">×</button>'+
+      "</div>"+
+      '<div class="wb-order-track-body" data-wb-track-body>'+
+        '<p class="wb-order-track-loading">Loading your order…</p>'+
+      "</div>"+
+      '<div class="wb-order-track-actions">'+
+        '<a class="wb-acct-button is-pay" data-wb-track-invoice href="#" hidden>Download invoice</a>'+
+        '<button type="button" class="wb-acct-button is-ghost" data-wb-track-close>Close</button>'+
+      "</div>"+
+    "</div>";
+  var cs=site?window.getComputedStyle(site):null;
+  var bg=(cs&&cs.getPropertyValue("--wb-bg").trim())||"#ffffff";
+  var fg=(cs&&cs.getPropertyValue("--wb-text").trim())||"#1a1d23";
+  var dialog=modal.querySelector(".wb-order-track-dialog");
+  if(dialog){
+    dialog.style.setProperty("background-color", bg, "important");
+    dialog.style.setProperty("color", fg, "important");
+  }
+  document.body.appendChild(modal);
+  function close(){
+    modal.remove();
+    try{
+      var url=new URL(window.location.href);
+      url.searchParams.delete("wbOrderTrack");
+      window.history.replaceState({}, "", url.pathname+url.search+url.hash);
+    }catch(_e){}
+  }
+  modal.querySelectorAll(".wb-order-track-backdrop,.wb-order-track-close,[data-wb-track-close]").forEach(function(btn){
+    btn.addEventListener("click", close);
+  });
+  var body=modal.querySelector("[data-wb-track-body]");
+  var invoice=modal.querySelector("[data-wb-track-invoice]");
+  fetch(apiBase()+"/shop/"+websiteId+"/auth/track/"+encodeURIComponent(token),{credentials:"include",cache:"no-store"})
+    .then(function(response){ return response.json().then(function(json){ return { ok:response.ok, json:json }; }); })
+    .then(function(result){
+      if(!result.ok){
+        body.innerHTML='<p class="wb-order-track-error">'+esc((result.json.error&&result.json.error.message)||"Order not found.")+"</p>";
+        return;
+      }
+      var order=result.json.order||{};
+      var status=String(order.status||"pending");
+      var statusClass=status.replace(/[^a-z0-9-]/gi,"").toLowerCase();
+      var items=(order.items||[]).map(function(item){
+        return '<li class="wb-order-track-item">'+
+          '<div class="wb-order-track-item-main">'+
+            "<strong>"+esc(item.productName||"Item")+"</strong>"+
+            "<span>"+esc(item.variantName||"")+(item.variantName?" · ":"")+"Qty "+esc(item.quantity)+"</span>"+
+          "</div>"+
+          '<div class="wb-order-track-item-price">'+esc(money(item.lineTotalPaise))+"</div>"+
+        "</li>";
+      }).join("");
+      body.innerHTML=
+        '<div class="wb-order-track-summary">'+
+          '<p class="wb-order-track-row"><span>Order</span><strong>#'+esc(order.number||"")+"</strong></p>"+
+          '<p class="wb-order-track-row"><span>Status</span><strong><span class="wb-order-track-badge is-'+esc(statusClass)+'">'+esc(status)+"</span></strong></p>"+
+          '<p class="wb-order-track-row"><span>Total</span><strong>'+esc(money(order.totalPaise))+"</strong></p>"+
+        "</div>"+
+        (items?'<ul class="wb-order-track-items">'+items+"</ul>":"");
+      if(order.canDownloadInvoice){
+        invoice.hidden=false;
+        invoice.href=apiBase()+"/shop/"+websiteId+"/auth/track/"+encodeURIComponent(token)+"/invoice?format=pdf";
+      }
+    })
+    .catch(function(){
+      body.innerHTML='<p class="wb-order-track-error">Can\\'t reach the server.</p>';
+    });
 })();`;

@@ -7,6 +7,7 @@ type Props = {
   websiteId?: string;
   authHref?: string;
   accountHref?: string;
+  allowGuestCheckout?: boolean;
   outOfStock?: boolean;
   /** Units available for this variant; used to cap the quantity picker. */
   stockMax?: number;
@@ -27,6 +28,7 @@ export default function ShopCartActions({
   websiteId,
   authHref = "/login",
   accountHref = "/account",
+  allowGuestCheckout = false,
   outOfStock = false,
   stockMax = 0,
   interactive = false,
@@ -83,7 +85,16 @@ export default function ShopCartActions({
     setPendingAction(null);
     setShowLoginPopup(false);
     try {
-      await shopAuthApi.addToCart(websiteId, { variantId, quantity: qty });
+      try {
+        await shopAuthApi.addToCart(websiteId, { variantId, quantity: qty });
+      } catch (error) {
+        const err = error as ShopAuthError;
+        if ((err?.status === 401 || err?.code === "UNAUTHORIZED") && allowGuestCheckout) {
+          await shopAuthApi.addGuestCart(websiteId, { variantId, quantity: qty });
+        } else {
+          throw error;
+        }
+      }
       if (action === "buy") {
         window.location.href = siteHref(accountPanelHref(accountHref, "cart"));
         return;
