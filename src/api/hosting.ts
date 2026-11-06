@@ -21,6 +21,8 @@ export type HostingPackage = {
   featured: boolean;
   /** Automatic backup cadence in days for websites on this package. Null = disabled. */
   websiteBackupDays: number | null;
+  /** Media library quota in MiB. Shared across the client's websites; highest ACTIVE/GRACE plan wins. */
+  mediaStorageMb: number;
   /** Priced per website: the website's own price, else `defaultPrices`. */
   isCustom: boolean;
   prices: CyclePrices;
@@ -190,6 +192,8 @@ export type HostingPackageInput = {
   defaultYearlyPaise?: number;
   /** Automatic backup cadence in days for websites on this package. Null = disabled. */
   websiteBackupDays?: number | null;
+  /** Media library quota in MiB for clients on this package. */
+  mediaStorageMb?: number;
   featured: boolean;
   active: boolean;
 };
@@ -220,6 +224,8 @@ export type ClientHosting = {
     createdAt: string;
     owner: ClientOwner | null;
     websiteBackupDaysOverride: number | null;
+    /** Null = use highest ACTIVE/GRACE package media quota. */
+    mediaStorageMbOverride: number | null;
   };
   balance: number;
   websites: ClientHostingWebsite[];
@@ -375,6 +381,11 @@ export const adminHostingApi = {
     request<{ hosting: ClientHosting }>(`/admin/hosting/clients/${encodeURIComponent(clientId)}/backup-policy`, {
       method: "PATCH",
       body: { websiteBackupDaysOverride },
+    }).then((data) => data.hosting),
+  updateClientStoragePolicy: (clientId: string, mediaStorageMbOverride: number | null) =>
+    request<{ hosting: ClientHosting }>(`/admin/hosting/clients/${encodeURIComponent(clientId)}/storage-policy`, {
+      method: "PATCH",
+      body: { mediaStorageMbOverride },
     }).then((data) => data.hosting),
   subscriptions: (params: SubscriptionListParams) => request<SubscriptionList>(`/admin/hosting/subscriptions${toQuery(params)}`),
   payments: (params: PaymentListParams) => request<PaymentList>(`/admin/hosting/payments${toQuery(params)}`),
