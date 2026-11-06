@@ -53,7 +53,7 @@ export default function ContactDetailsSection() {
             </div>
             {user.username ? (
               <>
-                <p className="mt-1 font-mono text-sm font-semibold text-ink">@{user.username}</p>
+                <p className="mt-1 font-mono text-sm font-semibold text-ink">{user.username}</p>
                 <p className="mt-0.5 text-xs text-ink-muted">Also works for sign-in.</p>
               </>
             ) : (
