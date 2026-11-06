@@ -64,12 +64,22 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 function RecordsTable({ records }: { records: DnsRecord[] }) {
   const hasRouting = records.some((record) => record.purpose === "routing");
   return (
-    <div className="space-y-2">
-      <p className="text-sm text-ink-body">
-        Add {records.length === 1 ? "this record" : "these records"} at the company where you bought the domain (GoDaddy,
-        Namecheap, Cloudflare…).
-        {records.length > 1 && " If there are other A, AAAA or CNAME records for this name, remove them."}
-      </p>
+    <div className="space-y-3">
+      <div className="rounded-lg border border-line bg-canvas/60 px-3.5 py-3 text-sm text-ink-body">
+        <p className="font-medium text-ink">Where to add {records.length === 1 ? "this" : "these"}</p>
+        <ol className="mt-2 list-decimal space-y-1.5 pl-4 text-ink-body">
+          <li>
+            Sign in at the company that manages DNS for this domain — usually where you bought it (GoDaddy, Namecheap,
+            Google Domains, Cloudflare, and similar).
+          </li>
+          <li>Open DNS settings (often labeled DNS, DNS Management, or Zone File).</li>
+          <li>
+            Create {records.length === 1 ? "the record" : "each record"} below. Copy the Name and Value with the buttons.
+            {records.length > 1 ? " If other A, AAAA, or CNAME records already use this name, remove them first." : ""}
+          </li>
+          <li>Save, then come back here and choose Verify now. DNS can take a few minutes up to a few hours.</li>
+        </ol>
+      </div>
       <div className="overflow-x-auto rounded-lg border border-line">
         <table className="w-full min-w-[520px] text-left text-sm">
           <thead className="bg-canvas text-xs uppercase tracking-wide text-ink-muted">
@@ -101,9 +111,10 @@ function RecordsTable({ records }: { records: DnsRecord[] }) {
         </table>
       </div>
       <p className="text-xs text-ink-muted">
-        Some providers add your domain to the name automatically. If so, enter only the part before it.
-        {hasRouting && " On Cloudflare, set the proxy status to “DNS only” (grey cloud)."} We check automatically every
-        few minutes; changes can take up to a few hours to show up.
+        Some providers add your domain to the name automatically. If so, enter only the part before it (for example{" "}
+        <span className="font-mono">_wb-verify.www</span> instead of the full name).
+        {hasRouting && " On Cloudflare, set the proxy status to “DNS only” (grey cloud)."} We also re-check
+        automatically every few minutes.
       </p>
     </div>
   );
