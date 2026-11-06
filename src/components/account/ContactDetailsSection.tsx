@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Button, InputOTP, REGEXP_ONLY_DIGITS } from "@heroui/react";
-import { Mail } from "lucide-react";
+import { AtSign, Mail, User } from "lucide-react";
 import { authApi, type AuthUser } from "../../api/auth.ts";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { useAuth } from "../../auth/auth-context.ts";
@@ -31,13 +31,39 @@ export default function ContactDetailsSection() {
           <h2 className="text-base font-semibold text-ink">Contact details</h2>
           <p className="text-xs text-ink-muted">
             {user.username
-              ? `You log in with the username @${user.username}. Adding an email lets you reset your password yourself.`
+              ? "Adding an email lets you reset your password yourself."
               : "Your email is also your login."}
           </p>
         </div>
       </div>
 
       <div className="mt-5 flex max-w-md flex-col gap-6">
+        <div className="grid gap-3 rounded-lg border border-line bg-canvas/50 px-3.5 py-3 sm:grid-cols-2">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-medium text-ink-muted">
+              <User className="size-3.5 shrink-0" aria-hidden />
+              Name
+            </div>
+            <p className="mt-1 text-sm font-semibold text-ink">{user.fullName}</p>
+          </div>
+          <div>
+            <div className="flex items-center gap-2 text-xs font-medium text-ink-muted">
+              <AtSign className="size-3.5 shrink-0" aria-hidden />
+              Username
+            </div>
+            {user.username ? (
+              <>
+                <p className="mt-1 font-mono text-sm font-semibold text-ink">@{user.username}</p>
+                <p className="mt-0.5 text-xs text-ink-muted">Also works for sign-in.</p>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-sm font-semibold text-ink">Not set</p>
+                <p className="mt-0.5 text-xs text-ink-muted">You sign in with email.</p>
+              </>
+            )}
+          </div>
+        </div>
         <EmailForm user={user} onSaved={setSessionUser} />
         <PhoneForm user={user} onSaved={setSessionUser} />
       </div>
