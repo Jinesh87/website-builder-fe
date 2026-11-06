@@ -5,6 +5,13 @@ import { adminHostingApi, type AdminHostingPackage, type HostingSettings } from 
 import { errorMessage } from "../../api/http.ts";
 import { formatPaise } from "../../api/wallet.ts";
 import { paiseToRupeesInput, rupeesInputToPaise, yearlySavingPercent } from "../../utils/hosting-pricing.ts";
+import {
+  isValidStorageMb,
+  storageFromMb,
+  storageRangeError,
+  storageToMb,
+  type StorageUnit,
+} from "../../utils/media-storage.ts";
 import { ConfirmModal } from "../ui/CommonModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import TextAreaInput from "../ui/TextAreaInput.tsx";
@@ -22,6 +29,8 @@ type Form = {
   defaultQuarterly: string;
   defaultYearly: string;
   websiteBackupDays: string;
+  mediaStorageAmount: string;
+  mediaStorageUnit: StorageUnit;
   featured: boolean;
   active: boolean;
 };
@@ -29,6 +38,7 @@ type Form = {
 type Feedback = { status: "success" | "danger"; message: string } | null;
 
 function toForm(pkg: AdminHostingPackage): Form {
+  const storage = storageFromMb(pkg.mediaStorageMb);
   return {
     name: pkg.name,
     description: pkg.description,
@@ -38,6 +48,8 @@ function toForm(pkg: AdminHostingPackage): Form {
     defaultQuarterly: paiseToRupeesInput(pkg.defaultPrices.QUARTERLY),
     defaultYearly: paiseToRupeesInput(pkg.defaultPrices.YEARLY),
     websiteBackupDays: pkg.websiteBackupDays ? String(pkg.websiteBackupDays) : "",
+    mediaStorageAmount: storage.amount,
+    mediaStorageUnit: storage.unit,
     featured: pkg.featured,
     active: pkg.active,
   };
@@ -68,7 +80,9 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
   const defaultQuarterly = pkg.isCustom ? rupeesInputToPaise(form.defaultQuarterly) ?? 0 : 0;
   const defaultYearly = pkg.isCustom ? rupeesInputToPaise(form.defaultYearly) ?? 0 : 0;
   const backupDays = form.websiteBackupDays.trim() ? Number(form.websiteBackupDays) : null;
+  const mediaStorageMb = storageToMb(form.mediaStorageAmount, form.mediaStorageUnit);
   const features = form.features.map((feature) => feature.trim()).filter(Boolean);
+  const storageError = isValidStorageMb(mediaStorageMb) ? undefined : storageRangeError(form.mediaStorageUnit);
   const errors = {
     name: form.name.trim() ? undefined : "Enter a name",
     description: form.description.trim() ? undefined : "Enter a short description",
@@ -80,6 +94,7 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
       backupDays === null || (Number.isInteger(backupDays) && backupDays >= 1 && backupDays <= 365)
         ? undefined
         : "Enter 1 to 365 days, or leave empty",
+    mediaStorageAmount: storageError,
   };
   const invalid = Object.values(errors).some(Boolean);
   const pricesChanged = pkg.isCustom
@@ -92,8 +107,25 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
     form.featured !== pkg.featured ||
     form.active !== pkg.active ||
     backupDays !== (pkg.websiteBackupDays ?? null) ||
+    mediaStorageMb !== pkg.mediaStorageMb ||
     features.join("\n") !== pkg.features.join("\n");
   const yearlySaving = yearlySavingPercent({ QUARTERLY: quarterly || null, YEARLY: yearly || null });
+
+  function setStorageUnit(unit: StorageUnit) {
+    if (unit === form.mediaStorageUnit) return;
+    const currentMb = storageToMb(form.mediaStorageAmount, form.mediaStorageUnit);
+    if (currentMb === null) {
+      update("mediaStorageUnit", unit);
+      return;
+    }
+    if (unit === "GB") {
+      const gb = Math.max(1, Math.round(currentMb / 1024));
+      setForm((current) => ({ ...current, mediaStorageUnit: unit, mediaStorageAmount: String(gb) }));
+    } else {
+      setForm((current) => ({ ...current, mediaStorageUnit: unit, mediaStorageAmount: String(currentMb) }));
+    }
+    setFeedback(null);
+  }
 
   function handleSave() {
     if (invalid) return;
@@ -116,6 +148,7 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
           yearlyPricePaise: yearly,
           ...(pkg.isCustom ? { defaultQuarterlyPaise: defaultQuarterly, defaultYearlyPaise: defaultYearly } : {}),
           websiteBackupDays: backupDays,
+          mediaStorageMb: mediaStorageMb!,
           featured: form.featured,
           active: form.active,
         }),
@@ -237,6 +270,58 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
             error={errors.websiteBackupDays}
             isDisabled={saving}
           />
+
+          <div>
+            <label htmlFor={`media-storage-${pkg.id}`} className="mb-1 block text-sm font-medium text-ink">
+              Media storage
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id={`media-storage-${pkg.id}`}
+                name={`media-storage-${pkg.id}`}
+                inputMode="numeric"
+                value={form.mediaStorageAmount}
+                onChange={(event) => update("mediaStorageAmount", event.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder={form.mediaStorageUnit === "GB" ? "1" : "1024"}
+                disabled={saving}
+                aria-invalid={Boolean(errors.mediaStorageAmount)}
+                className={`h-9 min-w-0 flex-1 rounded-lg border bg-surface px-3 text-sm text-ink shadow-ed-xs placeholder:text-ink-muted/50 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-canvas disabled:text-ink-muted ${
+                  errors.mediaStorageAmount
+                    ? "border-ed-danger focus:border-ed-danger focus:ring-ed-danger/15"
+                    : "border-ed-border focus:border-ed-accent focus:ring-ed-accent/15"
+                }`}
+              />
+              <div className="flex shrink-0 overflow-hidden rounded-lg border border-ed-border" role="group" aria-label="Storage unit">
+                {(["MB", "GB"] as const).map((unit) => (
+                  <button
+                    key={unit}
+                    type="button"
+                    disabled={saving}
+                    aria-pressed={form.mediaStorageUnit === unit}
+                    onClick={() => setStorageUnit(unit)}
+                    className={`px-3 py-2 text-xs font-semibold transition-colors ${
+                      form.mediaStorageUnit === unit
+                        ? "bg-brand text-white"
+                        : "bg-surface text-ink-muted hover:bg-canvas hover:text-ink"
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    {unit}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {errors.mediaStorageAmount ? (
+              <p className="mt-1 text-xs text-ed-danger">{errors.mediaStorageAmount}</p>
+            ) : (
+              <p className="mt-1 text-xs text-ink-muted">
+                {mediaStorageMb !== null
+                  ? form.mediaStorageUnit === "GB"
+                    ? `${mediaStorageMb.toLocaleString()} MB. Shared across the client's websites; their highest active plan sets the limit.`
+                    : `About ${(mediaStorageMb / 1024).toFixed(mediaStorageMb % 1024 === 0 ? 0 : 1)} GB. Shared across the client's websites; their highest active plan sets the limit.`
+                  : "Shared across the client's websites; their highest active plan sets the limit."}
+              </p>
+            )}
+          </div>
 
           <fieldset className="pt-1">
             <div className="flex items-center justify-between mb-1.5">

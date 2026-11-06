@@ -11,6 +11,7 @@ function pkg(id: string, prices: HostingPackage["prices"], extra: Partial<Hostin
     features: [],
     featured: false,
     websiteBackupDays: null,
+    mediaStorageMb: 1024,
     isCustom: false,
     prices,
     defaultPrices: { QUARTERLY: null, YEARLY: null },
