@@ -1754,6 +1754,8 @@ export type ShopCatalog = {
   authHref?: string;
   /** Page that holds the account section, such as "/account". */
   accountHref?: string;
+  /** Guests can cart and checkout without signing in. */
+  allowGuestCheckout?: boolean;
   /** Inclusive status ceiling for shopper cancels. Null/omitted = cancels disabled. */
   cancelUntilStatus?: ShopCancelUntilStatus | null;
   /** Shop-wide return guideline bullets. */

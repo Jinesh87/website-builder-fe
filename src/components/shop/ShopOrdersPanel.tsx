@@ -112,6 +112,14 @@ function RefundBadge({ status }: { status: ShopRefundStatus }) {
   );
 }
 
+function GuestBadge() {
+  return (
+    <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-800 ring-1 ring-inset ring-sky-200">
+      Guest
+    </span>
+  );
+}
+
 const FULFILLMENT_STEPS: { key: ShopOrderStatus; label: string }[] = [
   { key: "paid", label: "Order received" },
   { key: "processing", label: "Processing" },
@@ -261,7 +269,10 @@ function OrderDetail({
           <ArrowLeft className="size-4" aria-hidden /> Back
         </Button>
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-ink">{order ? `Order #${order.number}` : "Order"}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-sm font-semibold text-ink">{order ? `Order #${order.number}` : "Order"}</h3>
+            {order?.customer.isGuest && <GuestBadge />}
+          </div>
           <p className="truncate text-xs text-ink-muted">{order?.customer.email || "Order details"}</p>
         </div>
       </div>
@@ -322,7 +333,10 @@ function OrderDetail({
           <dl className="grid gap-3 sm:grid-cols-2">
             <div>
               <dt className="text-xs font-medium text-ink-muted">Customer</dt>
-              <dd className="text-sm text-ink">{order.customer.fullName}</dd>
+              <dd className="flex flex-wrap items-center gap-2 text-sm text-ink">
+                <span>{order.customer.fullName}</span>
+                {order.customer.isGuest && <GuestBadge />}
+              </dd>
               <dd className="text-xs text-ink-muted">{order.customer.email}</dd>
               {order.customer.phone && <dd className="text-xs text-ink-muted">{order.customer.phone}</dd>}
             </div>
@@ -526,7 +540,10 @@ export default function ShopOrdersPanel({ websiteId }: { websiteId: string }) {
                 >
                   <td className="px-5 py-3 font-medium text-ink">#{order.number}</td>
                   <td className="px-3 py-3">
-                    <p className="truncate text-ink">{order.customer.fullName}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-ink">{order.customer.fullName}</p>
+                      {order.customer.isGuest && <GuestBadge />}
+                    </div>
                     <p className="truncate text-xs text-ink-muted">{order.customer.email}</p>
                   </td>
                   <td className="px-3 py-3">

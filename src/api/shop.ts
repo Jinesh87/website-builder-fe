@@ -211,6 +211,7 @@ export type ShopCustomer = {
   fullName: string;
   phone: string | null;
   status: ShopCustomerStatus;
+  isGuest: boolean;
   emailVerifiedAt: string | null;
   lastSignedInAt: string | null;
   createdAt: string;
@@ -304,6 +305,7 @@ export type ShopOrder = {
     fullName: string;
     email: string;
     phone: string | null;
+    isGuest: boolean;
   };
   items: ShopOrderItem[];
   razorpayOrderId: string | null;

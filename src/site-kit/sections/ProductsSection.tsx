@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
 import ShopCartActions from "../ShopCartActions.tsx";
 import { formatInr, listingSelection, productHref, shopListings, SHOP_LIST_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
-import { accountPanelHref, SHOP_CART_SCRIPT, siteHref } from "../shop-auth.ts";
+import { accountPanelHref, SHOP_CART_SCRIPT, SHOP_TRACK_SCRIPT, siteHref } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
 import type { ProductsData, SectionOf, ShopCatalogProduct } from "../types.ts";
 
@@ -96,6 +96,7 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
   const websiteId = live ? catalog?.websiteId : undefined;
   const authHref = catalog?.authHref || "/login";
   const accountHref = catalog?.accountHref || "/account";
+  const allowGuestCheckout = catalog?.allowGuestCheckout === true;
   const loginPromptVariant = data.cartLoginPromptVariant || "soft-card";
   const interactive = !stat && !!websiteId;
   const serverList = live ? catalog?.list : undefined;
@@ -134,12 +135,15 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
   const from = total === 0 ? 0 : (currentPage - 1) * currentSize + 1;
   const to = total === 0 ? 0 : Math.min(total, from + pageListings.length - 1);
 
-  const cartPageHref = siteHref(accountPanelHref(accountHref, "cart"));
+  // Site-root path (no /live prefix). Live preview rewrites href=; cart script siteHref()s data-*.
+  const cartAccountPath = accountPanelHref(accountHref, "cart");
+  const cartPageHref = siteHref(cartAccountPath);
   const cartIcon = (
     <a
       className="wb-shop-cart-link"
       href={cartPageHref}
       data-wb-shop-cart-link=""
+      data-wb-shop-cart-account={cartAccountPath}
       aria-label="Cart"
       hidden={stat ? true : !interactive}
     >
@@ -287,6 +291,13 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
                 className="wb-shop-btn is-wishlist is-overlay"
                 data-wb-wishlist-toggle=""
                 data-wb-variant-id={variant.id}
+                data-wb-product-id={listing.product.id}
+                data-wb-product-name={listing.product.name}
+                data-wb-product-slug={listing.product.slug}
+                data-wb-variant-name={variant.name || ""}
+                data-wb-category-name={listing.product.categoryName || ""}
+                data-wb-price-paise={String(variant.pricePaise ?? price)}
+                data-wb-image-url={image?.url || ""}
                 aria-label="Add to wishlist"
               >
                 <span className="wb-wish-heart" aria-hidden="true">♡</span>
@@ -303,6 +314,7 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
                 websiteId={websiteId}
                 authHref={authHref}
                 accountHref={accountHref}
+                allowGuestCheckout={allowGuestCheckout}
                 outOfStock={!variant || variant.quantity <= 0}
                 stockMax={variant?.quantity ?? 0}
                 interactive={interactive}
@@ -435,6 +447,7 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
         data-wb-shop-website={websiteId || undefined}
         data-wb-shop-auth-href={authHref}
         data-wb-shop-account-href={accountHref}
+        data-wb-shop-guest={allowGuestCheckout ? "1" : undefined}
         data-wb-cart-login-variant={loginPromptVariant}
       >
         {data.design === "editorial" ? (
@@ -449,6 +462,7 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
         {!live && !stat && <p className="wb-shop-note">Sample products. The published page lists this website’s shop.</p>}
         {stat && <script dangerouslySetInnerHTML={{ __html: SHOP_LIST_SCRIPT }} />}
         {stat && websiteId && <script dangerouslySetInnerHTML={{ __html: SHOP_CART_SCRIPT }} />}
+        {stat && websiteId && <script dangerouslySetInnerHTML={{ __html: SHOP_TRACK_SCRIPT }} />}
       </div>
     </SectionShell>
   );

@@ -53,6 +53,14 @@ function StatusBadge({ status }: { status: ShopCustomerStatus }) {
   );
 }
 
+function GuestBadge() {
+  return (
+    <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-800 ring-1 ring-inset ring-sky-200">
+      Guest
+    </span>
+  );
+}
+
 function CustomerDetail({
   websiteId,
   customerId,
@@ -87,6 +95,10 @@ function CustomerDetail({
         { label: "Full name", value: customer.fullName },
         { label: "Email", value: customer.email },
         { label: "Phone", value: customer.phone || "—" },
+        {
+          label: "Account type",
+          value: customer.isGuest ? <GuestBadge /> : <span className="text-sm text-ink">Registered</span>,
+        },
         { label: "Status", value: <StatusBadge status={customer.status} /> },
         { label: "Email verified", value: customer.emailVerifiedAt ? formatWhen(customer.emailVerifiedAt) : "Not verified" },
         { label: "Last signed in", value: formatWhen(customer.lastSignedInAt) },
@@ -102,7 +114,10 @@ function CustomerDetail({
           <ArrowLeft className="size-4" aria-hidden /> Back
         </Button>
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-ink">{customer?.fullName || "Customer"}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-sm font-semibold text-ink">{customer?.fullName || "Customer"}</h3>
+            {customer?.isGuest && <GuestBadge />}
+          </div>
           <p className="truncate text-xs text-ink-muted">{customer?.email || "Account details"}</p>
         </div>
       </div>
@@ -171,7 +186,9 @@ export default function ShopCustomersPanel({ websiteId }: { websiteId: string })
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
         <div>
           <h3 className="text-sm font-semibold text-ink">Customers</h3>
-          <p className="mt-0.5 text-xs text-ink-muted">Shoppers who registered on this website. Click a row for details.</p>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            Shoppers who registered or checked out as guests. Click a row for details.
+          </p>
         </div>
         <div className="relative min-w-[220px] max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
@@ -226,12 +243,17 @@ export default function ShopCustomersPanel({ websiteId }: { websiteId: string })
                   }}
                 >
                   <td className="px-5 py-3">
-                    <p className="truncate font-medium text-ink">{customer.fullName}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate font-medium text-ink">{customer.fullName}</p>
+                      {customer.isGuest && <GuestBadge />}
+                    </div>
                     {customer.phone && <p className="truncate text-xs text-ink-muted">{customer.phone}</p>}
                   </td>
                   <td className="px-3 py-3 text-ink">{customer.email}</td>
                   <td className="px-3 py-3">
-                    <StatusBadge status={customer.status} />
+                    <div className="flex flex-wrap gap-1.5">
+                      <StatusBadge status={customer.status} />
+                    </div>
                   </td>
                   <td className="px-3 py-3 text-ink-muted">{formatWhen(customer.lastSignedInAt)}</td>
                   <td className="px-5 py-3 text-ink-muted">{formatWhen(customer.createdAt)}</td>

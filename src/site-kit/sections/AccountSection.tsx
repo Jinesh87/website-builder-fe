@@ -2082,6 +2082,8 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
     .filter(Boolean)
     .join(" ");
 
+  const allowGuestCheckout = catalog?.allowGuestCheckout === true;
+
   if (isStatic) {
     // The published page carries both states; the script shows the right one once the session is known.
     return (
@@ -2092,6 +2094,7 @@ export default function AccountSection({ section }: { section: SectionOf<"accoun
           data-wb-account-login={loginHref}
           data-wb-account-logout={logoutRedirectHref}
           data-wb-account-redirect={data.redirectWhenLoggedOut ? "1" : undefined}
+          data-wb-shop-guest={allowGuestCheckout ? "1" : undefined}
           data-wb-success-variant={data.successPopupVariant ?? "celebration"}
           data-wb-order-detail-variant={data.orderDetailVariant ?? "timeline"}
           data-wb-success-heading={data.successHeading?.trim() || "Order confirmed"}

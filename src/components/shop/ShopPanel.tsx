@@ -551,6 +551,42 @@ export default function ShopPanel({
 
           {website.shopEnabled && (
             <section className="rounded-xl border border-line bg-surface p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="max-w-2xl">
+                  <h2 className="text-base font-semibold text-ink">Guest checkout</h2>
+                  <p className="mt-1 text-sm text-ink-body">
+                    Let shoppers add to cart and pay without creating an account. They get an order email with a
+                    tracking link and can download their invoice from that page.
+                  </p>
+                </div>
+                <Switch
+                  isSelected={website.shopAllowGuestCheckout}
+                  onChange={(shopAllowGuestCheckout) => {
+                    void (async () => {
+                      try {
+                        onChange(await websitesApi.update(website.id, { shopAllowGuestCheckout }));
+                      } catch (err) {
+                        setTurnError(errorMessage(err));
+                      }
+                    })();
+                  }}
+                  isDisabled={turning}
+                >
+                  <Switch.Content>
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                    <Label className="text-sm text-ink">
+                      {website.shopAllowGuestCheckout ? "Guest checkout on" : "Guest checkout off"}
+                    </Label>
+                  </Switch.Content>
+                </Switch>
+              </div>
+            </section>
+          )}
+
+          {website.shopEnabled && (
+            <section className="rounded-xl border border-line bg-surface p-6">
               <div className="max-w-2xl">
                 <h2 className="text-base font-semibold text-ink">Order cancellation</h2>
                 <p className="mt-1 text-sm text-ink-body">

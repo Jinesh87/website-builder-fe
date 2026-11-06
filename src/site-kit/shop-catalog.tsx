@@ -225,6 +225,9 @@ export const SHOP_DETAIL_SCRIPT = `(function(){
       });
       root.querySelectorAll("[data-wb-wishlist-toggle]").forEach(function(btn){
         if(variant.id) btn.setAttribute("data-wb-variant-id", variant.id);
+        if(variant.name!=null) btn.setAttribute("data-wb-variant-name", String(variant.name||""));
+        if(variant.pricePaise!=null) btn.setAttribute("data-wb-price-paise", String(variant.pricePaise||0));
+        if(variant.image!=null) btn.setAttribute("data-wb-image-url", String(variant.image||""));
       });
       var msg=root.querySelector("[data-wb-cart-msg]");
       if(msg){ msg.hidden=true; msg.textContent=""; msg.classList.remove("is-ok","is-error","is-login"); }

@@ -32,7 +32,7 @@ import ProductDetailSection from "./sections/ProductDetailSection.tsx";
 import AccountSection from "./sections/AccountSection.tsx";
 import { useShopCatalog } from "./shop-catalog.tsx";
 import { ShopCatalogProvider } from "./shop-catalog.tsx";
-import { SHOP_NAV_AUTH_SCRIPT } from "./shop-auth.ts";
+import { SHOP_NAV_AUTH_SCRIPT, SHOP_TRACK_SCRIPT } from "./shop-auth.ts";
 import { useStaticRender } from "./render-mode.tsx";
 import { SITE_CSS } from "./styles.ts";
 import { themeToCssVars } from "./theme.ts";
@@ -115,23 +115,30 @@ type SiteFrameProps = {
   footer: ReactNode;
   children: ReactNode;
   shopWebsiteId?: string;
+  allowGuestCheckout?: boolean;
   navAuthScript?: boolean;
 };
 
 /** Themed page wrapper shared by the published page and the visual editor canvas. */
-export function SiteFrame({ theme, header, footer, children, shopWebsiteId, navAuthScript }: SiteFrameProps) {
+export function SiteFrame({ theme, header, footer, children, shopWebsiteId, allowGuestCheckout, navAuthScript }: SiteFrameProps) {
   const classes = ["wb-site", `wb-buttons-${theme.buttonStyle}`, `wb-cards-${theme.cardStyle}`].join(" ");
   return (
     <VideoModalProvider>
       <div
         className={classes}
         style={themeToCssVars(theme)}
-        {...(shopWebsiteId ? { "data-wb-shop-website": shopWebsiteId } : {})}
+        {...(shopWebsiteId
+          ? {
+              "data-wb-shop-website": shopWebsiteId,
+              ...(allowGuestCheckout ? { "data-wb-shop-guest": "1" } : {}),
+            }
+          : {})}
       >
         {header}
         <main>{children}</main>
         {footer}
         {navAuthScript && shopWebsiteId && <script dangerouslySetInnerHTML={{ __html: SHOP_NAV_AUTH_SCRIPT }} />}
+        {shopWebsiteId && <script dangerouslySetInnerHTML={{ __html: SHOP_TRACK_SCRIPT }} />}
       </div>
     </VideoModalProvider>
   );
@@ -181,6 +188,7 @@ function SitePageBody({ site, page, editor }: SitePageProps) {
   const catalog = useShopCatalog();
   const isStatic = useStaticRender();
   const shopWebsiteId = catalog?.live ? catalog.websiteId : undefined;
+  const allowGuestCheckout = Boolean(catalog?.live && catalog.allowGuestCheckout);
   // A page's own header/footer replaces the site-wide one; a hidden one means the page has none.
   const pageHeaderSection = page.sections.find((section): section is SectionOf<"header"> => section.type === "header");
   const pageFooterSection = page.sections.find((section): section is SectionOf<"footer"> => section.type === "footer");
@@ -213,6 +221,7 @@ function SitePageBody({ site, page, editor }: SitePageProps) {
         header={editor && effectiveHeader ? editor.renderHeader(effectiveHeader) : effectiveHeader}
         footer={editor && effectiveFooter ? editor.renderFooter(effectiveFooter) : effectiveFooter}
         shopWebsiteId={shopWebsiteId}
+        allowGuestCheckout={allowGuestCheckout}
         navAuthScript={Boolean(isStatic && shopWebsiteId)}
       >
         {editor
