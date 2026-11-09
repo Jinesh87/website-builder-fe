@@ -18,8 +18,9 @@ type Feedback = { status: "success" | "danger"; message: string } | null;
 const CYCLE_OPTIONS = (["QUARTERLY", "YEARLY"] as const).map((value) => ({ value, label: CYCLE_LABELS[value] }));
 
 function packageOptions(packages: HostingPackage[]) {
+  // Website hosting already returns offerable packages (no `active` flag on this type).
   return packages
-    .filter((pkg) => pkg.active || pkg.isCustom)
+    .filter((pkg) => pkg.isCustom || pkg.prices.QUARTERLY || pkg.prices.YEARLY)
     .map((pkg) => ({ value: pkg.id, label: pkg.name }));
 }
 
