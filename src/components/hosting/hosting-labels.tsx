@@ -63,12 +63,18 @@ export function daysUntil(iso: string): number {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / DAY_MS);
 }
 
-/** Same rule as the server's publish check: billing on and no paid (or grace) plan. */
-export function hostingBlocksPublish(hosting: WebsiteHosting | null): boolean {
+/**
+ * Same rule as the server's domain-connect check: billing on and no paid (or grace) plan.
+ * Publishing to the free subdomain does not use this.
+ */
+export function hostingBlocksDomainConnect(hosting: WebsiteHosting | null): boolean {
   if (!hosting?.enabled) return false;
   const status = hosting.subscription?.status;
   return status !== "ACTIVE" && status !== "GRACE";
 }
+
+/** @deprecated Use hostingBlocksDomainConnect — publish no longer requires a plan. */
+export const hostingBlocksPublish = hostingBlocksDomainConnect;
 
 /** "12 days left", "Ends today", "Ended 2 days ago". */
 export function remainingLabel(subscription: HostingSubscription): string | null {

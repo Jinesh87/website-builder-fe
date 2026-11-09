@@ -52,11 +52,8 @@ export default function WebsiteCard({
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-2xs transition-all duration-200 hover:border-line-strong hover:shadow-md">
-      {/* Thumbnail / Preview */}
-      <Link
-        to={`/websites/${website.id}`}
-        className="relative aspect-video w-full overflow-hidden border-b border-line bg-canvas transition-colors"
-      >
+      {/* Thumbnail / Preview — overlay link so SiteBrand <a> inside the preview isn't nested */}
+      <div className="relative aspect-video w-full overflow-hidden border-b border-line bg-canvas">
         {!loading && hasSections && siteData ? (
           <SiteThumbnail site={siteData} className="size-full" />
         ) : (
@@ -66,7 +63,12 @@ export default function WebsiteCard({
             </span>
           </div>
         )}
-      </Link>
+        <Link
+          to={`/websites/${website.id}`}
+          className="absolute inset-0 z-10"
+          aria-label={`Open ${website.name}`}
+        />
+      </div>
 
       {/* Card Info & Actions */}
       <div className="flex flex-1 flex-col p-4">

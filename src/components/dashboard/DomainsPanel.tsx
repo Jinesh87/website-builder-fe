@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Button, Chip, Spinner } from "@heroui/react";
+import { buttonVariants } from "@heroui/styles";
 import { Check, Copy, ExternalLink, Globe, RefreshCw, Star, Trash2 } from "lucide-react";
-import { errorMessage } from "../../api/http.ts";
+import { hostingApi, type PlanChoice, type WebsiteHosting } from "../../api/hosting.ts";
+import { ApiError, errorMessage } from "../../api/http.ts";
 import { websitesApi, type DnsRecord, type WebsiteDetail, type WebsiteDomain } from "../../api/websites.ts";
 import { env } from "../../config/env.ts";
+import { defaultPlan } from "../../utils/hosting-pricing.ts";
+import { formatPaise } from "../../api/wallet.ts";
 import { getLiveSiteUrl } from "../../utils/live-url.ts";
+import HostingCheckoutModal from "../hosting/HostingCheckoutModal.tsx";
+import HostingRequiredCard from "../hosting/HostingRequiredCard.tsx";
+import { hostingBlocksDomainConnect } from "../hosting/hosting-labels.tsx";
+import PlanPicker from "../hosting/PlanPicker.tsx";
 import CommonModal from "../ui/CommonModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import TextInput from "../ui/TextInput.tsx";
@@ -12,6 +20,9 @@ import { formatDateTime } from "../websites/website-labels.tsx";
 
 type DomainsPanelProps = {
   website: WebsiteDetail;
+  isAdmin: boolean;
+  hosting: WebsiteHosting | null;
+  onHostingChange: (hosting: WebsiteHosting) => void;
   /** Called after a change that can move the site's main address. */
   onChanged: () => void;
 };
@@ -120,7 +131,7 @@ function RecordsTable({ records }: { records: DnsRecord[] }) {
   );
 }
 
-export default function DomainsPanel({ website, onChanged }: DomainsPanelProps) {
+export default function DomainsPanel({ website, isAdmin, hosting, onHostingChange, onChanged }: DomainsPanelProps) {
   const [domains, setDomains] = useState<WebsiteDomain[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hostname, setHostname] = useState("");
@@ -130,6 +141,9 @@ export default function DomainsPanel({ website, onChanged }: DomainsPanelProps) 
   const [actionError, setActionError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<WebsiteDomain | null>(null);
   const [removePending, setRemovePending] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanChoice | null>(() => (hosting ? defaultPlan(hosting) : null));
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [pendingHostname, setPendingHostname] = useState<string | null>(null);
 
   const load = useCallback(
     () =>
@@ -147,21 +161,62 @@ export default function DomainsPanel({ website, onChanged }: DomainsPanelProps) 
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (hosting) setSelectedPlan(defaultPlan(hosting));
+  }, [hosting]);
+
   const freeUrl = getLiveSiteUrl(website.subdomain);
   const isLive = website.status === "PUBLISHED";
+  const needsPlan = hostingBlocksDomainConnect(hosting);
+  const selectedPrice =
+    selectedPlan && hosting?.packages.find((pkg) => pkg.id === selectedPlan.packageId)?.prices[selectedPlan.cycle];
+
+  async function addDomain(name: string) {
+    const domain = await websitesApi.addDomain(website.id, name);
+    setDomains((current) => [...(current ?? []), domain]);
+    setHostname("");
+    setPendingHostname(null);
+  }
 
   async function handleAdd(event: FormEvent) {
     event.preventDefault();
-    if (!hostname.trim()) {
+    const name = hostname.trim();
+    if (!name) {
       setAddError("Enter a domain name like www.yourbusiness.com.");
+      return;
+    }
+    if (needsPlan) {
+      setPendingHostname(name);
+      setCheckoutOpen(true);
       return;
     }
     setAdding(true);
     setAddError(null);
     try {
-      const domain = await websitesApi.addDomain(website.id, hostname.trim());
-      setDomains((current) => [...(current ?? []), domain]);
-      setHostname("");
+      await addDomain(name);
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "HOSTING_REQUIRED") {
+        const refreshed = await hostingApi.get(website.id).catch(() => hosting);
+        if (refreshed) onHostingChange(refreshed);
+        setPendingHostname(name);
+        setCheckoutOpen(true);
+        return;
+      }
+      setAddError(errorMessage(err));
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function handlePaid(updated: WebsiteHosting) {
+    onHostingChange(updated);
+    setCheckoutOpen(false);
+    const name = (pendingHostname ?? hostname).trim();
+    if (!name) return;
+    setAdding(true);
+    setAddError(null);
+    try {
+      await addDomain(name);
     } catch (err) {
       setAddError(errorMessage(err));
     } finally {
@@ -231,8 +286,45 @@ export default function DomainsPanel({ website, onChanged }: DomainsPanelProps) 
           <h2 className="text-base font-semibold text-ink">Custom domains</h2>
           <p className="mt-0.5 text-sm text-ink-muted">
             Use a domain you own. Secure HTTPS is set up automatically once it's connected.
+            {hosting?.enabled
+              ? " An active hosting plan is required before you can connect one."
+              : ""}
           </p>
         </div>
+
+        {needsPlan && hosting && (
+          <div className="space-y-4 border-b border-line px-6 py-5">
+            <HostingRequiredCard hosting={hosting} isAdmin={isAdmin} />
+            <PlanPicker
+              packages={hosting.packages}
+              value={selectedPlan}
+              onChange={setSelectedPlan}
+              currentPackageId={hosting.subscription?.packageId}
+              onEditCustom={isAdmin ? () => setCheckoutOpen(true) : undefined}
+              customAction={
+                isAdmin ? undefined : (
+                  <a
+                    href="/contact"
+                    target="_blank"
+                    rel="noreferrer"
+                    className={buttonVariants({ size: "sm", variant: "outline", className: "w-full" })}
+                  >
+                    Contact us
+                  </a>
+                )
+              }
+            />
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button size="sm" onPress={() => setCheckoutOpen(true)}>
+                {isAdmin
+                  ? "Record payment to unlock domains"
+                  : selectedPrice == null
+                    ? "Choose plan & continue"
+                    : `Continue · ${selectedPrice === 0 ? "Free" : formatPaise(selectedPrice)}`}
+              </Button>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleAdd} className="flex flex-wrap items-start gap-3 border-b border-line px-6 py-5" noValidate>
           <div className="min-w-0 flex-1 basis-64">
@@ -249,7 +341,7 @@ export default function DomainsPanel({ website, onChanged }: DomainsPanelProps) 
             />
           </div>
           <Button type="submit" size="sm" isPending={adding} className="mt-6">
-            Connect domain
+            {needsPlan ? "Choose plan & connect" : "Connect domain"}
           </Button>
         </form>
 
@@ -375,6 +467,24 @@ export default function DomainsPanel({ website, onChanged }: DomainsPanelProps) 
           can connect it again later.
         </p>
       </CommonModal>
+
+      {hosting && (
+        <HostingCheckoutModal
+          isOpen={checkoutOpen}
+          onClose={() => {
+            setCheckoutOpen(false);
+            setPendingHostname(null);
+          }}
+          hosting={hosting}
+          isAdmin={isAdmin}
+          initialPlan={selectedPlan}
+          onChangePlan={() => setCheckoutOpen(false)}
+          onPaid={(updated) => void handlePaid(updated)}
+          onHostingChange={onHostingChange}
+          title="Choose a hosting plan to connect a domain"
+          notice={<HostingRequiredCard hosting={hosting} isAdmin={isAdmin} />}
+        />
+      )}
     </div>
   );
 }

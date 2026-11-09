@@ -40,11 +40,9 @@ import ShopPanel from "../../components/shop/ShopPanel.tsx";
 import SitePreviewCard from "../../components/dashboard/SitePreviewCard.tsx";
 import HostingAlert from "../../components/hosting/HostingAlert.tsx";
 import HostingCheckoutModal from "../../components/hosting/HostingCheckoutModal.tsx";
-import HostingRequiredCard from "../../components/hosting/HostingRequiredCard.tsx";
 import {
   formatBillingDate,
   HostingStatusChip,
-  hostingBlocksPublish,
   planLabel,
 } from "../../components/hosting/hosting-labels.tsx";
 import LiveSiteLink from "../../components/websites/LiveSiteLink.tsx";
@@ -123,8 +121,6 @@ export default function ProjectDashboardPage() {
   const tab = parseProjectTab(searchParams.get("tab"), showShop);
   const [hosting, setHosting] = useState<WebsiteHosting | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  /** Set when the checkout was opened by Publish, so publishing continues once paid. */
-  const [publishAfterPay, setPublishAfterPay] = useState(false);
   const [success, setSuccess] = useState<{ title?: string } | null>(null);
   const [versions, setVersions] = useState<WebsiteVersion[]>([]);
   const [loadError, setLoadError] = useState<{
@@ -209,27 +205,14 @@ export default function ProjectDashboardPage() {
       setConfirmPublish(false);
       setSuccess({});
     } catch (err) {
-      if (err instanceof ApiError && err.code === "HOSTING_REQUIRED") {
-        setConfirmPublish(false);
-        await loadHosting();
-        setPublishAfterPay(true);
-        setCheckoutOpen(true);
-        return;
-      }
       setPublishError(errorMessage(err));
     } finally {
       setPublishing(false);
     }
   }
 
-  /** Publishing needs a live plan while billing is on; ask for one first instead of failing. */
   function startPublish() {
     setPublishError(null);
-    if (hostingBlocksPublish(hosting)) {
-      setPublishAfterPay(true);
-      setCheckoutOpen(true);
-      return;
-    }
     setConfirmPublish(true);
   }
 
@@ -240,11 +223,7 @@ export default function ProjectDashboardPage() {
     setCheckoutOpen(false);
     refreshWebsite();
     if (restored) {
-      setPublishAfterPay(false);
       setSuccess({ title: "Your website is live again!" });
-    } else if (publishAfterPay) {
-      setPublishAfterPay(false);
-      setConfirmPublish(true);
     }
   }
 
@@ -422,7 +401,9 @@ export default function ProjectDashboardPage() {
 
         {publishError && <FormAlert status="danger">{publishError}</FormAlert>}
 
-        {hosting && tab !== "hosting" && <HostingAlert hosting={hosting} onOpen={() => setTab("hosting")} />}
+        {hosting && tab !== "hosting" && tab !== "domains" && (
+          <HostingAlert hosting={hosting} onOpen={() => setTab("hosting")} />
+        )}
 
         <ProjectTabs value={tab} onChange={setTab} showShop={showShop} />
 
@@ -567,7 +548,13 @@ export default function ProjectDashboardPage() {
         )}
 
         {tab === "domains" && (
-          <DomainsPanel website={website} onChanged={refreshWebsite} />
+          <DomainsPanel
+            website={website}
+            isAdmin={isAdmin}
+            hosting={hosting}
+            onHostingChange={setHosting}
+            onChanged={refreshWebsite}
+          />
         )}
 
         {tab === "hosting" &&
@@ -576,10 +563,7 @@ export default function ProjectDashboardPage() {
               hosting={hosting}
               isAdmin={isAdmin}
               onChange={setHosting}
-              onPay={() => {
-                setPublishAfterPay(false);
-                setCheckoutOpen(true);
-              }}
+              onPay={() => setCheckoutOpen(true)}
             />
           ) : (
             <div className="grid place-items-center py-16">
@@ -736,20 +720,11 @@ export default function ProjectDashboardPage() {
       {hosting && (
         <HostingCheckoutModal
           isOpen={checkoutOpen}
-          onClose={() => {
-            setCheckoutOpen(false);
-            setPublishAfterPay(false);
-          }}
+          onClose={() => setCheckoutOpen(false)}
           hosting={hosting}
           isAdmin={isAdmin}
           onPaid={handlePaid}
           onHostingChange={setHosting}
-          title={publishAfterPay ? "Choose a hosting plan to publish" : undefined}
-          notice={
-            publishAfterPay && (
-              <HostingRequiredCard hosting={hosting} isAdmin={isAdmin} />
-            )
-          }
         />
       )}
 

@@ -336,6 +336,11 @@ export const hostingApi = {
   /** Super Admin: records a payment collected offline, or charges the client's connects. */
   collect: (websiteId: string, input: CollectInput) =>
     request<HostingResponse>(`${websiteBase(websiteId)}/collect`, { method: "POST", body: input }).then((data) => data.hosting),
+  /** Super Admin: undoes the latest recorded (non-Razorpay) payment and restores the prior period. */
+  unrecordPayment: (websiteId: string, paymentId: string) =>
+    request<HostingResponse>(`${websiteBase(websiteId)}/payments/${encodeURIComponent(paymentId)}`, {
+      method: "DELETE",
+    }).then((data) => data.hosting),
   /** Client: starts Razorpay autopay for the saved plan. */
   setupAutopay: (websiteId: string) =>
     request<{ checkout: SubscriptionCheckout }>(`${websiteBase(websiteId)}/autopay`, { method: "POST" }).then((data) => data.checkout),
