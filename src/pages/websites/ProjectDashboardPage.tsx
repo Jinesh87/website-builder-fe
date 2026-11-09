@@ -217,13 +217,16 @@ export default function ProjectDashboardPage() {
   }
 
   function handlePaid(updated: WebsiteHosting) {
-    // A site taken offline for non-payment comes back by itself once paid.
-    const restored = hosting?.website.offlineReason === "BILLING" && updated.website.status === "PUBLISHED";
+    // Paying reconnects the custom domain; free subdomain was never unpublished for billing.
+    const wasSuspended = hosting?.subscription?.status === "SUSPENDED" || hosting?.website.offlineReason === "BILLING";
+    const restored =
+      wasSuspended &&
+      (updated.subscription?.status === "ACTIVE" || updated.subscription?.status === "GRACE");
     setHosting(updated);
     setCheckoutOpen(false);
     refreshWebsite();
     if (restored) {
-      setSuccess({ title: "Your website is live again!" });
+      setSuccess({ title: "Custom domain reconnected!" });
     }
   }
 

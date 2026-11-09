@@ -22,11 +22,12 @@ export default function HostingAlert({ hosting, onOpen }: { hosting: WebsiteHost
   if (subscription.status === "SUSPENDED") {
     if (!hosting.enabled) return null;
     status = "danger";
-    message = "This website is offline because hosting wasn't renewed. Pay to bring it back, with no changes.";
+    message =
+      "Hosting wasn't renewed, so the custom domain is disconnected. Your free WebBuilder address stays live — renew to reconnect the custom domain.";
     actionLabel = "Renew hosting";
   } else if (subscription.status === "GRACE" && subscription.graceEndsAt) {
     const left = daysLeftPhrase(subscription.graceEndsAt);
-    message = `Grace period: ${left}. The website goes offline on ${formatBillingDate(subscription.graceEndsAt)} unless hosting is renewed.`;
+    message = `Grace period: ${left}. On ${formatBillingDate(subscription.graceEndsAt)} the custom domain disconnects unless hosting is renewed. Your free address stays live.`;
     actionLabel = "Renew hosting";
   } else if (
     subscription.status === "ACTIVE" &&
@@ -34,7 +35,7 @@ export default function HostingAlert({ hosting, onOpen }: { hosting: WebsiteHost
     subscription.currentPeriodEnd
   ) {
     const left = daysLeftPhrase(subscription.currentPeriodEnd);
-    message = `Free hosting period: ${left} (until ${formatBillingDate(subscription.currentPeriodEnd)}). Renew before then — free periods have no grace, and the site goes offline when they end.`;
+    message = `Free hosting period: ${left} (until ${formatBillingDate(subscription.currentPeriodEnd)}). Renew before then — free periods have no grace, and the custom domain disconnects when they end. Your free address stays live.`;
     actionLabel = "View hosting";
   } else if (!hosting.enabled) {
     return null;

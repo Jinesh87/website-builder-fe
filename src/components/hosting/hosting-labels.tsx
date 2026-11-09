@@ -81,7 +81,9 @@ export function remainingLabel(subscription: HostingSubscription): string | null
   const until = subscription.status === "GRACE" ? subscription.graceEndsAt : subscription.currentPeriodEnd;
   if (!until || subscription.status === "SUSPENDED" || subscription.status === "AWAITING_PAYMENT") return null;
   const days = daysUntil(until);
-  if (subscription.status === "GRACE") return days <= 0 ? "Going offline" : `Offline in ${days} ${days === 1 ? "day" : "days"}`;
+  if (subscription.status === "GRACE") {
+    return days <= 0 ? "Domain disconnecting" : `Domain off in ${days} ${days === 1 ? "day" : "days"}`;
+  }
   if (days < 0) return "Renewing";
   if (days === 0) return "Ends today";
   return `${days} ${days === 1 ? "day" : "days"} left`;
@@ -105,7 +107,7 @@ export function HostingStatusChip({ subscription }: { subscription: HostingSubsc
     case "SUSPENDED":
       return (
         <Chip size="sm" color="danger">
-          Offline · unpaid
+          Domain locked · unpaid
         </Chip>
       );
     case "AWAITING_PAYMENT":

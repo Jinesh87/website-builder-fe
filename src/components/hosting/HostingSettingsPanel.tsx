@@ -302,7 +302,7 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
 
           <div className="rounded-lg border border-line bg-canvas p-3.5 text-xs text-ink-muted space-y-2">
             <p className="font-semibold text-ink">Subscription Lifecycle</p>
-            <p>Unpaid expired websites keep all their page data and drafts safely intact while offline, ready to instantly re-activate upon payment.</p>
+            <p>Unpaid hosting disconnects the custom domain only. The free WebBuilder address and all drafts stay live; reconnect by paying.</p>
           </div>
         </section>
       </div>

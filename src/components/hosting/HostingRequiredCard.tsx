@@ -56,7 +56,7 @@ export default function HostingRequiredCard({ hosting, isAdmin }: { hosting: Web
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs font-semibold text-ink">{title}</p>
           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${tone}`}>
-            {isSuspended ? "Offline" : isAwaiting ? "Ready to activate" : "Required"}
+            {isSuspended ? "Domain locked" : isAwaiting ? "Ready to activate" : "Required"}
           </span>
         </div>
         <p className="mt-0.5 text-xs leading-relaxed text-ink-body">{body}</p>

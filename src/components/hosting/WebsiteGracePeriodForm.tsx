@@ -68,8 +68,8 @@ export default function WebsiteGracePeriodForm({ hosting, onSaved }: WebsiteGrac
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-ink-muted">
-        After a paid period ends unpaid, the site stays live for this many days before going offline. Free periods skip grace
-        and go offline when they end. Leave blank to use the platform default ({hosting.graceDays}{" "}
+        After a paid period ends unpaid, the custom domain stays connected for this many days, then disconnects. The free
+        WebBuilder address stays live. Free periods skip grace. Leave blank for the platform default ({hosting.graceDays}{" "}
         {hosting.graceDays === 1 ? "day" : "days"}).
       </p>
       <div>
