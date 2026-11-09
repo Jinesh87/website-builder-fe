@@ -266,7 +266,7 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
               <p className="text-xs text-ink-muted">
                 {settings.liveSitesWithoutPlan === 0
                   ? "Every published website has a valid hosting plan."
-                  : `${settings.liveSitesWithoutPlan} published ${settings.liveSitesWithoutPlan === 1 ? "website has" : "websites have"} no hosting plan.`}
+                  : `${settings.liveSitesWithoutPlan} published ${settings.liveSitesWithoutPlan === 1 ? "website has" : "websites have"} no hosting plan. Grant one site from the client's websites page, or all here.`}
               </p>
             </div>
           </div>

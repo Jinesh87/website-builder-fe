@@ -46,6 +46,8 @@ export type HostingSubscription = {
   cycle: BillingCycle;
   status: HostingStatus;
   autoRenew: boolean;
+  /** Current ACTIVE period was granted free (not paid). Cleared on payment. */
+  isComplimentary: boolean;
   /** This website's custom package price in paise; null = the package's default. */
   customQuarterlyPaise: number | null;
   customYearlyPaise: number | null;
@@ -336,6 +338,9 @@ export const hostingApi = {
   /** Super Admin: records a payment collected offline, or charges the client's connects. */
   collect: (websiteId: string, input: CollectInput) =>
     request<HostingResponse>(`${websiteBase(websiteId)}/collect`, { method: "POST", body: input }).then((data) => data.hosting),
+  /** Super Admin: complimentary ACTIVE period for one website; attaches the plan used at renewal. */
+  grantFreePeriod: (websiteId: string, input: PlanChoice & { freeDays: number }) =>
+    request<HostingResponse>(`${websiteBase(websiteId)}/grant-free`, { method: "POST", body: input }).then((data) => data.hosting),
   /** Super Admin: undoes the latest recorded (non-Razorpay) payment and restores the prior period. */
   unrecordPayment: (websiteId: string, paymentId: string) =>
     request<HostingResponse>(`${websiteBase(websiteId)}/payments/${encodeURIComponent(paymentId)}`, {

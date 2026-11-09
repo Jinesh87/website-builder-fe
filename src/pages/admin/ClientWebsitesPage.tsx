@@ -7,6 +7,7 @@ import {
   CreditCard,
   Eye,
   Globe,
+  Gift,
   History,
   IndianRupee,
   LayoutDashboard,
@@ -23,6 +24,7 @@ import { formatConnects, formatPaise } from "../../api/wallet.ts";
 import StatCard from "../../components/admin/StatCard.tsx";
 import { SOURCE_LABELS } from "../../components/admin/client-labels.tsx";
 import { IconButton, IconLink, RowActions } from "../../components/admin/websites/RowActions.tsx";
+import GrantFreePeriodForm from "../../components/hosting/GrantFreePeriodForm.tsx";
 import HostingCheckoutModal from "../../components/hosting/HostingCheckoutModal.tsx";
 import {
   daysUntil,
@@ -42,6 +44,7 @@ import FormAlert from "../../components/ui/FormAlert.tsx";
 import { WebsiteStatusChip } from "../../components/websites/website-labels.tsx";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
+type ActiveMode = "pay" | "price" | "free";
 
 /** Super Admin: one client's websites with their hosting dates, payments and actions. */
 export default function ClientWebsitesPage() {
@@ -50,8 +53,8 @@ export default function ClientWebsitesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback>(null);
 
-  /** The website being paid for or re-priced, loaded on demand. */
-  const [active, setActive] = useState<{ mode: "pay" | "price"; hosting: WebsiteHosting } | null>(null);
+  /** The website being paid for, re-priced, or granted a free period — loaded on demand. */
+  const [active, setActive] = useState<{ mode: ActiveMode; hosting: WebsiteHosting } | null>(null);
   const [opening, setOpening] = useState<string | null>(null);
   const [historyFor, setHistoryFor] = useState<ClientHostingWebsite | null>(null);
 
@@ -72,7 +75,7 @@ export default function ClientWebsitesPage() {
     void load();
   }, [load]);
 
-  async function open(website: ClientHostingWebsite, mode: "pay" | "price") {
+  async function open(website: ClientHostingWebsite, mode: ActiveMode) {
     setOpening(website.id);
     setFeedback(null);
     try {
@@ -93,6 +96,15 @@ export default function ClientWebsitesPage() {
   function handlePriceSaved() {
     setActive(null);
     setFeedback({ status: "success", message: "Custom price saved. It applies from the website's next payment." });
+    void load();
+  }
+
+  function handleFreeGranted(updated: WebsiteHosting) {
+    setActive(null);
+    const until = updated.subscription?.currentPeriodEnd
+      ? ` until ${formatBillingDate(updated.subscription.currentPeriodEnd)}`
+      : "";
+    setFeedback({ status: "success", message: `Free period granted for ${updated.website.name}${until}.` });
     void load();
   }
 
@@ -233,6 +245,7 @@ export default function ClientWebsitesPage() {
                     isOpening={opening === website.id}
                     onRecordPayment={() => void open(website, "pay")}
                     onEditPrice={() => void open(website, "price")}
+                    onGrantFree={() => void open(website, "free")}
                     onHistory={() => setHistoryFor(website)}
                   />
                 ))}
@@ -267,6 +280,27 @@ export default function ClientWebsitesPage() {
         </CommonModal>
       )}
 
+      {active?.mode === "free" && (
+        <CommonModal
+          isOpen
+          onClose={() => setActive(null)}
+          headerDetails={{
+            icon: <Gift className="size-4.5" />,
+            title: "Grant free period",
+            description: `${active.hosting.website.name} · ${active.hosting.website.subdomain}`,
+          }}
+          iconTone="brand"
+          size="md"
+          disableFooter
+        >
+          <GrantFreePeriodForm
+            hosting={active.hosting}
+            onGranted={handleFreeGranted}
+            onCancel={() => setActive(null)}
+          />
+        </CommonModal>
+      )}
+
       {historyFor && (
         <WebsitePaymentsModal
           isOpen
@@ -293,12 +327,14 @@ function WebsiteRow({
   isOpening,
   onRecordPayment,
   onEditPrice,
+  onGrantFree,
   onHistory,
 }: {
   website: ClientHostingWebsite;
   isOpening: boolean;
   onRecordPayment: () => void;
   onEditPrice: () => void;
+  onGrantFree: () => void;
   onHistory: () => void;
 }) {
   const { subscription, lastPayment } = website;
@@ -368,6 +404,7 @@ function WebsiteRow({
           <IconLink to={`/websites/${website.id}/edit`} label="Edit site" icon={SquarePen} />
           <IconLink to={`/websites/${website.id}/preview`} label="Preview" icon={Eye} />
           <IconButton onPress={onRecordPayment} label="Record payment" icon={CreditCard} isDisabled={isOpening} />
+          <IconButton onPress={onGrantFree} label="Grant free period" icon={Gift} isDisabled={isOpening} />
           <IconButton onPress={onHistory} label="Payment history" icon={History} />
         </RowActions>
       </td>

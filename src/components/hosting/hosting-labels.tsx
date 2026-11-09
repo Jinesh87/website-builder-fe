@@ -92,8 +92,8 @@ export function HostingStatusChip({ subscription }: { subscription: HostingSubsc
   switch (subscription.status) {
     case "ACTIVE":
       return (
-        <Chip size="sm" color="success">
-          Active
+        <Chip size="sm" color={subscription.isComplimentary ? "warning" : "success"}>
+          {subscription.isComplimentary ? "Free period" : "Active"}
         </Chip>
       );
     case "GRACE":
