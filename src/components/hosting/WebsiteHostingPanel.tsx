@@ -21,6 +21,7 @@ import {
   remainingLabel,
   SwitchField,
 } from "./hosting-labels.tsx";
+import GrantFreePeriodForm from "./GrantFreePeriodForm.tsx";
 import PlanPicker from "./PlanPicker.tsx";
 import WebsitePriceEditor from "./WebsitePriceEditor.tsx";
 
@@ -291,6 +292,26 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
                   Starts from the default Custom price; change it for a deal agreed with the client. Only Super Admins can set it.
                 </p>
                 <WebsitePriceEditor hosting={hosting} onSaved={onChange} />
+              </div>
+            )}
+            {isAdmin && (
+              <div className="border-t border-line pt-4">
+                <h3 className="text-sm font-semibold text-ink">Grant free period</h3>
+                <p className="mb-3 mt-0.5 text-xs text-ink-muted">
+                  For this website only. Platform bulk free days stay under Settings → Hosting.
+                </p>
+                <GrantFreePeriodForm
+                  hosting={hosting}
+                  onGranted={(updated) => {
+                    onChange(updated);
+                    setFeedback({
+                      status: "success",
+                      message: updated.subscription?.currentPeriodEnd
+                        ? `Free period granted until ${formatBillingDate(updated.subscription.currentPeriodEnd)}.`
+                        : "Free period granted.",
+                    });
+                  }}
+                />
               </div>
             )}
           </div>
