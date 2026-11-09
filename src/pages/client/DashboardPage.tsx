@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Spinner } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
 import { ArrowRight, Globe, Image, Plus, Trash2 } from "lucide-react";
@@ -8,6 +8,10 @@ import { formatBytes, mediaApi, type StorageUsage } from "../../api/media.ts";
 import { websitesApi, type WebsiteSummary } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
+import HostingAlert, {
+  hostingAlertFromAttention,
+  resolveHostingAlert,
+} from "../../components/hosting/HostingAlert.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import BuilderChoices from "../../components/websites/BuilderChoices.tsx";
@@ -82,6 +86,14 @@ export default function DashboardPage() {
   const published = overview?.websites.filter((website) => website.status === "PUBLISHED").length ?? 0;
   const pendingChanges = overview?.websites.filter((website) => website.hasUnpublishedChanges).length ?? 0;
   const recent = overview?.websites.slice(0, RECENT_COUNT) ?? [];
+  const hostingAlerts = useMemo(() => {
+    if (!overview) return [];
+    return overview.websites.flatMap((website) => {
+      if (!website.hostingAttention) return [];
+      const source = hostingAlertFromAttention(website.id, website.name, website.hostingAttention);
+      return resolveHostingAlert(source) ? [source] : [];
+    });
+  }, [overview]);
 
   return (
     <div className="px-6 py-8 sm:px-8">
@@ -109,6 +121,18 @@ export default function DashboardPage() {
 
       {overview && (
         <>
+          {hostingAlerts.length > 0 && (
+            <section aria-label="Hosting alerts" className="mt-6 space-y-3">
+              {hostingAlerts.map((source) => (
+                <HostingAlert
+                  key={source.websiteId}
+                  source={source}
+                  href={`/websites/${source.websiteId}?tab=hosting`}
+                />
+              ))}
+            </section>
+          )}
+
           <section aria-label="Summary" className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Websites" value={overview.totalWebsites} />
             <Stat label="Published" value={published} hint={published === 0 ? "Publish a website to put it online" : undefined} />

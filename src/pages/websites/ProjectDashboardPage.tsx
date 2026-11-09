@@ -38,7 +38,7 @@ import ProjectTabs, {
 } from "../../components/dashboard/ProjectTabs.tsx";
 import ShopPanel from "../../components/shop/ShopPanel.tsx";
 import SitePreviewCard from "../../components/dashboard/SitePreviewCard.tsx";
-import HostingAlert from "../../components/hosting/HostingAlert.tsx";
+import HostingAlert, { hostingAlertFromWebsite } from "../../components/hosting/HostingAlert.tsx";
 import HostingCheckoutModal from "../../components/hosting/HostingCheckoutModal.tsx";
 import {
   formatBillingDate,
@@ -405,7 +405,7 @@ export default function ProjectDashboardPage() {
         {publishError && <FormAlert status="danger">{publishError}</FormAlert>}
 
         {hosting && tab !== "hosting" && tab !== "domains" && (
-          <HostingAlert hosting={hosting} onOpen={() => setTab("hosting")} />
+          <HostingAlert source={hostingAlertFromWebsite(hosting)} onOpen={() => setTab("hosting")} />
         )}
 
         <ProjectTabs value={tab} onChange={setTab} showShop={showShop} />

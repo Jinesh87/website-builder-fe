@@ -37,6 +37,15 @@ export type WebsiteGeneration = {
   completedAt: string | null;
 };
 
+/** Compact hosting state for client dashboard / list alerts. */
+export type WebsiteHostingAttention = {
+  billingEnabled: boolean;
+  status: "AWAITING_PAYMENT" | "ACTIVE" | "GRACE" | "SUSPENDED";
+  isComplimentary: boolean;
+  currentPeriodEnd: string | null;
+  graceEndsAt: string | null;
+};
+
 export type WebsiteSummary = {
   id: string;
   clientId: string;
@@ -69,6 +78,8 @@ export type WebsiteSummary = {
   shopGstPercent: number;
   /** Default: prices include GST unless a product overrides it. */
   shopPriceIncludesGst: boolean;
+  /** Null when the website has no hosting subscription. */
+  hostingAttention: WebsiteHostingAttention | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
