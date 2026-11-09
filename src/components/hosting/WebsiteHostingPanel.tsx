@@ -23,6 +23,7 @@ import {
 } from "./hosting-labels.tsx";
 import GrantFreePeriodForm from "./GrantFreePeriodForm.tsx";
 import PlanPicker from "./PlanPicker.tsx";
+import WebsiteGracePeriodForm from "./WebsiteGracePeriodForm.tsx";
 import WebsitePriceEditor from "./WebsitePriceEditor.tsx";
 
 type Feedback = { status: "success" | "danger" | "warning"; message: string } | null;
@@ -312,6 +313,15 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
                     });
                   }}
                 />
+              </div>
+            )}
+            {isAdmin && (
+              <div className="border-t border-line pt-4">
+                <h3 className="text-sm font-semibold text-ink">Grace period</h3>
+                <p className="mb-3 mt-0.5 text-xs text-ink-muted">
+                  For this website only. Platform default stays under Settings → Hosting.
+                </p>
+                <WebsiteGracePeriodForm hosting={hosting} onSaved={onChange} />
               </div>
             )}
           </div>
