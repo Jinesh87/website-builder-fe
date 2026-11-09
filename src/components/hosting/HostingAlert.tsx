@@ -34,7 +34,7 @@ export default function HostingAlert({ hosting, onOpen }: { hosting: WebsiteHost
     subscription.currentPeriodEnd
   ) {
     const left = daysLeftPhrase(subscription.currentPeriodEnd);
-    message = `Free hosting period: ${left} (until ${formatBillingDate(subscription.currentPeriodEnd)}). After that, renew on your plan to keep the site live.`;
+    message = `Free hosting period: ${left} (until ${formatBillingDate(subscription.currentPeriodEnd)}). Renew before then — free periods have no grace, and the site goes offline when they end.`;
     actionLabel = "View hosting";
   } else if (!hosting.enabled) {
     return null;

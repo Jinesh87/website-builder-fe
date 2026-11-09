@@ -68,8 +68,9 @@ export default function WebsiteGracePeriodForm({ hosting, onSaved }: WebsiteGrac
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-ink-muted">
-        After the paid or free period ends unpaid, the site stays live for this many days before going offline. Leave blank to
-        use the platform default ({hosting.graceDays} {hosting.graceDays === 1 ? "day" : "days"}).
+        After a paid period ends unpaid, the site stays live for this many days before going offline. Free periods skip grace
+        and go offline when they end. Leave blank to use the platform default ({hosting.graceDays}{" "}
+        {hosting.graceDays === 1 ? "day" : "days"}).
       </p>
       <div>
         <label htmlFor={`website-grace-days-${hosting.website.id}`} className="mb-1 block text-sm font-medium text-ink">

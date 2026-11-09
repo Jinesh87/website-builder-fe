@@ -101,8 +101,8 @@ export default function GrantFreePeriodForm({ hosting, onGranted, onCancel }: Gr
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-ink-muted">
-        Activates complimentary hosting from today. After the free days, the client pays to renew on the plan below (they can
-        switch plans before renewing).
+        Activates complimentary hosting from today. When free days end unpaid, the site goes offline with no grace — the client
+        must renew on the plan below (they can switch plans before then).
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
