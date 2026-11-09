@@ -159,7 +159,7 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
           <div className="flex-1">
             <h2 className="text-base font-semibold text-ink">Hosting packages</h2>
             <p className="text-xs text-ink-muted">
-              Displayed on public pricing pages and publishing checkout. Configured in real-time.
+              Displayed on public pricing pages and domain-connect checkout. Configured in real-time.
             </p>
           </div>
         </div>
@@ -220,9 +220,9 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
             </div>
 
             <div>
-              <SwitchField label="Require a paid hosting plan to publish" isSelected={form.enabled} onChange={update("enabled")} isDisabled={saving} />
+              <SwitchField label="Require a paid hosting plan for custom domains" isSelected={form.enabled} onChange={update("enabled")} isDisabled={saving} />
               <p className="mt-1 text-xs text-ink-muted">
-                When on, publishing needs a plan, and unpaid sites go offline after the grace period.
+                When on, connecting a custom domain needs a plan. Publishing on the free address stays free. Unpaid sites still go offline after the grace period.
               </p>
             </div>
 

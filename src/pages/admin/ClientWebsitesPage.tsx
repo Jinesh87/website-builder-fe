@@ -273,6 +273,15 @@ export default function ClientWebsitesPage() {
           onClose={() => setHistoryFor(null)}
           website={historyFor}
           subscription={historyFor.subscription}
+          onChanged={() => {
+            void adminHostingApi.client(clientId).then((loaded) => {
+              setData(loaded);
+              setHistoryFor((current) => {
+                if (!current) return null;
+                return loaded.websites.find((site) => site.id === current.id) ?? current;
+              });
+            });
+          }}
         />
       )}
     </div>

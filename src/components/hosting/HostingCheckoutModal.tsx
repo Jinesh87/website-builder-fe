@@ -22,7 +22,7 @@ type HostingCheckoutModalProps = {
   hosting: WebsiteHosting;
   isAdmin: boolean;
   onPaid: (hosting: WebsiteHosting) => void;
-  /** E.g. "Choose a plan to publish". */
+  /** E.g. "Choose a hosting plan to connect a domain". */
   title?: string;
   /** Shown above the plans, e.g. why a plan is needed. */
   notice?: ReactNode;

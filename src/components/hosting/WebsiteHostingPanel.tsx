@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@heroui/react";
 import { Receipt } from "lucide-react";
-import { hostingApi, type HostingAutopay, type PlanChoice, type WebsiteHosting } from "../../api/hosting.ts";
+import { hostingApi, type HostingAutopay, type HostingPayment, type PlanChoice, type WebsiteHosting } from "../../api/hosting.ts";
 import { errorMessage } from "../../api/http.ts";
 import { formatConnects, formatPaise, isAutopayLive } from "../../api/wallet.ts";
 import { defaultPlan } from "../../utils/hosting-pricing.ts";
 import { CheckoutDismissedError, openRazorpaySubscriptionCheckout } from "../../utils/razorpay-checkout.ts";
+import ConfirmDialog from "../ui/ConfirmDialog.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import {
   CYCLE_PERIOD,
@@ -59,6 +60,10 @@ type WebsiteHostingPanelProps = {
   onPay: () => void;
 };
 
+function canUnrecordPayment(payment: HostingPayment, latestId: string | undefined): boolean {
+  return payment.id === latestId && payment.method !== "RAZORPAY";
+}
+
 export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay }: WebsiteHostingPanelProps) {
   const { subscription, autopay, payment: options } = hosting;
   const [plan, setPlan] = useState<PlanChoice | null>(() => defaultPlan(hosting));
@@ -66,6 +71,10 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
   const [togglingRenew, setTogglingRenew] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [renewFeedback, setRenewFeedback] = useState<Feedback>(null);
+  const [unrecording, setUnrecording] = useState<HostingPayment | null>(null);
+  const [unrecordPending, setUnrecordPending] = useState(false);
+  const [unrecordError, setUnrecordError] = useState<string | null>(null);
+  const latestPaymentId = hosting.payments[0]?.id;
 
   useEffect(() => {
     setPlan(defaultPlan({ packages: hosting.packages, subscription }));
@@ -164,7 +173,7 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
     <div className="space-y-6">
       {!hosting.enabled && (
         <FormAlert status="warning">
-          Hosting billing is off on the platform, so publishing doesn't need a plan yet. Plans and payments set up here still apply.
+          Hosting billing is off on the platform, so custom domains don't need a plan yet. Plans and payments set up here still apply.
         </FormAlert>
       )}
 
@@ -307,11 +316,13 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
                   <th className="px-5 py-2.5 text-right font-medium">Amount</th>
                   <th className="px-5 py-2.5 font-medium">Paid by</th>
                   <th className="px-5 py-2.5 font-medium">Paid on</th>
+                  {isAdmin && <th className="px-5 py-2.5 text-right font-medium"> </th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {hosting.payments.map((payment) => {
                   const { amount, detail } = paymentAmountLabel(payment);
+                  const showUnrecord = isAdmin && canUnrecordPayment(payment, latestPaymentId);
                   return (
                     <tr key={payment.id}>
                       <td className="whitespace-nowrap px-5 py-2.5 text-ink">{formatPeriod(payment.periodStart, payment.periodEnd)}</td>
@@ -325,6 +336,25 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
                         {payment.reference && <span className="block text-xs text-ink-muted">Ref {payment.reference}</span>}
                       </td>
                       <td className="whitespace-nowrap px-5 py-2.5 text-xs text-ink-muted">{formatBillingDate(payment.createdAt)}</td>
+                      {isAdmin && (
+                        <td className="whitespace-nowrap px-5 py-2.5 text-right">
+                          {showUnrecord ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-danger hover:bg-danger/10"
+                              onPress={() => {
+                                setUnrecordError(null);
+                                setUnrecording(payment);
+                              }}
+                            >
+                              Un-record
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-ink-muted">—</span>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -333,6 +363,46 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        isOpen={!!unrecording}
+        title="Un-record this payment?"
+        subtitle={unrecording ? `${planLabel(unrecording)} · ${formatPeriod(unrecording.periodStart, unrecording.periodEnd)}` : undefined}
+        confirmLabel="Un-record payment"
+        tone="danger"
+        isPending={unrecordPending}
+        onCancel={() => {
+          if (unrecordPending) return;
+          setUnrecording(null);
+          setUnrecordError(null);
+        }}
+        onConfirm={async () => {
+          if (!unrecording) return;
+          setUnrecordPending(true);
+          setUnrecordError(null);
+          try {
+            const updated = await hostingApi.unrecordPayment(hosting.website.id, unrecording.id);
+            onChange(updated);
+            setUnrecording(null);
+            setFeedback({ status: "success", message: "Payment un-recorded. The prior hosting period was restored." });
+          } catch (err) {
+            setUnrecordError(errorMessage(err));
+          } finally {
+            setUnrecordPending(false);
+          }
+        }}
+      >
+        <p className="text-sm text-ink-body">
+          This removes the payment from history and rolls the plan back to the previous paid period (or awaiting payment if
+          none). Connects charged for this period are refunded to the client wallet. Online Razorpay payments can&apos;t be
+          un-recorded here.
+        </p>
+        {unrecordError && (
+          <div className="mt-3">
+            <FormAlert status="danger">{unrecordError}</FormAlert>
+          </div>
+        )}
+      </ConfirmDialog>
     </div>
   );
 }

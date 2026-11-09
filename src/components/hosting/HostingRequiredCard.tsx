@@ -8,8 +8,8 @@ function reason(hosting: WebsiteHosting, isAdmin: boolean): { title: string; bod
     return {
       title: "Hosting expired",
       body: isAdmin
-        ? "This website went offline because its hosting wasn't renewed. Record a payment to bring it back; nothing in the site changes."
-        : "Your website went offline because its hosting wasn't renewed. Renew to bring it back; nothing in your site changes.",
+        ? "This website's hosting wasn't renewed. Record a payment before connecting a custom domain."
+        : "Your hosting wasn't renewed. Renew your plan before connecting a custom domain.",
     };
   }
   if (subscription?.status === "AWAITING_PAYMENT") {
@@ -17,19 +17,19 @@ function reason(hosting: WebsiteHosting, isAdmin: boolean): { title: string; bod
     return {
       title: "Hosting plan ready",
       body: isAdmin
-        ? `A ${plan} plan is set up for this website. Record the client's payment to put it live.`
-        : `A ${plan} plan is set up for this website. Pay for it to go live.`,
+        ? `A ${plan} plan is set up for this website. Record the client's payment to unlock custom domains.`
+        : `A ${plan} plan is set up for this website. Pay for it to connect your own domain.`,
     };
   }
   return {
-    title: "Hosting plan needed to go live",
+    title: "Hosting plan needed for a custom domain",
     body: isAdmin
-      ? "Every website needs an active hosting plan to be live. Record the client's payment for the plan they chose."
-      : "Every website needs an active hosting plan to be live on the internet. Your draft is saved, and you can keep editing anytime.",
+      ? "Connecting a custom domain needs an active hosting plan. Record the client's payment for the plan they chose. Publishing on the free address still works without this."
+      : "Connecting your own domain needs an active hosting plan. You can still publish and share your free address without paying.",
   };
 }
 
-/** Explains why publishing needs a hosting plan. */
+/** Explains why connecting a custom domain needs a hosting plan. */
 export default function HostingRequiredCard({ hosting, isAdmin }: { hosting: WebsiteHosting; isAdmin: boolean }) {
   const { title, body } = reason(hosting, isAdmin);
   const status = hosting.subscription?.status;

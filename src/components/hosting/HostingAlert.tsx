@@ -15,11 +15,8 @@ export default function HostingAlert({ hosting, onOpen }: { hosting: WebsiteHost
     message = "This website is offline because hosting wasn't renewed. Pay to bring it back, with no changes.";
   } else if (subscription?.status === "GRACE" && subscription.graceEndsAt) {
     message = `Hosting expired. The website goes offline on ${formatBillingDate(subscription.graceEndsAt)} unless it's renewed.`;
-  } else if (subscription?.status === "AWAITING_PAYMENT") {
-    message = "A hosting plan is set up. Pay for it to publish this website.";
-  } else if (!subscription && hosting.website.status !== "PUBLISHED") {
-    message = "Choose a hosting plan to publish this website.";
   } else {
+    // Unpaid / no-plan messages live on the Domains tab (HostingRequiredCard), not here.
     return null;
   }
 
