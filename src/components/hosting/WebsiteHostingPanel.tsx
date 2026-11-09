@@ -23,6 +23,7 @@ import {
 } from "./hosting-labels.tsx";
 import GrantFreePeriodForm from "./GrantFreePeriodForm.tsx";
 import PlanPicker from "./PlanPicker.tsx";
+import WebsiteFeaturesEditor from "./WebsiteFeaturesEditor.tsx";
 import WebsiteGracePeriodForm from "./WebsiteGracePeriodForm.tsx";
 import WebsitePriceEditor from "./WebsitePriceEditor.tsx";
 
@@ -180,77 +181,117 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <section className="rounded-xl border border-line bg-surface shadow-xs">
-          <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-            <h2 className="text-sm font-semibold text-ink">Hosting plan</h2>
-            <HostingStatusChip subscription={subscription} />
-          </div>
-          <dl className="divide-y divide-line px-5">
-            <Row label="Plan">{subscription ? planLabel(subscription) : "Not chosen"}</Row>
-            <Row label="Price">
-              {formatPlanPrice(currentPrice)}
-              {subscription && currentPrice !== null && currentPrice > 0 && (
-                <span className="block text-xs font-normal text-ink-muted">per {CYCLE_PERIOD[subscription.cycle]}</span>
+        <div className="space-y-6">
+          <section className="rounded-xl border border-line bg-surface shadow-xs">
+            <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
+              <h2 className="text-sm font-semibold text-ink">Hosting plan</h2>
+              <HostingStatusChip subscription={subscription} />
+            </div>
+            <dl className="divide-y divide-line px-5">
+              <Row label="Plan">{subscription ? planLabel(subscription) : "Not chosen"}</Row>
+              <Row label="Price">
+                {formatPlanPrice(currentPrice)}
+                {subscription && currentPrice !== null && currentPrice > 0 && (
+                  <span className="block text-xs font-normal text-ink-muted">per {CYCLE_PERIOD[subscription.cycle]}</span>
+                )}
+              </Row>
+              <Row label="Current period">
+                {subscription?.currentPeriodStart && subscription.currentPeriodEnd
+                  ? formatPeriod(subscription.currentPeriodStart, subscription.currentPeriodEnd)
+                  : "—"}
+                {remaining && <span className="block text-xs font-normal text-ink-muted">{remaining}</span>}
+              </Row>
+              {subscription?.status === "GRACE" && subscription.graceEndsAt && (
+                <Row label="Domain locks">{formatBillingDate(subscription.graceEndsAt)}</Row>
               )}
-            </Row>
-            <Row label="Current period">
-              {subscription?.currentPeriodStart && subscription.currentPeriodEnd
-                ? formatPeriod(subscription.currentPeriodStart, subscription.currentPeriodEnd)
-                : "—"}
-              {remaining && <span className="block text-xs font-normal text-ink-muted">{remaining}</span>}
-            </Row>
-            {subscription?.status === "GRACE" && subscription.graceEndsAt && (
-              <Row label="Goes offline">{formatBillingDate(subscription.graceEndsAt)}</Row>
-            )}
-            {subscription?.status === "SUSPENDED" && subscription.suspendedAt && (
-              <Row label="Offline since">{formatBillingDate(subscription.suspendedAt)}</Row>
-            )}
-            {options.connects && (
-              <Row label={isAdmin ? "Client's connects" : "Your connects"}>{formatConnects(options.balance)}</Row>
-            )}
-          </dl>
-          {subscription && (canUseAutopay || options.connects) && (
-            <div className="flex flex-col gap-3 border-t border-line px-5 py-4">
-              {canUseAutopay && (
-                <div>
-                  <SwitchField
-                    label="Autopay with card or UPI"
-                    isSelected={autopay !== null}
-                    onChange={toggleAutopay}
-                    isDisabled={togglingRenew || (isAdmin && autopay === null)}
-                  />
-                  <p className={`mt-1 text-xs ${autopay && !isAutopayLive(autopay.status) ? "text-ed-danger" : "text-ink-muted"}`}>
-                    {autopay
-                      ? autopayDetail(autopay)
-                      : subscription.status === "ACTIVE" && subscription.currentPeriodEnd
-                        ? `Charged automatically when the period ends on ${formatBillingDate(subscription.currentPeriodEnd)}.`
-                        : "Pays this period now, then renews automatically."}
-                  </p>
-                </div>
+              {subscription?.status === "SUSPENDED" && subscription.suspendedAt && (
+                <Row label="Domain locked since">{formatBillingDate(subscription.suspendedAt)}</Row>
               )}
               {options.connects && (
-                <SwitchField
-                  label="Auto-renew from connects"
-                  isSelected={subscription.autoRenew}
-                  onChange={toggleAutoRenew}
-                  isDisabled={togglingRenew || autopay !== null}
-                />
+                <Row label={isAdmin ? "Client's connects" : "Your connects"}>{formatConnects(options.balance)}</Row>
               )}
-              {renewFeedback && <FormAlert status={renewFeedback.status}>{renewFeedback.message}</FormAlert>}
+            </dl>
+            {subscription && (canUseAutopay || options.connects) && (
+              <div className="flex flex-col gap-3 border-t border-line px-5 py-4">
+                {canUseAutopay && (
+                  <div>
+                    <SwitchField
+                      label="Autopay with card or UPI"
+                      isSelected={autopay !== null}
+                      onChange={toggleAutopay}
+                      isDisabled={togglingRenew || (isAdmin && autopay === null)}
+                    />
+                    <p className={`mt-1 text-xs ${autopay && !isAutopayLive(autopay.status) ? "text-ed-danger" : "text-ink-muted"}`}>
+                      {autopay
+                        ? autopayDetail(autopay)
+                        : subscription.status === "ACTIVE" && subscription.currentPeriodEnd
+                          ? `Charged automatically when the period ends on ${formatBillingDate(subscription.currentPeriodEnd)}.`
+                          : "Pays this period now, then renews automatically."}
+                    </p>
+                  </div>
+                )}
+                {options.connects && (
+                  <SwitchField
+                    label="Auto-renew from connects"
+                    isSelected={subscription.autoRenew}
+                    onChange={toggleAutoRenew}
+                    isDisabled={togglingRenew || autopay !== null}
+                  />
+                )}
+                {renewFeedback && <FormAlert status={renewFeedback.status}>{renewFeedback.message}</FormAlert>}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4">
+              <span className="text-xs text-ink-muted">{renewalNote}</span>
+              <Button size="sm" onPress={onPay} isDisabled={hosting.renewalOpensAt !== null || autopayRenews}>
+                {isAdmin ? "Record payment" : subscription?.currentPeriodEnd ? "Renew now" : "Pay & activate"}
+              </Button>
             </div>
+            {hosting.renewalOpensAt && (
+              <p className="border-t border-line px-5 py-3 text-xs text-ink-muted">
+                Renewal opens on {formatBillingDate(hosting.renewalOpensAt)}.
+              </p>
+            )}
+          </section>
+
+          {isAdmin && (
+            <section className="rounded-xl border border-line bg-surface shadow-xs">
+              <div className="border-b border-line px-5 py-3.5">
+                <h2 className="text-sm font-semibold text-ink">Grant free period</h2>
+                <p className="mt-0.5 text-xs text-ink-muted">This website only. Bulk grants stay under Settings → Hosting.</p>
+              </div>
+              <div className="px-5 py-4">
+                <GrantFreePeriodForm
+                  hosting={hosting}
+                  onGranted={(updated) => {
+                    onChange(updated);
+                    setFeedback({
+                      status: "success",
+                      message: updated.subscription?.currentPeriodEnd
+                        ? `Free period granted until ${formatBillingDate(updated.subscription.currentPeriodEnd)}.`
+                        : "Free period granted.",
+                    });
+                  }}
+                />
+              </div>
+            </section>
           )}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4">
-            <span className="text-xs text-ink-muted">{renewalNote}</span>
-            <Button size="sm" onPress={onPay} isDisabled={hosting.renewalOpensAt !== null || autopayRenews}>
-              {isAdmin ? "Record payment" : subscription?.currentPeriodEnd ? "Renew now" : "Pay & activate"}
-            </Button>
-          </div>
-          {hosting.renewalOpensAt && (
-            <p className="border-t border-line px-5 py-3 text-xs text-ink-muted">
-              Renewal opens on {formatBillingDate(hosting.renewalOpensAt)}.
-            </p>
+
+          {isAdmin && (
+            <section className="rounded-xl border border-line bg-surface shadow-xs">
+              <div className="border-b border-line px-5 py-3.5">
+                <h2 className="text-sm font-semibold text-ink">Grace period</h2>
+                <p className="mt-0.5 text-xs text-ink-muted">
+                  After paid periods only. Blank uses the platform default ({hosting.graceDays}{" "}
+                  {hosting.graceDays === 1 ? "day" : "days"}).
+                </p>
+              </div>
+              <div className="px-5 py-4">
+                <WebsiteGracePeriodForm hosting={hosting} onSaved={onChange} />
+              </div>
+            </section>
           )}
-        </section>
+        </div>
 
         <section className="rounded-xl border border-line bg-surface shadow-xs">
           <div className="border-b border-line px-5 py-3.5">
@@ -288,40 +329,20 @@ export default function WebsiteHostingPanel({ hosting, isAdmin, onChange, onPay 
             </div>
             {isAdmin && (
               <div className="border-t border-line pt-4">
-                <h3 className="text-sm font-semibold text-ink">Custom price for this website</h3>
+                <h3 className="text-sm font-semibold text-ink">Custom price</h3>
                 <p className="mb-3 mt-0.5 text-xs text-ink-muted">
-                  Starts from the default Custom price; change it for a deal agreed with the client. Only Super Admins can set it.
+                  Starts from the default Custom price; change it for a deal agreed with the client.
                 </p>
                 <WebsitePriceEditor hosting={hosting} onSaved={onChange} />
               </div>
             )}
             {isAdmin && (
               <div className="border-t border-line pt-4">
-                <h3 className="text-sm font-semibold text-ink">Grant free period</h3>
+                <h3 className="text-sm font-semibold text-ink">Custom features</h3>
                 <p className="mb-3 mt-0.5 text-xs text-ink-muted">
-                  For this website only. Platform bulk free days stay under Settings → Hosting.
+                  Shown on the plan card. Starts from Settings → Hosting; override for this website only.
                 </p>
-                <GrantFreePeriodForm
-                  hosting={hosting}
-                  onGranted={(updated) => {
-                    onChange(updated);
-                    setFeedback({
-                      status: "success",
-                      message: updated.subscription?.currentPeriodEnd
-                        ? `Free period granted until ${formatBillingDate(updated.subscription.currentPeriodEnd)}.`
-                        : "Free period granted.",
-                    });
-                  }}
-                />
-              </div>
-            )}
-            {isAdmin && (
-              <div className="border-t border-line pt-4">
-                <h3 className="text-sm font-semibold text-ink">Grace period</h3>
-                <p className="mb-3 mt-0.5 text-xs text-ink-muted">
-                  For this website only. Platform default stays under Settings → Hosting.
-                </p>
-                <WebsiteGracePeriodForm hosting={hosting} onSaved={onChange} />
+                <WebsiteFeaturesEditor hosting={hosting} onSaved={onChange} />
               </div>
             )}
           </div>

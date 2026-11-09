@@ -9,6 +9,7 @@ function pkg(id: string, prices: HostingPackage["prices"], extra: Partial<Hostin
     name: id,
     description: "",
     features: [],
+    defaultFeatures: null,
     featured: false,
     websiteBackupDays: null,
     mediaStorageMb: 1024,

@@ -17,7 +17,10 @@ export type HostingPackage = {
   slug: string;
   name: string;
   description: string;
+  /** Effective feature list for this website (custom override when set). */
   features: string[];
+  /** Custom package only: package-level features when the website has no override. */
+  defaultFeatures: string[] | null;
   featured: boolean;
   /** Automatic backup cadence in days for websites on this package. Null = disabled. */
   websiteBackupDays: number | null;
@@ -53,6 +56,8 @@ export type HostingSubscription = {
   /** This website's custom package price in paise; null = the package's default. */
   customQuarterlyPaise: number | null;
   customYearlyPaise: number | null;
+  /** This website's custom package features; null = the package's default features. */
+  customFeatures: string[] | null;
   currentPeriodStart: string | null;
   currentPeriodEnd: string | null;
   graceEndsAt: string | null;
@@ -137,6 +142,8 @@ export type UpdatePlanInput = {
   /** Super Admin only; null = the custom package's default price. */
   customQuarterlyPaise?: number | null;
   customYearlyPaise?: number | null;
+  /** Super Admin only; null = the custom package's default features. */
+  customFeatures?: string[] | null;
   /** Super Admin only; null = use platform grace days. */
   graceDaysOverride?: number | null;
 };

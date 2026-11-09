@@ -325,7 +325,10 @@ export default function HostingPackageEditor({ pkg, onSaved }: { pkg: AdminHosti
 
           <fieldset className="pt-1">
             <div className="flex items-center justify-between mb-1.5">
-              <legend className="text-xs font-semibold text-ink">Features ({features.length})</legend>
+              <legend className="text-xs font-semibold text-ink">
+                Features ({features.length})
+                {pkg.isCustom ? <span className="ml-1 font-normal text-ink-muted">· default; override per website</span> : null}
+              </legend>
               {form.features.length < MAX_FEATURES && (
                 <button
                   type="button"

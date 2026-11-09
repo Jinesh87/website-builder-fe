@@ -100,11 +100,7 @@ export default function GrantFreePeriodForm({ hosting, onGranted, onCancel }: Gr
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-ink-muted">
-        Activates complimentary hosting from today. When free days end unpaid, the custom domain disconnects with no grace —
-        the free address stays live. The client renews on the plan below (they can switch before then).
-      </p>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 grid-cols-2">
         <div>
           <label htmlFor={`grant-free-days-${hosting.website.id}`} className="mb-1 block text-sm font-medium text-ink">
             Free days
@@ -126,6 +122,9 @@ export default function GrantFreePeriodForm({ hosting, onGranted, onCancel }: Gr
         <SelectInput label="Billed" value={cycle} onChange={setCycle} options={CYCLE_OPTIONS} />
       </div>
       <SelectInput label="Then renews on" value={packageId} onChange={setPackageId} options={listed} />
+      <p className="text-xs text-ink-muted">
+        No grace after free days — custom domain disconnects; free address stays live.
+      </p>
       {listed.length === 0 && (
         <FormAlert status="warning">Price a hosting package in Settings → Hosting first.</FormAlert>
       )}
