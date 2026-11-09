@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@heroui/react";
 import {
   hostingApi,
@@ -15,6 +15,7 @@ import { defaultPlan } from "../../utils/hosting-pricing.ts";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
 const CYCLE_OPTIONS = (["QUARTERLY", "YEARLY"] as const).map((value) => ({ value, label: CYCLE_LABELS[value] }));
 
 function packageOptions(packages: HostingPackage[]) {
@@ -22,6 +23,17 @@ function packageOptions(packages: HostingPackage[]) {
   return packages
     .filter((pkg) => pkg.isCustom || pkg.prices.QUARTERLY || pkg.prices.YEARLY)
     .map((pkg) => ({ value: pkg.id, label: pkg.name }));
+}
+
+/** Length of the current complimentary grant, or the default starter value. */
+function freeDaysFromHosting(hosting: WebsiteHosting): string {
+  const sub = hosting.subscription;
+  if (!sub?.isComplimentary || !sub.currentPeriodStart || !sub.currentPeriodEnd) return "30";
+  const days = Math.round(
+    (new Date(sub.currentPeriodEnd).getTime() - new Date(sub.currentPeriodStart).getTime()) / DAY_MS,
+  );
+  if (!Number.isFinite(days) || days < 1) return "30";
+  return String(Math.min(366, days));
 }
 
 type GrantFreePeriodFormProps = {
@@ -34,11 +46,26 @@ type GrantFreePeriodFormProps = {
 export default function GrantFreePeriodForm({ hosting, onGranted, onCancel }: GrantFreePeriodFormProps) {
   const listed = useMemo(() => packageOptions(hosting.packages), [hosting.packages]);
   const initial = defaultPlan(hosting);
-  const [freeDays, setFreeDays] = useState("30");
+  const [freeDays, setFreeDays] = useState(() => freeDaysFromHosting(hosting));
   const [packageId, setPackageId] = useState(initial?.packageId ?? listed[0]?.value ?? "");
   const [cycle, setCycle] = useState<BillingCycle>(initial?.cycle ?? "YEARLY");
   const [pending, setPending] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+
+  useEffect(() => {
+    setFreeDays(freeDaysFromHosting(hosting));
+    const next = defaultPlan(hosting);
+    setPackageId(next?.packageId ?? listed[0]?.value ?? "");
+    setCycle(next?.cycle ?? "YEARLY");
+  }, [
+    hosting.subscription?.id,
+    hosting.subscription?.isComplimentary,
+    hosting.subscription?.currentPeriodStart,
+    hosting.subscription?.currentPeriodEnd,
+    hosting.subscription?.packageId,
+    hosting.subscription?.cycle,
+    listed,
+  ]);
 
   async function submit() {
     const days = Number(freeDays);
@@ -56,6 +83,7 @@ export default function GrantFreePeriodForm({ hosting, onGranted, onCancel }: Gr
     try {
       const updated = await hostingApi.grantFreePeriod(hosting.website.id, { ...plan, freeDays: days });
       onGranted(updated);
+      setFreeDays(freeDaysFromHosting(updated));
       const end = updated.subscription?.currentPeriodEnd;
       setFeedback({
         status: "success",

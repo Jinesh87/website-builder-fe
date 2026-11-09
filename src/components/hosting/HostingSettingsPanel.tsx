@@ -213,7 +213,7 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
                 label="Grace period after expiry"
                 value={form.graceDays}
                 onChange={update("graceDays")}
-                hint="Site stays live unpaid before going offline."
+                hint="Platform default. Override per website on its Hosting tab."
                 error={errors.graceDays}
                 isDisabled={saving}
               />
