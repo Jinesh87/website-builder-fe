@@ -75,7 +75,19 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
 }
 
-function StatCard({ label, value, hint, icon, tone }: { label: string; value: string; hint: string; icon: ReactNode; tone: string }) {
+function StatCard({
+  label,
+  value,
+  hint,
+  icon,
+  tone,
+}: {
+  label: string;
+  value: string;
+  hint: ReactNode;
+  icon: ReactNode;
+  tone: string;
+}) {
   return (
     <div className="rounded-xl border border-line bg-surface p-4 shadow-sm">
       <div className="flex items-center justify-between">
@@ -83,10 +95,15 @@ function StatCard({ label, value, hint, icon, tone }: { label: string; value: st
         <span className={`grid size-8 place-items-center rounded-lg ${tone}`}>{icon}</span>
       </div>
       <p className="mt-2 text-2xl font-bold tracking-tight text-ink">{value}</p>
-      <p className="mt-1 text-xs text-ink-muted">{hint}</p>
+      <div className="mt-1 text-xs text-ink-muted">{hint}</div>
     </div>
   );
 }
+
+const PAYMENT_KIND_LABELS: Record<"CONNECTS" | "HOSTING", string> = {
+  CONNECTS: "Connects",
+  HOSTING: "Hosting",
+};
 
 function ClientCell({
   client,
@@ -218,7 +235,18 @@ export default function TransactionsPage() {
           <StatCard
             label="Collected"
             value={formatPaise(payments.summary.paidPaise)}
-            hint={`${payments.summary.paidCount} successful ${payments.summary.paidCount === 1 ? "payment" : "payments"}`}
+            hint={
+              <>
+                <p>
+                  {payments.summary.paidCount} successful{" "}
+                  {payments.summary.paidCount === 1 ? "payment" : "payments"}
+                </p>
+                <p className="mt-1">
+                  Connects {formatPaise(payments.summary.paidConnectsPaise)} · Hosting{" "}
+                  {formatPaise(payments.summary.paidHostingPaise)}
+                </p>
+              </>
+            }
             icon={<CreditCard className="size-4" aria-hidden />}
             tone="bg-emerald-50 text-emerald-600"
           />
@@ -333,6 +361,7 @@ export default function TransactionsPage() {
                 <thead className="border-b border-line bg-canvas/60 text-xs text-ink-muted">
                   <tr>
                     <th className="px-5 py-3 font-medium">Client</th>
+                    <th className="px-5 py-3 font-medium">Type</th>
                     <th className="px-5 py-3 font-medium">Status</th>
                     <th className="px-5 py-3 text-right font-medium">Amount</th>
                     <th className="px-5 py-3 font-medium">Started</th>
@@ -342,8 +371,13 @@ export default function TransactionsPage() {
                 </thead>
                 <tbody className="divide-y divide-line">
                   {payments.items.map((item) => (
-                    <tr key={item.id} className="hover:bg-canvas/40">
+                    <tr key={`${item.kind}-${item.id}`} className="hover:bg-canvas/40">
                       <ClientCell client={item.client} user={item.user} />
+                      <td className="px-5 py-3">
+                        <span className="rounded-full bg-canvas px-2 py-0.5 text-xs font-medium text-ink-body">
+                          {PAYMENT_KIND_LABELS[item.kind]}
+                        </span>
+                      </td>
                       <td className="px-5 py-3">
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[item.status].className}`}>
                           {STATUS_STYLES[item.status].label}
@@ -352,7 +386,11 @@ export default function TransactionsPage() {
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 text-right">
                         <p className="font-semibold text-ink">{formatPaise(item.amountPaise, item.currency)}</p>
-                        <p className="text-xs text-ink-muted">{formatConnects(item.connects)}</p>
+                        <p className="max-w-56 truncate text-xs text-ink-muted" title={item.label}>
+                          {item.kind === "CONNECTS" && item.connects != null
+                            ? formatConnects(item.connects)
+                            : item.label}
+                        </p>
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 text-xs text-ink-body">{formatDate(item.createdAt)}</td>
                       <td className="whitespace-nowrap px-5 py-3 text-xs text-ink-body">{item.paidAt ? formatDate(item.paidAt) : "—"}</td>

@@ -65,18 +65,19 @@ function PlanCard({ plan, cycle, onStart }: { plan: HostingPackage; cycle: Billi
               ? `About ${formatPaise(Math.round(price / CYCLE_MONTHS[cycle]))} a month, billed ${CYCLE_NAMES[cycle]}.`
               : `Not offered with ${CYCLE_NAMES[cycle]} billing.`}
           </p>
-          <button
-            className={plan.featured ? "btn p lg block" : "btn lg block"}
-            type="button"
-            disabled={!price}
-            onClick={() => onStart(plan)}
-          >
-            Get started
-          </button>
-          {plan.isCustom && (
-            <p className="hint" style={{ textAlign: "center" }}>
-              Need something different? <Link to="/contact">Request a custom quote</Link>.
-            </p>
+          {plan.isCustom ? (
+            <Link to="/contact" className="btn lg block">
+              Contact sales
+            </Link>
+          ) : (
+            <button
+              className={plan.featured ? "btn p lg block" : "btn lg block"}
+              type="button"
+              disabled={!price}
+              onClick={() => onStart(plan)}
+            >
+              Get started
+            </button>
           )}
         </>
       )}

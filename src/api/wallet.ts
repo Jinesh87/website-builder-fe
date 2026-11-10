@@ -221,11 +221,17 @@ export type AdminTransactionsResponse = {
 
 export type PaymentStatus = "CREATED" | "PAID" | "FAILED";
 
+export type AdminPaymentKind = "CONNECTS" | "HOSTING";
+
 export type AdminPayment = {
   id: string;
+  kind: AdminPaymentKind;
+  /** Short line under the amount: connects pack or hosting plan. */
+  label: string;
   razorpayOrderId: string;
   razorpayPaymentId: string | null;
-  connects: number;
+  /** Connects credited for CONNECTS payments; null for hosting. */
+  connects: number | null;
   amountPaise: number;
   currency: string;
   status: PaymentStatus;
@@ -238,7 +244,14 @@ export type AdminPayment = {
 
 export type AdminPaymentsResponse = {
   items: AdminPayment[];
-  summary: { paidPaise: number; paidCount: number; failedCount: number; pendingCount: number };
+  summary: {
+    paidPaise: number;
+    paidCount: number;
+    paidConnectsPaise: number;
+    paidHostingPaise: number;
+    failedCount: number;
+    pendingCount: number;
+  };
   total: number;
   page: number;
   pageSize: number;
