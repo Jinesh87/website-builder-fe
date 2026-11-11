@@ -1818,12 +1818,40 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
   const subheading = data.subheading?.trim();
   const liveAccount = { ...account, cartItems, wishlistItems, orders, addresses };
 
+  function selectPanel(panel: Panel) {
+    if (!panels.includes(panel)) return;
+    setActive(panel);
+    if (typeof window === "undefined") return;
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("panel") === panel) return;
+      url.searchParams.set("panel", panel);
+      window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+    } catch {
+      /* ignore */
+    }
+  }
+
   useEffect(() => {
     setCartItems(account.cartItems);
     setWishlistItems(account.wishlistItems);
     setOrders(account.orders);
     setAddresses(account.addresses);
   }, [account.cartItems, account.wishlistItems, account.orders, account.addresses]);
+
+  useEffect(() => {
+    function onPopState() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = (params.get("panel") || window.location.hash.replace(/^#/, "") || "").trim() as Panel;
+        if (panels.includes(fromUrl)) setActive(fromUrl);
+      } catch {
+        /* ignore */
+      }
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [panels]);
 
   async function logout() {
     if (!interactive || !websiteId) return;
@@ -1855,7 +1883,7 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
           className={`wb-acct-tab${current === panel ? " is-active" : ""}`}
           aria-selected={current === panel}
           data-wb-account-tab={panel}
-          onClick={() => setActive(panel)}
+          onClick={() => selectPanel(panel)}
         >
           <span>{labelOf(data, panel)}</span>
           {panel === "orders" && (
@@ -1908,7 +1936,7 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
             interactive={interactive}
             onCartChange={setCartItems}
             onPaid={(order) => void refreshAfterPay(order)}
-            onGoAddresses={() => setActive("addresses")}
+            onGoAddresses={() => selectPanel("addresses")}
           />
         );
       case "profile":
@@ -1966,7 +1994,7 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
       onView={() => {
         const id = successOrder.id;
         setSuccessOrder(null);
-        if (panels.includes("orders")) setActive("orders");
+        if (panels.includes("orders")) selectPanel("orders");
         setOpenOrderId(id);
       }}
     />
@@ -2006,7 +2034,7 @@ function MemberView({ data, variant, account, websiteId, interactive, logoutRedi
 
   if (variant === "overview-cards") {
     const openPanel = (panel: Panel) => {
-      if (panels.includes(panel)) setActive(panel);
+      selectPanel(panel);
     };
     return (
       <div className="wb-acct-member">

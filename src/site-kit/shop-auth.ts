@@ -981,7 +981,16 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       return tab?name:null;
     }catch(_e){ return null; }
   }
-  function activatePanel(root, tabs, name){
+  function syncPanelUrl(name){
+    try{
+      if(!name) return;
+      var url=new URL(window.location.href);
+      if(url.searchParams.get("panel")===name) return;
+      url.searchParams.set("panel", name);
+      window.history.replaceState({}, "", url.pathname+url.search+url.hash);
+    }catch(_e){}
+  }
+  function activatePanel(root, tabs, name, opts){
     if(!name) return;
     tabs.forEach(function(other){
       var on=other.getAttribute("data-wb-account-tab")===name;
@@ -996,6 +1005,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     root.querySelectorAll("[data-wb-account-panel]").forEach(function(panel){
       panel.hidden=panel.getAttribute("data-wb-account-panel")!==name;
     });
+    if(!(opts&&opts.skipUrl)) syncPanelUrl(name);
   }
   function bind(root, base, loginHref, logoutHref){
     if(root.getAttribute("data-wb-account-bound")) return;
@@ -1016,7 +1026,12 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         }
       });
     });
-    activatePanel(root, tabs, preferredPanel(root));
+    var initial=preferredPanel(root);
+    if(initial) activatePanel(root, tabs, initial, { skipUrl:true });
+    window.addEventListener("popstate", function(){
+      var next=preferredPanel(root);
+      if(next) activatePanel(root, tabs, next, { skipUrl:true });
+    });
     root.querySelectorAll("[data-wb-account-logout]").forEach(function(button){
       button.addEventListener("click", function(){
         request(base, "/logout", "POST").catch(function(){}).then(function(){ window.location.href=siteHref(logoutHref); });
@@ -2356,9 +2371,10 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     });
     refreshGuestCart().then(function(){
       showState(root, "member");
-      var panel=preferredPanel(root)||"cart";
+      var fromUrl=preferredPanel(root);
+      var panel=fromUrl||"cart";
       if(panel!=="cart" && panel!=="wishlist" && panel!=="addresses") panel="cart";
-      activatePanel(root, tabs, panel);
+      activatePanel(root, tabs, panel, { skipUrl: fromUrl===panel });
     }).catch(function(){
       showState(root, "guest");
     });
