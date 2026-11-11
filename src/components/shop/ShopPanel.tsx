@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Label, Spinner, Switch } from "@heroui/react";
 import { ChevronLeft, ImagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { ACCEPT_BY_KIND, mediaApi, uploadProblem } from "../../api/media.ts";
 import { shopApi, type ShopCategory, type ShopImage, type ShopProduct, type ShopProductInput, type ShopVariant } from "../../api/shop.ts";
 import { errorMessage } from "../../api/http.ts";
@@ -357,6 +358,17 @@ const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "razorpay", label: "Razorpay" },
 ];
 
+const SHOP_SECTION_IDS = new Set<string>(SHOP_SECTIONS.map((section) => section.id));
+
+function defaultShopSection(shopEnabled: boolean): ShopSection {
+  return shopEnabled ? "products" : "settings";
+}
+
+function parseShopSection(raw: string | null, shopEnabled: boolean): ShopSection {
+  if (raw && SHOP_SECTION_IDS.has(raw)) return raw as ShopSection;
+  return defaultShopSection(shopEnabled);
+}
+
 function optionSummary(product: ShopProduct): string {
   const names = [...new Set(product.optionSets.flatMap((set) => set.options.map((option) => option.name)))];
   const count = `${product.variants.length} ${product.variants.length === 1 ? "variant" : "variants"}`;
@@ -370,7 +382,21 @@ export default function ShopPanel({
   website: WebsiteDetail;
   onChange: (website: WebsiteDetail) => void;
 }) {
-  const [section, setSection] = useState<ShopSection>(website.shopEnabled ? "products" : "settings");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const section = parseShopSection(searchParams.get("section"), website.shopEnabled);
+
+  function setSection(next: ShopSection) {
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current);
+        params.set("tab", "shop");
+        params.set("section", next);
+        return params;
+      },
+      { replace: true },
+    );
+  }
+
   const [turning, setTurning] = useState(false);
   const [turnError, setTurnError] = useState<string | null>(null);
   const [savingCancelPolicy, setSavingCancelPolicy] = useState(false);
