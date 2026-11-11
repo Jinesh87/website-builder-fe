@@ -64,7 +64,7 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
   }
 
   return (
-    <div className="fixed inset-0 flex overflow-hidden bg-canvas">
+    <div className="fixed inset-0 flex overflow-hidden bg-canvas text-ink" data-theme="light">
       <aside
         className={`flex h-full w-64 shrink-0 flex-col border-r px-3 py-5 ${
           dark ? "border-transparent bg-ink text-white" : "border-line bg-surface"

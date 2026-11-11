@@ -110,6 +110,8 @@ export type HostingPaymentOptions = {
 export type WebsiteHosting = {
   /** False until the Super Admin turns hosting billing on. */
   enabled: boolean;
+  /** Days before period end when renew emails and client renew banners start. */
+  reminderDays: number;
   /** Platform default grace days after unpaid expiry (used when subscription has no override). */
   graceDays: number;
   website: {
@@ -133,7 +135,56 @@ export type WebsiteHosting = {
   payments: HostingPayment[];
 };
 
-export type PlanChoice = { packageId: string; cycle: BillingCycle };
+export type PlanChoice = { packageId: string; cycle: BillingCycle; couponCode?: string };
+
+export type HostingCouponDiscountType = "PERCENT" | "FIXED_PAISE";
+
+export type HostingCoupon = {
+  id: string;
+  code: string;
+  discountType: HostingCouponDiscountType;
+  discountValue: number;
+  expiresAt: string | null;
+  maxUses: number | null;
+  usedCount: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateHostingCouponInput = {
+  code: string;
+  discountType: HostingCouponDiscountType;
+  discountValue: number;
+  expiresAt?: string | null;
+  maxUses?: number | null;
+};
+
+export type UpdateHostingCouponInput = {
+  discountType?: HostingCouponDiscountType;
+  discountValue?: number;
+  expiresAt?: string | null;
+  maxUses?: number | null;
+  active?: boolean;
+};
+
+export type HostingCouponPreview = {
+  code: string;
+  listAmountPaise: number;
+  discountPaise: number;
+  finalAmountPaise: number;
+};
+
+export type HostingCouponRedemption = {
+  id: string;
+  listAmountPaise: number;
+  discountPaise: number;
+  finalAmountPaise: number;
+  createdAt: string;
+  client: { id: string; businessName: string };
+  user: { id: string; fullName: string; email: string | null } | null;
+  website: { id: string; name: string; subdomain: string } | null;
+};
 
 export type UpdatePlanInput = {
   packageId?: string;
@@ -348,6 +399,11 @@ export const hostingApi = {
   /** Client: pays the next period from the wallet, when the platform allows it. */
   payWithConnects: (websiteId: string, plan: PlanChoice) =>
     request<HostingResponse>(`${websiteBase(websiteId)}/pay`, { method: "POST", body: plan }).then((data) => data.hosting),
+  previewCoupon: (websiteId: string, input: PlanChoice & { couponCode: string }) =>
+    request<{ preview: HostingCouponPreview }>(`${websiteBase(websiteId)}/coupon/preview`, {
+      method: "POST",
+      body: input,
+    }).then((data) => data.preview),
   /** Super Admin: records a payment collected offline, or charges the client's connects. */
   collect: (websiteId: string, input: CollectInput) =>
     request<HostingResponse>(`${websiteBase(websiteId)}/collect`, { method: "POST", body: input }).then((data) => data.hosting),
@@ -397,6 +453,18 @@ export const adminHostingApi = {
     }).then((data) => data.settings),
   backfill: (input: PlanChoice & { freeDays: number }) =>
     request<{ created: number }>(`${SETTINGS}/backfill`, { method: "POST", body: input }),
+  coupons: () => request<{ coupons: HostingCoupon[] }>(`${SETTINGS}/coupons`).then((data) => data.coupons),
+  createCoupon: (input: CreateHostingCouponInput) =>
+    request<{ coupon: HostingCoupon }>(`${SETTINGS}/coupons`, { method: "POST", body: input }).then((data) => data.coupon),
+  updateCoupon: (couponId: string, input: UpdateHostingCouponInput) =>
+    request<{ coupon: HostingCoupon }>(`${SETTINGS}/coupons/${encodeURIComponent(couponId)}`, {
+      method: "PATCH",
+      body: input,
+    }).then((data) => data.coupon),
+  couponRedemptions: (couponId: string) =>
+    request<{ redemptions: HostingCouponRedemption[] }>(
+      `${SETTINGS}/coupons/${encodeURIComponent(couponId)}/redemptions`,
+    ).then((data) => data.redemptions),
   clients: (params: ClientOverviewParams) => request<ClientOverviewList>(`/admin/hosting/clients${toQuery(params)}`),
   client: (clientId: string) =>
     request<{ hosting: ClientHosting }>(`/admin/hosting/clients/${encodeURIComponent(clientId)}`).then((data) => data.hosting),

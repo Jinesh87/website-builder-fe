@@ -10,6 +10,7 @@ import {
   Rows3,
   Server,
   Settings,
+  TicketPercent,
   Users,
   Wallet,
 } from "lucide-react";
@@ -45,6 +46,7 @@ function adminNav(
     { label: "AI Usage", icon: AiSparklesIcon, to: "/admin/ai-usage" },
     { label: "Transactions", icon: Wallet, to: "/admin/transactions" },
     { label: "Hosting", icon: CalendarClock, to: "/admin/hosting" },
+    { label: "Coupons", icon: TicketPercent, to: "/admin/coupons", activePrefixes: ["/admin/coupons"] },
     { label: "Templates", icon: LayoutTemplate, to: "/admin/templates" },
     { label: "Headers and footers", icon: PanelsTopLeft },
     { label: "Reusable sections", icon: Rows3, to: "/admin/sections" },

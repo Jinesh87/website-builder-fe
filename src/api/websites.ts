@@ -40,6 +40,8 @@ export type WebsiteGeneration = {
 /** Compact hosting state for client dashboard / list alerts. */
 export type WebsiteHostingAttention = {
   billingEnabled: boolean;
+  /** Days before period end when the renew banner appears (same as email reminders). */
+  reminderDays: number;
   status: "AWAITING_PAYMENT" | "ACTIVE" | "GRACE" | "SUSPENDED";
   isComplimentary: boolean;
   currentPeriodEnd: string | null;

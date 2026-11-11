@@ -13,11 +13,19 @@ function daysLeftPhrase(iso: string): string {
   return `${days} days left`;
 }
 
+/** True when period end is within the platform reminder window (same rule as renewal emails). */
+function withinReminderWindow(periodEndIso: string, reminderDays: number): boolean {
+  if (reminderDays <= 0) return false;
+  const days = daysUntil(periodEndIso);
+  return days >= 0 && days <= reminderDays;
+}
+
 export type HostingAlertSource = {
   websiteId: string;
   /** When set (e.g. client dashboard), the message names this website. */
   websiteName?: string;
   enabled: boolean;
+  reminderDays: number;
   subscription: {
     status: HostingStatus;
     isComplimentary: boolean;
@@ -30,6 +38,7 @@ export function hostingAlertFromWebsite(hosting: WebsiteHosting): HostingAlertSo
   return {
     websiteId: hosting.website.id,
     enabled: hosting.enabled,
+    reminderDays: hosting.reminderDays,
     subscription: hosting.subscription
       ? {
           status: hosting.subscription.status,
@@ -50,6 +59,7 @@ export function hostingAlertFromAttention(
     websiteId,
     websiteName,
     enabled: attention.billingEnabled,
+    reminderDays: attention.reminderDays,
     subscription: {
       status: attention.status,
       isComplimentary: attention.isComplimentary,
@@ -64,7 +74,7 @@ export function resolveHostingAlert(source: HostingAlertSource): {
   message: string;
   actionLabel: string;
 } | null {
-  const { subscription, websiteName } = source;
+  const { subscription, websiteName, reminderDays } = source;
   if (!subscription) return null;
 
   const forSite = websiteName ? ` for ${websiteName}` : "";
@@ -91,6 +101,18 @@ export function resolveHostingAlert(source: HostingAlertSource): {
       ? `Free hosting period for ${websiteName}: ${left} (until ${formatBillingDate(subscription.currentPeriodEnd)}). Renew before then — free periods have no grace, and the custom domain disconnects when they end. The free address stays live.`
       : `Free hosting period: ${left} (until ${formatBillingDate(subscription.currentPeriodEnd)}). Renew before then — free periods have no grace, and the custom domain disconnects when they end. Your free address stays live.`;
     actionLabel = "View hosting";
+  } else if (
+    source.enabled &&
+    subscription.status === "ACTIVE" &&
+    !subscription.isComplimentary &&
+    subscription.currentPeriodEnd &&
+    withinReminderWindow(subscription.currentPeriodEnd, reminderDays)
+  ) {
+    const left = daysLeftPhrase(subscription.currentPeriodEnd);
+    message = websiteName
+      ? `Hosting for ${websiteName}: ${left} (until ${formatBillingDate(subscription.currentPeriodEnd)}). Renew before then to keep the custom domain connected after this period. The free address stays live.`
+      : `Hosting: ${left} (until ${formatBillingDate(subscription.currentPeriodEnd)}). Renew before then to keep your custom domain connected after this period. Your free address stays live.`;
+    actionLabel = "Renew hosting";
   } else if (!source.enabled) {
     return null;
   } else {

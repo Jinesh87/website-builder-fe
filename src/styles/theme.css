@@ -309,10 +309,9 @@ button[role="checkbox"]:focus-visible {
   color: #ffffff !important;
 }
 
-/* Checkmark SVG inside indicator */
+/* Checkmark SVG inside checkbox indicator only (avoid date-picker / other *indicator* slots). */
 [data-slot="checkbox-indicator"] svg,
 [data-slot="indicator"] svg,
-[data-slot*="indicator"] svg,
 .checkbox__indicator svg {
   width: 11px !important;
   height: 11px !important;

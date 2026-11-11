@@ -3,7 +3,13 @@ import { Link } from "react-router-dom";
 import { Button } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
 import { CreditCard, Pencil, Server, Wallet } from "lucide-react";
-import { hostingApi, type CollectInput, type PlanChoice, type WebsiteHosting } from "../../api/hosting.ts";
+import {
+  hostingApi,
+  type CollectInput,
+  type HostingCouponPreview,
+  type PlanChoice,
+  type WebsiteHosting,
+} from "../../api/hosting.ts";
 import { errorMessage } from "../../api/http.ts";
 import { formatConnects, formatPaise } from "../../api/wallet.ts";
 import { connectsForPaise, CYCLES, defaultPlan } from "../../utils/hosting-pricing.ts";
@@ -63,6 +69,9 @@ export default function HostingCheckoutModal({
   const [paying, setPaying] = useState(false);
   /** Razorpay opens its own window; ours would keep focus from it. */
   const [razorpayOpen, setRazorpayOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponPreview, setCouponPreview] = useState<HostingCouponPreview | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   const { payment: options } = hosting;
 
@@ -85,10 +94,16 @@ export default function HostingCheckoutModal({
     setNote("");
     setEditingPrice(needsCustomPrice(initialHosting, initial));
     setFeedback(null);
+    setCouponCode("");
+    setCouponPreview(null);
   }, [openedFor, initialPlan?.packageId, initialPlan?.cycle]);
 
   const selected = plan ? hosting.packages.find((pkg) => pkg.id === plan.packageId) : undefined;
-  const price = selected && plan ? selected.prices[plan.cycle] : null;
+  const listPrice = selected && plan ? selected.prices[plan.cycle] : null;
+  const price =
+    listPrice !== null && couponPreview && couponPreview.listAmountPaise === listPrice
+      ? couponPreview.finalAmountPaise
+      : listPrice;
   const period = plan ? hosting.nextPeriods[plan.cycle] : null;
   const connects = price === null ? 0 : connectsForPaise(price, options.connectsPerRupee);
   const autopayRenews =
@@ -104,6 +119,38 @@ export default function HostingCheckoutModal({
   function choosePlan(next: PlanChoice) {
     setPlan(next);
     setEditingPrice(needsCustomPrice(hosting, next));
+    setFeedback(null);
+    setCouponPreview(null);
+  }
+
+  async function applyCoupon() {
+    if (!plan || listPrice === null || listPrice <= 0) return;
+    const code = couponCode.trim();
+    if (!code) {
+      setFeedback({ status: "danger", message: "Enter a coupon code." });
+      return;
+    }
+    setApplyingCoupon(true);
+    setFeedback(null);
+    try {
+      const preview = await hostingApi.previewCoupon(hosting.website.id, {
+        packageId: plan.packageId,
+        cycle: plan.cycle,
+        couponCode: code,
+      });
+      setCouponPreview(preview);
+      setCouponCode(preview.code);
+    } catch (err) {
+      setCouponPreview(null);
+      setFeedback({ status: "danger", message: errorMessage(err) });
+    } finally {
+      setApplyingCoupon(false);
+    }
+  }
+
+  function clearCoupon() {
+    setCouponPreview(null);
+    setCouponCode("");
     setFeedback(null);
   }
 
@@ -135,12 +182,19 @@ export default function HostingCheckoutModal({
     if (!plan) return;
     setFeedback(null);
     setPaying(true);
+    const withCoupon: PlanChoice =
+      !isAdmin && couponPreview ? { ...plan, couponCode: couponPreview.code } : plan;
     try {
       const updated = isAdmin
-        ? await hostingApi.collect(hosting.website.id, { ...plan, method: adminMethod, reference: reference.trim(), note: note.trim() })
+        ? await hostingApi.collect(hosting.website.id, {
+            ...plan,
+            method: adminMethod,
+            reference: reference.trim(),
+            note: note.trim(),
+          })
         : clientMethod === "WALLET"
-          ? await hostingApi.payWithConnects(hosting.website.id, plan)
-          : await payOnline(plan);
+          ? await hostingApi.payWithConnects(hosting.website.id, withCoupon)
+          : await payOnline(withCoupon);
       onPaid(updated);
     } catch (err) {
       setFeedback(
@@ -263,11 +317,57 @@ export default function HostingCheckoutModal({
               <dt className="text-ink-muted">Covers</dt>
               <dd className="font-medium text-ink">{formatPeriod(period.start, period.end)}</dd>
             </div>
+            {couponPreview && listPrice !== null && couponPreview.discountPaise > 0 && (
+              <>
+                <div className="flex justify-between gap-4 px-4 py-2.5">
+                  <dt className="text-ink-muted">List price</dt>
+                  <dd className="text-ink-muted line-through">{formatPaise(listPrice)}</dd>
+                </div>
+                <div className="flex justify-between gap-4 px-4 py-2.5">
+                  <dt className="text-ink-muted">Coupon ({couponPreview.code})</dt>
+                  <dd className="font-medium text-emerald-700">−{formatPaise(couponPreview.discountPaise)}</dd>
+                </div>
+              </>
+            )}
             <div className="flex justify-between gap-4 px-4 py-2.5">
               <dt className="text-ink-muted">Total</dt>
               <dd className="font-semibold text-ink">{price === 0 ? "Free" : formatPaise(price)}</dd>
             </div>
           </dl>
+        )}
+
+        {!isAdmin && listPrice !== null && listPrice > 0 && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1">
+              <TextInput
+                label="Coupon code"
+                name="coupon"
+                value={couponCode}
+                onChange={(value) => {
+                  setCouponCode(value);
+                  if (couponPreview) setCouponPreview(null);
+                }}
+                placeholder="Optional"
+                isDisabled={paying || applyingCoupon}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onPress={() => void applyCoupon()}
+                isPending={applyingCoupon}
+                isDisabled={paying || !couponCode.trim()}
+              >
+                Apply
+              </Button>
+              {couponPreview && (
+                <Button size="sm" variant="ghost" onPress={clearCoupon} isDisabled={paying || applyingCoupon}>
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
         )}
 
         {!isAdmin && price !== null && price > 0 && (options.connects || !options.razorpay) && (

@@ -61,6 +61,8 @@ const AiUsagePage = lazy(() => import("./pages/admin/AiUsagePage.tsx"));
 const AiUsageClientPage = lazy(() => import("./pages/admin/AiUsageClientPage.tsx"));
 const TransactionsPage = lazy(() => import("./pages/admin/TransactionsPage.tsx"));
 const HostingPage = lazy(() => import("./pages/admin/HostingPage.tsx"));
+const CouponsPage = lazy(() => import("./pages/admin/CouponsPage.tsx"));
+const CouponDetailPage = lazy(() => import("./pages/admin/CouponDetailPage.tsx"));
 const SectionLibraryPage = lazy(() => import("./pages/admin/SectionLibraryPage.tsx"));
 const TemplatesAdminPage = lazy(() => import("./pages/admin/TemplatesPage.tsx"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage.tsx"));
@@ -156,6 +158,8 @@ export default function App() {
                 <Route path="ai-usage/:clientId" element={<AiUsageClientPage />} />
                 <Route path="transactions" element={<TransactionsPage />} />
                 <Route path="hosting" element={<HostingPage />} />
+                <Route path="coupons" element={<CouponsPage />} />
+                <Route path="coupons/:couponId" element={<CouponDetailPage />} />
                 <Route path="templates" element={<TemplatesAdminPage />} />
                 <Route path="sections" element={<SectionLibraryPage />} />
                 <Route path="media" element={<MediaLibraryPage />} />
