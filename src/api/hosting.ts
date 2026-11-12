@@ -442,6 +442,31 @@ export const pricingApi = {
 
 const SETTINGS = "/admin/settings/hosting";
 
+export type HostingEmailKind =
+  | "renewal_reminder"
+  | "paid"
+  | "expired"
+  | "suspended"
+  | "autopay_stopped";
+
+export type HostingEmailTemplate = {
+  kind: HostingEmailKind;
+  kindLabel: string;
+  enabled: boolean;
+  subject: string;
+  heading: string;
+  message: string;
+  isDefault: boolean;
+  updatedAt: string | null;
+};
+
+export type HostingEmailTemplateInput = {
+  enabled: boolean;
+  subject: string;
+  heading: string;
+  message: string;
+};
+
 export const adminHostingApi = {
   settings: () => request<{ settings: HostingSettings }>(SETTINGS).then((data) => data.settings),
   updateSettings: (input: HostingSettingsInput) =>
@@ -465,6 +490,17 @@ export const adminHostingApi = {
     request<{ redemptions: HostingCouponRedemption[] }>(
       `${SETTINGS}/coupons/${encodeURIComponent(couponId)}/redemptions`,
     ).then((data) => data.redemptions),
+  emailTemplates: () =>
+    request<{ templates: HostingEmailTemplate[]; placeholders: string[] }>(`${SETTINGS}/email-templates`),
+  updateEmailTemplate: (kind: HostingEmailKind, input: HostingEmailTemplateInput) =>
+    request<{ template: HostingEmailTemplate }>(`${SETTINGS}/email-templates/${encodeURIComponent(kind)}`, {
+      method: "PUT",
+      body: input,
+    }).then((data) => data.template),
+  resetEmailTemplate: (kind: HostingEmailKind) =>
+    request<{ template: HostingEmailTemplate }>(`${SETTINGS}/email-templates/${encodeURIComponent(kind)}/reset`, {
+      method: "POST",
+    }).then((data) => data.template),
   clients: (params: ClientOverviewParams) => request<ClientOverviewList>(`/admin/hosting/clients${toQuery(params)}`),
   client: (clientId: string) =>
     request<{ hosting: ClientHosting }>(`/admin/hosting/clients/${encodeURIComponent(clientId)}`).then((data) => data.hosting),

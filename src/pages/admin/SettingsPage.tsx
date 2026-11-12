@@ -16,6 +16,7 @@ import PaymentSettingsPanel, { PaymentStatusChip } from "../../components/admin/
 import AiModelPricingPanel from "../../components/admin/AiModelPricingPanel.tsx";
 import AiBillingRatePanel from "../../components/admin/AiBillingRatePanel.tsx";
 import type { PaymentConfig } from "../../api/wallet.ts";
+import HostingEmailTemplatesPanel from "../../components/hosting/HostingEmailTemplatesPanel.tsx";
 import HostingSettingsPanel from "../../components/hosting/HostingSettingsPanel.tsx";
 import type { HostingSettings } from "../../api/hosting.ts";
 import ReferralSettingsPanel, { ReferralStatusChip } from "../../components/admin/ReferralSettingsPanel.tsx";
@@ -350,6 +351,7 @@ export default function SettingsPage() {
           )}
 
           {emailConfig && (
+            <div className="flex flex-col gap-6 w-full">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
               {/* Left: Resend Configuration & Notification Inboxes */}
               <form
@@ -540,6 +542,9 @@ export default function SettingsPage() {
                   </ul>
                 </div>
               </div>
+            </div>
+
+              <HostingEmailTemplatesPanel />
             </div>
           )}
         </div>

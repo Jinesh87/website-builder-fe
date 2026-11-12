@@ -10,6 +10,7 @@ import { ApiError, errorMessage } from "../../api/http.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { validateEmail } from "../../auth/validation.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
+import HostingEmailTemplatesPanel from "../../components/hosting/HostingEmailTemplatesPanel.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 
@@ -167,7 +168,7 @@ export default function EmailSettingsPage() {
       )}
 
       {config && (
-        <div className="mt-8 grid max-w-2xl gap-6">
+        <div className="mt-8 grid max-w-4xl gap-6">
           <form
             onSubmit={handleSave}
             noValidate
@@ -335,6 +336,8 @@ export default function EmailSettingsPage() {
               </div>
             )}
           </form>
+
+          <HostingEmailTemplatesPanel />
         </div>
       )}
     </div>
