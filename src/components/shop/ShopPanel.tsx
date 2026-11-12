@@ -7,6 +7,7 @@ import { shopApi, type ShopCategory, type ShopImage, type ShopProduct, type Shop
 import { errorMessage } from "../../api/http.ts";
 import { formatPaise } from "../../api/wallet.ts";
 import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
+import ShopCouponsPanel from "./ShopCouponsPanel.tsx";
 import ShopCustomersPanel from "./ShopCustomersPanel.tsx";
 import ShopInvoiceTemplatePanel from "./ShopInvoiceTemplatePanel.tsx";
 import { ShopInventoryLogPanel, ShopInventoryPanel } from "./ShopInventoryPanel.tsx";
@@ -343,6 +344,7 @@ type ShopSection =
   | "order-emails"
   | "inventory"
   | "inventory-log"
+  | "coupons"
   | "razorpay";
 
 const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
@@ -351,6 +353,7 @@ const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "products", label: "Products" },
   { id: "customers", label: "Customers" },
   { id: "orders", label: "Orders" },
+  { id: "coupons", label: "Coupons" },
   { id: "invoice-template", label: "Invoice template" },
   { id: "order-emails", label: "Order emails" },
   { id: "inventory", label: "Inventory" },
@@ -803,13 +806,14 @@ export default function ShopPanel({
         section === "products" ||
         section === "customers" ||
         section === "orders" ||
+        section === "coupons" ||
         section === "invoice-template" ||
         section === "order-emails" ||
         section === "inventory" ||
         section === "inventory-log") &&
         !website.shopEnabled && (
         <section className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
-          <p className="text-sm text-ink-body">Turn the shop on in Shop settings before managing categories, products, customers, orders, or stock.</p>
+          <p className="text-sm text-ink-body">Turn the shop on in Shop settings before managing categories, products, customers, orders, coupons, or stock.</p>
           <Button size="sm" variant="outline" className="mt-4" onPress={() => setSection("settings")}>
             Open shop settings
           </Button>
@@ -818,6 +822,7 @@ export default function ShopPanel({
 
       {section === "customers" && website.shopEnabled && <ShopCustomersPanel websiteId={website.id} />}
       {section === "orders" && website.shopEnabled && <ShopOrdersPanel websiteId={website.id} />}
+      {section === "coupons" && website.shopEnabled && <ShopCouponsPanel websiteId={website.id} />}
       {section === "invoice-template" && website.shopEnabled && (
         <ShopInvoiceTemplatePanel
           websiteId={website.id}

@@ -247,6 +247,41 @@ export const SHOP_DETAIL_SCRIPT = `(function(){
         if(exact||fallback) apply(exact||fallback);
       });
     });
+    root.querySelectorAll("[data-wb-copy-coupon]").forEach(function(btn){
+      if(btn.getAttribute("data-wb-bound")) return;
+      btn.setAttribute("data-wb-bound","1");
+      btn.addEventListener("click", function(event){
+        event.preventDefault();
+        event.stopPropagation();
+        var code=btn.getAttribute("data-wb-copy-coupon")||"";
+        if(!code) return;
+        var labelNode=btn.querySelector("[data-wb-copy-label]")||btn;
+        var defaultLabel=btn.getAttribute("data-wb-copy-default")||"Copy";
+        function done(ok){
+          labelNode.textContent=ok?"Copied":"Copy failed";
+          btn.classList.toggle("is-copied", !!ok);
+          setTimeout(function(){
+            labelNode.textContent=defaultLabel;
+            btn.classList.remove("is-copied");
+          }, 1600);
+        }
+        if(navigator.clipboard&&navigator.clipboard.writeText){
+          navigator.clipboard.writeText(code).then(function(){ done(true); }).catch(function(){ done(false); });
+          return;
+        }
+        try{
+          var area=document.createElement("textarea");
+          area.value=code;
+          area.setAttribute("readonly","");
+          area.style.position="fixed";
+          area.style.opacity="0";
+          document.body.appendChild(area);
+          area.select();
+          done(document.execCommand("copy"));
+          document.body.removeChild(area);
+        }catch(_e){ done(false); }
+      });
+    });
   });
 })();`;
 

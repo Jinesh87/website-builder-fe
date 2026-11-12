@@ -792,6 +792,9 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
         backHref: "/shop",
         showDescription: true,
         showStock: true,
+        showCancellationPolicy: true,
+        showReturnPolicy: true,
+        showCoupons: true,
       }),
     },
     account: {

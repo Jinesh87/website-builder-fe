@@ -343,6 +343,46 @@ export type ShopProductPage = {
   total: number;
 };
 
+export type ShopCouponDiscountType = "PERCENT" | "FIXED_PAISE";
+
+export type ShopCoupon = {
+  id: string;
+  code: string;
+  discountType: ShopCouponDiscountType;
+  discountValue: number;
+  scope: "cart" | "product";
+  productId: string | null;
+  productName: string | null;
+  variantId: string | null;
+  variantName: string | null;
+  expiresAt: string | null;
+  maxUses: number | null;
+  usedCount: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateShopCouponInput = {
+  code: string;
+  discountType: ShopCouponDiscountType;
+  discountValue: number;
+  productId?: string | null;
+  variantId?: string | null;
+  expiresAt?: string | null;
+  maxUses?: number | null;
+};
+
+export type UpdateShopCouponInput = {
+  discountType?: ShopCouponDiscountType;
+  discountValue?: number;
+  productId?: string | null;
+  variantId?: string | null;
+  expiresAt?: string | null;
+  maxUses?: number | null;
+  active?: boolean;
+};
+
 function productQuery(params: ShopProductQuery): string {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
@@ -493,4 +533,18 @@ export const shopApi = {
       method: "PUT",
       body: input,
     }).then((data) => data.design),
+
+  coupons: (websiteId: string) =>
+    request<{ coupons: ShopCoupon[] }>(`${base(websiteId)}/coupons`).then((data) => data.coupons),
+
+  createCoupon: (websiteId: string, input: CreateShopCouponInput) =>
+    request<{ coupon: ShopCoupon }>(`${base(websiteId)}/coupons`, { method: "POST", body: input }).then(
+      (data) => data.coupon,
+    ),
+
+  updateCoupon: (websiteId: string, couponId: string, input: UpdateShopCouponInput) =>
+    request<{ coupon: ShopCoupon }>(`${base(websiteId)}/coupons/${couponId}`, {
+      method: "PATCH",
+      body: input,
+    }).then((data) => data.coupon),
 };

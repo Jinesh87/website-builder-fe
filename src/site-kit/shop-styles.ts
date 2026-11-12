@@ -373,6 +373,57 @@ export const SHOP_CSS = `
   margin: 0; font-family: var(--wb-font-body); font-size: 0.75rem !important; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--wb-text);
 }
+.wb-product-coupons {
+  margin: 0; border: 1px dashed color-mix(in srgb, var(--wb-text) 18%, transparent);
+  border-radius: 12px; background: color-mix(in srgb, var(--wb-text) 3%, var(--wb-bg));
+  overflow: hidden;
+}
+.wb-product-coupons-summary {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: 0; padding: 12px 14px; cursor: pointer; list-style: none; user-select: none;
+}
+.wb-product-coupons-summary::-webkit-details-marker { display: none; }
+.wb-product-coupons-label {
+  margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--wb-text);
+}
+.wb-product-coupons-chevron {
+  width: 0.55rem; height: 0.55rem; border-right: 2px solid var(--wb-muted); border-bottom: 2px solid var(--wb-muted);
+  transform: rotate(45deg); transition: transform 0.15s ease; flex-shrink: 0;
+}
+.wb-product-coupons[open] .wb-product-coupons-chevron { transform: rotate(-135deg); }
+.wb-product-coupons-panel {
+  display: grid; gap: 8px; padding: 0 14px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--wb-text) 10%, transparent);
+}
+.wb-product-coupons-list {
+  display: grid; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none;
+  max-height: 220px; overflow-y: auto; overscroll-contain: contain;
+}
+.wb-product-coupon {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; min-width: 0;
+}
+.wb-product-coupon-main {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 8px; align-items: center; min-width: 0;
+}
+.wb-product-coupon-code {
+  display: inline-flex; align-items: center; min-height: 28px; padding: 0 0.55rem; grid-row: 1 / span 2;
+  border-radius: 0.4rem; border: 1px solid color-mix(in srgb, var(--wb-text) 14%, transparent);
+  background: var(--wb-bg); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; color: var(--wb-text);
+}
+.wb-product-coupon-offer { font-size: 0.86rem; font-weight: 600; color: var(--wb-text); min-width: 0; }
+.wb-product-coupon-scope { font-size: 0.75rem; color: var(--wb-muted); min-width: 0; }
+.wb-product-coupon-copy {
+  display: inline-flex; align-items: center; gap: 0.35rem; min-height: 32px; padding: 0 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--wb-text) 14%, transparent); border-radius: 999px;
+  background: var(--wb-bg); color: var(--wb-text); font: inherit; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.wb-product-coupon-copy:hover { border-color: color-mix(in srgb, var(--wb-text) 28%, transparent); }
+.wb-product-coupon-copy.is-copied { border-color: color-mix(in srgb, #15803d 40%, transparent); color: #15803d; }
+.wb-product-coupon-copy-icon { width: 0.9rem; height: 0.9rem; flex-shrink: 0; }
+.wb-product-coupons-hint { margin: 0; font-size: 0.75rem; color: var(--wb-muted); }
 .wb-product-policy {
   display: grid; gap: 4px; margin: 0; padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--wb-text) 12%, transparent);

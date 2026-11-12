@@ -3213,6 +3213,12 @@ function ProductDetailForm({ data, onChange }: DataFormProps<ProductDetailData>)
         onChange={(showReturnPolicy) => onChange({ ...data, showReturnPolicy })}
         hint="Uses the shop return window and guidelines from Shop → Shop settings, plus each product's return settings."
       />
+      <CheckboxField
+        label="Show coupons"
+        checked={data.showCoupons !== false}
+        onChange={(showCoupons) => onChange({ ...data, showCoupons })}
+        hint="Lists active cart-wide and product coupons from Shop → Coupons."
+      />
     </FormGroup>
   );
 }

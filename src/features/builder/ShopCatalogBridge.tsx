@@ -1,8 +1,27 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { shopApi, type ShopProduct } from "../../api/shop.ts";
+import { shopApi, type ShopCoupon, type ShopProduct } from "../../api/shop.ts";
 import { ShopCatalogProvider } from "../../site-kit/shop-catalog.tsx";
-import type { ShopCancelUntilStatus, ShopCatalogProduct } from "../../site-kit/index.ts";
+import type { ShopCancelUntilStatus, ShopCatalogCoupon, ShopCatalogProduct } from "../../site-kit/index.ts";
 import { useEditor } from "./editor-context.ts";
+
+function toCatalogCoupon(coupon: ShopCoupon): ShopCatalogCoupon {
+  return {
+    code: coupon.code,
+    discountType: coupon.discountType,
+    discountValue: coupon.discountValue,
+    scope: coupon.scope,
+    variantId: coupon.variantId,
+    variantName: coupon.variantName,
+    expiresAt: coupon.expiresAt,
+  };
+}
+
+function isPublicCoupon(coupon: ShopCoupon): boolean {
+  if (!coupon.active) return false;
+  if (coupon.expiresAt && new Date(coupon.expiresAt).getTime() <= Date.now()) return false;
+  if (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) return false;
+  return true;
+}
 
 function variantOptions(product: ShopProduct, variantName: string): { name: string; value: string }[] {
   for (const set of product.optionSets ?? []) {
@@ -109,10 +128,12 @@ export function WebsiteShopCatalogProvider({
   children: ReactNode;
 }) {
   const [products, setProducts] = useState<ShopCatalogProduct[] | null>(null);
+  const [coupons, setCoupons] = useState<ShopCoupon[]>([]);
 
   useEffect(() => {
     if (!website?.shopFeatureEnabled || !website.shopEnabled) {
       setProducts(null);
+      setCoupons([]);
       return;
     }
     let cancel = false;
@@ -131,10 +152,28 @@ export function WebsiteShopCatalogProvider({
       .catch(() => {
         if (!cancel) setProducts([]);
       });
+    shopApi
+      .coupons(website.id)
+      .then((rows) => {
+        if (!cancel) setCoupons(rows.filter(isPublicCoupon));
+      })
+      .catch(() => {
+        if (!cancel) setCoupons([]);
+      });
     return () => {
       cancel = true;
     };
   }, [website?.id, website?.shopEnabled, website?.shopFeatureEnabled, website?.shopReturnDays]);
+
+  // Match ProductDetailSection: with no slug, the canvas previews products[0].
+  const previewProduct =
+    (productSlug ? products?.find((product) => product.slug === productSlug) : undefined) ??
+    products?.[0];
+  const detailCoupons: ShopCatalogCoupon[] = previewProduct
+    ? coupons
+        .filter((coupon) => coupon.scope === "cart" || coupon.productId === previewProduct.id)
+        .map(toCatalogCoupon)
+    : coupons.filter((coupon) => coupon.scope === "cart").map(toCatalogCoupon);
 
   const catalog =
     website?.shopFeatureEnabled && website.shopEnabled && products
@@ -144,6 +183,7 @@ export function WebsiteShopCatalogProvider({
           accountHref: "/account",
           cancelUntilStatus: website.shopCancelUntilStatus,
           returnGuidelines: website.shopReturnGuidelines ?? [],
+          coupons: detailCoupons,
           products,
           productSlug,
           selection,

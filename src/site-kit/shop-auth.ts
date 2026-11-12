@@ -399,6 +399,7 @@ export const shopAuthApi = {
       fullName: string;
       phone?: string;
       address: ShopCustomerAddressInput;
+      couponCode?: string;
     },
   ) => {
     const result = await shopAuthFetch(websiteId, "/guest/checkout", {
@@ -469,7 +470,26 @@ export const shopAuthApi = {
     return (result.body as { wishlistItems: ShopWishlistItemSummary[] }).wishlistItems;
   },
 
-  startCheckout: async (websiteId: string, input: { addressId: string }) => {
+  previewCoupon: async (websiteId: string, couponCode: string) => {
+    const result = await shopAuthFetch(websiteId, "/checkout/coupon-preview", {
+      method: "POST",
+      body: JSON.stringify({ couponCode }),
+    });
+    if (!result.ok) throw asError(result.status, result.body);
+    return (
+      result.body as {
+        preview: {
+          code: string;
+          listAmountPaise: number;
+          discountPaise: number;
+          finalAmountPaise: number;
+          scope: "cart" | "product";
+        };
+      }
+    ).preview;
+  },
+
+  startCheckout: async (websiteId: string, input: { addressId: string; couponCode?: string }) => {
     const result = await shopAuthFetch(websiteId, "/checkout", {
       method: "POST",
       body: JSON.stringify(input),
@@ -815,6 +835,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     var cartEmpty=root.querySelector('[data-wb-account-empty="cart"]');
     var cartTotal=root.querySelector("[data-wb-account-cart-total]");
     var total=0;
+    clearAppliedCoupon(root);
     if(cartList){
       cartList.innerHTML="";
       cart.forEach(function(item){
@@ -847,10 +868,93 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       cartList.hidden=cart.length===0;
     }
     if(cartTotal) cartTotal.hidden=cart.length===0;
-    setText(root, "cartTotal", money(total));
+    var discountPaise=Number(root.getAttribute("data-wb-coupon-discount")||0);
+    var displayTotal=discountPaise>0?Math.max(0,total-discountPaise):total;
+    setText(root, "cartTotal", money(displayTotal));
+    var discountRow=root.querySelector("[data-wb-account-cart-discount]");
+    if(discountRow){
+      if(discountPaise>0){
+        discountRow.removeAttribute("hidden");
+        var code=root.getAttribute("data-wb-coupon-code")||"";
+        var label=discountRow.querySelector("span");
+        if(label) label.textContent=code?"Coupon "+code:"Coupon";
+        setText(root, "cartDiscount", "−"+money(discountPaise));
+      } else {
+        discountRow.setAttribute("hidden","");
+        setText(root, "cartDiscount", "");
+      }
+    }
     if(cartEmpty) cartEmpty.hidden=cart.length>0;
     root.querySelectorAll("[data-wb-account-checkout]").forEach(function(node){ node.hidden=cart.length===0; });
     fillCheckoutAddresses(root, addressCache);
+    ensureCheckoutCouponShell(root);
+  }
+  function clearAppliedCoupon(root){
+    root.removeAttribute("data-wb-coupon-code");
+    root.removeAttribute("data-wb-coupon-discount");
+    var discountRow=root.querySelector("[data-wb-account-cart-discount]");
+    if(discountRow){
+      discountRow.setAttribute("hidden","");
+      setText(root, "cartDiscount", "");
+    }
+    var msg=root.querySelector("[data-wb-account-coupon-message]");
+    if(msg){ msg.hidden=true; msg.textContent=""; msg.classList.remove("is-ok","is-error"); }
+  }
+  function couponMessage(root, text, ok){
+    var elMsg=root.querySelector("[data-wb-account-coupon-message]");
+    if(!elMsg) return;
+    elMsg.hidden=!text;
+    elMsg.textContent=text||"";
+    elMsg.classList.toggle("is-error", !!text && !ok);
+    elMsg.classList.toggle("is-ok", !!text && !!ok);
+  }
+  function readCouponCode(root){
+    var applied=String(root.getAttribute("data-wb-coupon-code")||"").trim();
+    if(applied) return applied;
+    var input=root.querySelector("[data-wb-account-coupon-input]");
+    return input?String(input.value||"").trim():"";
+  }
+  function ensureCheckoutCouponShell(root){
+    var checkout=root.querySelector("[data-wb-account-checkout]");
+    if(!checkout) return null;
+    var shell=checkout.querySelector("[data-wb-account-checkout-coupon]");
+    if(shell) return shell;
+    shell=el("div","wb-acct-checkout-coupon");
+    shell.setAttribute("data-wb-account-checkout-coupon","");
+    shell.appendChild(el("p","wb-acct-checkout-label","Coupon code"));
+    var row=el("div","wb-acct-checkout-coupon-row");
+    var input=document.createElement("input");
+    input.type="text";
+    input.className="wb-acct-checkout-coupon-input";
+    input.setAttribute("data-wb-account-coupon-input","");
+    input.placeholder="Enter code";
+    input.autocomplete="off";
+    var apply=el("button","wb-acct-linkish","Apply");
+    apply.type="button";
+    apply.setAttribute("data-wb-account-coupon-apply","");
+    row.appendChild(input);
+    row.appendChild(apply);
+    shell.appendChild(row);
+    var msg=el("p","wb-acct-message");
+    msg.setAttribute("data-wb-account-coupon-message","");
+    msg.hidden=true;
+    shell.appendChild(msg);
+    var pay=checkout.querySelector("[data-wb-account-pay]");
+    if(pay) checkout.insertBefore(shell, pay);
+    else checkout.appendChild(shell);
+    var discountRow=root.querySelector("[data-wb-account-cart-discount]");
+    if(!discountRow){
+      var cartTotal=root.querySelector("[data-wb-account-cart-total]");
+      discountRow=el("div","wb-acct-cart-discount");
+      discountRow.setAttribute("data-wb-account-cart-discount","");
+      discountRow.setAttribute("hidden","");
+      discountRow.appendChild(el("span","","Coupon"));
+      var amount=el("strong","");
+      amount.setAttribute("data-wb-account-field","cartDiscount");
+      discountRow.appendChild(amount);
+      if(cartTotal&&cartTotal.parentNode) cartTotal.parentNode.insertBefore(discountRow, cartTotal.nextSibling);
+    }
+    return shell;
   }
   function ensureCheckoutAddressShell(root){
     var checkout=root.querySelector("[data-wb-account-checkout]");
@@ -878,6 +982,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     var pay=checkout.querySelector("[data-wb-account-pay]");
     if(pay) checkout.insertBefore(shell, pay);
     else checkout.insertBefore(shell, checkout.firstChild);
+    ensureCheckoutCouponShell(root);
     return shell;
   }
   function fillCheckoutAddresses(root, addresses){
@@ -1282,6 +1387,46 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         btn.textContent=busy?"Opening payment…":(btn.getAttribute("data-wb-pay-label")||"Pay now");
       });
     }
+    function applyCoupon(){
+      var input=root.querySelector("[data-wb-account-coupon-input]");
+      var code=input?String(input.value||"").trim():"";
+      if(!code){
+        clearAppliedCoupon(root);
+        couponMessage(root, "Enter a coupon code.", false);
+        return;
+      }
+      var applyBtn=root.querySelector("[data-wb-account-coupon-apply]");
+      if(applyBtn){ applyBtn.disabled=true; applyBtn.textContent="Checking…"; }
+      couponMessage(root, "", true);
+      request(base, "/checkout/coupon-preview", "POST", { couponCode: code }).then(function(result){
+        if(applyBtn){ applyBtn.disabled=false; applyBtn.textContent="Apply"; }
+        if(!result.ok){
+          clearAppliedCoupon(root);
+          couponMessage(root, (result.json&&result.json.error&&result.json.error.message)||"Invalid coupon.", false);
+          return;
+        }
+        var preview=(result.json&&result.json.preview)||{};
+        var discount=Number(preview.discountPaise||0);
+        root.setAttribute("data-wb-coupon-code", String(preview.code||code).toUpperCase());
+        root.setAttribute("data-wb-coupon-discount", String(discount));
+        if(input) input.value=String(preview.code||code).toUpperCase();
+        couponMessage(root, discount>0?("Saved "+money(discount)+" off."):"Coupon applied.", true);
+        var discountRow=root.querySelector("[data-wb-account-cart-discount]");
+        if(discountRow){
+          if(discount>0){
+            discountRow.removeAttribute("hidden");
+            var label=discountRow.querySelector("span");
+            if(label) label.textContent="Coupon "+String(preview.code||code).toUpperCase();
+            setText(root, "cartDiscount", "−"+money(discount));
+          } else discountRow.setAttribute("hidden","");
+        }
+        if(preview.finalAmountPaise!=null) setText(root, "cartTotal", money(preview.finalAmountPaise));
+      }).catch(function(){
+        if(applyBtn){ applyBtn.disabled=false; applyBtn.textContent="Apply"; }
+        clearAppliedCoupon(root);
+        couponMessage(root, "Can't reach the server. Try again.", false);
+      });
+    }
     function payNow(){
       if(root.getAttribute("data-wb-paying")) return;
       var addressId=selectedCheckoutAddressId(root);
@@ -1292,7 +1437,10 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       root.setAttribute("data-wb-paying","1");
       setPayBusy(true);
       payMessage("", true);
-      request(base, "/checkout", "POST", { addressId: addressId }).then(function(result){
+      var payload={ addressId: addressId };
+      var couponCode=readCouponCode(root);
+      if(couponCode) payload.couponCode=couponCode;
+      request(base, "/checkout", "POST", payload).then(function(result){
         if(!result.ok){
           setPayBusy(false);
           root.removeAttribute("data-wb-paying");
@@ -1331,7 +1479,28 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         payNow();
       });
     });
+    ensureCheckoutCouponShell(root);
     root.addEventListener("click", function(event){
+      var applyBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-account-coupon-apply]");
+      if(applyBtn && root.contains(applyBtn)){
+        event.preventDefault();
+        if(root.getAttribute("data-wb-guest-session")){
+          var input=root.querySelector("[data-wb-account-coupon-input]");
+          var code=input?String(input.value||"").trim().toUpperCase():"";
+          if(!code){
+            clearAppliedCoupon(root);
+            couponMessage(root, "Enter a coupon code.", false);
+            return;
+          }
+          if(input) input.value=code;
+          root.setAttribute("data-wb-coupon-code", code);
+          root.removeAttribute("data-wb-coupon-discount");
+          couponMessage(root, "Code saved — applied when you pay.", true);
+          return;
+        }
+        applyCoupon();
+        return;
+      }
       var button=event.target&&event.target.closest&&event.target.closest("[data-wb-account-go-addresses]");
       if(!button || !root.contains(button)) return;
       event.preventDefault();
@@ -1341,6 +1510,19 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       }
       var stat=root.querySelector('[data-wb-account-stat="addresses"]');
       if(stat) stat.click();
+    });
+    root.addEventListener("input", function(event){
+      var input=event.target&&event.target.closest&&event.target.closest("[data-wb-account-coupon-input]");
+      if(!input || !root.contains(input)) return;
+      input.value=String(input.value||"").toUpperCase();
+      if(root.getAttribute("data-wb-coupon-code")) clearAppliedCoupon(root);
+    });
+    root.addEventListener("keydown", function(event){
+      var input=event.target&&event.target.closest&&event.target.closest("[data-wb-account-coupon-input]");
+      if(!input || !root.contains(input) || event.key!=="Enter") return;
+      event.preventDefault();
+      var applyBtn=root.querySelector("[data-wb-account-coupon-apply]");
+      if(applyBtn) applyBtn.click();
     });
     function trackingSteps(status){
       var steps=[
@@ -2105,6 +2287,8 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
           country:guestAddress.country||"IN"
         }
       };
+      var guestCoupon=readCouponCode(root);
+      if(guestCoupon) payload.couponCode=guestCoupon;
       root.setAttribute("data-wb-paying","1");
       setPayBusy(true);
       payMessage("", true);
@@ -3223,6 +3407,7 @@ export const SHOP_GUEST_CHECKOUT_SCRIPT = `(function(){
           '<input required name="state" placeholder="State" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
         "</div>"+
         '<input required name="postalCode" placeholder="PIN / postal code" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px" />'+
+        '<input name="couponCode" placeholder="Coupon code (optional)" style="height:36px;padding:0 10px;border:1px solid #ddd;border-radius:8px;text-transform:uppercase" />'+
         '<p data-wb-guest-error style="color:#b91c1c;font-size:13px;margin:0;display:none"></p>'+
         '<button type="submit" class="wb-shop-btn is-buy" data-wb-guest-pay>Pay now</button>'+
       "</form>"+
@@ -3283,6 +3468,8 @@ export const SHOP_GUEST_CHECKOUT_SCRIPT = `(function(){
         country:"IN"
       }
     };
+    var couponCode=String(data.get("couponCode")||"").trim();
+    if(couponCode) payload.couponCode=couponCode;
     fetch(apiBase()+"/shop/"+websiteId+"/auth/guest/checkout",{
       method:"POST",
       credentials:"include",

@@ -128,6 +128,24 @@ export const ACCOUNT_CSS = `
 .wb-acct-checkout-option-body { display: grid; gap: 2px; min-width: 0; }
 .wb-acct-checkout-option-body strong { font-size: 0.92rem; }
 .wb-acct-checkout-option-body span { font-size: 0.82rem; color: var(--wb-muted); line-height: 1.4; }
+.wb-acct-checkout-coupon { display: grid; gap: 8px; }
+.wb-acct-checkout-coupon-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center;
+}
+.wb-acct-checkout-coupon-input {
+  width: 100%; min-height: 40px; padding: 0 12px; border: 1px solid var(--wb-border);
+  border-radius: var(--wb-acct-field-r); background: var(--wb-bg); color: inherit; font: inherit;
+}
+.wb-acct-checkout-coupon-input:focus {
+  outline: none; border-color: color-mix(in srgb, var(--wb-acct-accent) 55%, var(--wb-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wb-acct-accent) 18%, transparent);
+}
+.wb-acct-cart-discount {
+  display: flex; justify-content: space-between; align-items: center; padding: 4px 14px 0;
+  font-size: 0.88rem; color: var(--wb-muted);
+}
+.wb-acct-cart-discount[hidden] { display: none !important; }
+.wb-acct-cart-discount strong { color: #15803d; font-weight: 600; }
 .wb-acct-button.is-pay {
   width: 100%; justify-content: center; background: var(--wb-acct-accent); color: var(--wb-acct-on-accent);
   border: 0; cursor: pointer;

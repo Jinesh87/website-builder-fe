@@ -1747,6 +1747,17 @@ export type ShopCatalogProduct = {
 /** Real shop catalogue. `live` means empty is "no products", not "show samples". */
 export type ShopCancelUntilStatus = "paid" | "processing" | "shipped";
 
+/** Coupon codes shown on a product detail page (cart-wide and product-scoped). */
+export type ShopCatalogCoupon = {
+  code: string;
+  discountType: "PERCENT" | "FIXED_PAISE";
+  discountValue: number;
+  scope: "cart" | "product";
+  variantId: string | null;
+  variantName: string | null;
+  expiresAt: string | null;
+};
+
 export type ShopCatalog = {
   /** Present when the live shop (or editor bridge) can call shopper auth APIs. */
   websiteId?: string;
@@ -1760,6 +1771,8 @@ export type ShopCatalog = {
   cancelUntilStatus?: ShopCancelUntilStatus | null;
   /** Shop-wide return guideline bullets. */
   returnGuidelines?: string[];
+  /** Applicable coupons when rendering a product detail page. */
+  coupons?: ShopCatalogCoupon[];
   products: ShopCatalogProduct[];
   productSlug?: string;
   /** Option values to preselect, from the shop-card link. */
@@ -1803,6 +1816,8 @@ export type ProductDetailData = {
   showCancellationPolicy?: boolean;
   /** Shows the product return policy under the description. */
   showReturnPolicy?: boolean;
+  /** Shows active cart-wide and product coupons on the detail page. */
+  showCoupons?: boolean;
 };
 
 /** Mirrors backend ACCOUNT_VARIANTS. Stored in site data, so values are only ever appended. */

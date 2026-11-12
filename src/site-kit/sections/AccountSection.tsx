@@ -873,9 +873,19 @@ function CartPanel({
   const [payMessage, setPayMessage] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<ShopCartItemSummary | null>(null);
   const [removeQty, setRemoveQty] = useState(1);
+  const [couponDraft, setCouponDraft] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountPaise: number;
+    finalAmountPaise: number;
+  } | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponMessage, setCouponMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
   useEffect(() => {
     setItems(account.cartItems);
+    setAppliedCoupon(null);
+    setCouponMessage(null);
   }, [account.cartItems]);
 
   useEffect(() => {
@@ -919,6 +929,36 @@ function CartPanel({
     }
   }
 
+  async function applyCoupon() {
+    if (!interactive || !websiteId || couponBusy || items.length === 0) return;
+    const code = couponDraft.trim();
+    if (!code) {
+      setAppliedCoupon(null);
+      setCouponMessage({ text: "Enter a coupon code.", ok: false });
+      return;
+    }
+    setCouponBusy(true);
+    setCouponMessage(null);
+    try {
+      const preview = await shopAuthApi.previewCoupon(websiteId, code);
+      setAppliedCoupon({
+        code: preview.code,
+        discountPaise: preview.discountPaise,
+        finalAmountPaise: preview.finalAmountPaise,
+      });
+      setCouponDraft(preview.code);
+      setCouponMessage({
+        text: `Saved ${formatInr(preview.discountPaise)} off.`,
+        ok: true,
+      });
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponMessage({ text: errorMessage(err), ok: false });
+    } finally {
+      setCouponBusy(false);
+    }
+  }
+
   async function payNow() {
     if (!interactive || !websiteId || paying || items.length === 0) return;
     if (!selectedAddressId) {
@@ -929,7 +969,11 @@ function CartPanel({
     setError(null);
     setPayMessage(null);
     try {
-      const checkout = await shopAuthApi.startCheckout(websiteId, { addressId: selectedAddressId });
+      const couponCode = (appliedCoupon?.code || couponDraft).trim();
+      const checkout = await shopAuthApi.startCheckout(websiteId, {
+        addressId: selectedAddressId,
+        ...(couponCode ? { couponCode } : {}),
+      });
       const confirmation = await openRazorpayCheckout(
         {
           orderId: checkout.razorpayOrderId,
@@ -1072,7 +1116,19 @@ function CartPanel({
       {error && <p className="wb-acct-message is-error">{error}</p>}
       <div className="wb-acct-cart-total" data-wb-account-cart-total hidden={items.length === 0}>
         <span>Subtotal</span>
-        <strong data-wb-account-field="cartTotal">{formatInr(total)}</strong>
+        <strong data-wb-account-field="cartTotal">
+          {formatInr(appliedCoupon ? appliedCoupon.finalAmountPaise : total)}
+        </strong>
+      </div>
+      <div
+        className="wb-acct-cart-discount"
+        data-wb-account-cart-discount
+        hidden={!appliedCoupon || appliedCoupon.discountPaise <= 0}
+      >
+        <span>Coupon {appliedCoupon?.code}</span>
+        <strong data-wb-account-field="cartDiscount">
+          {appliedCoupon ? `−${formatInr(appliedCoupon.discountPaise)}` : ""}
+        </strong>
       </div>
       <div className="wb-acct-checkout" data-wb-account-checkout hidden={items.length === 0}>
         <div className="wb-acct-checkout-address" data-wb-account-checkout-address>
@@ -1128,6 +1184,55 @@ function CartPanel({
           >
             Manage addresses
           </button>
+        </div>
+        <div className="wb-acct-checkout-coupon" data-wb-account-checkout-coupon>
+          <p className="wb-acct-checkout-label">Coupon code</p>
+          <div className="wb-acct-checkout-coupon-row">
+            <input
+              type="text"
+              className="wb-acct-checkout-coupon-input"
+              data-wb-account-coupon-input
+              placeholder="Enter code"
+              autoComplete="off"
+              value={couponDraft}
+              disabled={paying || couponBusy}
+              onChange={
+                interactive
+                  ? (event) => {
+                      setCouponDraft(event.target.value.toUpperCase());
+                      if (appliedCoupon) setAppliedCoupon(null);
+                      if (couponMessage) setCouponMessage(null);
+                    }
+                  : undefined
+              }
+              onKeyDown={
+                interactive
+                  ? (event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void applyCoupon();
+                      }
+                    }
+                  : undefined
+              }
+            />
+            <button
+              type="button"
+              className="wb-acct-linkish"
+              data-wb-account-coupon-apply
+              disabled={paying || couponBusy || !couponDraft.trim()}
+              onClick={interactive ? () => void applyCoupon() : undefined}
+            >
+              {couponBusy ? "Checking…" : "Apply"}
+            </button>
+          </div>
+          <p
+            className={`wb-acct-message${couponMessage ? (couponMessage.ok ? " is-ok" : " is-error") : ""}`}
+            data-wb-account-coupon-message
+            hidden={!couponMessage}
+          >
+            {couponMessage?.text}
+          </p>
         </div>
         <button
           type="button"

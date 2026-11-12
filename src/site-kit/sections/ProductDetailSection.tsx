@@ -1,10 +1,53 @@
 import { useEffect, useState } from "react";
+import { Copy } from "lucide-react";
 import { parseRichText, SectionShell } from "../primitives.tsx";
 import ShopCartActions from "../ShopCartActions.tsx";
 import { coverImage, formatInr, shopCancelPolicyText, shopReturnPolicyText, SHOP_DETAIL_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
 import { SHOP_CART_SCRIPT, SHOP_TRACK_SCRIPT } from "../shop-auth.ts";
 import { useStaticRender } from "../render-mode.tsx";
-import type { ProductDetailData, SectionOf, ShopCatalogProduct, ShopCatalogVariant } from "../types.ts";
+import type {
+  ProductDetailData,
+  SectionOf,
+  ShopCatalogCoupon,
+  ShopCatalogProduct,
+  ShopCatalogVariant,
+} from "../types.ts";
+
+const SAMPLE_COUPONS: ShopCatalogCoupon[] = [
+  {
+    code: "SAVE10",
+    discountType: "PERCENT",
+    discountValue: 10,
+    scope: "cart",
+    variantId: null,
+    variantName: null,
+    expiresAt: null,
+  },
+  {
+    code: "TEE50",
+    discountType: "FIXED_PAISE",
+    discountValue: 5000,
+    scope: "product",
+    variantId: null,
+    variantName: null,
+    expiresAt: null,
+  },
+];
+
+function couponOfferLabel(coupon: ShopCatalogCoupon): string {
+  if (coupon.discountType === "PERCENT") return `${coupon.discountValue}% off`;
+  try {
+    return `${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(coupon.discountValue / 100)} off`;
+  } catch {
+    return `₹${(coupon.discountValue / 100).toFixed(0)} off`;
+  }
+}
+
+function couponScopeLabel(coupon: ShopCatalogCoupon): string {
+  if (coupon.scope === "cart") return "Whole cart";
+  if (coupon.variantName) return coupon.variantName;
+  return "This product";
+}
 
 const SAMPLE: ShopCatalogProduct = {
   id: "sample-detail",
@@ -110,11 +153,22 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
   const preferredId = product ? (variantForSelection(product, catalog?.selection)?.id ?? "") : "";
   const [variantId, setVariantId] = useState(preferredId);
   const [imageIndex, setImageIndex] = useState(0);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const selectionKey = JSON.stringify(catalog?.selection ?? {});
   const showStock = data.showStock !== false;
   const showDescription = data.showDescription !== false;
   const showCancellationPolicy = data.showCancellationPolicy !== false;
   const showReturnPolicy = data.showReturnPolicy !== false;
+  const showCoupons = data.showCoupons !== false;
+  const coupons = showCoupons
+    ? live
+      ? (catalog?.coupons ?? []).filter((coupon) => {
+          if (coupon.scope === "cart") return true;
+          if (!coupon.variantId) return true;
+          return !variantId || coupon.variantId === variantId;
+        })
+      : SAMPLE_COUPONS
+    : [];
   const cancelPolicy =
     showCancellationPolicy
       ? shopCancelPolicyText(catalog?.cancelUntilStatus ?? (!live ? "paid" : null))
@@ -256,6 +310,63 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
         />
       </div>
     );
+    const couponOffers =
+      coupons.length > 0 ? (
+        <details className="wb-product-coupons" aria-label="Available coupons">
+          <summary className="wb-product-coupons-summary">
+            <span className="wb-product-coupons-label">
+              {coupons.length === 1 ? "1 coupon available" : `${coupons.length} coupons available`}
+            </span>
+            <span className="wb-product-coupons-chevron" aria-hidden="true" />
+          </summary>
+          <div className="wb-product-coupons-panel">
+            <ul className="wb-product-coupons-list">
+              {coupons.map((coupon) => {
+                const key = `${coupon.code}-${coupon.variantId ?? "all"}`;
+                const copied = copiedCode === coupon.code;
+                return (
+                  <li key={key} className="wb-product-coupon">
+                    <div className="wb-product-coupon-main">
+                      <code className="wb-product-coupon-code">{coupon.code}</code>
+                      <span className="wb-product-coupon-offer">{couponOfferLabel(coupon)}</span>
+                      <span className="wb-product-coupon-scope">{couponScopeLabel(coupon)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={`wb-product-coupon-copy${copied ? " is-copied" : ""}`}
+                      data-wb-copy-coupon={coupon.code}
+                      data-wb-copy-default="Copy"
+                      aria-label={`Copy coupon code ${coupon.code}`}
+                      onClick={
+                        !stat
+                          ? async (event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              try {
+                                await navigator.clipboard.writeText(coupon.code);
+                                setCopiedCode(coupon.code);
+                                window.setTimeout(
+                                  () => setCopiedCode((current) => (current === coupon.code ? null : current)),
+                                  1600,
+                                );
+                              } catch {
+                                /* live pages use the product detail copy script */
+                              }
+                            }
+                          : undefined
+                      }
+                    >
+                      <Copy className="wb-product-coupon-copy-icon" aria-hidden="true" />
+                      <span data-wb-copy-label="">{copied ? "Copied" : "Copy"}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="wb-product-coupons-hint">Copy a code and apply it at checkout</p>
+          </div>
+        </details>
+      ) : null;
     const options =
       groups.length > 0 ? (
         <div className="wb-product-options">
@@ -368,6 +479,7 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
           <aside className="wb-product-panel">
             {heading}
             {buy}
+            {couponOffers}
             {options}
             {returns}
           </aside>
@@ -386,6 +498,7 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
           <div className="wb-product-intro">
             {heading}
             {buy}
+            {couponOffers}
           </div>
           {gallery}
           <div className="wb-product-band">
@@ -411,6 +524,7 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
             {policy}
             {returns}
             {buy}
+            {couponOffers}
             {options}
           </div>
         </>
@@ -422,6 +536,7 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
           <div className="wb-product-copy">
             {heading}
             {buy}
+            {couponOffers}
             {options}
             {hasCopyDetails && (
               <div className="wb-product-details">
