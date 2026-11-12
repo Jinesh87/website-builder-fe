@@ -590,6 +590,25 @@ export function fullNameFromForm(form: HTMLFormElement): string {
  * the member view filled with their data (or the guest prompt), and wires tabs, forms and logout.
  */
 export const SHOP_ACCOUNT_SCRIPT = `(function(){
+  // One-shot Buy→checkout: arm in sessionStorage, strip ?checkout=1 at boot so cancel+refresh cannot reopen Razorpay.
+  window.__wbCheckoutArmed=false;
+  try{
+    var bootParams=new URLSearchParams(window.location.search||"");
+    var bootCheckout=bootParams.get("checkout");
+    var armRaw=null;
+    try{ armRaw=sessionStorage.getItem("wb_checkout_arm"); }catch(_armRead){}
+    if(bootCheckout==="1"){
+      try{
+        var bootUrl=new URL(window.location.href);
+        bootUrl.searchParams.delete("checkout");
+        window.history.replaceState({}, "", bootUrl.pathname+bootUrl.search+bootUrl.hash);
+      }catch(_bootClear){}
+      if(armRaw==="1"){
+        window.__wbCheckoutArmed=true;
+        try{ sessionStorage.removeItem("wb_checkout_arm"); }catch(_armClear){}
+      }
+    }
+  }catch(_boot){}
   function apiBase(){
     var meta=document.querySelector('meta[name="wb-api"]');
     var content=meta&&meta.getAttribute("content");
@@ -1909,7 +1928,17 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     });
     try{
       var params=new URLSearchParams(window.location.search||"");
-      if(params.get("checkout")==="1"){
+      var checkoutFlag=params.get("checkout");
+      var armed=!!window.__wbCheckoutArmed;
+      window.__wbCheckoutArmed=false;
+      if(checkoutFlag==="1"){
+        try{
+          var checkoutUrl=new URL(window.location.href);
+          checkoutUrl.searchParams.delete("checkout");
+          window.history.replaceState({}, "", checkoutUrl.pathname+checkoutUrl.search+checkoutUrl.hash);
+        }catch(_clear){}
+      }
+      if(armed){
         setTimeout(function(){ payNow(); }, 400);
       }
     }catch(_e){}
@@ -3221,6 +3250,7 @@ export const SHOP_CART_SCRIPT = `(function(){
       }
       if(buy){
         var cartUrl=accountPanelHref(accountHref(button), "cart");
+        try{ sessionStorage.setItem("wb_checkout_arm","1"); }catch(_armSet){}
         try{
           var buyUrl=new URL(cartUrl, window.location.origin);
           buyUrl.searchParams.set("checkout","1");
