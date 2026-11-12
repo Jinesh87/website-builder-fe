@@ -1220,7 +1220,8 @@ function CartPanel({
               type="button"
               className="wb-acct-linkish"
               data-wb-account-coupon-apply
-              disabled={paying || couponBusy || !couponDraft.trim()}
+              // Live HTML is static — never bake disabled from empty React draft or Apply never fires.
+              disabled={interactive ? paying || couponBusy || !couponDraft.trim() : false}
               onClick={interactive ? () => void applyCoupon() : undefined}
             >
               {couponBusy ? "Checking…" : "Apply"}

@@ -17,12 +17,13 @@ import {
 } from "@heroui/react";
 import type { DateValue } from "@internationalized/date";
 import { parseDate, today } from "@internationalized/date";
-import { Calendar as CalendarIcon, Plus, SquarePen, TicketPercent } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, Plus, SquarePen, TicketPercent } from "lucide-react";
 import {
   shopApi,
   type CreateShopCouponInput,
   type ShopCoupon,
   type ShopCouponDiscountType,
+  type ShopCouponRedemption,
   type ShopProduct,
   type ShopVariant,
   type UpdateShopCouponInput,
@@ -125,12 +126,200 @@ function formatExpiryDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: IST });
 }
 
+function formatWhen(iso: string): string {
+  return new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+}
+
+function CouponDetail({
+  websiteId,
+  coupon,
+  onBack,
+  onUpdated,
+}: {
+  websiteId: string;
+  coupon: ShopCoupon;
+  onBack: () => void;
+  onUpdated: (coupon: ShopCoupon) => void;
+}) {
+  const [redemptions, setRedemptions] = useState<ShopCouponRedemption[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback>(null);
+  const [toggling, setToggling] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setRedemptions(null);
+    setError(null);
+    shopApi
+      .couponRedemptions(websiteId, coupon.id)
+      .then((rows) => {
+        if (!cancelled) setRedemptions(rows);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(errorMessage(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [websiteId, coupon.id]);
+
+  async function toggleActive() {
+    if (toggling) return;
+    setToggling(true);
+    setFeedback(null);
+    try {
+      const updated = await shopApi.updateCoupon(websiteId, coupon.id, { active: !coupon.active });
+      onUpdated(updated);
+      setFeedback({
+        status: "success",
+        message: updated.active ? "Coupon activated." : "Coupon deactivated.",
+      });
+    } catch (err) {
+      setFeedback({ status: "danger", message: errorMessage(err) });
+    } finally {
+      setToggling(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button size="sm" variant="outline" onPress={onBack}>
+          <ArrowLeft className="size-4" aria-hidden />
+          Back
+        </Button>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="font-mono text-base font-semibold text-ink">{coupon.code}</h2>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                coupon.active ? "bg-emerald-50 text-emerald-700" : "bg-canvas text-ink-muted"
+              }`}
+            >
+              {coupon.active ? "Active" : "Off"}
+            </span>
+          </div>
+          <p className="text-sm text-ink-muted">
+            {formatDiscount(coupon)} · {coupon.usedCount}
+            {coupon.maxUses !== null ? ` / ${coupon.maxUses}` : ""} uses · Expires{" "}
+            {coupon.expiresAt ? formatExpiryDate(coupon.expiresAt) : "never"}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onPress={() => setEditOpen(true)}>
+            <SquarePen className="size-3.5" aria-hidden />
+            Edit
+          </Button>
+          <Button size="sm" variant="ghost" onPress={() => void toggleActive()} isDisabled={toggling}>
+            {coupon.active ? "Deactivate" : "Activate"}
+          </Button>
+        </div>
+      </div>
+
+      {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
+      {error && <FormAlert status="danger">{error}</FormAlert>}
+
+      <dl className="grid gap-3 rounded-xl border border-line bg-surface px-5 py-4 sm:grid-cols-3">
+        <div>
+          <dt className="text-xs font-medium text-ink-muted">Applies to</dt>
+          <dd className="text-sm text-ink">
+            {coupon.scope === "cart"
+              ? "Whole cart"
+              : [coupon.productName, coupon.variantName].filter(Boolean).join(" · ") || "Product"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium text-ink-muted">Discount</dt>
+          <dd className="text-sm text-ink">{formatDiscount(coupon)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium text-ink-muted">Uses</dt>
+          <dd className="text-sm text-ink">
+            {coupon.usedCount}
+            {coupon.maxUses !== null ? ` / ${coupon.maxUses}` : " (unlimited)"}
+          </dd>
+        </div>
+      </dl>
+
+      <section className="overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
+        <div className="border-b border-line px-5 py-3">
+          <h3 className="text-sm font-semibold text-ink">Orders that used this coupon</h3>
+          <p className="text-xs text-ink-muted">
+            {redemptions?.length ?? 0} {(redemptions?.length ?? 0) === 1 ? "order" : "orders"}
+          </p>
+        </div>
+        {redemptions === null && !error && (
+          <div className="grid place-items-center py-12">
+            <Spinner aria-label="Loading coupon usage" />
+          </div>
+        )}
+        {redemptions && redemptions.length === 0 && (
+          <div className="px-6 py-12 text-center">
+            <p className="text-sm font-medium text-ink">No usage yet</p>
+            <p className="mt-1 text-sm text-ink-muted">Orders appear here after a shopper pays with this code.</p>
+          </div>
+        )}
+        {redemptions && redemptions.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-line bg-canvas/60 text-xs text-ink-muted">
+                <tr>
+                  <th className="px-4 py-2.5 font-medium">When</th>
+                  <th className="px-4 py-2.5 font-medium">Order</th>
+                  <th className="px-4 py-2.5 font-medium">Customer</th>
+                  <th className="px-4 py-2.5 font-medium">Status</th>
+                  <th className="px-4 py-2.5 text-right font-medium">List</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Discount</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Paid</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {redemptions.map((row) => (
+                  <tr key={row.id} className="hover:bg-canvas/40">
+                    <td className="whitespace-nowrap px-4 py-2.5 text-ink-body">{formatWhen(row.createdAt)}</td>
+                    <td className="px-4 py-2.5 font-medium text-ink">#{row.order.number}</td>
+                    <td className="px-4 py-2.5">
+                      <p className="text-ink">{row.customer.fullName}</p>
+                      <p className="text-xs text-ink-muted">{row.customer.email}</p>
+                    </td>
+                    <td className="px-4 py-2.5 capitalize text-ink-body">{row.order.status}</td>
+                    <td className="px-4 py-2.5 text-right text-ink-body">{formatPaise(row.listAmountPaise)}</td>
+                    <td className="px-4 py-2.5 text-right text-emerald-700">−{formatPaise(row.discountPaise)}</td>
+                    <td className="px-4 py-2.5 text-right font-medium text-ink">
+                      {formatPaise(row.finalAmountPaise)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <ShopCouponFormModal
+        isOpen={editOpen}
+        mode="edit"
+        websiteId={websiteId}
+        coupon={coupon}
+        onClose={() => setEditOpen(false)}
+        onSaved={(updated) => {
+          onUpdated(updated);
+          setEditOpen(false);
+          setFeedback({ status: "success", message: `Coupon ${updated.code} updated.` });
+        }}
+      />
+    </div>
+  );
+}
+
 export default function ShopCouponsPanel({ websiteId }: { websiteId: string }) {
   const [coupons, setCoupons] = useState<ShopCoupon[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [listFeedback, setListFeedback] = useState<Feedback>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<ShopCoupon | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   function reload() {
     return shopApi
@@ -162,6 +351,20 @@ export default function ShopCouponsPanel({ websiteId }: { websiteId: string }) {
       <div className="grid place-items-center py-12">
         <Spinner aria-label="Loading coupons" />
       </div>
+    );
+  }
+
+  const selected = selectedId ? coupons.find((row) => row.id === selectedId) ?? null : null;
+  if (selected) {
+    return (
+      <CouponDetail
+        websiteId={websiteId}
+        coupon={selected}
+        onBack={() => setSelectedId(null)}
+        onUpdated={(updated) => {
+          setCoupons((current) => current?.map((row) => (row.id === updated.id ? updated : row)) ?? null);
+        }}
+      />
     );
   }
 
@@ -207,7 +410,18 @@ export default function ShopCouponsPanel({ websiteId }: { websiteId: string }) {
               </thead>
               <tbody className="divide-y divide-line">
                 {coupons.map((coupon) => (
-                  <tr key={coupon.id}>
+                  <tr
+                    key={coupon.id}
+                    tabIndex={0}
+                    className="cursor-pointer transition-colors hover:bg-canvas/40 focus-visible:bg-canvas/40 focus-visible:outline-none"
+                    onClick={() => setSelectedId(coupon.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedId(coupon.id);
+                      }
+                    }}
+                  >
                     <td className="px-4 py-3 font-mono text-ink">{coupon.code}</td>
                     <td className="px-4 py-3 text-ink-body">{formatDiscount(coupon)}</td>
                     <td className="px-4 py-3 text-ink-body">
@@ -228,12 +442,15 @@ export default function ShopCouponsPanel({ websiteId }: { websiteId: string }) {
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           coupon.active ? "bg-emerald-50 text-emerald-700" : "bg-canvas text-ink-muted"
                         }`}
-                        onClick={() => void toggleActive(coupon)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void toggleActive(coupon);
+                        }}
                       >
                         {coupon.active ? "Active" : "Off"}
                       </button>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(event) => event.stopPropagation()}>
                       <Button size="sm" variant="outline" onPress={() => setEditing(coupon)}>
                         <SquarePen className="size-3.5" aria-hidden />
                         Edit

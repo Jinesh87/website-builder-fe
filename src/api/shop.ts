@@ -300,6 +300,10 @@ export type ShopOrder = {
   refundStatus: ShopRefundStatus;
   totalPaise: number;
   currency: "INR";
+  couponId: string | null;
+  couponCode: string | null;
+  listAmountPaise: number | null;
+  discountPaise: number | null;
   customer: {
     id: string;
     fullName: string;
@@ -381,6 +385,25 @@ export type UpdateShopCouponInput = {
   expiresAt?: string | null;
   maxUses?: number | null;
   active?: boolean;
+};
+
+export type ShopCouponRedemption = {
+  id: string;
+  listAmountPaise: number;
+  discountPaise: number;
+  finalAmountPaise: number;
+  createdAt: string;
+  order: {
+    id: string;
+    number: string;
+    status: string;
+  };
+  customer: {
+    id: string;
+    fullName: string;
+    email: string;
+    isGuest: boolean;
+  };
 };
 
 function productQuery(params: ShopProductQuery): string {
@@ -547,4 +570,9 @@ export const shopApi = {
       method: "PATCH",
       body: input,
     }).then((data) => data.coupon),
+
+  couponRedemptions: (websiteId: string, couponId: string) =>
+    request<{ redemptions: ShopCouponRedemption[] }>(
+      `${base(websiteId)}/coupons/${couponId}/redemptions`,
+    ).then((data) => data.redemptions),
 };

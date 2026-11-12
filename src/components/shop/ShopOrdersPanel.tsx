@@ -364,7 +364,27 @@ function OrderDetail({
             </div>
             <div>
               <dt className="text-xs font-medium text-ink-muted">Total</dt>
-              <dd className="text-sm font-semibold text-ink">{formatInr(order.totalPaise)}</dd>
+              {order.discountPaise != null && order.discountPaise > 0 ? (
+                <div className="mt-0.5 space-y-1 text-sm">
+                  <div className="flex justify-between gap-4 text-ink-muted">
+                    <span>Subtotal</span>
+                    <span className="tabular-nums">{formatInr(order.listAmountPaise ?? order.totalPaise + order.discountPaise)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-emerald-700">
+                    <span>Coupon {order.couponCode || ""}</span>
+                    <span className="tabular-nums">−{formatInr(order.discountPaise)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 font-semibold text-ink">
+                    <span>Paid</span>
+                    <span className="tabular-nums">{formatInr(order.totalPaise)}</span>
+                  </div>
+                </div>
+              ) : (
+                <dd className="text-sm font-semibold text-ink">{formatInr(order.totalPaise)}</dd>
+              )}
+              {order.couponCode && !(order.discountPaise != null && order.discountPaise > 0) && (
+                <dd className="mt-1 text-xs text-ink-muted">Coupon {order.couponCode}</dd>
+              )}
             </div>
             <div>
               <dt className="text-xs font-medium text-ink-muted">Payment</dt>
@@ -514,12 +534,13 @@ export default function ShopOrdersPanel({ websiteId }: { websiteId: string }) {
       )}
       {data && data.orders.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[44rem] text-left text-sm">
+          <table className="w-full min-w-[48rem] text-left text-sm">
             <thead>
               <tr className="border-b border-line text-xs font-medium text-ink-muted">
                 <th className="px-5 py-2 font-medium">Order</th>
                 <th className="px-3 py-2 font-medium">Customer</th>
                 <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">Coupon</th>
                 <th className="px-3 py-2 font-medium">Total</th>
                 <th className="px-5 py-2 font-medium">Placed</th>
               </tr>
@@ -552,7 +573,19 @@ export default function ShopOrdersPanel({ websiteId }: { websiteId: string }) {
                       <RefundBadge status={order.refundStatus} />
                     </div>
                   </td>
-                  <td className="px-3 py-3 tabular-nums text-ink">{formatInr(order.totalPaise)}</td>
+                  <td className="px-3 py-3">
+                    {order.couponCode ? (
+                      <span className="font-mono text-xs text-ink">{order.couponCode}</span>
+                    ) : (
+                      <span className="text-ink-muted">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 tabular-nums text-ink">
+                    <div>{formatInr(order.totalPaise)}</div>
+                    {order.discountPaise != null && order.discountPaise > 0 && (
+                      <div className="text-xs text-emerald-700">−{formatInr(order.discountPaise)}</div>
+                    )}
+                  </td>
                   <td className="px-5 py-3 text-ink-muted">{formatWhen(order.createdAt)}</td>
                 </tr>
               ))}

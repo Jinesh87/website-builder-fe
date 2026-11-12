@@ -590,24 +590,15 @@ export function fullNameFromForm(form: HTMLFormElement): string {
  * the member view filled with their data (or the guest prompt), and wires tabs, forms and logout.
  */
 export const SHOP_ACCOUNT_SCRIPT = `(function(){
-  // One-shot Buy→checkout: arm in sessionStorage, strip ?checkout=1 at boot so cancel+refresh cannot reopen Razorpay.
-  window.__wbCheckoutArmed=false;
+  // Drop legacy ?checkout=1 so old Buy links cannot auto-open Razorpay.
   try{
     var bootParams=new URLSearchParams(window.location.search||"");
-    var bootCheckout=bootParams.get("checkout");
-    var armRaw=null;
-    try{ armRaw=sessionStorage.getItem("wb_checkout_arm"); }catch(_armRead){}
-    if(bootCheckout==="1"){
-      try{
-        var bootUrl=new URL(window.location.href);
-        bootUrl.searchParams.delete("checkout");
-        window.history.replaceState({}, "", bootUrl.pathname+bootUrl.search+bootUrl.hash);
-      }catch(_bootClear){}
-      if(armRaw==="1"){
-        window.__wbCheckoutArmed=true;
-        try{ sessionStorage.removeItem("wb_checkout_arm"); }catch(_armClear){}
-      }
+    if(bootParams.get("checkout")==="1"){
+      var bootUrl=new URL(window.location.href);
+      bootUrl.searchParams.delete("checkout");
+      window.history.replaceState({}, "", bootUrl.pathname+bootUrl.search+bootUrl.hash);
     }
+    try{ sessionStorage.removeItem("wb_checkout_arm"); }catch(_armClear){}
   }catch(_boot){}
   function apiBase(){
     var meta=document.querySelector('meta[name="wb-api"]');
@@ -1499,6 +1490,8 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       });
     });
     ensureCheckoutCouponShell(root);
+    // SSR may ship Apply as disabled when the React draft was empty; unlock for the live script.
+    root.querySelectorAll("[data-wb-account-coupon-apply]").forEach(function(btn){ btn.disabled=false; });
     root.addEventListener("click", function(event){
       var applyBtn=event.target&&event.target.closest&&event.target.closest("[data-wb-account-coupon-apply]");
       if(applyBtn && root.contains(applyBtn)){
@@ -1926,22 +1919,6 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       event.preventDefault();
       openOrderDetail(row.getAttribute("data-wb-order-id")||"");
     });
-    try{
-      var params=new URLSearchParams(window.location.search||"");
-      var checkoutFlag=params.get("checkout");
-      var armed=!!window.__wbCheckoutArmed;
-      window.__wbCheckoutArmed=false;
-      if(checkoutFlag==="1"){
-        try{
-          var checkoutUrl=new URL(window.location.href);
-          checkoutUrl.searchParams.delete("checkout");
-          window.history.replaceState({}, "", checkoutUrl.pathname+checkoutUrl.search+checkoutUrl.hash);
-        }catch(_clear){}
-      }
-      if(armed){
-        setTimeout(function(){ payNow(); }, 400);
-      }
-    }catch(_e){}
     var profile=root.querySelector("[data-wb-account-profile]");
     if(profile){
       profile.addEventListener("submit", function(event){
@@ -3249,15 +3226,8 @@ export const SHOP_CART_SCRIPT = `(function(){
         return;
       }
       if(buy){
-        var cartUrl=accountPanelHref(accountHref(button), "cart");
-        try{ sessionStorage.setItem("wb_checkout_arm","1"); }catch(_armSet){}
-        try{
-          var buyUrl=new URL(cartUrl, window.location.origin);
-          buyUrl.searchParams.set("checkout","1");
-          window.location.href=/^(https?:)/i.test(cartUrl)?buyUrl.toString():siteHref(buyUrl.pathname+buyUrl.search+buyUrl.hash);
-        }catch(_e){
-          window.location.href=siteHref(cartUrl+(cartUrl.indexOf("?")>=0?"&":"?")+"checkout=1");
-        }
+        // Land on cart so the shopper can apply a coupon before paying.
+        window.location.href=siteHref(accountPanelHref(accountHref(button), "cart"));
         return;
       }
       showMessage(button, qty===1?"Added to cart.":("Added "+qty+" to cart."), "ok");
