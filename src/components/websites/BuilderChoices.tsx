@@ -30,7 +30,7 @@ export default function BuilderChoices() {
         <FileCode2 className="size-5 text-brand" aria-hidden />
         <p className="mt-3 font-medium text-ink">Import HTML</p>
         <p className="mt-1 text-sm text-ink-body">
-          Upload marked HTML; we save each block as a component that matches your look.
+          Upload any HTML site; keep its exact look or turn it into builder sections.
         </p>
         <p className="mt-3 text-sm font-medium text-brand">Upload →</p>
       </Link>

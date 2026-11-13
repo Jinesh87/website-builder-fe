@@ -1,3 +1,4 @@
+import { ImportedHtmlBlock } from "../sections/ImportedHtmlSection.tsx";
 import { parseRichText } from "../rich-text.tsx";
 import { useState, type CSSProperties, type FormEvent } from "react";
 import { safeHref } from "../links.ts";
@@ -121,8 +122,18 @@ function LegalLinksList({ legalLinks }: { legalLinks?: LinkRef[] }) {
   );
 }
 
-export default function SiteFooter({ footer, settings }: { footer: FooterData; settings?: Partial<SectionSettings> }) {
+export default function SiteFooter({
+  footer,
+  settings,
+  sectionId = "site-footer",
+}: {
+  footer: FooterData;
+  settings?: Partial<SectionSettings>;
+  /** Id of the footer section ("site-footer" or a page's own "page-footer"); routes imported forms. */
+  sectionId?: string;
+}) {
   if (footer.hidden) return null;
+  if (footer.imported?.html) return <ImportedHtmlBlock data={{ ...footer.imported, chrome: "footer" }} sectionId={sectionId} />;
 
   const chrome = chromeStyle(settings);
   const themeClass = [

@@ -1,3 +1,4 @@
+import { ImportedHtmlBlock } from "../sections/ImportedHtmlSection.tsx";
 import { parseRichText } from "../rich-text.tsx";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { useIsCurrentPage } from "../current-page.ts";
@@ -389,9 +390,19 @@ function EditorialCurtainDrawer({
   );
 }
 
-export default function SiteHeader({ header, settings }: { header: HeaderData; settings?: Partial<SectionSettings> }) {
+export default function SiteHeader({
+  header,
+  settings,
+  sectionId = "site-header",
+}: {
+  header: HeaderData;
+  settings?: Partial<SectionSettings>;
+  /** Id of the header section ("site-header" or a page's own "page-header"); routes imported forms. */
+  sectionId?: string;
+}) {
   const [mobileOpen, setMobileOpen] = useState(false);
   if (header.hidden) return null;
+  if (header.imported?.html) return <ImportedHtmlBlock data={{ ...header.imported, chrome: "header" }} sectionId={sectionId} />;
 
   const position = header.position ?? (header.sticky ? "sticky" : "static");
 

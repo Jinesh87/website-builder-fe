@@ -294,6 +294,8 @@ export type SavedSection = {
   section: Section;
   /** Shared by the platform; clients can use but not delete it. */
   isPlatform: boolean;
+  /** Set when an HTML import added this entry; it is deleted with that website. */
+  sourceWebsiteId?: string | null;
   createdAt: string;
 };
 
@@ -345,7 +347,7 @@ export const websitesApi = {
   savedSections: (websiteId: string) =>
     request<{ sections: SavedSection[] }>(`${BASE}/${websiteId}/saved-sections`).then((data) => data.sections),
 
-  saveSection: (websiteId: string, input: { name: string; section: Section }) =>
+  saveSection: (websiteId: string, input: { name: string; section: Section; fromWebsite?: boolean }) =>
     request<{ section: SavedSection }>(`${BASE}/${websiteId}/saved-sections`, { method: "POST", body: input }).then(
       (data) => data.section,
     ),

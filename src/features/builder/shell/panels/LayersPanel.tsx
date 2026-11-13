@@ -5,9 +5,11 @@ import { moveSection, replaceSection, selectSection, useBuilderPuck } from "../.
 import { EmptyState, PanelHeader, ToolButton } from "../ui.tsx";
 
 export function itemTitle(item: BuilderItem): string {
-  const data = item.props.data as { heading?: string; siteName?: string };
+  const data = item.props.data as { heading?: string; siteName?: string; title?: string };
   const type = getSectionType(item.type);
-  return data.heading?.trim() || data.siteName?.trim() || SECTION_DEFINITIONS[type]?.label || item.type;
+  // Imported HTML blocks keep their name in `title` (heading text, "Site header", …).
+  const imported = type === "imported_html" ? data.title?.trim() : undefined;
+  return imported || data.heading?.trim() || data.siteName?.trim() || SECTION_DEFINITIONS[type]?.label || item.type;
 }
 
 export default function LayersPanel() {

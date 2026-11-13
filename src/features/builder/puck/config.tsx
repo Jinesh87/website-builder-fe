@@ -137,6 +137,10 @@ function RootRender({ children }: { children: ReactNode }) {
 
     if (anchor || cardWithHref) {
       event.preventDefault();
+      // Imported HTML is mostly links (whole cards, nav, buttons): a plain click selects the block
+      // instead of leaving the page. Ctrl/Cmd+click still follows the link.
+      const inImportedHtml = Boolean(target?.closest("[data-wb-imported-html]"));
+      if (inImportedHtml && !event.metaKey && !event.ctrlKey) return;
       if (href && href !== "#") {
         site.navigateToHref?.(href);
       }
@@ -185,6 +189,11 @@ function RootRender({ children }: { children: ReactNode }) {
           overscroll-behavior-y: none !important;
         }
         /* The body's height is auto, so a percentage would collapse the drop zone to its content. */
+        /* Imported HTML brings its own z-indexes (sticky headers, floating cards). Isolating each
+           block keeps them below Puck's selection outline and toolbar. */
+        .wb-editor-section-wrap:has(> [data-wb-imported-html]) {
+          isolation: isolate;
+        }
         #frame-root {
           background-color: transparent !important;
           margin: 0 !important;

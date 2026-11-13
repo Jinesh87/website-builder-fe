@@ -81,7 +81,9 @@ import { ContactFormFieldsEditor, ContactLayoutEditor } from "./ContactBuilderFi
 import { createContactLayout, layoutHasForm, resolveContactLayout } from "../../../site-kit/contact-builder.ts";
 import AuthSectionForm from "./AuthSectionForm.tsx";
 import CardsSectionForm from "./CardsSectionForm.tsx";
-import ImportedHtmlForm from "./ImportedHtmlForm.tsx";
+import ImportedHtmlForm, { ImportedChromeForm } from "./ImportedHtmlForm.tsx";
+import { chromeToBuilder, chromeToImported, footerFromImported } from "../../../site-kit/imported-html-convert.ts";
+import { SwitchBackBar } from "./ImportedHtmlForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
 import { Bold, Italic, Film, Waves, Compass, Sparkles } from "lucide-react";
@@ -5192,18 +5194,58 @@ function DataForm({
 }) {
   switch (section.type) {
     case "header":
+      if (section.data.imported) {
+        const imported = section.data.imported;
+        return (
+          <ImportedChromeForm
+            kind="header"
+            data={imported}
+            onChange={(next) => onChange({ ...section, data: { ...section.data, imported: next } })}
+            onUseBuilder={() => onChange({ ...section, data: chromeToBuilder(section.data) })}
+          />
+        );
+      }
       return (
-        <HeaderForm
-          header={section.data}
-          onChange={(data) => onChange({ ...section, data })}
-        />
+        <>
+          {section.data.importedHidden ? (
+            <SwitchBackBar
+              text="This header was imported from HTML."
+              action="Switch back to the imported header"
+              onSwitch={() => onChange({ ...section, data: chromeToImported(section.data) })}
+            />
+          ) : null}
+          <HeaderForm
+            header={section.data}
+            onChange={(data) => onChange({ ...section, data })}
+          />
+        </>
       );
     case "footer":
+      if (section.data.imported) {
+        const imported = section.data.imported;
+        return (
+          <ImportedChromeForm
+            kind="footer"
+            data={imported}
+            onChange={(next) => onChange({ ...section, data: { ...section.data, imported: next } })}
+            onUseBuilder={() => onChange({ ...section, data: chromeToBuilder(footerFromImported(imported, section.data)) })}
+          />
+        );
+      }
       return (
-        <FooterForm
-          footer={section.data}
-          onChange={(data) => onChange({ ...section, data })}
-        />
+        <>
+          {section.data.importedHidden ? (
+            <SwitchBackBar
+              text="This footer was imported from HTML."
+              action="Switch back to the imported footer"
+              onSwitch={() => onChange({ ...section, data: chromeToImported(section.data) })}
+            />
+          ) : null}
+          <FooterForm
+            footer={section.data}
+            onChange={(data) => onChange({ ...section, data })}
+          />
+        </>
       );
     case "hero":
       return (
@@ -5348,8 +5390,9 @@ function DataForm({
     case "imported_html":
       return (
         <ImportedHtmlForm
-          data={section.data}
+          section={section}
           onChange={(data) => onChange({ ...section, data })}
+          onReplace={onChange}
         />
       );
     case "products":

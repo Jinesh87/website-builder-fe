@@ -236,7 +236,11 @@
     const message = String(data.get("message") || "").trim();
     const honeypot = String(data.get("_wb_hp") || "");
     const sectionId = form.getAttribute("data-wb-section");
-    if (sectionId) return { sectionId, fields: customFields(form, data), _wb_hp: honeypot };
+    if (sectionId) {
+      // Imported HTML can hold several forms in one block; the index picks the right field list.
+      const formIndex = Number(form.getAttribute("data-wb-form-index") || 0);
+      return { sectionId, formIndex, fields: customFields(form, data), _wb_hp: honeypot };
+    }
     const details = [services.length ? `Interested in: ${services.join(", ")}` : "", budget ? `Budget: ${budget}` : ""]
       .filter(Boolean)
       .join("\n");
@@ -324,7 +328,7 @@
       void submitClapper(form, contactUrl);
       return;
     }
-    if (contactUrl && form.classList.contains("wb-contact-form")) {
+    if (contactUrl && (form.classList.contains("wb-contact-form") || form.hasAttribute("data-wb-imported-form"))) {
       void submitContact(form, contactUrl);
       return;
     }

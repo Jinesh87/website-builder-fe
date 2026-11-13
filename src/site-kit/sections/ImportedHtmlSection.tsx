@@ -1,4 +1,4 @@
-import type { SectionOf } from "../types.ts";
+import type { ImportedHtmlData, SectionOf } from "../types.ts";
 
 const SCOPE_PATTERN = /^wbi-[a-z0-9]{4,40}$/;
 
@@ -71,21 +71,36 @@ export function applyImportedHtmlEdits(
 }
 
 /**
+ * Imported forms post to the site's contact endpoint as `{ sectionId, formIndex, fields }`; the
+ * section id is only known at render time (blocks get copied/duplicated), so it is stamped here.
+ */
+function withFormSection(html: string, sectionId: string | undefined): string {
+  if (!sectionId || !html.includes("data-wb-imported-form")) return html;
+  const safeId = sectionId.replace(/[^\w-]/g, "");
+  return html.replace(/<form\b(?![^>]*\sdata-wb-section=)/g, `<form data-wb-section="${safeId}"`);
+}
+
+/** Renders sanitized, pre-scoped imported markup (a page block or the imported site header/footer). */
+export function ImportedHtmlBlock({ data, sectionId }: { data: ImportedHtmlData; sectionId?: string }) {
+  const scope = data.scope && SCOPE_PATTERN.test(data.scope) ? data.scope : "";
+  const css = scope ? data.css || "" : "";
+  const className = ["wb-imported-html", scope, data.chrome ? `wb-imported-html--${data.chrome}` : ""]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <div className={className} data-section-id={sectionId} data-wb-imported-html="">
+      {css ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}
+      <div className="wb-imported-html-root" dangerouslySetInnerHTML={{ __html: withFormSection(data.html, sectionId) }} />
+    </div>
+  );
+}
+
+/**
  * Full-fidelity block imported from HTML. Markup is sanitized and CSS is pre-scoped to
  * `.wb-site .{scope}` on the server, so it is rendered verbatim here.
  */
 export default function ImportedHtmlSection({ section }: { section: SectionOf<"imported_html"> }) {
   const { data } = section;
-  const scope = data.scope && SCOPE_PATTERN.test(data.scope) ? data.scope : "";
-  const css = scope ? data.css || "" : "";
-  const className = [
-    "wb-imported-html",
-    scope,
-    data.chrome ? `wb-imported-html--${data.chrome}` : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   if (!data.html?.trim()) {
     return (
       <section className="wb-section wb-imported-html-empty" data-section-id={section.id}>
@@ -95,11 +110,5 @@ export default function ImportedHtmlSection({ section }: { section: SectionOf<"i
       </section>
     );
   }
-
-  return (
-    <div className={className} data-section-id={section.id} data-wb-imported-html="">
-      {css ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}
-      <div className="wb-imported-html-root" dangerouslySetInnerHTML={{ __html: data.html }} />
-    </div>
-  );
+  return <ImportedHtmlBlock data={data} sectionId={section.id} />;
 }

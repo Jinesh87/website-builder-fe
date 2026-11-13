@@ -99,6 +99,10 @@ export type HeaderMenuItem = {
 };
 
 export type HeaderData = {
+  /** Original header/footer markup from an HTML import; when set it replaces the builder design. */
+  imported?: ImportedHtmlData;
+  /** Imported markup kept while the builder design is shown ("Switch back to the imported …"). */
+  importedHidden?: ImportedHtmlData;
   /** Style of the site-wide header, edited through the shared header section. */
   settings?: SectionSettings;
   design: HeaderDesign;
@@ -198,6 +202,10 @@ export type FooterContact = {
 };
 
 export type FooterData = {
+  /** Original header/footer markup from an HTML import; when set it replaces the builder design. */
+  imported?: ImportedHtmlData;
+  /** Imported markup kept while the builder design is shown ("Switch back to the imported …"). */
+  importedHidden?: ImportedHtmlData;
   /** Style of the site-wide footer, edited through the shared footer section. */
   settings?: SectionSettings;
   design: FooterDesign;

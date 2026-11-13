@@ -22,6 +22,7 @@ import {
   type CreateWebsiteInput,
   type GenerationTone,
   type ThemeOption,
+  type WebsiteDetail,
   type WebsiteTemplate,
 } from "../../api/websites.ts";
 import {
@@ -46,11 +47,21 @@ import TextAreaInput from "../../components/ui/TextAreaInput.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import TemplateThumbnail from "../../components/websites/TemplateThumbnail.tsx";
 import {
+  IMPORT_MARKER_RULES,
   IMPORT_MARKUP_COPY_TEXT,
   IMPORT_MARKUP_SUMMARY,
   IMPORT_MARKUP_TEMPLATE,
+  IMPORT_SECTION_TYPES,
 } from "../../features/websites/importHtmlConvention.ts";
 import { getTemplateKey } from "../../site-kit/templates/index.ts";
+import {
+  convertDraftToBuilder,
+  convertImportedSection,
+  extractImportedContent,
+  suggestSectionTypes,
+} from "../../site-kit/imported-html-convert.ts";
+import type { SectionOf } from "../../site-kit/types.ts";
+import { draftFromWebsite, toSaveInput } from "./editor/editor-state.ts";
 import { getTemplateDisplayId } from "../marketing/use-gallery-templates.ts";
 
 type Step = 1 | 2 | 3 | 4;
@@ -271,6 +282,7 @@ export default function CreateWebsitePage() {
   });
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importFileError, setImportFileError] = useState<string | null>(null);
+  const [importMode, setImportMode] = useState<"exact" | "builder">("exact");
   const [importRulesCopied, setImportRulesCopied] = useState(false);
   const [aiBrief, setAiBrief] = useState<AiBrief>(EMPTY_AI_BRIEF);
   const [aiErrors, setAiErrors] = useState<AiBriefErrors>({});
@@ -580,13 +592,39 @@ export default function CreateWebsitePage() {
       setImportFileError("Choose a .html or .zip file to import.");
       return;
     }
-    await submit(() =>
-      websitesApi.importHtml({
+    await submit(async () => {
+      const website = await websitesApi.importHtml({
         ...infoInput(),
         ...(themeId ? { themeId } : {}),
         file: importFile,
-      }),
-    );
+      });
+      if (importMode === "builder") await convertImportToBuilder(website);
+      return website;
+    });
+  }
+
+  /** "Builder sections" mode: every imported block (and the library copies) becomes a native section. */
+  async function convertImportToBuilder(website: WebsiteDetail) {
+    const { draft } = convertDraftToBuilder(draftFromWebsite(website));
+    await websitesApi.saveDraft(website.id, toSaveInput(draft, website.draft.draftUpdatedAt));
+    try {
+      // Only this import's library entries; blocks from other imports are left alone.
+      const saved = await websitesApi.savedSections(website.id);
+      for (const entry of saved) {
+        if (entry.sourceWebsiteId !== website.id || entry.section.type !== "imported_html") continue;
+        const imported = entry.section as SectionOf<"imported_html">;
+        const type = suggestSectionTypes(extractImportedContent(imported.data.html || ""))[0] ?? "text";
+        // Delete first: the library has a size limit.
+        await websitesApi.deleteSavedSection(website.id, entry.id);
+        await websitesApi.saveSection(website.id, {
+          name: entry.name,
+          section: convertImportedSection(imported, type),
+          fromWebsite: true,
+        });
+      }
+    } catch {
+      // The library is a convenience; the site itself is already converted.
+    }
   }
 
   async function submit(create: () => Promise<{ id: string }>) {
@@ -773,8 +811,8 @@ export default function CreateWebsitePage() {
                   Import HTML
                 </span>
                 <span className="mt-1 block text-sm text-ink-body">
-                  Upload marked HTML. Each block becomes a saved component that
-                  keeps your design — edit text and images afterward.
+                  Upload any HTML site (.html or .zip). Keep its exact look and edit
+                  text and images, or turn it into builder sections.
                 </span>
               </button>
             </div>
@@ -913,9 +951,9 @@ export default function CreateWebsitePage() {
           <section className="mt-6 rounded-xl border border-line bg-surface p-6">
             <h2 className="text-lg font-semibold text-ink">Upload HTML or ZIP</h2>
             <p className="mt-1 text-sm text-ink-body">
-              HTML must follow the markup contract below. Untagged content is
-              skipped. Upload a <strong>.zip</strong> (HTML + images) so media
-              paths resolve.
+              Any HTML page works. Upload a <strong>.zip</strong> with your HTML, CSS and
+              images so file paths resolve. The optional markers below control how
+              blocks are split and which builder section each one converts to.
             </p>
 
             <div className="relative mt-5 rounded-lg border border-line bg-canvas/60">
@@ -940,12 +978,32 @@ export default function CreateWebsitePage() {
                 <span>{importRulesCopied ? "Copied" : "Copy"}</span>
               </button>
               <div className="space-y-3 px-4 py-3 pr-24 text-sm text-ink-body">
-                <p className="text-sm font-medium text-ink">Markup rules</p>
+                <p className="text-sm font-medium text-ink">How import works</p>
                 <ul className="list-disc space-y-1 pl-5">
                   {IMPORT_MARKUP_SUMMARY.map((rule) => (
                     <li key={rule}>{rule}</li>
                   ))}
                 </ul>
+                <p className="pt-1 text-sm font-medium text-ink">Optional markers</p>
+                <ul className="list-disc space-y-1 pl-5">
+                  {IMPORT_MARKER_RULES.map((rule) => (
+                    <li key={rule}>
+                      <code className="text-ed-2xs">{rule.split(" ")[0]}</code> {rule.slice(rule.indexOf(" ") + 1)}
+                    </li>
+                  ))}
+                </ul>
+                <p className="pt-1 text-sm font-medium text-ink">Section types for data-wb-section</p>
+                <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+                  {IMPORT_SECTION_TYPES.map(({ type, use }) => (
+                    <div key={type} className="flex gap-2">
+                      <dt>
+                        <code className="rounded bg-surface px-1.5 py-0.5 text-ed-2xs text-ink">{type}</code>
+                      </dt>
+                      <dd className="text-xs text-ink-body">{use}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="pt-1 text-sm font-medium text-ink">Example (index.html)</p>
                 <pre className="max-h-64 overflow-auto rounded-md bg-surface p-3 text-ed-2xs leading-relaxed text-ink">
                   {IMPORT_MARKUP_TEMPLATE}
                 </pre>
@@ -993,6 +1051,34 @@ export default function CreateWebsitePage() {
                 }
               />
             </label>
+
+            <fieldset className="mt-6">
+              <legend className="text-sm font-medium text-ink">After import</legend>
+              <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    ["exact", "Keep the exact look", "Blocks keep the original HTML and CSS. Edit text and images, or swap single blocks for builder sections later."],
+                    ["builder", "Convert to builder sections", "Each block becomes a native section (hero, services, FAQ…) using a theme taken from your site's colours and fonts."],
+                  ] as const
+                ).map(([value, title, description]) => (
+                  <label
+                    key={value}
+                    className={`cursor-pointer rounded-lg border p-4 transition-colors ${importMode === value ? "border-brand bg-brand-soft/40" : "border-line hover:border-brand"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="import-mode"
+                      value={value}
+                      checked={importMode === value}
+                      onChange={() => setImportMode(value)}
+                      className="sr-only"
+                    />
+                    <span className="block text-sm font-medium text-ink">{title}</span>
+                    <span className="mt-1 block text-sm text-ink-body">{description}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
             {importFile && (
               <div className="mt-3 flex justify-end">

@@ -1,3 +1,5 @@
+import { alternateOf, convertDraftToBuilder, hasImportedHtml, switchToAlternate } from "../../../site-kit/imported-html-convert.ts";
+import { SwitchBackBar } from "../../../pages/websites/editor/ImportedHtmlForm.tsx";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BookmarkPlus, Copy, MousePointerClick, Trash2, X } from "lucide-react";
 import { websitesApi } from "../../../api/websites.ts";
@@ -185,6 +187,26 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
                 </button>
               </div>
             )}
+            {!chromeType && alternateOf(localSection) ? (
+              <div className="px-4 pt-4">
+                <SwitchBackBar
+                  text={
+                    alternateOf(localSection)!.type === "imported_html"
+                      ? "This section was converted from imported HTML. The original is kept, with any edits you made to it."
+                      : `You switched this back from a builder ${SECTION_DEFINITIONS[alternateOf(localSection)!.type].label} section. That version is kept too.`
+                  }
+                  action={
+                    alternateOf(localSection)!.type === "imported_html"
+                      ? "Switch back to the imported original"
+                      : `Switch back to the ${SECTION_DEFINITIONS[alternateOf(localSection)!.type].label} version`
+                  }
+                  onSwitch={() => {
+                    const next = switchToAlternate(localSection);
+                    if (next) change(next);
+                  }}
+                />
+              </div>
+            ) : null}
             <SectionContentForm key={localSection.id} section={localSection} onChange={change} />
             <div className="border-t border-ed-border/70 p-4 mt-2">
               <button
@@ -237,6 +259,14 @@ function SiteInspector() {
       })),
     );
     notify(show ? `This page now shows the site ${type}` : `${type === "header" ? "Header" : "Footer"} removed from this page`);
+  }
+
+  function convertImported(scope: "page" | "site") {
+    const { draft: next, converted } = convertDraftToBuilder(draft, scope === "page" ? { pageIds: [page.id] } : {});
+    editDraft(() => next);
+    const updated = next.pages.find((p) => p.id === page.id);
+    if (updated) setAllSections(dispatch, withSiteChrome(updated.sections, next));
+    notify(`${converted} imported block${converted === 1 ? "" : "s"} converted to builder sections`);
   }
 
   function removePage() {
@@ -293,6 +323,32 @@ function SiteInspector() {
                 hint="Select the header or footer on the canvas to edit it, or customize it for this page only."
               />
             </div>
+
+            {hasImportedHtml(draft) && (
+              <div className="flex flex-col gap-2.5 border-t border-ed-border/70 px-4 py-4">
+                <p className="text-ed-xs font-semibold uppercase tracking-wider text-ed-muted">Imported HTML</p>
+                <p className="text-ed-xs text-ed-muted">
+                  Turn imported blocks into builder sections that use your theme (already set from the imported
+                  brand). Each block keeps its text, images, buttons and cards.
+                </p>
+                {hasImportedHtml(draft, page.id) && (
+                  <button
+                    type="button"
+                    onClick={() => convertImported("page")}
+                    className="flex w-full items-center justify-center rounded-ed-lg border border-ed-border bg-ed-panel py-2 text-ed-xs font-semibold text-ed-text transition-colors hover:bg-ed-hover"
+                  >
+                    Convert this page to builder sections
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => convertImported("site")}
+                  className="flex w-full items-center justify-center rounded-ed-lg border border-ed-border bg-ed-panel py-2 text-ed-xs font-semibold text-ed-text transition-colors hover:bg-ed-hover"
+                >
+                  Convert the whole site (incl. header &amp; footer)
+                </button>
+              </div>
+            )}
 
             {page.slug !== "/" && (
               <div className="px-4 py-4">
