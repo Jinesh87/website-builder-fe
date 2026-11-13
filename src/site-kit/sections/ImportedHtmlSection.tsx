@@ -84,7 +84,7 @@ function withFormSection(html: string, sectionId: string | undefined): string {
  * Visible text with a space where separate elements meet ("WOODFIT FURNITA" + "Furniture &
  * Plywood"), but not inside all-caps words split for styling ("W<span>OO</span>DFIT").
  */
-function spacedText(el: Element): string {
+export function spacedText(el: Element): string {
   let out = "";
   let lastText = "";
   let lastParent: Node | null = null;

@@ -1,4 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronUp, CopyPlus, Plus, Trash2 } from "lucide-react";
+import {
+  duplicateImportedElement,
+  duplicateImportedItem,
+  moveImportedItem,
+  readImportedGroups,
+  removeImportedElement,
+  removeImportedItem,
+} from "../../../site-kit/imported-html-structure.ts";
 import {
   convertImportedSection,
   extractImportedContent,
@@ -124,6 +133,8 @@ export function ImportedHtmlFields({ data, onChange }: { data: ImportedHtmlData;
     onChange({ ...data, html, texts: nextTexts });
   }
 
+  const groups = useMemo(() => readImportedGroups(data.html || ""), [data.html]);
+
   return (
     <>
       {texts.length === 0 && mediaSlots.length === 0 ? (
@@ -133,17 +144,57 @@ export function ImportedHtmlFields({ data, onChange }: { data: ImportedHtmlData;
         </p>
       ) : null}
 
+      {groups.length > 0 ? (
+        <FormGroup
+          title="Cards & lists"
+          description="Add, remove or reorder repeated items. A new item copies the one you pick, so it has the same design; then edit its text and images below."
+        >
+          <div className="space-y-4">
+            {groups.map((group) => (
+              <div key={`${group.index}-${group.items.length}`} className="space-y-1.5">
+                <p className="text-ed-xs font-semibold text-ed-text">{group.label}</p>
+                <ul className="space-y-1">
+                  {group.items.map((item) => (
+                    <li key={item.index} className="flex items-center gap-1 rounded-ed-md border border-ed-border px-2 py-1">
+                      <span className="min-w-0 flex-1 truncate text-ed-xs text-ed-muted">{item.label}</span>
+                      <IconAction label="Move up" disabled={item.index === 0} onClick={() => onChange(moveImportedItem(data, group.index, item.index, -1))}>
+                        <ChevronUp className="size-3.5" aria-hidden />
+                      </IconAction>
+                      <IconAction label="Move down" disabled={item.index === group.items.length - 1} onClick={() => onChange(moveImportedItem(data, group.index, item.index, 1))}>
+                        <ChevronDown className="size-3.5" aria-hidden />
+                      </IconAction>
+                      <IconAction label="Add a copy below" onClick={() => onChange(duplicateImportedItem(data, group.index, item.index))}>
+                        <CopyPlus className="size-3.5" aria-hidden />
+                      </IconAction>
+                      <IconAction label="Remove" tone="danger" disabled={group.items.length <= 1} onClick={() => onChange(removeImportedItem(data, group.index, item.index))}>
+                        <Trash2 className="size-3.5" aria-hidden />
+                      </IconAction>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </FormGroup>
+      ) : null}
+
       {texts.length > 0 ? (
-        <FormGroup title="Text">
+        <FormGroup title="Text" description="Use + to add another one just like it (same style) right after it.">
           <div className="space-y-3">
             {texts.map((item, index) => (
-              <TextAreaField
-                key={item.id}
-                label={item.label || `Text ${index + 1}`}
-                value={item.value}
-                onChange={(value) => updateText(item.id, value)}
-                rows={item.value.length > 120 ? 4 : 2}
-              />
+              <div key={item.id} className="relative">
+                <EntryActions
+                  onDuplicate={() => onChange(duplicateImportedElement(data, { kind: "text", id: item.id }))}
+                  onRemove={() => onChange(removeImportedElement(data, { kind: "text", id: item.id }))}
+                  what="text"
+                />
+                <TextAreaField
+                  label={item.label || `Text ${index + 1}`}
+                  value={item.value}
+                  onChange={(value) => updateText(item.id, value)}
+                  rows={item.value.length > 120 ? 4 : 2}
+                />
+              </div>
             ))}
           </div>
         </FormGroup>
@@ -153,12 +204,18 @@ export function ImportedHtmlFields({ data, onChange }: { data: ImportedHtmlData;
         <FormGroup title="Links" description="Where each link or button goes. Pick a page, or enter a web address, phone or email.">
           <div className="space-y-4">
             {links.map((item) => (
-              <LinkField
-                key={item.index}
-                label={item.hasText ? item.link.label.slice(0, 48) : `${item.link.label.slice(0, 40)} (image link)`}
-                value={item.link}
-                onChange={(next) => updateLink(item.index, next)}
-              />
+              <div key={item.index} className="relative">
+                <EntryActions
+                  onDuplicate={() => onChange(duplicateImportedElement(data, { kind: "link", index: item.index }))}
+                  onRemove={() => onChange(removeImportedElement(data, { kind: "link", index: item.index }))}
+                  what="link"
+                />
+                <LinkField
+                  label={item.hasText ? item.link.label.slice(0, 48) : `${item.link.label.slice(0, 40)} (image link)`}
+                  value={item.link}
+                  onChange={(next) => updateLink(item.index, next)}
+                />
+              </div>
             ))}
           </div>
         </FormGroup>
@@ -167,35 +224,81 @@ export function ImportedHtmlFields({ data, onChange }: { data: ImportedHtmlData;
       {mediaSlots.length > 0 ? (
         <FormGroup title="Media">
           <div className="space-y-4">
-            {mediaSlots.map((slot, index) =>
-              slot.kind === "video" ? (
-                <VideoField
-                  key={slot.key}
-                  label={slot.alt ? `Video: ${slot.alt.slice(0, 40)}` : `Video ${index + 1}`}
-                  value={slot.url}
-                  onChange={(url) => updateSlot(slot.key, { url: url || "" })}
-                  optional={false}
-                  mode="any"
+            {mediaSlots.map((slot, index) => (
+              <div key={slot.key} className="relative">
+                <EntryActions
+                  onDuplicate={() => onChange(duplicateImportedElement(data, { kind: "media", key: slot.key }))}
+                  onRemove={() => onChange(removeImportedElement(data, { kind: "media", key: slot.key }))}
+                  what={slot.kind}
                 />
-              ) : (
-                <ImageField
-                  key={slot.key}
-                  label={slot.alt ? `Image: ${slot.alt.slice(0, 40)}` : `Image ${index + 1}`}
-                  value={{ url: slot.url, alt: slot.alt || "" }}
-                  onChange={(image) =>
-                    updateSlot(slot.key, {
-                      url: image?.url || "",
-                      alt: image?.alt || undefined,
-                    })
-                  }
-                  optional={false}
-                />
-              ),
-            )}
+                {slot.kind === "video" ? (
+                  <VideoField
+                    label={slot.alt ? `Video: ${slot.alt.slice(0, 40)}` : `Video ${index + 1}`}
+                    value={slot.url}
+                    onChange={(url) => updateSlot(slot.key, { url: url || "" })}
+                    optional={false}
+                    mode="any"
+                  />
+                ) : (
+                  <ImageField
+                    label={slot.alt ? `Image: ${slot.alt.slice(0, 40)}` : `Image ${index + 1}`}
+                    value={{ url: slot.url, alt: slot.alt || "" }}
+                    onChange={(image) =>
+                      updateSlot(slot.key, {
+                        url: image?.url || "",
+                        alt: image?.alt || undefined,
+                      })
+                    }
+                    optional={false}
+                  />
+                )}
+              </div>
+            ))}
           </div>
         </FormGroup>
       ) : null}
     </>
+  );
+}
+
+function IconAction({
+  label,
+  onClick,
+  disabled,
+  tone,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: "danger";
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`inline-flex size-6 items-center justify-center rounded-ed-md text-ed-muted transition-colors hover:bg-ed-hover disabled:opacity-30 ${tone === "danger" ? "hover:text-red-600" : "hover:text-ed-text"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** "+" (add another just like it, right after) and remove, shown at the top-right of an entry. */
+function EntryActions({ onDuplicate, onRemove, what }: { onDuplicate: () => void; onRemove: () => void; what: string }) {
+  return (
+    <div className="absolute right-0 top-0 z-10 flex gap-0.5">
+      <IconAction label={`Add another ${what} like this`} onClick={onDuplicate}>
+        <Plus className="size-3.5" aria-hidden />
+      </IconAction>
+      <IconAction label={`Remove this ${what}`} tone="danger" onClick={onRemove}>
+        <Trash2 className="size-3.5" aria-hidden />
+      </IconAction>
+    </div>
   );
 }
 
