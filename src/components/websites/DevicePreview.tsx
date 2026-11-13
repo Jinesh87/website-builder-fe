@@ -2,6 +2,8 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent,
 import { Monitor, Smartphone, Tablet, type LucideIcon } from "lucide-react";
 import { openVideoModal, SiteStyles, themeToCssVars, type ThemeSettings } from "../../site-kit/index.ts";
 import { isExternalHref, isOffsiteHref, linkHash } from "../../site-kit/links.ts";
+// Hamburger menus of imported HTML blocks (their own scripts are stripped on import).
+import "../../features/site-export/imported-menu-runtime.js";
 
 export type Device = "desktop" | "tablet" | "mobile";
 

@@ -3,7 +3,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { SitePage, SiteRenderModeProvider, SITE_CSS, type SiteData } from "../site-kit/index.ts";
 import { EXPORT_BASE_CSS, STATIC_STATE_CSS } from "../features/site-export/export-css.ts";
 import { googleFontLinks, toGoogleFontNames, usedFonts } from "../features/site-export/export-fonts.ts";
-import runtimeJs from "../features/site-export/static-runtime.js?raw";
+import siteRuntimeJs from "../features/site-export/static-runtime.js?raw";
+import importedMenuJs from "../features/site-export/imported-menu-runtime.js?raw";
+
+const runtimeJs = `${importedMenuJs}\n${siteRuntimeJs}`;
 import type { WebsitePage } from "../api/websites.ts";
 
 export type RenderedPage = {

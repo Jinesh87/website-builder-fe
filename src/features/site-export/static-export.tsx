@@ -3,7 +3,8 @@ import { SitePage, SiteRenderModeProvider, SITE_CSS } from "../../site-kit/index
 import { EXPORT_BASE_CSS, STATIC_STATE_CSS } from "./export-css.ts";
 import { escapeHtml, type ExportFile, type ExportProgress, type ExportSite } from "./export-content.ts";
 import { googleFontLinks, toGoogleFontNames, usedFonts } from "./export-fonts.ts";
-import runtimeJs from "./static-runtime.js?raw";
+import siteRuntimeJs from "./static-runtime.js?raw";
+import importedMenuJs from "./imported-menu-runtime.js?raw";
 
 /** "/" is index.html; "/services/web" is services-web.html. Every page sits at the root so relative links work offline. */
 function fileNameFor(slug: string, taken: Set<string>): string {
@@ -129,7 +130,7 @@ export async function buildStaticSite(site: ExportSite, onProgress: ExportProgre
 
   files.push(
     { path: "css/styles.css", data: `${EXPORT_BASE_CSS}\n${STATIC_STATE_CSS}\n${SITE_CSS.trim()}\n` },
-    { path: "js/site.js", data: runtimeJs },
+    { path: "js/site.js", data: `${importedMenuJs}\n${siteRuntimeJs}` },
     { path: "README.md", data: readme(site, pageList) },
   );
   return files;

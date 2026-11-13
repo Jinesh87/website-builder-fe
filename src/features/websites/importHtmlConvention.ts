@@ -2,7 +2,9 @@
  * Guide shown on the "Import HTML" step. The markers it documents are read by:
  *  - backend html-import-components.ts (pages, blocks, header/footer detection, block names), and
  *  - site-kit/imported-html-convert.ts (data-wb-section type, data-wb-field / data-wb-item hints
- *    used when a block is converted to a builder section).
+ *    used when a block is converted to a builder section), and
+ *  - features/site-export/imported-menu-runtime.js (data-wb-nav-toggle / data-wb-nav / data-wb-nav-open-class
+ *    for mobile menus).
  */
 import { CONVERTIBLE_TYPES, type ConvertibleType } from "../../site-kit/imported-html-convert.ts";
 
@@ -10,6 +12,7 @@ import { CONVERTIBLE_TYPES, type ConvertibleType } from "../../site-kit/imported
 export const IMPORT_MARKUP_SUMMARY = [
   "Any HTML works. The page's own JavaScript runs first, then each top-level block inside <main> becomes an editable block with its original look.",
   "<header> and <footer> outside <main> become the site-wide header and footer. Forms keep working and send enquiries to the site's contact email.",
+  "Your own scripts don't run on the published site (they're removed for safety). The mobile menu button is handled for you; mark it as shown below to make it exact.",
   "Pages: put each page in its own .html file in a .zip (index.html is Home, about.html becomes /about), or wrap pages in data-wb-page=\"slug\" inside one file.",
   "Upload a .zip with the HTML, CSS and images so file paths resolve. Colours and fonts are taken from your CSS for the builder theme.",
 ] as const;
@@ -20,6 +23,7 @@ export const IMPORT_MARKER_RULES = [
   'data-wb-component="Name" names the block in the component library.',
   'data-wb-field="…" marks a part of a block: heading, eyebrow, subheading, primaryCta, secondaryCta, image.',
   'data-wb-item marks each repeated card; inside it use data-wb-field: title, description, image, link, price, role.',
+  'data-wb-nav-toggle marks the mobile menu (hamburger) button. Put data-wb-nav on the menu it opens, and data-wb-nav-open-class="open" on that menu with the class your CSS uses for an open menu. Without them the menu is detected automatically.',
 ] as const;
 
 /** What each builder section type is for; `satisfies` makes a new type fail to compile until documented. */
@@ -57,7 +61,11 @@ export const IMPORT_MARKUP_TEMPLATE = `<!DOCTYPE html>
   <!-- Site header: shared by every page -->
   <header>
     <a href="index.html"><img src="images/logo.png" alt="My business"></a>
-    <nav><a href="index.html">Home</a> <a href="contact.html">Contact</a></nav>
+    <!-- Mobile menu: the button opens the nav by adding the "open" class (style .menu.open in your CSS) -->
+    <button data-wb-nav-toggle aria-label="Open menu">☰</button>
+    <nav class="menu" data-wb-nav data-wb-nav-open-class="open">
+      <a href="index.html">Home</a> <a href="contact.html">Contact</a>
+    </nav>
   </header>
 
   <main>
