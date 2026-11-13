@@ -1,4 +1,5 @@
-import type { ImportedHtmlData, LinkRef, SectionOf } from "../types.ts";
+import type { ImportedHtmlData, LinkRef, SectionOf, SectionSettings } from "../types.ts";
+import { importedStyleCss } from "../imported-html-style.ts";
 
 const SCOPE_PATTERN = /^wbi-[a-z0-9]{4,40}$/;
 
@@ -233,16 +234,27 @@ export function applyImportedLinkIcon(html: string, index: number, iconMarkup: s
   return template.innerHTML;
 }
 
-/** Renders sanitized, pre-scoped imported markup (a page block or the imported site header/footer). */
-export function ImportedHtmlBlock({ data, sectionId }: { data: ImportedHtmlData; sectionId?: string }) {
+/**
+ * Renders sanitized, pre-scoped imported markup (a page block or the imported site header/footer).
+ * `settings` (page blocks only) layers the section's Style / Responsive / Advanced choices on top.
+ */
+export function ImportedHtmlBlock({ data, sectionId, settings }: { data: ImportedHtmlData; sectionId?: string; settings?: SectionSettings }) {
   const scope = data.scope && SCOPE_PATTERN.test(data.scope) ? data.scope : "";
   const css = scope ? data.css || "" : "";
-  const className = ["wb-imported-html", scope, data.chrome ? `wb-imported-html--${data.chrome}` : ""]
+  const overrides = importedStyleCss(sectionId, settings);
+  const className = [
+    "wb-imported-html",
+    scope,
+    data.chrome ? `wb-imported-html--${data.chrome}` : "",
+    settings?.hideOnMobile ? "wb-hide-mobile" : "",
+    settings?.hideOnDesktop ? "wb-hide-desktop" : "",
+  ]
     .filter(Boolean)
     .join(" ");
   return (
-    <div className={className} data-section-id={sectionId} data-wb-imported-html="">
+    <div className={className} id={settings?.anchor || undefined} data-section-id={sectionId} data-wb-imported-html="">
       {css ? <style dangerouslySetInnerHTML={{ __html: css }} /> : null}
+      {overrides ? <style dangerouslySetInnerHTML={{ __html: overrides }} /> : null}
       <div className="wb-imported-html-root" dangerouslySetInnerHTML={{ __html: withFormSection(data.html, sectionId) }} />
     </div>
   );
@@ -263,5 +275,5 @@ export default function ImportedHtmlSection({ section }: { section: SectionOf<"i
       </section>
     );
   }
-  return <ImportedHtmlBlock data={data} sectionId={section.id} />;
+  return <ImportedHtmlBlock data={data} sectionId={section.id} settings={section.settings} />;
 }

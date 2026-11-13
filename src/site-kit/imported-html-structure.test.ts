@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
 import {
+  applyElementStyle,
+  readElementStyle,
   duplicateImportedElement,
   duplicateImportedItem,
   moveImportedItem,
@@ -73,5 +75,28 @@ describe("structural edits on imported blocks", () => {
     const noImage = removeImportedElement(data, { kind: "media", key: "m0" });
     expect(noImage.html).not.toContain("/a.jpg");
     expect(noImage.mediaSlots!.map((m) => m.key)).toEqual(["m1"]);
+  });
+});
+
+describe("per-element style", () => {
+  const data: ImportedHtmlData = {
+    html: `<div><a class="btn" href="/a">One</a><a class="btn" href="/b">Two</a><h2 data-wb-text-id="t1">Hi</h2></div>`,
+    texts: [{ id: "t1", label: "Heading", value: "Hi" }],
+  };
+
+  it("styles one button without touching the other", () => {
+    const next = applyElementStyle(data, { kind: "link", index: 1 }, { background: "#ff0000", radius: "999px", hideOnMobile: true });
+    expect(readElementStyle(next, { kind: "link", index: 1 })).toEqual({ background: "#ff0000", radius: "999px", hideOnMobile: true });
+    expect(readElementStyle(next, { kind: "link", index: 0 })).toEqual({});
+    expect(next.html).toMatch(/href="\/b"[^>]*>|class="btn wb-hide-mobile"/);
+    expect(next.html).toContain("!important");
+  });
+
+  it("clears a style again and ignores unsafe values", () => {
+    const styled = applyElementStyle(data, { kind: "text", id: "t1" }, { color: "#00ff00", fontSize: "32px" });
+    expect(readElementStyle(styled, { kind: "text", id: "t1" })).toEqual({ color: "#00ff00", fontSize: "32px" });
+    const cleared = applyElementStyle(styled, { kind: "text", id: "t1" }, { color: "", fontSize: "" });
+    expect(cleared.html).toBe(data.html);
+    expect(applyElementStyle(data, { kind: "text", id: "t1" }, { color: "red;}</style>" }).html).toBe(data.html);
   });
 });

@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   Link2,
   MousePointerClick,
+  Paintbrush,
   Plus,
   Search,
   SlidersHorizontal,
@@ -15,6 +16,9 @@ import {
 } from "lucide-react";
 import { onImportedFocus, recentImportedFocus } from "../../../features/builder/imported-focus.ts";
 import {
+  applyElementStyle,
+  readElementStyle,
+  type ElementStyle,
   duplicateImportedElement,
   duplicateImportedItem,
   entryKey,
@@ -48,7 +52,7 @@ import type {
   Section,
   SectionOf,
 } from "../../../site-kit/types.ts";
-import { ImageField, LinkField, LinkTargetsContext, TextAreaField, TextField, VideoField } from "./fields.tsx";
+import { CheckboxField, ColorField, ImageField, LinkField, LinkTargetsContext, SelectField, TextAreaField, TextField, VideoField } from "./fields.tsx";
 
 type Props = {
   section: SectionOf<"imported_html">;
@@ -146,6 +150,8 @@ function EntryShell({
   what,
   onDuplicate,
   onRemove,
+  styling,
+  onToggleStyle,
   children,
 }: {
   entryKey: string;
@@ -153,6 +159,8 @@ function EntryShell({
   what: string;
   onDuplicate: () => void;
   onRemove: () => void;
+  styling: boolean;
+  onToggleStyle: () => void;
   children: ReactNode;
 }) {
   return (
@@ -161,6 +169,9 @@ function EntryShell({
       className={`group relative rounded-ed-md transition-shadow ${focused ? "ring-2 ring-ed-accent ring-offset-2 ring-offset-ed-panel" : ""}`}
     >
       <div className="absolute right-0 top-0 z-10 flex gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+        <IconAction label={styling ? `Close ${what} style` : `Style this ${what}`} onClick={onToggleStyle}>
+          <Paintbrush className={`size-3.5 ${styling ? "text-ed-accent" : ""}`} aria-hidden />
+        </IconAction>
         <IconAction label={`Add another ${what} like this`} onClick={onDuplicate}>
           <Plus className="size-3.5" aria-hidden />
         </IconAction>
@@ -188,7 +199,21 @@ function linkIconMarkup(link: LinkRef): string {
   return icon.outerHTML;
 }
 
-function LinkEntry({ link, hasText, hasIcon, onChange }: { link: LinkRef; hasText: boolean; hasIcon: boolean; onChange: (next: LinkRef) => void }) {
+function LinkEntry({
+  link,
+  hasText,
+  hasIcon,
+  onChange,
+  styling,
+  onToggleStyle,
+}: {
+  link: LinkRef;
+  hasText: boolean;
+  hasIcon: boolean;
+  onChange: (next: LinkRef) => void;
+  styling: boolean;
+  onToggleStyle: () => void;
+}) {
   const [more, setMore] = useState(false);
   const targets = useContext(LinkTargetsContext);
   const listId = useMemo(() => `imported-link-${Math.random().toString(36).slice(2)}`, []);
@@ -234,9 +259,14 @@ function LinkEntry({ link, hasText, hasIcon, onChange }: { link: LinkRef; hasTex
           </option>
         ))}
       </datalist>
-      <button type="button" className="inline-flex items-center gap-1 text-ed-2xs font-semibold text-ed-accent" onClick={() => setMore(true)}>
-        <SlidersHorizontal className="size-3" aria-hidden /> More: new tab, download, video{hasIcon ? "" : ", add an icon"}
-      </button>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <button type="button" className="inline-flex items-center gap-1 text-ed-2xs font-semibold text-ed-accent" onClick={onToggleStyle} aria-expanded={styling}>
+          <Paintbrush className="size-3" aria-hidden /> {styling ? "Close button style" : "Style this button (colour, corners)"}
+        </button>
+        <button type="button" className="inline-flex items-center gap-1 text-ed-2xs font-semibold text-ed-accent" onClick={() => setMore(true)}>
+          <SlidersHorizontal className="size-3" aria-hidden /> More: new tab, download, video{hasIcon ? "" : ", add an icon"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -270,6 +300,94 @@ function useEditing(data: ImportedHtmlData, onChange: (data: ImportedHtmlData) =
   };
 }
 
+const KEEP = "As imported";
+const FONT_SIZES = [{ value: "default", label: KEEP }, ...[12, 14, 15, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64].map((n) => ({ value: `${n}px`, label: `${n}px` }))];
+const FONT_WEIGHTS = [
+  { value: "default", label: KEEP },
+  { value: "400", label: "Regular" },
+  { value: "500", label: "Medium" },
+  { value: "600", label: "Semi-bold" },
+  { value: "700", label: "Bold" },
+  { value: "800", label: "Extra bold" },
+];
+const RADII = [
+  { value: "default", label: KEEP },
+  { value: "0px", label: "Square" },
+  { value: "4px", label: "Slightly rounded" },
+  { value: "8px", label: "Rounded" },
+  { value: "16px", label: "Very rounded" },
+  { value: "999px", label: "Pill / circle" },
+];
+
+const COMPLETE_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+/** Colour field that keeps half-typed values ("#d2") locally and only applies complete colours. */
+function StyleColorField({ label, value, fallback, onCommit }: { label: string; value?: string; fallback: string; onCommit: (value: string) => void }) {
+  const [draft, setDraft] = useState(value ?? "");
+  useEffect(() => setDraft(value ?? ""), [value]);
+  return (
+    <ColorField
+      label={label}
+      value={draft}
+      fallback={fallback}
+      placeholder={KEEP}
+      onChange={(next) => {
+        setDraft(next);
+        if (!next || COMPLETE_COLOR.test(next)) onCommit(next);
+      }}
+    />
+  );
+}
+
+/** Colours, size and visibility for one element only (this button, this heading, this image). */
+function ElementStyleEditor({
+  kind,
+  what,
+  style,
+  onChange,
+}: {
+  kind: OutlineEntry["kind"];
+  what: string;
+  style: ElementStyle;
+  onChange: (patch: ElementStyle) => void;
+}) {
+  const pick = (key: "fontSize" | "fontWeight" | "radius") => (value: string) => onChange({ [key]: value === "default" ? "" : value });
+  const hasStyle = Object.values(style).some(Boolean);
+  return (
+    <div className="mt-2 space-y-3 rounded-ed-md border border-ed-accent/30 bg-ed-accent/5 p-2.5">
+      <p className="text-ed-2xs font-semibold uppercase tracking-wide text-ed-muted">Style of this {what} only</p>
+      {kind === "link" && (
+        <>
+          <StyleColorField label="Button colour" value={style.background} onCommit={(background) => onChange({ background })} fallback="#2563eb" />
+          <StyleColorField label="Text colour" value={style.color} onCommit={(color) => onChange({ color })} fallback="#ffffff" />
+          <StyleColorField label="Border colour" value={style.borderColor} onCommit={(borderColor) => onChange({ borderColor })} fallback="#2563eb" />
+          <SelectField label="Corners" value={style.radius ?? "default"} options={RADII} onChange={pick("radius")} />
+        </>
+      )}
+      {kind === "text" && (
+        <>
+          <StyleColorField label="Colour" value={style.color} onCommit={(color) => onChange({ color })} fallback="#0f172a" />
+          <SelectField label="Size" value={style.fontSize ?? "default"} options={FONT_SIZES} onChange={pick("fontSize")} />
+          <SelectField label="Weight" value={style.fontWeight ?? "default"} options={FONT_WEIGHTS} onChange={pick("fontWeight")} />
+        </>
+      )}
+      {kind === "link" && <SelectField label="Text size" value={style.fontSize ?? "default"} options={FONT_SIZES} onChange={pick("fontSize")} />}
+      {kind === "media" && <SelectField label="Corners" value={style.radius ?? "default"} options={RADII} onChange={pick("radius")} />}
+      <CheckboxField label="Hide on mobile" checked={Boolean(style.hideOnMobile)} onChange={(hideOnMobile) => onChange({ hideOnMobile })} />
+      <CheckboxField label="Hide on tablet and desktop" checked={Boolean(style.hideOnDesktop)} onChange={(hideOnDesktop) => onChange({ hideOnDesktop })} />
+      {hasStyle && (
+        <button
+          type="button"
+          className="text-ed-2xs font-medium text-ed-danger hover:underline"
+          onClick={() => onChange({ background: "", color: "", borderColor: "", radius: "", fontSize: "", fontWeight: "", hideOnMobile: false, hideOnDesktop: false })}
+        >
+          Reset this {what}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function EntryField({
   entry,
   data,
@@ -282,6 +400,7 @@ function EntryField({
   focused: boolean;
 }) {
   const edit = useEditing(data, onChange);
+  const [styling, setStyling] = useState(false);
   const what = entry.kind === "link" ? "button" : entry.kind === "media" ? entry.slot.kind : "text";
   let field: ReactNode;
   if (entry.kind === "text") {
@@ -292,7 +411,14 @@ function EntryField({
       <TextField label={entry.label} value={entry.value} onChange={(value) => edit.text(entry.id, value)} />
     );
   } else if (entry.kind === "link") {
-    field = <LinkEntry link={entry.link} hasText={entry.hasText} hasIcon={entry.hasIcon} onChange={(next) => edit.link(entry, next)} />;
+    field = <LinkEntry
+        link={entry.link}
+        hasText={entry.hasText}
+        hasIcon={entry.hasIcon}
+        onChange={(next) => edit.link(entry, next)}
+        styling={styling}
+        onToggleStyle={() => setStyling((open) => !open)}
+      />;
   } else if (entry.slot.kind === "video") {
     field = (
       <VideoField
@@ -320,8 +446,18 @@ function EntryField({
       what={what}
       onDuplicate={() => onChange(duplicateImportedElement(data, entry.ref))}
       onRemove={() => onChange(removeImportedElement(data, entry.ref))}
+      styling={styling}
+      onToggleStyle={() => setStyling((open) => !open)}
     >
       {field}
+      {styling ? (
+        <ElementStyleEditor
+          kind={entry.kind}
+          what={what}
+          style={readElementStyle(data, entry.ref)}
+          onChange={(patch) => onChange(applyElementStyle(data, entry.ref, patch))}
+        />
+      ) : null}
     </EntryShell>
   );
 }
@@ -417,7 +553,7 @@ export function ImportedHtmlFields({
     <div ref={rootRef} className="space-y-3">
       {sectionId ? (
         <p className="flex items-center gap-1.5 text-ed-2xs text-ed-muted">
-          <MousePointerClick className="size-3.5" aria-hidden /> Tip: click any text, button or image on the canvas to jump to it here.
+          <MousePointerClick className="size-3.5" aria-hidden /> Tip: click any text, button or image on the canvas to jump to it here. Hover a field and use the brush to style just that one.
         </p>
       ) : null}
 

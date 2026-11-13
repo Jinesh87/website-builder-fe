@@ -1,3 +1,4 @@
+import ImportedStyleForm from "../../../pages/websites/editor/ImportedStyleForm.tsx";
 import { alternateOf, convertDraftToBuilder, hasImportedHtml, switchToAlternate } from "../../../site-kit/imported-html-convert.ts";
 import { SwitchBackBar } from "../../../pages/websites/editor/ImportedHtmlForm.tsx";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -220,7 +221,12 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
             </div>
           </div>
         )}
-        {tab === "style" && <SectionStyleForm settings={localSection.settings} siteFont={siteFont} sectionType={localSection.type} onChange={changeSettings} />}
+        {tab === "style" &&
+          (localSection.type === "imported_html" ? (
+            <ImportedStyleForm settings={localSection.settings} onChange={changeSettings} onShowContent={() => setTab("content")} />
+          ) : (
+            <SectionStyleForm settings={localSection.settings} siteFont={siteFont} sectionType={localSection.type} onChange={changeSettings} />
+          ))}
         {tab === "responsive" && <SectionResponsiveForm settings={localSection.settings} onChange={changeSettings} />}
         {tab === "advanced" && <SectionAdvancedForm settings={localSection.settings} onChange={changeSettings} />}
       </div>

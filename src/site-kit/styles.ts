@@ -10067,6 +10067,9 @@ details[open] > summary .wb-faq-plus {
 }
 
 /* Mobile */
+@container wb-site (min-width: 601px) {
+  .wb-hide-desktop { display: none; }
+}
 @container wb-site (max-width: 600px) {
   .wb-site h1 { font-size: 32px; }
   .wb-site h2 { font-size: 25px; }
@@ -10585,6 +10588,9 @@ ${RICH_TEXT_CSS}
    pages get browser-default spacing back unless their own CSS says otherwise. */
 .wb-imported-html { display: block; min-width: 0; }
 .wb-imported-html-root { display: contents; }
+/* Device visibility must beat the block's own display rules. */
+@container wb-site (max-width: 600px) { .wb-site .wb-imported-html.wb-hide-mobile, .wb-site .wb-imported-html .wb-hide-mobile { display: none !important; } }
+@container wb-site (min-width: 601px) { .wb-site .wb-imported-html.wb-hide-desktop, .wb-site .wb-imported-html .wb-hide-desktop { display: none !important; } }
 .wb-imported-html--header { display: contents; }
 .wb-site .wb-imported-html :where(*:not(svg, svg *)) { margin: revert; padding: revert; box-sizing: revert; }
 .wb-site .wb-imported-html :where(h1, h2, h3, h4, h5, h6) { font: revert; letter-spacing: revert; line-height: revert; }

@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Check, RotateCcw } from "lucide-react";
+import { Check, RotateCcw, X } from "lucide-react";
 import { normalizeHexColor } from "../../utils/colors.ts";
 
 const PRESET_SWATCHES = [
@@ -147,10 +147,11 @@ CellColorPicker.Label = function CellColorPickerLabel({ className = "" }: { clas
         <button
           type="button"
           onClick={() => onChange(undefined)}
-          className="text-ed-faint hover:text-ed-text transition-colors p-0.5 rounded hover:bg-ed-subtle"
-          title="Reset to default theme color"
+          className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-ed-2xs font-semibold text-ed-muted transition-colors hover:bg-ed-subtle hover:text-ed-danger"
+          title="Remove this colour"
         >
-          <RotateCcw className="size-3" />
+          <RotateCcw className="size-3" aria-hidden />
+          Reset
         </button>
       )}
     </div>
@@ -331,9 +332,10 @@ CellColorPicker.Swatch = function CellColorPickerSwatch({
           <button
             type="button"
             onClick={() => onChange(undefined)}
-            className="text-ed-2xs text-ed-faint hover:text-ed-danger transition-colors font-medium"
+            className="inline-flex items-center gap-1 rounded-ed border border-ed-danger/40 bg-ed-danger/5 px-2 py-1 text-ed-xs font-semibold text-ed-danger transition-colors hover:bg-ed-danger/10"
           >
-            Clear custom
+            <X className="size-3" aria-hidden />
+            Remove colour
           </button>
         )}
       </div>

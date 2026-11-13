@@ -223,19 +223,22 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
           <HelpCircle className="size-4" aria-hidden />
         </button>
       </AppTooltip>
-      <AppTooltip content="Download code" placement="bottom">
-        <button
-          type="button"
-          onClick={() => setDownloadOpen(true)}
-          onMouseEnter={() => void DownloadCodeDialog.preload()}
-          onFocus={() => void DownloadCodeDialog.preload()}
-          disabled={autosave.status === "conflict"}
-          aria-label="Download code"
-          className="grid size-8 place-items-center rounded-ed border border-ed-border text-ed-muted hover:bg-ed-hover hover:text-ed-text disabled:opacity-50"
-        >
-          <Code2 className="size-4" aria-hidden />
-        </button>
-      </AppTooltip>
+      {/* Code download is for platform super admins only. */}
+      {role === "SUPER_ADMIN" && (
+        <AppTooltip content="Download code" placement="bottom">
+          <button
+            type="button"
+            onClick={() => setDownloadOpen(true)}
+            onMouseEnter={() => void DownloadCodeDialog.preload()}
+            onFocus={() => void DownloadCodeDialog.preload()}
+            disabled={autosave.status === "conflict"}
+            aria-label="Download code"
+            className="grid size-8 place-items-center rounded-ed border border-ed-border text-ed-muted hover:bg-ed-hover hover:text-ed-text disabled:opacity-50"
+          >
+            <Code2 className="size-4" aria-hidden />
+          </button>
+        </AppTooltip>
+      )}
       <button
         type="button"
         onClick={() => void openPreview()}
@@ -265,7 +268,7 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
           Publish
         </button>
       )}
-      {downloadOpen && (
+      {role === "SUPER_ADMIN" && downloadOpen && (
         <Suspense fallback={null}>
           <DownloadCodeDialog
             websiteId={website.id}

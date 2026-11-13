@@ -138,6 +138,83 @@ export function removeImportedElement(data: ImportedHtmlData, ref: ElementRef): 
 }
 
 // ---------------------------------------------------------------------------
+// Per-element look (one button, one heading, one image)
+// ---------------------------------------------------------------------------
+
+/** Style of a single imported element, stored as `!important` inline style so it wins over the block's CSS. */
+export type ElementStyle = {
+  background?: string;
+  color?: string;
+  borderColor?: string;
+  /** Corner rounding, e.g. "8px". */
+  radius?: string;
+  /** e.g. "18px". */
+  fontSize?: string;
+  fontWeight?: string;
+  hideOnMobile?: boolean;
+  hideOnDesktop?: boolean;
+};
+
+const STYLE_PROPS: Record<"background" | "color" | "borderColor" | "radius" | "fontSize" | "fontWeight", string> = {
+  background: "background-color",
+  color: "color",
+  borderColor: "border-color",
+  radius: "border-radius",
+  fontSize: "font-size",
+  fontWeight: "font-weight",
+};
+const SAFE_STYLE_VALUE = /^[#\w\s(),.%-]{1,40}$/;
+
+function toHex(value: string): string {
+  const rgb = value.match(/^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+  if (!rgb) return value;
+  return `#${rgb.slice(1, 4).map((n) => Number(n).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** The style set on one element through the panel (not what its imported CSS gives it). */
+export function readElementStyle(data: ImportedHtmlData, ref: ElementRef): ElementStyle {
+  if (typeof document === "undefined") return {};
+  const el = findRef(parse(data.html || "").content, ref) as HTMLElement | null | undefined;
+  if (!el?.style) return {};
+  const style: ElementStyle = {};
+  for (const [key, prop] of Object.entries(STYLE_PROPS) as [keyof typeof STYLE_PROPS, string][]) {
+    const value = el.style.getPropertyValue(prop).trim();
+    if (value) style[key] = key === "background" || key === "color" || key === "borderColor" ? toHex(value) : value;
+  }
+  if (el.classList.contains("wb-hide-mobile")) style.hideOnMobile = true;
+  if (el.classList.contains("wb-hide-desktop")) style.hideOnDesktop = true;
+  return style;
+}
+
+/** Sets (or, with an empty value, clears) parts of one element's own style. */
+export function applyElementStyle(data: ImportedHtmlData, ref: ElementRef, patch: ElementStyle): ImportedHtmlData {
+  if (typeof document === "undefined") return data;
+  const template = parse(data.html || "");
+  const el = findRef(template.content, ref) as HTMLElement | null | undefined;
+  if (!el?.style) return data;
+  for (const [key, prop] of Object.entries(STYLE_PROPS) as [keyof typeof STYLE_PROPS, string][]) {
+    if (!(key in patch)) continue;
+    const value = patch[key]?.trim();
+    if (value && SAFE_STYLE_VALUE.test(value)) {
+      el.style.setProperty(prop, value, "important");
+      // A gradient/image background would cover the new colour (only once the colour is valid).
+      if (key === "background") {
+        if (el.style.getPropertyValue(prop)) el.style.setProperty("background-image", "none", "important");
+        else el.style.removeProperty("background-image");
+      }
+    } else {
+      el.style.removeProperty(prop);
+      if (key === "background") el.style.removeProperty("background-image");
+    }
+  }
+  if ("hideOnMobile" in patch) el.classList.toggle("wb-hide-mobile", Boolean(patch.hideOnMobile));
+  if ("hideOnDesktop" in patch) el.classList.toggle("wb-hide-desktop", Boolean(patch.hideOnDesktop));
+  if (!el.getAttribute("style")?.trim()) el.removeAttribute("style");
+  if (!el.getAttribute("class")?.trim()) el.removeAttribute("class");
+  return { ...data, html: template.innerHTML };
+}
+
+// ---------------------------------------------------------------------------
 // Repeated items (cards, list rows, FAQ rows, link columns)
 // ---------------------------------------------------------------------------
 

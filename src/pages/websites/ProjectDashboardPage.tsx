@@ -370,15 +370,18 @@ export default function ProjectDashboardPage() {
                 live site
               </a>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              onPress={() => setDownloadOpen(true)}
-              onMouseEnter={() => void DownloadCodeDialog.preload()}
-              onFocus={() => void DownloadCodeDialog.preload()}
-            >
-              <Code2 className="size-4" aria-hidden /> Download code
-            </Button>
+            {/* Code download is for platform super admins only. */}
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="outline"
+                onPress={() => setDownloadOpen(true)}
+                onMouseEnter={() => void DownloadCodeDialog.preload()}
+                onFocus={() => void DownloadCodeDialog.preload()}
+              >
+                <Code2 className="size-4" aria-hidden /> Download code
+              </Button>
+            )}
             <Link
               to={previewUrl}
               className={buttonVariants({ size: "sm", variant: "outline" })}
@@ -739,7 +742,7 @@ export default function ProjectDashboardPage() {
         title={success?.title}
       />
 
-      {downloadOpen && (
+      {isAdmin && downloadOpen && (
         <Suspense fallback={null}>
           <DownloadCodeDialog
             websiteId={website.id}
