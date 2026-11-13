@@ -113,7 +113,22 @@ export type ImportedLink = {
   hasText: boolean;
   /** `data-wb-text-id` of the link, when its words are also listed under "Text". */
   textId?: string;
+  /** The link shows an icon or logo (an inline SVG or an icon-font glyph) that can be swapped. */
+  hasIcon: boolean;
 };
+
+const ICON_CLASS = /(^|[\s_-])(icon|fa[a-z]?|bi|ri|ti|la[a-z]?|mdi|ion|feather|glyph\w*|social\w*)([\s_-]|$)/i;
+
+/** The link's icon element: an inline <svg>, or an empty icon-font element like <i class="fa fa-facebook">. */
+export function findLinkIcon(anchor: Element): Element | null {
+  for (const el of Array.from(anchor.querySelectorAll("svg, i, span"))) {
+    // Document order: the outermost <svg> comes first.
+    if (el.tagName.toLowerCase() === "svg") return el;
+    if (el.textContent?.trim() || el.querySelector("img, svg")) continue;
+    if (el.tagName.toLowerCase() === "i" || ICON_CLASS.test(el.getAttribute("class") || "")) return el;
+  }
+  return null;
+}
 
 function parseFragment(html: string): HTMLTemplateElement {
   const template = document.createElement("template");
@@ -135,7 +150,16 @@ export function readImportedLinks(html: string): ImportedLink[] {
       ...(anchor.hasAttribute("download") ? { actionType: "download" as const } : {}),
       ...(isVideo ? { actionType: "video" as const, videoUrl: anchor.getAttribute("data-wb-video-url") ?? "" } : {}),
     };
-    return { index, link, hasText: Boolean(ownText(anchor)), ...(anchor.getAttribute("data-wb-text-id") ? { textId: anchor.getAttribute("data-wb-text-id")! } : {}) };
+    const icon = findLinkIcon(anchor);
+    const iconName = icon?.getAttribute("data-wb-icon");
+    if (iconName) link.icon = iconName;
+    return {
+      index,
+      link,
+      hasText: Boolean(ownText(anchor)),
+      hasIcon: Boolean(icon),
+      ...(anchor.getAttribute("data-wb-text-id") ? { textId: anchor.getAttribute("data-wb-text-id")! } : {}),
+    };
   });
 }
 
@@ -166,6 +190,46 @@ export function applyImportedLinkEdit(html: string, index: number, link: LinkRef
     anchor.removeAttribute("data-wb-video-url");
   }
   if (ownText(anchor) && link.label.trim() && ownText(anchor) !== link.label.trim()) setOwnText(anchor, link.label.trim());
+  return template.innerHTML;
+}
+
+/**
+ * Swaps the icon/logo of link #index for `iconMarkup` (a single <svg> or <img>, tagged with
+ * `data-wb-icon`). The new icon keeps the old one's classes and size so the imported CSS still
+ * styles it; a link without an icon gets one before its words. Empty markup removes the icon.
+ */
+export function applyImportedLinkIcon(html: string, index: number, iconMarkup: string): string {
+  if (typeof document === "undefined") return html;
+  const template = parseFragment(html);
+  const anchor = template.content.querySelectorAll("a[href]")[index];
+  if (!anchor) return html;
+  const old = findLinkIcon(anchor);
+  if (!iconMarkup) {
+    // Never leave a link with nothing to click on.
+    if (old && ownText(anchor)) old.remove();
+    return template.innerHTML;
+  }
+  const next = parseFragment(iconMarkup).content.firstElementChild;
+  if (!next) return html;
+  if (old) {
+    const oldClass = old.getAttribute("class");
+    // Icon-font classes draw their own glyph (::before): don't carry those over.
+    if (oldClass && old.tagName.toLowerCase() === "svg") next.setAttribute("class", oldClass);
+    for (const attr of ["width", "height", "style"]) {
+      const value = old.getAttribute(attr);
+      if (value && old.tagName.toLowerCase() === "svg") next.setAttribute(attr, value);
+    }
+    if (!next.getAttribute("width") && !next.getAttribute("style")) {
+      next.setAttribute("width", "1em");
+      next.setAttribute("height", "1em");
+    }
+    old.replaceWith(next);
+  } else {
+    next.setAttribute("width", "1em");
+    next.setAttribute("height", "1em");
+    next.setAttribute("style", "display:inline-block;vertical-align:-0.125em;margin-inline-end:0.4em");
+    anchor.prepend(next);
+  }
   return template.innerHTML;
 }
 

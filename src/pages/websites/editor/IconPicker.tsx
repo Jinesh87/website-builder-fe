@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { ImageRef } from "../../../site-kit/index.ts";
 import { SiteIcon } from "../../../site-kit/primitives.tsx";
+import { brandIconFor } from "../../../site-kit/brand-icons.ts";
 import { ImageField } from "./fields.tsx";
 import {
   ICON_CATEGORIES,
@@ -55,6 +56,8 @@ type IconPickerModalProps = {
 function getShortIconLabel(name?: string, isCustom = false): string {
   if (isCustom) return "Custom image";
   if (!name) return "Choose icon…";
+  const brand = brandIconFor(name);
+  if (brand) return brand.label;
   const legacy = LEGACY_ICONS.find((i) => i.name === name);
   if (legacy) {
     return legacy.label.split("/")[0].trim().replace(/\s[^\w\s].*$/, "");
@@ -131,7 +134,7 @@ export function IconPickerModal({
                     Icon Picker
                   </Modal.Heading>
                   <p className="text-ed-2xs text-ed-muted mt-0.5">
-                    Select from 1,700+ clean icons or upload your custom logo/icon.
+                    Select from 1,700+ clean icons and social media logos, or upload your own.
                   </p>
                 </div>
               </div>
@@ -183,7 +186,7 @@ export function IconPickerModal({
                         type="search"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Search 1,700+ icons (e.g. zap, rocket, shield, payment, arrow, check)..."
+                        placeholder="Search 1,700+ icons (e.g. facebook, instagram, rocket, shield, arrow)..."
                         className="h-9 w-full rounded-ed-lg border border-ed-border bg-ed-panel pl-9 pr-9 text-ed-sm text-ed-text placeholder:text-ed-faint shadow-ed-xs transition-all duration-150 hover:border-ed-border-strong focus:border-ed-accent focus:outline-none focus:ring-2 focus:ring-ed-accent/15 [&::-webkit-search-cancel-button]:hidden"
                       />
                       {query && (

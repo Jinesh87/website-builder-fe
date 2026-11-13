@@ -1,8 +1,10 @@
 import { icons as lucideIcons } from "lucide-react";
+import { BRAND_ICONS, BRAND_ICON_PREFIX } from "../../../site-kit/brand-icons.ts";
 
 export type IconCategory =
   | "all"
   | "popular"
+  | "social"
   | "business"
   | "tech"
   | "communication"
@@ -15,6 +17,7 @@ export type IconCategory =
 export const ICON_CATEGORIES: { id: IconCategory; label: string }[] = [
   { id: "all", label: "All Icons (1,500+)" },
   { id: "popular", label: "Popular & CMS" },
+  { id: "social", label: "Social Media & Brands" },
   { id: "business", label: "Business & Finance" },
   { id: "tech", label: "Tech & Software" },
   { id: "communication", label: "Communication" },
@@ -60,7 +63,7 @@ export const LEGACY_ICONS: { name: string; label: string }[] = [
   { name: "chat", label: "Chat 💬" },
 ];
 
-const CATEGORY_KEYWORDS: Record<Exclude<IconCategory, "all">, string[]> = {
+const CATEGORY_KEYWORDS: Record<Exclude<IconCategory, "all" | "social">, string[]> = {
   popular: [
     "sparkles", "zap", "shield", "check", "star", "heart", "trending", "award",
     "flame", "globe", "target", "compass", "key", "cpu", "layers", "activity",
@@ -162,6 +165,17 @@ export function getIconCatalog(): IconItem[] {
     });
   }
 
+  // 3. Brand / social media logos (Lucide has none).
+  for (const [key, brand] of Object.entries(BRAND_ICONS)) {
+    items.push({
+      name: `${BRAND_ICON_PREFIX}${key}`,
+      label: brand.label,
+      isLegacy: false,
+      category: "social",
+      keywords: [key, ...brand.label.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean), "social", "brand", "logo", "media"],
+    });
+  }
+
   cachedIconCatalog = items;
   return items;
 }
@@ -182,6 +196,7 @@ export function searchIcons(query: string, category: IconCategory = "all"): Icon
           if (!isPop) return false;
         }
       } else if (item.category !== category) {
+        if (category === "social") return false;
         const matchCat = CATEGORY_KEYWORDS[category]?.some((kw) =>
           item.name.toLowerCase().includes(kw)
         );

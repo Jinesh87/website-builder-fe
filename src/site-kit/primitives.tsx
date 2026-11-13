@@ -7,6 +7,7 @@ import { getCuratedFallbackImage, normalizeImageUrl } from "./image-utils.ts";
 import { openVideoModal } from "./VideoModal.tsx";
 import { parseRichText } from "./rich-text.tsx";
 import { toPlainText } from "./rich-text-core.ts";
+import { brandIconFor } from "./brand-icons.ts";
 
 type SiteLinkProps = {
   link: LinkRef;
@@ -402,6 +403,18 @@ export function SiteIcon({ name, image, className = "", style, inline = false, s
   }
 
   if (!name) return null;
+
+  const brand = brandIconFor(name);
+  if (brand) {
+    const iconSize = size ?? (inline ? "1.15em" : 22);
+    return (
+      <span className={`${baseClass} wb-icon-brand`} style={style} aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: iconSize, height: iconSize }}>
+          <path d={brand.path} />
+        </svg>
+      </span>
+    );
+  }
 
   const legacyIcon = ICON_PATHS[name as IconName];
   if (legacyIcon) {

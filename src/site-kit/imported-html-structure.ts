@@ -6,8 +6,8 @@
  * CSS automatically. Copies get fresh text ids / media keys and their own inspector entries.
  * Browser-only (uses <template>).
  */
-import { spacedText } from "./sections/ImportedHtmlSection.tsx";
-import type { ImportedHtmlData, ImportedHtmlMediaSlot, ImportedHtmlText } from "./types.ts";
+import { readImportedLinks, spacedText } from "./sections/ImportedHtmlSection.tsx";
+import type { ImportedHtmlData, ImportedHtmlMediaSlot, ImportedHtmlText, LinkRef } from "./types.ts";
 
 const SKIP = "svg, script, style, template";
 
@@ -217,4 +217,92 @@ export function moveImportedItem(data: ImportedHtmlData, group: number, item: nu
     texts: [...(data.texts ?? [])].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)),
     mediaSlots: [...(data.mediaSlots ?? [])].sort((a, b) => mediaOrder.indexOf(a.key) - mediaOrder.indexOf(b.key)),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Outline: the block's editable parts grouped the way they appear on the canvas
+// ---------------------------------------------------------------------------
+
+export type OutlineEntry =
+  | { kind: "text"; ref: ElementRef; id: string; label: string; value: string }
+  | { kind: "link"; ref: ElementRef; index: number; link: LinkRef; hasText: boolean; hasIcon: boolean; textId?: string }
+  | { kind: "media"; ref: ElementRef; key: string; slot: ImportedHtmlMediaSlot };
+
+export type OutlineItem = { index: number; label: string; entries: OutlineEntry[] };
+export type OutlineGroup = { index: number; title: string; items: OutlineItem[] };
+export type ImportedOutline = { main: OutlineEntry[]; groups: OutlineGroup[]; total: number };
+
+function groupTitle(items: Element[]): string {
+  const tag = items[0]!.tagName;
+  const noun = tag === "LI" ? "List items" : tag === "DETAILS" ? "Questions" : tag === "A" && !items[0]!.querySelector("img, h2, h3, h4, p") ? "Links" : "Cards";
+  return `${noun} (${items.length})`;
+}
+
+/**
+ * Every editable part of an imported block in page order. Parts inside a repeated item (card,
+ * row) are listed under that item; a button's words and destination form a single "link" entry.
+ */
+export function readImportedOutline(data: ImportedHtmlData): ImportedOutline {
+  const empty: ImportedOutline = { main: [], groups: [], total: 0 };
+  if (typeof document === "undefined" || !data.html) return empty;
+  const root = parse(data.html).content;
+  const allGroups = groupElements(root);
+  // Only top-level groups get their own panel; lists inside a card stay inside that card.
+  const topGroups = allGroups
+    .map((items, index) => ({ items, index }))
+    .filter(({ items }) => !allGroups.some((other) => other !== items && other.some((item) => item !== items[0] && item.contains(items[0]!))));
+
+  const groups: OutlineGroup[] = topGroups.map(({ items, index }) => ({
+    index,
+    title: groupTitle(items),
+    items: items.map((el, itemIndex) => ({ index: itemIndex, label: labelOf(el), entries: [] })),
+  }));
+  const ownerOf = (node: Element): OutlineItem | null => {
+    for (const [g, { items }] of topGroups.entries()) {
+      const i = items.findIndex((item) => item === node || item.contains(node));
+      if (i >= 0) return groups[g]!.items[i]!;
+    }
+    return null;
+  };
+
+  const anchors = [...root.querySelectorAll("a[href]")];
+  const links = readImportedLinks(data.html);
+  const texts = new Map((data.texts ?? []).map((text) => [text.id, text]));
+  const slots = new Map((data.mediaSlots ?? []).map((slot) => [slot.key, slot]));
+  const main: OutlineEntry[] = [];
+  let total = 0;
+
+  for (const node of root.querySelectorAll("[data-wb-text-id], [data-wb-media-key], a[href]")) {
+    let entry: OutlineEntry | null = null;
+    if (node.matches("a[href]")) {
+      const index = anchors.indexOf(node);
+      const info = links[index];
+      if (info) entry = { kind: "link", ref: { kind: "link", index }, index, link: info.link, hasText: info.hasText, hasIcon: info.hasIcon, ...(info.textId ? { textId: info.textId } : {}) };
+    } else if (node.hasAttribute("data-wb-media-key")) {
+      const slot = slots.get(node.getAttribute("data-wb-media-key")!);
+      if (slot) entry = { kind: "media", ref: { kind: "media", key: slot.key }, key: slot.key, slot };
+    } else {
+      const text = texts.get(node.getAttribute("data-wb-text-id")!);
+      if (text) entry = { kind: "text", ref: { kind: "text", id: text.id }, id: text.id, label: text.label, value: text.value };
+    }
+    if (!entry) continue;
+    total += 1;
+    (ownerOf(node)?.entries ?? main).push(entry);
+  }
+  return { main, groups: groups.filter((group) => group.items.some((item) => item.entries.length > 0)), total };
+}
+
+/** Which outline entry a click on the canvas landed on (link > image > text). */
+export function entryKeyForElement(blockRoot: Element, target: Element): string | null {
+  const anchor = target.closest("a[href]");
+  if (anchor && blockRoot.contains(anchor)) return `link:${[...blockRoot.querySelectorAll("a[href]")].indexOf(anchor)}`;
+  const media = target.closest("[data-wb-media-key]");
+  if (media && blockRoot.contains(media)) return `media:${media.getAttribute("data-wb-media-key")}`;
+  const text = target.closest("[data-wb-text-id]");
+  if (text && blockRoot.contains(text)) return `text:${text.getAttribute("data-wb-text-id")}`;
+  return null;
+}
+
+export function entryKey(entry: OutlineEntry): string {
+  return entry.kind === "link" ? `link:${entry.index}` : entry.kind === "media" ? `media:${entry.key}` : `text:${entry.id}`;
 }

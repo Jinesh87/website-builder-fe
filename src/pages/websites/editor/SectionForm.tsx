@@ -5200,6 +5200,7 @@ function DataForm({
           <ImportedChromeForm
             kind="header"
             data={imported}
+            sectionId={section.id}
             onChange={(next) => onChange({ ...section, data: { ...section.data, imported: next } })}
             onUseBuilder={() => onChange({ ...section, data: chromeToBuilder(section.data) })}
           />
@@ -5227,6 +5228,7 @@ function DataForm({
           <ImportedChromeForm
             kind="footer"
             data={imported}
+            sectionId={section.id}
             onChange={(next) => onChange({ ...section, data: { ...section.data, imported: next } })}
             onUseBuilder={() => onChange({ ...section, data: chromeToBuilder(footerFromImported(imported, section.data)) })}
           />

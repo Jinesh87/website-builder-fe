@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { applyImportedLinkEdit, readImportedLinks } from "./sections/ImportedHtmlSection.tsx";
+import { applyImportedLinkEdit, applyImportedLinkIcon, readImportedLinks } from "./sections/ImportedHtmlSection.tsx";
 
 const HTML = `<section><a class="btn" href="/contact" data-wb-text-id="t1"><svg viewBox="0 0 1 1"></svg>Call us now</a>
   <a href="https://instagram.com/x" target="_blank" rel="noopener noreferrer"><img src="/ig.png" alt="Instagram"></a></section>`;
@@ -8,8 +8,8 @@ const HTML = `<section><a class="btn" href="/contact" data-wb-text-id="t1"><svg 
 describe("imported HTML links", () => {
   it("lists every link with its label and destination", () => {
     expect(readImportedLinks(HTML)).toEqual([
-      { index: 0, link: { label: "Call us now", href: "/contact" }, hasText: true, textId: "t1" },
-      { index: 1, link: { label: "Instagram", href: "https://instagram.com/x", openInNewTab: true }, hasText: false },
+      { index: 0, link: { label: "Call us now", href: "/contact" }, hasText: true, hasIcon: true, textId: "t1" },
+      { index: 1, link: { label: "Instagram", href: "https://instagram.com/x", openInNewTab: true }, hasText: false, hasIcon: false },
     ]);
   });
 
@@ -38,5 +38,20 @@ describe("imported HTML links", () => {
     expect(readImportedLinks(cleared)[0]!.link.href).toBe("");
     const brand = `<a href="/"><img src="/l.png" alt=""><span><b>W<span>OO</span>DFIT FURNITA</b><small>Furniture &amp; Plywood</small></span></a>`;
     expect(readImportedLinks(brand)[0]!.link.label).toBe("WOODFIT FURNITA Furniture & Plywood");
+  });
+
+  it("swaps a link's icon or icon-font glyph for a picked logo, keeping its size classes", () => {
+    const logo = `<svg viewBox="0 0 24 24" fill="currentColor" data-wb-icon="brand:facebook"><path d="M1 1"></path></svg>`;
+    const social = `<a href="https://fb.com/x"><i class="fa fa-twitter"></i></a><a href="/c"><svg class="ico" width="18" height="18"></svg>Call</a><a href="/d">Plain</a>`;
+    let html = applyImportedLinkIcon(social, 0, logo);
+    expect(html).not.toContain("fa-twitter");
+    expect(readImportedLinks(html)[0]!.link.icon).toBe("brand:facebook");
+    html = applyImportedLinkIcon(html, 1, logo);
+    expect(html).toMatch(/<svg[^>]*class="ico"[^>]*>|<svg[^>]*width="18"/);
+    expect(html).toContain("Call");
+    html = applyImportedLinkIcon(html, 2, logo);
+    expect(readImportedLinks(html)[2]).toMatchObject({ hasIcon: true, hasText: true, link: { icon: "brand:facebook" } });
+    // Removing an icon never empties an icon-only link.
+    expect(applyImportedLinkIcon(html, 0, "")).toContain('data-wb-icon="brand:facebook"');
   });
 });

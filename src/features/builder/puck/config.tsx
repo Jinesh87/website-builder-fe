@@ -1,3 +1,5 @@
+import { reportImportedFocus } from "../imported-focus.ts";
+import { entryKeyForElement } from "../../../site-kit/imported-html-structure.ts";
 import type { ComponentConfig, Config } from "@puckeditor/core";
 import { memo, useMemo, type MouseEvent, type ReactNode } from "react";
 import {
@@ -126,11 +128,50 @@ function EmptyCanvas() {
   );
 }
 
+/**
+ * Click-to-edit for imported HTML. In edit mode the editor disables pointer events on section
+ * content, so the click target is the editor's wrapper: find the editable element under the
+ * pointer by geometry (the smallest text / button / image box containing it).
+ */
+function reportImportedClick(target: HTMLElement | null, x: number, y: number) {
+  if (!target || typeof target.closest !== "function") return;
+  /** 0 when (x, y) is inside the element, else the distance to its box. */
+  const distance = (el: Element) => {
+    const rect = el.getBoundingClientRect();
+    if (!rect.width || !rect.height) return Infinity;
+    const dx = Math.max(rect.left - x, 0, x - rect.right);
+    const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+    return Math.hypot(dx, dy);
+  };
+  // The overlay is a sibling of the content, so find the imported block under the pointer.
+  const block = [...target.ownerDocument.querySelectorAll("[data-wb-imported-html]")].find((el) => distance(el) === 0);
+  const root = block?.querySelector(".wb-imported-html-root");
+  if (!block || !root) return;
+  // Closest editable part (a few pixels of slack), preferring the smallest box.
+  let best: Element | null = null;
+  let bestScore = Infinity;
+  for (const el of root.querySelectorAll("[data-wb-text-id], [data-wb-media-key], a[href]")) {
+    const d = distance(el);
+    if (d > 12) continue;
+    const rect = el.getBoundingClientRect();
+    const score = d * 1_000_000 + rect.width * rect.height;
+    if (score < bestScore) {
+      best = el;
+      bestScore = score;
+    }
+  }
+  const key = best ? entryKeyForElement(root, best) : null;
+  if (key) reportImportedFocus(block.getAttribute("data-section-id")!, key);
+}
+
 function RootRender({ children }: { children: ReactNode }) {
   const site = useBuilderSite();
 
   const handleLinkClick = (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement | null;
+    // Imported HTML: tell the inspector which text / button / image was clicked.
+    reportImportedClick(target, event.clientX, event.clientY);
+
     const anchor = target instanceof Element ? target.closest<HTMLAnchorElement>("a") : null;
     const cardWithHref = target instanceof Element ? target.closest<HTMLElement>("[data-href]") : null;
     const href = anchor?.getAttribute("href") || cardWithHref?.getAttribute("data-href");
