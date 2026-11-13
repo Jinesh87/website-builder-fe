@@ -6,15 +6,20 @@ import {
   type ConvertibleType,
 } from "../../../site-kit/imported-html-convert.ts";
 import { SECTION_DEFINITIONS } from "../../../site-kit/registry.ts";
-import { applyImportedHtmlEdits } from "../../../site-kit/sections/ImportedHtmlSection.tsx";
+import {
+  applyImportedHtmlEdits,
+  applyImportedLinkEdit,
+  readImportedLinks,
+} from "../../../site-kit/sections/ImportedHtmlSection.tsx";
 import type {
   ImportedHtmlData,
   ImportedHtmlMediaSlot,
   ImportedHtmlText,
+  LinkRef,
   Section,
   SectionOf,
 } from "../../../site-kit/types.ts";
-import { FormGroup, ImageField, SelectField, TextAreaField, TextField, VideoField } from "./fields.tsx";
+import { FormGroup, ImageField, LinkField, SelectField, TextAreaField, TextField, VideoField } from "./fields.tsx";
 
 type Props = {
   section: SectionOf<"imported_html">;
@@ -106,6 +111,19 @@ export function ImportedHtmlFields({ data, onChange }: { data: ImportedHtmlData;
     onChange(withSyncedHtml(data, texts, nextSlots));
   }
 
+  const links = useMemo(() => readImportedLinks(data.html || ""), [data.html]);
+
+  function updateLink(index: number, next: LinkRef) {
+    const current = links.find((item) => item.index === index);
+    const html = applyImportedLinkEdit(data.html || "", index, next);
+    // Keep the "Text" entry of a link in step with a label edited here.
+    const nextTexts =
+      current?.textId && current.hasText
+        ? texts.map((item) => (item.id === current.textId ? { ...item, value: next.label } : item))
+        : texts;
+    onChange({ ...data, html, texts: nextTexts });
+  }
+
   return (
     <>
       {texts.length === 0 && mediaSlots.length === 0 ? (
@@ -125,6 +143,21 @@ export function ImportedHtmlFields({ data, onChange }: { data: ImportedHtmlData;
                 value={item.value}
                 onChange={(value) => updateText(item.id, value)}
                 rows={item.value.length > 120 ? 4 : 2}
+              />
+            ))}
+          </div>
+        </FormGroup>
+      ) : null}
+
+      {links.length > 0 ? (
+        <FormGroup title="Links" description="Where each link or button goes. Pick a page, or enter a web address, phone or email.">
+          <div className="space-y-4">
+            {links.map((item) => (
+              <LinkField
+                key={item.index}
+                label={item.hasText ? item.link.label.slice(0, 48) : `${item.link.label.slice(0, 40)} (image link)`}
+                value={item.link}
+                onChange={(next) => updateLink(item.index, next)}
               />
             ))}
           </div>
