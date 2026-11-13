@@ -6,6 +6,7 @@ import {
   Briefcase,
   Columns,
   CreditCard,
+  FileCode2,
   FileText,
   GripVertical,
   Grid,
@@ -61,6 +62,7 @@ const SECTION_ICONS: Record<SectionType, ComponentType<LucideProps>> = {
   products: ShoppingBag,
   product_detail: ShoppingBag,
   account: UserCircle,
+  imported_html: FileCode2,
 };
 
 /** Drag-to-insert list backed by Puck's drawer, rendered with the builder's own styling and icons. */
@@ -68,6 +70,8 @@ export default function ComponentsPanel() {
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
   const types = SECTION_TYPES.filter((type) => {
+    // Created only via HTML/ZIP import — not drag-added as an empty shell.
+    if (type === "imported_html") return false;
     const definition = SECTION_DEFINITIONS[type];
     return !needle || `${definition.label} ${definition.description}`.toLowerCase().includes(needle);
   });

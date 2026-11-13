@@ -81,6 +81,7 @@ import { ContactFormFieldsEditor, ContactLayoutEditor } from "./ContactBuilderFi
 import { createContactLayout, layoutHasForm, resolveContactLayout } from "../../../site-kit/contact-builder.ts";
 import AuthSectionForm from "./AuthSectionForm.tsx";
 import CardsSectionForm from "./CardsSectionForm.tsx";
+import ImportedHtmlForm from "./ImportedHtmlForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
 import { Bold, Italic, Film, Waves, Compass, Sparkles } from "lucide-react";
@@ -5340,6 +5341,13 @@ function DataForm({
     case "custom":
       return (
         <CustomSectionForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+    case "imported_html":
+      return (
+        <ImportedHtmlForm
           data={section.data}
           onChange={(data) => onChange({ ...section, data })}
         />

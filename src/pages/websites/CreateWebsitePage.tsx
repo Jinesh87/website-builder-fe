@@ -5,9 +5,12 @@ import {
   ArrowRight,
   ArrowUp,
   Check,
+  Copy,
+  FileCode2,
   LayoutTemplate,
   MousePointerClick,
   Trash2,
+  Upload,
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { adminClientsApi, type Client } from "../../api/admin-clients.ts";
@@ -42,6 +45,11 @@ import SelectInput, {
 import TextAreaInput from "../../components/ui/TextAreaInput.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import TemplateThumbnail from "../../components/websites/TemplateThumbnail.tsx";
+import {
+  IMPORT_MARKUP_COPY_TEXT,
+  IMPORT_MARKUP_SUMMARY,
+  IMPORT_MARKUP_TEMPLATE,
+} from "../../features/websites/importHtmlConvention.ts";
 import { getTemplateKey } from "../../site-kit/templates/index.ts";
 import { getTemplateDisplayId } from "../marketing/use-gallery-templates.ts";
 
@@ -62,7 +70,7 @@ type InfoErrors = Partial<Record<keyof InfoForm | "clientId", string>>;
 
 export type CreatedState = { created?: boolean };
 
-type BuilderMode = "MANUAL" | "AI";
+type BuilderMode = "MANUAL" | "AI" | "IMPORT";
 
 const STEPS: Record<BuilderMode, { step: Step; label: string }[]> = {
   MANUAL: [
@@ -76,6 +84,11 @@ const STEPS: Record<BuilderMode, { step: Step; label: string }[]> = {
     { step: 2, label: "Website info" },
     { step: 3, label: "Describe it" },
     { step: 4, label: "AI builds it" },
+  ],
+  IMPORT: [
+    { step: 1, label: "Builder type" },
+    { step: 2, label: "Website info" },
+    { step: 3, label: "Upload HTML" },
   ],
 };
 
@@ -250,13 +263,15 @@ export default function CreateWebsitePage() {
   const [step, setStep] = useState<Step>(() =>
     searchParams.get("templateKey") || questionnaireId ? 2 : 1,
   );
-  const [mode, setMode] = useState<BuilderMode>(
-    searchParams.get("builder") === "ai" ||
-      searchParams.get("mode") === "ai" ||
-      Boolean(questionnaireId)
-      ? "AI"
-      : "MANUAL",
-  );
+  const [mode, setMode] = useState<BuilderMode>(() => {
+    const builder = searchParams.get("builder") ?? searchParams.get("mode");
+    if (builder === "import") return "IMPORT";
+    if (builder === "ai" || Boolean(questionnaireId)) return "AI";
+    return "MANUAL";
+  });
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importFileError, setImportFileError] = useState<string | null>(null);
+  const [importRulesCopied, setImportRulesCopied] = useState(false);
   const [aiBrief, setAiBrief] = useState<AiBrief>(EMPTY_AI_BRIEF);
   const [aiErrors, setAiErrors] = useState<AiBriefErrors>({});
   const [form, setForm] = useState<InfoForm>({
@@ -540,6 +555,40 @@ export default function CreateWebsitePage() {
     );
   }
 
+  function acceptImportFile(file: File | null) {
+    setImportFileError(null);
+    if (!file) {
+      setImportFile(null);
+      return;
+    }
+    const lower = file.name.toLowerCase();
+    if (!lower.endsWith(".html") && !lower.endsWith(".htm") && !lower.endsWith(".zip")) {
+      setImportFile(null);
+      setImportFileError("Upload a .html file or a .zip folder.");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      setImportFile(null);
+      setImportFileError("File must be under 50 MB.");
+      return;
+    }
+    setImportFile(file);
+  }
+
+  async function importFromHtml() {
+    if (!importFile) {
+      setImportFileError("Choose a .html or .zip file to import.");
+      return;
+    }
+    await submit(() =>
+      websitesApi.importHtml({
+        ...infoInput(),
+        ...(themeId ? { themeId } : {}),
+        file: importFile,
+      }),
+    );
+  }
+
   async function submit(create: () => Promise<{ id: string }>) {
     setCreating(true);
     setSubmitError(null);
@@ -641,7 +690,7 @@ export default function CreateWebsitePage() {
             <h2 className="text-lg font-semibold text-ink">
               How do you want to build it?
             </h2>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid gap-4 sm:grid-cols-3">
               <button
                 type="button"
                 aria-pressed={mode === "MANUAL"}
@@ -700,6 +749,32 @@ export default function CreateWebsitePage() {
                 <span className="mt-1 block text-sm text-ink-body">
                   Describe your website in a prompt. AI creates an editable
                   draft you can change any time.
+                </span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={mode === "IMPORT"}
+                onClick={() => setMode("IMPORT")}
+                className={`rounded-lg border-2 p-5 text-left transition-colors ${
+                  mode === "IMPORT"
+                    ? "border-brand bg-brand-soft/40"
+                    : "border-line hover:border-line-strong"
+                }`}
+              >
+                <span className="flex items-center justify-between">
+                  <FileCode2 className="size-5 text-brand" aria-hidden />
+                  {mode === "IMPORT" && (
+                    <span className="rounded-full bg-brand px-2 py-0.5 text-ed-2xs font-medium text-white">
+                      Selected
+                    </span>
+                  )}
+                </span>
+                <span className="mt-3 block font-medium text-ink">
+                  Import HTML
+                </span>
+                <span className="mt-1 block text-sm text-ink-body">
+                  Upload marked HTML. Each block becomes a saved component that
+                  keeps your design — edit text and images afterward.
                 </span>
               </button>
             </div>
@@ -824,12 +899,134 @@ export default function CreateWebsitePage() {
                 <span>
                   {mode === "AI"
                     ? "Continue: describe your website"
-                    : "Continue: theme selection"}
+                    : mode === "IMPORT"
+                      ? "Continue: upload HTML"
+                      : "Continue: theme selection"}
                 </span>
                 <ArrowRight className="size-4" aria-hidden />
               </Button>
             </div>
           </form>
+        )}
+
+        {step === 3 && mode === "IMPORT" && (
+          <section className="mt-6 rounded-xl border border-line bg-surface p-6">
+            <h2 className="text-lg font-semibold text-ink">Upload HTML or ZIP</h2>
+            <p className="mt-1 text-sm text-ink-body">
+              HTML must follow the markup contract below. Untagged content is
+              skipped. Upload a <strong>.zip</strong> (HTML + images) so media
+              paths resolve.
+            </p>
+
+            <div className="relative mt-5 rounded-lg border border-line bg-canvas/60">
+              <button
+                type="button"
+                className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 py-1.5 text-xs font-medium text-ink shadow-sm transition-colors hover:bg-canvas"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(IMPORT_MARKUP_COPY_TEXT);
+                    setImportRulesCopied(true);
+                    window.setTimeout(() => setImportRulesCopied(false), 2000);
+                  } catch {
+                    setImportRulesCopied(false);
+                  }
+                }}
+              >
+                {importRulesCopied ? (
+                  <Check className="size-3.5" aria-hidden />
+                ) : (
+                  <Copy className="size-3.5" aria-hidden />
+                )}
+                <span>{importRulesCopied ? "Copied" : "Copy"}</span>
+              </button>
+              <div className="space-y-3 px-4 py-3 pr-24 text-sm text-ink-body">
+                <p className="text-sm font-medium text-ink">Markup rules</p>
+                <ul className="list-disc space-y-1 pl-5">
+                  {IMPORT_MARKUP_SUMMARY.map((rule) => (
+                    <li key={rule}>{rule}</li>
+                  ))}
+                </ul>
+                <pre className="max-h-64 overflow-auto rounded-md bg-surface p-3 text-ed-2xs leading-relaxed text-ink">
+                  {IMPORT_MARKUP_TEMPLATE}
+                </pre>
+              </div>
+            </div>
+
+            {(submitError || importFileError) && (
+              <div className="mt-5">
+                <FormAlert status="danger">{submitError || importFileError}</FormAlert>
+              </div>
+            )}
+
+            <label
+              className={`mt-6 flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-6 py-12 text-center transition-colors ${
+                importFile
+                  ? "border-brand bg-brand-soft/30"
+                  : "border-line hover:border-brand hover:bg-brand-soft/20"
+              }`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                acceptImportFile(event.dataTransfer.files?.[0] ?? null);
+              }}
+            >
+              <Upload className="size-8 text-brand" aria-hidden />
+              <span className="text-sm font-medium text-ink">
+                {importFile ? importFile.name : "Drop a file here or click to browse"}
+              </span>
+              <span className="text-xs text-ink-body">
+                .html or .zip · up to 50 MB
+                {importFile
+                  ? ` · ${(importFile.size / (1024 * 1024)).toFixed(1)} MB`
+                  : ""}
+              </span>
+              <input
+                type="file"
+                accept=".html,.htm,.zip,text/html,application/zip"
+                className="sr-only"
+                onChange={(event) =>
+                  acceptImportFile(event.target.files?.[0] ?? null)
+                }
+              />
+            </label>
+
+            {importFile && (
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  className="text-sm text-ink-body hover:text-ink underline"
+                  onClick={() => acceptImportFile(null)}
+                >
+                  Clear file
+                </button>
+              </div>
+            )}
+
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
+              <Button
+                variant="outline"
+                onPress={() => setStep(2)}
+                isDisabled={creating}
+                className="font-medium text-ink-body hover:text-ink"
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+                <span>Back</span>
+              </Button>
+              <Button
+                onPress={importFromHtml}
+                isPending={creating}
+                isDisabled={!importFile}
+                className="font-medium"
+              >
+                <FileCode2 className="size-4" aria-hidden />
+                <span>Import website</span>
+              </Button>
+            </div>
+          </section>
         )}
 
         {step === 3 && mode === "AI" && (

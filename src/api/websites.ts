@@ -367,6 +367,19 @@ export const websitesApi = {
   createWithAi: (input: CreateAiWebsiteInput) =>
     request<WebsiteResponse>(`${BASE}/ai`, { method: "POST", body: input }).then((data) => data.website),
 
+  /** Creates a website from an uploaded .html file or .zip (HTML + local assets). */
+  importHtml: (input: CreateWebsiteInput & { file: File }) => {
+    const form = new FormData();
+    const { file, ...fields } = input;
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined && value !== null && value !== "") form.set(key, String(value));
+    }
+    form.set("file", file);
+    return request<WebsiteResponse>(`${BASE}/import-html`, { method: "POST", body: form }).then(
+      (data) => data.website,
+    );
+  },
+
   generation: (id: string) =>
     request<{ generation: WebsiteGeneration }>(`${BASE}/${id}/generation`).then((data) => data.generation),
 

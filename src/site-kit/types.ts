@@ -1694,6 +1694,35 @@ export type SectionDataMap = {
   products: ProductsData;
   product_detail: ProductDetailData;
   account: AccountData;
+  imported_html: ImportedHtmlData;
+};
+
+export type ImportedHtmlText = {
+  id: string;
+  label: string;
+  value: string;
+};
+
+export type ImportedHtmlMediaSlot = {
+  key: string;
+  kind: "image" | "video";
+  url: string;
+  alt?: string;
+};
+
+/** Full-fidelity HTML import: sanitized markup + scoped CSS + editable fields. */
+export type ImportedHtmlData = {
+  title?: string;
+  /** Sanitized markup; editable nodes carry data-wb-text-id / data-wb-media-key. */
+  html: string;
+  /** Stylesheet already scoped under `.wb-site .{scope}` and reduced to this block's rules. */
+  css?: string;
+  /** Scope class shared by every block from the same import (`wbi-…`). */
+  scope?: string;
+  /** Set on the imported site header/footer blocks. */
+  chrome?: "header" | "footer";
+  texts?: ImportedHtmlText[];
+  mediaSlots?: ImportedHtmlMediaSlot[];
 };
 
 export type SectionType = keyof SectionDataMap;

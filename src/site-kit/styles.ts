@@ -10579,4 +10579,18 @@ ${RICH_TEXT_CSS}
   user-select: none;
   margin: 0 4px;
 }
+
+/* Full-fidelity HTML imports. Their CSS is scoped to .wb-site .wbi-… (specificity 0,2,0+), so these
+   (0,2,0) rules sit above the site-kit reset/heading sizes but below every imported rule: imported
+   pages get browser-default spacing back unless their own CSS says otherwise. */
+.wb-imported-html { display: block; min-width: 0; }
+.wb-imported-html-root { display: contents; }
+.wb-imported-html--header { display: contents; }
+.wb-site .wb-imported-html :where(*:not(svg, svg *)) { margin: revert; padding: revert; box-sizing: revert; }
+.wb-site .wb-imported-html :where(h1, h2, h3, h4, h5, h6) { font: revert; letter-spacing: revert; line-height: revert; }
+.wb-site .wb-imported-html :where(img) { display: revert; height: revert; }
+.wb-site .wb-imported-html :where(a) { color: revert; text-decoration: revert; }
+.wb-site .wb-imported-html :where(ul, ol, menu) { list-style: revert; }
+.wb-site .wb-imported-html :where(button, input, textarea, select) { font: revert; color: revert; }
+.wb-site .wb-imported-html :where(table) { border-collapse: revert; }
 `;

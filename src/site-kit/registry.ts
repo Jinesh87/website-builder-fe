@@ -567,6 +567,19 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
         "Login, register, forgot password and optional OTP verification screens with configurable fields and social login.",
       createData: createAuthData,
     },
+    imported_html: {
+      type: "imported_html",
+      label: "Imported HTML",
+      category: "Content",
+      description: "Full-fidelity page imported from an HTML file or ZIP. Edit text and media in the inspector.",
+      createData: () => ({
+        title: "Imported page",
+        html: "<p>Imported content will appear here.</p>",
+        css: "",
+        texts: [],
+        mediaSlots: [],
+      }),
+    },
     custom: {
       type: "custom",
       label: "Custom Layout",
