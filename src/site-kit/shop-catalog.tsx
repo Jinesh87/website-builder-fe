@@ -106,7 +106,7 @@ export const SHOP_DETAIL_SCRIPT = `(function(){
     var variants=[];
     try{ variants=JSON.parse(node.textContent); }catch(e){ return; }
     var priceEl=root.querySelector("[data-wb-price]");
-    var stockEl=root.querySelector("[data-wb-stock]");
+    var stockEl=root.querySelector(".wb-product-stock[data-wb-stock]");
     var hero=root.querySelector("[data-wb-hero]");
     var thumbs=root.querySelector("[data-wb-thumbs]");
     function showPhoto(src, alt){
@@ -215,14 +215,18 @@ export const SHOP_DETAIL_SCRIPT = `(function(){
         btn.classList.toggle("is-active", on);
         btn.setAttribute("aria-pressed", on?"true":"false");
       });
+      var stock=Number(variant.stockQty||0);
+      var soldOut=!!variant.out || stock<=0;
       root.querySelectorAll("[data-wb-cart-action]").forEach(function(btn){
         if(variant.id) btn.setAttribute("data-wb-variant-id", variant.id);
-        var stock=Number(variant.stockQty||0);
         btn.setAttribute("data-wb-stock", String(Math.max(0, stock)));
-        btn.disabled=!!variant.out || stock<=0;
-        if(variant.out || stock<=0) btn.setAttribute("aria-disabled","true");
+        // Out-of-stock variants can still be added to the cart; only Buy is blocked.
+        var block=soldOut && btn.getAttribute("data-wb-cart-action")==="buy";
+        btn.disabled=block;
+        if(block) btn.setAttribute("aria-disabled","true");
         else btn.removeAttribute("aria-disabled");
       });
+      root.querySelectorAll("[data-wb-stock-badge]").forEach(function(badge){ badge.hidden=!soldOut; });
       root.querySelectorAll("[data-wb-wishlist-toggle]").forEach(function(btn){
         if(variant.id) btn.setAttribute("data-wb-variant-id", variant.id);
         if(variant.name!=null) btn.setAttribute("data-wb-variant-name", String(variant.name||""));

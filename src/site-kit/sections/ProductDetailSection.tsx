@@ -305,6 +305,7 @@ export default function ProductDetailSection({ section }: { section: SectionOf<"
           allowGuestCheckout={allowGuestCheckout}
           outOfStock={selected.quantity <= 0}
           stockMax={selected.quantity}
+          stockBadge={!showStock}
           interactive={interactive}
           loginPromptVariant={design === "editorial" ? "minimal" : design === "compact" ? "glass" : design === "gallery-focus" ? "split" : "soft-card"}
         />

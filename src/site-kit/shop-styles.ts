@@ -110,6 +110,10 @@ export const SHOP_CSS = `
 .wb-shop-actions { display: flex; flex-direction: column; gap: 6px; padding: 0 14px 14px; }
 .wb-shop-actions.is-compact { padding-top: 0; }
 .wb-shop-action-row { display: flex; gap: 8px; }
+.wb-shop-stock-badge { align-self: flex-start; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; color: #b91c1c; background: color-mix(in srgb, #b91c1c 10%, transparent); }
+.wb-shop-stock-badge[hidden] { display: none; }
+.wb-acct-row-stock { display: block; font-size: 0.75rem; font-weight: 600; }
+.wb-acct-row-stock.is-out { color: #b91c1c; }
 .wb-shop-btn {
   flex: 1; margin: 0; padding: 0.55rem 0.7rem; border-radius: 10px; border: 1px solid var(--wb-border);
   font: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer; line-height: 1.2;

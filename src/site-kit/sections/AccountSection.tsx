@@ -1098,6 +1098,7 @@ function CartPanel({
               <span className="wb-acct-row-sub">
                 {item.variantName ? `${item.variantName} · ` : ""}Qty {item.quantity}
               </span>
+              {item.outOfStock ? <span className="wb-acct-row-stock is-out">Out of stock</span> : null}
             </div>
             <strong className="wb-acct-row-amount">{formatInr(item.pricePaise * item.quantity)}</strong>
             <button

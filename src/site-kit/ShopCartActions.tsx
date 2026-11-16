@@ -11,6 +11,8 @@ type Props = {
   outOfStock?: boolean;
   /** Units available for this variant; used to cap the quantity picker. */
   stockMax?: number;
+  /** Show an "Out of stock" badge above the buttons (off when the section already shows stock). */
+  stockBadge?: boolean;
   /** Editor / preview: handle clicks in React. Published pages use the static cart script. */
   interactive?: boolean;
   compact?: boolean;
@@ -18,6 +20,9 @@ type Props = {
 };
 
 type PendingAction = "add" | "buy";
+
+/** Largest quantity one cart line may hold (matches the backend cap). */
+const CART_LINE_MAX = 99;
 
 function themeStyle(from: HTMLElement | null): string | undefined {
   return from?.closest(".wb-site")?.getAttribute("style") || undefined;
@@ -31,6 +36,7 @@ export default function ShopCartActions({
   allowGuestCheckout = false,
   outOfStock = false,
   stockMax = 0,
+  stockBadge = true,
   interactive = false,
   compact = false,
   loginPromptVariant = "soft-card",
@@ -40,8 +46,11 @@ export default function ShopCartActions({
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const disabled = outOfStock || stockMax <= 0 || !variantId || busy !== null;
-  const maxQty = Math.max(0, Math.min(99, Math.floor(stockMax)));
+  // Out-of-stock items can still go in the cart (checkout refuses them until restocked); Buy stays off.
+  const soldOut = outOfStock || stockMax <= 0;
+  const maxQty = soldOut ? CART_LINE_MAX : Math.max(0, Math.min(CART_LINE_MAX, Math.floor(stockMax)));
+  const cartDisabled = !variantId || busy !== null;
+  const buyDisabled = soldOut || cartDisabled;
   const loginUrl = siteHref(authHref);
   const actionsRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +67,7 @@ export default function ShopCartActions({
 
   const openQuantity = (action: PendingAction) => {
     if (!interactive) return;
-    if (!variantId || outOfStock || maxQty <= 0) {
+    if (!variantId || (action === "buy" && soldOut)) {
       setMessage({ kind: "error", text: "This item is out of stock." });
       return;
     }
@@ -74,7 +83,7 @@ export default function ShopCartActions({
       setPendingAction(null);
       return;
     }
-    if (!variantId || outOfStock || maxQty <= 0) {
+    if (!variantId || (pendingAction === "buy" && soldOut)) {
       setMessage({ kind: "error", text: "This item is out of stock." });
       setPendingAction(null);
       return;
@@ -99,7 +108,8 @@ export default function ShopCartActions({
         window.location.href = siteHref(accountPanelHref(accountHref, "cart"));
         return;
       }
-      setMessage({ kind: "ok", text: qty === 1 ? "Added to cart." : `Added ${qty} to cart.` });
+      const added = qty === 1 ? "Added to cart." : `Added ${qty} to cart.`;
+      setMessage({ kind: "ok", text: soldOut ? `${added} You can check out once it's back in stock.` : added });
     } catch (error) {
       const err = error as ShopAuthError;
       if (err?.status === 401 || err?.code === "UNAUTHORIZED") {
@@ -203,7 +213,7 @@ export default function ShopCartActions({
                     +
                   </button>
                 </div>
-                <span className="wb-cart-qty-stock">{maxQty} in stock</span>
+                <span className="wb-cart-qty-stock">{soldOut ? "Out of stock" : `${maxQty} in stock`}</span>
               </div>
               <div className="wb-cart-login-actions is-stacked">
                 <button type="button" className="wb-shop-btn is-buy" onClick={() => void confirmAdd()}>
@@ -222,15 +232,20 @@ export default function ShopCartActions({
   return (
     <>
       <div ref={actionsRef} className={`wb-shop-actions${compact ? " is-compact" : ""}`}>
+        {stockBadge ? (
+          <span className="wb-shop-stock-badge" data-wb-stock-badge="" hidden={!soldOut}>
+            Out of stock
+          </span>
+        ) : null}
         <div className="wb-shop-action-row">
           <button
             type="button"
             className="wb-shop-btn is-cart"
             data-wb-cart-action="add"
             data-wb-variant-id={variantId || undefined}
-            data-wb-stock={String(maxQty)}
-            disabled={disabled}
-            aria-disabled={!variantId || outOfStock || maxQty <= 0 || undefined}
+            data-wb-stock={String(soldOut ? 0 : maxQty)}
+            disabled={cartDisabled}
+            aria-disabled={!variantId || undefined}
             onClick={interactive ? () => openQuantity("add") : undefined}
           >
             {busy === "add" ? "Adding…" : "Cart"}
@@ -240,9 +255,9 @@ export default function ShopCartActions({
             className="wb-shop-btn is-buy"
             data-wb-cart-action="buy"
             data-wb-variant-id={variantId || undefined}
-            data-wb-stock={String(maxQty)}
-            disabled={disabled}
-            aria-disabled={!variantId || outOfStock || maxQty <= 0 || undefined}
+            data-wb-stock={String(soldOut ? 0 : maxQty)}
+            disabled={buyDisabled}
+            aria-disabled={!variantId || soldOut || undefined}
             onClick={interactive ? () => openQuantity("buy") : undefined}
           >
             {busy === "buy" ? "Buying…" : "Buy"}
