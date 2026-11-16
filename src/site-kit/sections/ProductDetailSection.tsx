@@ -57,30 +57,20 @@ const SAMPLE: ShopCatalogProduct = {
   categoryName: "Tops",
   returnDays: 7,
   images: [],
-  variants: [
-    {
-      id: "s1",
-      name: "S / Black",
-      pricePaise: 89900,
-      quantity: 12,
+  // Every size comes in every colour, so any pick works in the preview. M / Blue shows the out-of-stock look.
+  variants: (["S", "M", "L"] as const).flatMap((size, row) =>
+    (["Black", "Blue"] as const).map((colour, col) => ({
+      id: `s${row * 2 + col + 1}`,
+      name: `${size} / ${colour}`,
+      pricePaise: colour === "Black" ? 89900 : 99900,
+      quantity: size === "M" && colour === "Blue" ? 0 : 12,
       images: [],
       options: [
-        { name: "Size", value: "S" },
-        { name: "Colour", value: "Black" },
+        { name: "Size", value: size },
+        { name: "Colour", value: colour },
       ],
-    },
-    {
-      id: "s2",
-      name: "M / Blue",
-      pricePaise: 99900,
-      quantity: 0,
-      images: [],
-      options: [
-        { name: "Size", value: "M" },
-        { name: "Colour", value: "Blue" },
-      ],
-    },
-  ],
+    })),
+  ),
 };
 
 type Choice = { name: string; value: string };
