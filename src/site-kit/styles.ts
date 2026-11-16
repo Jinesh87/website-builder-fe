@@ -1766,6 +1766,34 @@ em, i {
 .wb-hero-asymmetric .wb-hero-media { margin-top: 24px; transform: rotate(1deg); transition: transform 0.3s ease; }
 .wb-hero-asymmetric .wb-hero-media:hover { transform: rotate(0deg); }
 
+.wb-hero-arch-collage .wb-hero-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center;
+}
+.wb-hero-arch-collage .wb-hero-badge {
+  padding: 0; border: 0; border-radius: 0; background: none;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--wb-muted);
+}
+.wb-hero-arch-collage h1 { font-size: clamp(42px, 5vw, 64px); font-weight: 500; letter-spacing: -0.01em; line-height: 1.12; }
+.wb-hero-arch-collage .wb-hero-sub,
+.wb-hero-arch-collage .wb-hero-desc { max-width: 440px; }
+.wb-hero-arch-collage .wb-hero-actions { margin-top: 12px; }
+.wb-arch-collage {
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; height: 540px;
+}
+.wb-arch-collage > div { position: relative; overflow: hidden; min-height: 0; }
+.wb-arch-collage img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.wb-arch-collage-arch { grid-row: 1 / 3; border-radius: 200px 200px 16px 16px; }
+.wb-arch-collage-tile { border-radius: 16px; }
+.wb-arch-collage .is-empty { background: color-mix(in srgb, var(--wb-primary) 16%, var(--wb-surface, #f3ebe2)); }
+.wb-arch-collage .wb-arch-collage-tile.is-empty:nth-child(2) { background: color-mix(in srgb, var(--wb-primary) 9%, var(--wb-surface, #f3ebe2)); }
+.wb-arch-collage .wb-arch-collage-tile.is-empty:nth-child(3) { background: color-mix(in srgb, var(--wb-primary) 24%, var(--wb-surface, #f3ebe2)); }
+.wb-arch-collage[data-photos="2"] { grid-template-rows: 1fr; }
+.wb-arch-collage[data-photos="2"] .wb-arch-collage-arch { grid-row: auto; }
+.wb-arch-collage[data-photos="2"] .wb-arch-collage-tile { margin-top: 64px; }
+.wb-arch-collage[data-photos="1"] { grid-template-columns: minmax(0, 420px); grid-template-rows: 1fr; justify-content: center; }
+.wb-arch-collage[data-photos="1"] .wb-arch-collage-arch { grid-row: auto; border-radius: 240px 240px 16px 16px; }
+
 .wb-hero-floating-cards .wb-hero-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
 }
@@ -7587,7 +7615,7 @@ details[open] > summary .wb-faq-plus {
 .wb-align-left .wb-hero-rating {
   justify-content: flex-start;
 }
-.wb-align-left .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards) .wb-hero-copy {
+.wb-align-left .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards):not(.wb-hero-arch-collage) .wb-hero-copy {
   align-items: flex-start;
 }
 .wb-align-left .wb-stat { text-align: left; }
@@ -7615,7 +7643,7 @@ details[open] > summary .wb-faq-plus {
 .wb-align-center .wb-hero-rating {
   justify-content: center;
 }
-.wb-align-center .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards) .wb-hero-copy {
+.wb-align-center .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards):not(.wb-hero-arch-collage) .wb-hero-copy {
   align-items: center;
 }
 .wb-align-center .wb-stat { text-align: center; }
@@ -7643,7 +7671,7 @@ details[open] > summary .wb-faq-plus {
 .wb-align-right .wb-hero-rating {
   justify-content: flex-end;
 }
-.wb-align-right .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards) .wb-hero-copy {
+.wb-align-right .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards):not(.wb-hero-arch-collage) .wb-hero-copy {
   align-items: flex-end;
 }
 .wb-align-right .wb-stat { text-align: right; }
@@ -10042,6 +10070,8 @@ details[open] > summary .wb-faq-plus {
   .wb-grid { grid-template-columns: repeat(var(--wb-cols-tablet, 2), minmax(0, 1fr)); }
   .wb-hero-split .wb-hero-grid, .wb-hero-split-left .wb-hero-grid, .wb-hero-asymmetric .wb-hero-grid, .wb-contact-grid { grid-template-columns: 1fr; gap: 40px; }
   .wb-hero-floating-cards .wb-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .wb-hero-arch-collage .wb-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .wb-arch-collage { height: 420px; }
   .wb-hero-floating-cards .wb-floating-card-wrap { padding: 0; }
   .wb-hero-floating-cards .wb-floating-card-wrap img { aspect-ratio: 4 / 3; }
   .wb-hero-floating-cards-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }

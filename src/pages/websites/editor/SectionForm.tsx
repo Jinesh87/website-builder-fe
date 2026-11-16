@@ -535,6 +535,10 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
               label:
                 "Vintage Sunburst Nostalgia (Radiating ray banner, white shadow title & circular portrait)",
             },
+            {
+              value: "arch-collage",
+              label: "Arch photo collage (Headline beside a tall arched photo & two tiles)",
+            },
           ]}
           onChange={(value) => {
             const variant = value as HeroData["variant"];
@@ -1195,7 +1199,50 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             )}
           />
         </FormGroup>
-      ) : data.variant === "campaign-banner" ? null : (
+      ) : data.variant === "campaign-banner" ? null : data.variant === "arch-collage" ? (
+        <FormGroup title="Collage photos">
+          <SelectField
+            label="Number of photos"
+            value={String(data.collagePhotos ?? 3)}
+            options={[
+              { value: "1", label: "1 photo (arch only)" },
+              { value: "2", label: "2 photos (arch + tall tile)" },
+              { value: "3", label: "3 photos (arch + two stacked tiles)" },
+            ]}
+            onChange={(value) =>
+              onChange({ ...data, collagePhotos: Number(value) as 1 | 2 | 3 })
+            }
+          />
+          <ImageField
+            label={(data.collagePhotos ?? 3) === 1 ? "Arched photo" : "Arched photo (tall, left)"}
+            value={data.image}
+            onChange={(image) => onChange({ ...data, image })}
+            optional
+            dimensionHint={MEDIA_SIZE.archCollageArch}
+            hint={MEDIA_HINT.cropped}
+          />
+          {(data.collagePhotos ?? 3) >= 2 && (
+            <ImageField
+              label={(data.collagePhotos ?? 3) === 2 ? "Tile photo (right)" : "Top tile photo"}
+              value={data.secondaryImage}
+              onChange={(secondaryImage) => onChange({ ...data, secondaryImage })}
+              optional
+              dimensionHint={(data.collagePhotos ?? 3) === 2 ? MEDIA_SIZE.archCollageArch : MEDIA_SIZE.archCollageTile}
+              hint={MEDIA_HINT.cropped}
+            />
+          )}
+          {(data.collagePhotos ?? 3) === 3 && (
+            <ImageField
+              label="Bottom tile photo"
+              value={data.tertiaryImage}
+              onChange={(tertiaryImage) => onChange({ ...data, tertiaryImage })}
+              optional
+              dimensionHint={MEDIA_SIZE.archCollageTile}
+              hint={MEDIA_HINT.cropped}
+            />
+          )}
+        </FormGroup>
+      ) : (
         <FormGroup title="Foreground media / visual">
           <SelectField
             label="Foreground media type"

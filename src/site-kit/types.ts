@@ -349,6 +349,7 @@ export const HERO_VARIANTS = [
   "campaign-banner",
   "vintage-editorial",
   "vintage-sunburst",
+  "arch-collage",
 ] as const;
 
 export type HeroVariant = (typeof HERO_VARIANTS)[number];
@@ -445,6 +446,10 @@ export type HeroData = {
   videoLoop?: boolean;
   image?: ImageRef;
   secondaryImage?: ImageRef;
+  /** Third photo; the arch collage shows image, secondaryImage and this one. */
+  tertiaryImage?: ImageRef;
+  /** How many arch collage photos to show: 1 (arch only), 2 (arch + tile) or 3 (arch + two tiles). Unset is 3. */
+  collagePhotos?: 1 | 2 | 3;
   backgroundImage?: ImageRef;
   bgImagePosition?: "bottom" | "center" | "top" | "cover";
   bgOverlayType?: "dark" | "light" | "gradient" | "none";

@@ -181,6 +181,16 @@ function normalizeSection(raw: Section): Section {
     }
   }
 
+  if (
+    mergedData.tertiaryImage &&
+    typeof mergedData.tertiaryImage === "object"
+  ) {
+    const img = mergedData.tertiaryImage as Record<string, unknown>;
+    if (!img.url || typeof img.url !== "string" || !img.url.trim()) {
+      delete mergedData.tertiaryImage;
+    }
+  }
+
   // Type-specific schema normalization
   if (type === "hero") {
     const validHeroVariants = [

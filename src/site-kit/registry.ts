@@ -2206,6 +2206,27 @@ export const SECTION_PRESETS: SectionPreset[] = [
       }),
   },
   {
+    key: "hero-arch-collage",
+    type: "hero",
+    label: "Hero · arch photo collage",
+    category: "Hero",
+    description:
+      "Editorial headline beside a tall arched photo and two stacked tiles. Suits boutiques and fashion stores.",
+    create: () =>
+      createSection("hero", {
+        data: {
+          variant: "arch-collage",
+          eyebrow: "New season collection",
+          heading: "Drape Your Story in Grace",
+          subheading:
+            "Curated pieces chosen with love for every occasion, from everyday elegance to festive grace.",
+          primaryCta: { label: "Shop the Collection", href: "/shop" },
+          secondaryCta: { label: "Our Story", href: "/about" },
+          buttonShape: "pill",
+        },
+      }),
+  },
+  {
     key: "hero-minimal-typography",
     type: "hero",
     label: "Hero · minimal bold typography",

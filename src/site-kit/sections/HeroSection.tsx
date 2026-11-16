@@ -1126,6 +1126,42 @@ export default function HeroSection({
     </div>
   );
 
+  if (data.variant === "arch-collage") {
+    // Tall arched photo on the left, two stacked tiles on the right; empty slots show soft tinted panels.
+    const photoCount = data.collagePhotos === 1 || data.collagePhotos === 2 ? data.collagePhotos : 3;
+    const tiles = [
+      { image: data.image, className: "wb-arch-collage-arch" },
+      { image: data.secondaryImage, className: "wb-arch-collage-tile" },
+      { image: data.tertiaryImage, className: "wb-arch-collage-tile" },
+    ].slice(0, photoCount);
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className={`wb-hero wb-hero-arch-collage wb-align-${baseAlign ?? "left"} ${minHeightClass} ${buttonShape.className}`}
+        style={buttonShape.style}
+        label="Hero"
+      >
+        <div className="wb-hero-grid">
+          {copy}
+          <div className="wb-arch-collage" data-photos={photoCount}>
+            {tiles.map((tile, index) => (
+              <div
+                key={index}
+                className={`${tile.className}${tile.image?.url ? "" : " is-empty"}`}
+              >
+                {tile.image?.url && (
+                  <SiteImage image={tile.image} priority={index === 0} />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        <BottomShapeDivider shape={data.bottomShape} />
+      </SectionShell>
+    );
+  }
+
   const isBgMediaMode =
     data.imagePosition === "background" ||
     data.variant === "background-image" ||
