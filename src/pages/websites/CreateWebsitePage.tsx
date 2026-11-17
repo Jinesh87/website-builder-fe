@@ -47,6 +47,7 @@ import TextAreaInput from "../../components/ui/TextAreaInput.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import TemplateThumbnail from "../../components/websites/TemplateThumbnail.tsx";
 import {
+  IMPORT_FORM_RULES,
   IMPORT_MARKER_RULES,
   IMPORT_MARKUP_COPY_TEXT,
   IMPORT_MARKUP_SUMMARY,
@@ -951,8 +952,8 @@ export default function CreateWebsitePage() {
           <section className="mt-6 rounded-xl border border-line bg-surface p-6">
             <h2 className="text-lg font-semibold text-ink">Upload HTML or ZIP</h2>
             <p className="mt-1 text-sm text-ink-body">
-              Any HTML page works. Upload a <strong>.zip</strong> with your HTML, CSS and
-              images so file paths resolve. The optional markers below control how
+              Any HTML page works. Upload a <strong>.zip</strong> with your HTML, CSS,
+              images and fonts so file paths resolve. The optional markers below control how
               blocks are split and which builder section each one converts to.
             </p>
 
@@ -990,6 +991,12 @@ export default function CreateWebsitePage() {
                     <li key={rule}>
                       <code className="text-ed-2xs">{rule.split(" ")[0]}</code> {rule.slice(rule.indexOf(" ") + 1)}
                     </li>
+                  ))}
+                </ul>
+                <p className="pt-1 text-sm font-medium text-ink">Forms</p>
+                <ul className="list-disc space-y-1 pl-5">
+                  {IMPORT_FORM_RULES.map((rule) => (
+                    <li key={rule}>{rule}</li>
                   ))}
                 </ul>
                 <p className="pt-1 text-sm font-medium text-ink">Section types for data-wb-section</p>

@@ -11,10 +11,11 @@ import { CONVERTIBLE_TYPES, type ConvertibleType } from "../../site-kit/imported
 /** What happens to any HTML, tagged or not. */
 export const IMPORT_MARKUP_SUMMARY = [
   "Any HTML works. The page's own JavaScript runs first, then each top-level block inside <main> becomes an editable block with its original look.",
-  "<header> and <footer> outside <main> become the site-wide header and footer. Forms keep working and send enquiries to the site's contact email.",
+  "<header> and <footer> outside <main> become the site-wide header and footer.",
+  "Forms send enquiries to the site's contact email when they are plain HTML forms (see the form rules below). Forms built by your own JavaScript show up but can't send.",
   "Your own scripts don't run on the published site (they're removed for safety). The mobile menu button is handled for you; mark it as shown below to make it exact.",
   "Pages: put each page in its own .html file in a .zip (index.html is Home, about.html becomes /about), or wrap pages in data-wb-page=\"slug\" inside one file.",
-  "Upload a .zip with the HTML, CSS and images so file paths resolve. Colours and fonts are taken from your CSS for the builder theme.",
+  "Upload a .zip with the HTML, CSS, images and font files (.woff2, .woff, .ttf, .otf) so file paths resolve. Fonts referenced by @font-face are kept, so the site uses the same fonts. Colours and fonts are also taken from your CSS for the builder theme.",
 ] as const;
 
 /** Optional markers: they make the split and the conversion to builder sections exact. */
@@ -24,6 +25,21 @@ export const IMPORT_MARKER_RULES = [
   'data-wb-field="…" marks a part of a block: heading, eyebrow, subheading, primaryCta, secondaryCta, image.',
   'data-wb-item marks each repeated card; inside it use data-wb-field: title, description, image, link, price, role.',
   'data-wb-nav-toggle marks the mobile menu (hamburger) button. Put data-wb-nav on the menu it opens, and data-wb-nav-open-class="open" on that menu with the class your CSS uses for an open menu. Without them the menu is detected automatically.',
+] as const;
+
+/**
+ * What a form needs to send enquiries on the published site. Read by backend html-import-forms.ts
+ * (field list the contact endpoint validates against), site-kit/imported-html-convert.ts (fields of
+ * a converted contact section) and features/site-export/static-runtime.js (posting on submit).
+ */
+export const IMPORT_FORM_RULES = [
+  "Put every field and the send button inside one real <form> element. Inputs placed in plain <div>s are not sent.",
+  "Use real controls: <input>, <select> and <textarea>. Clickable <button>s or <div>s that change state with JavaScript send nothing; use radio buttons for one choice and checkboxes for several.",
+  'Give each field a name, e.g. name="email". Radio buttons and checkboxes in the same group must share one name.',
+  'Label each field with a <label> (wrapping the input or using for="id"). For a group of radio buttons or checkboxes, put them in a <fieldset> with a <legend>.',
+  'Mark required fields with the required attribute or a * in the label. Use type="email", type="tel", type="number" or type="date" where it fits.',
+  'Send with <button type="submit"> (or a <button> with no type) inside the form. type="button" with a click script does nothing, because your scripts are removed.',
+  "Include an email or phone field so you can reply. Each entry is emailed to you as Label: answer; empty optional fields are left out.",
 ] as const;
 
 /** What each builder section type is for; `satisfies` makes a new type fail to compile until documented. */
@@ -102,8 +118,13 @@ export const IMPORT_MARKUP_TEMPLATE = `<!DOCTYPE html>
       <h2 data-wb-field="heading">Send an enquiry</h2>
       <p>Phone: <a href="tel:+919876543210">+91 98765 43210</a></p>
       <form>
-        <label>Your name <input name="name" required></label>
-        <label>Phone <input type="tel" name="phone" required></label>
+        <label>Your name * <input name="name" required></label>
+        <label>Phone * <input type="tel" name="phone" required></label>
+        <fieldset>
+          <legend>Interested in</legend>
+          <label><input type="checkbox" name="interest" value="Doors"> Doors</label>
+          <label><input type="checkbox" name="interest" value="Plywood"> Plywood</label>
+        </fieldset>
         <label>Message <textarea name="message"></textarea></label>
         <button type="submit">Send</button>
       </form>
@@ -127,6 +148,9 @@ export const IMPORT_MARKUP_COPY_TEXT = [
   "",
   "Optional markers",
   ...IMPORT_MARKER_RULES.map((rule) => `• ${rule}`),
+  "",
+  "Forms",
+  ...IMPORT_FORM_RULES.map((rule) => `• ${rule}`),
   "",
   "Section types (data-wb-section)",
   ...IMPORT_SECTION_TYPES.map(({ type, use }) => `• ${type}: ${use}`),
