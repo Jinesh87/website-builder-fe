@@ -310,6 +310,10 @@ const FONT_WEIGHTS = [
   { value: "700", label: "Bold" },
   { value: "800", label: "Extra bold" },
 ];
+const IMAGE_HEIGHTS = [
+  { value: "default", label: KEEP },
+  ...[24, 32, 40, 48, 56, 64, 72, 80, 96, 120].map((n) => ({ value: `${n}px`, label: `${n}px tall (width follows the image)` })),
+];
 const RADII = [
   { value: "default", label: KEEP },
   { value: "0px", label: "Square" },
@@ -351,7 +355,7 @@ function ElementStyleEditor({
   style: ElementStyle;
   onChange: (patch: ElementStyle) => void;
 }) {
-  const pick = (key: "fontSize" | "fontWeight" | "radius") => (value: string) => onChange({ [key]: value === "default" ? "" : value });
+  const pick = (key: "fontSize" | "fontWeight" | "radius" | "imageHeight") => (value: string) => onChange({ [key]: value === "default" ? "" : value });
   const hasStyle = Object.values(style).some(Boolean);
   return (
     <div className="mt-2 space-y-3 rounded-ed-md border border-ed-accent/30 bg-ed-accent/5 p-2.5">
@@ -372,14 +376,19 @@ function ElementStyleEditor({
         </>
       )}
       {kind === "link" && <SelectField label="Text size" value={style.fontSize ?? "default"} options={FONT_SIZES} onChange={pick("fontSize")} />}
-      {kind === "media" && <SelectField label="Corners" value={style.radius ?? "default"} options={RADII} onChange={pick("radius")} />}
+      {kind === "media" && (
+        <>
+          <SelectField label="Size" value={style.imageHeight ?? "default"} options={IMAGE_HEIGHTS} onChange={pick("imageHeight")} />
+          <SelectField label="Corners" value={style.radius ?? "default"} options={RADII} onChange={pick("radius")} />
+        </>
+      )}
       <CheckboxField label="Hide on mobile" checked={Boolean(style.hideOnMobile)} onChange={(hideOnMobile) => onChange({ hideOnMobile })} />
       <CheckboxField label="Hide on tablet and desktop" checked={Boolean(style.hideOnDesktop)} onChange={(hideOnDesktop) => onChange({ hideOnDesktop })} />
       {hasStyle && (
         <button
           type="button"
           className="text-ed-2xs font-medium text-ed-danger hover:underline"
-          onClick={() => onChange({ background: "", color: "", borderColor: "", radius: "", fontSize: "", fontWeight: "", hideOnMobile: false, hideOnDesktop: false })}
+          onClick={() => onChange({ background: "", color: "", borderColor: "", radius: "", fontSize: "", fontWeight: "", imageHeight: "", hideOnMobile: false, hideOnDesktop: false })}
         >
           Reset this {what}
         </button>

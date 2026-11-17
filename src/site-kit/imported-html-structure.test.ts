@@ -99,4 +99,13 @@ describe("per-element style", () => {
     expect(cleared.html).toBe(data.html);
     expect(applyElementStyle(data, { kind: "text", id: "t1" }, { color: "red;}</style>" }).html).toBe(data.html);
   });
+
+  it("sizes an image by height so a wide logo keeps its shape", () => {
+    const logo: ImportedHtmlData = { html: '<a class="brand" href="/"><img src="/logo.png" alt="" data-wb-media-key="m0"></a>', mediaSlots: [{ key: "m0", url: "/logo.png", kind: "image" }] };
+    const sized = applyElementStyle(logo, { kind: "media", key: "m0" }, { imageHeight: "56px" });
+    expect(readElementStyle(sized, { kind: "media", key: "m0" })).toEqual({ imageHeight: "56px" });
+    expect(sized.html).toMatch(/height: 56px !important; width: auto !important/);
+    expect(applyElementStyle(sized, { kind: "media", key: "m0" }, { imageHeight: "" }).html).toBe(logo.html);
+    expect(applyElementStyle(logo, { kind: "media", key: "m0" }, { imageHeight: "50vh" }).html).toBe(logo.html);
+  });
 });

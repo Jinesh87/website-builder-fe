@@ -151,6 +151,8 @@ export type ElementStyle = {
   /** e.g. "18px". */
   fontSize?: string;
   fontWeight?: string;
+  /** Image/logo height, e.g. "56px"; the width follows the picture's own shape. */
+  imageHeight?: string;
   hideOnMobile?: boolean;
   hideOnDesktop?: boolean;
 };
@@ -181,6 +183,8 @@ export function readElementStyle(data: ImportedHtmlData, ref: ElementRef): Eleme
     const value = el.style.getPropertyValue(prop).trim();
     if (value) style[key] = key === "background" || key === "color" || key === "borderColor" ? toHex(value) : value;
   }
+  const height = el.style.getPropertyValue("height").trim();
+  if (height) style.imageHeight = height;
   if (el.classList.contains("wb-hide-mobile")) style.hideOnMobile = true;
   if (el.classList.contains("wb-hide-desktop")) style.hideOnDesktop = true;
   return style;
@@ -205,6 +209,18 @@ export function applyElementStyle(data: ImportedHtmlData, ref: ElementRef, patch
     } else {
       el.style.removeProperty(prop);
       if (key === "background") el.style.removeProperty("background-image");
+    }
+  }
+  if ("imageHeight" in patch) {
+    const height = patch.imageHeight?.trim();
+    if (height && /^\d{1,3}px$/.test(height)) {
+      // Auto width keeps a wide logo's proportions instead of squeezing it into the old box.
+      el.style.setProperty("height", height, "important");
+      el.style.setProperty("width", "auto", "important");
+      el.style.setProperty("max-width", "100%", "important");
+      el.style.setProperty("object-fit", "contain", "important");
+    } else {
+      for (const prop of ["height", "width", "max-width", "object-fit"]) el.style.removeProperty(prop);
     }
   }
   if ("hideOnMobile" in patch) el.classList.toggle("wb-hide-mobile", Boolean(patch.hideOnMobile));
