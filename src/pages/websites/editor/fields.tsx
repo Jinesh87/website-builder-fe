@@ -5,6 +5,7 @@ import {
   useId,
   useRef,
   useState,
+  type KeyboardEvent,
   type ReactNode,
 } from "react";
 import { Button, Checkbox, Dropdown, Label } from "@heroui/react";
@@ -115,6 +116,8 @@ type TextFieldProps = {
   error?: string;
   type?: "text" | "email" | "tel" | "url" | "number";
   list?: string;
+  onBlur?: () => void;
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
 };
 
 export function TextField({
