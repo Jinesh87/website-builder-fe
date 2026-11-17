@@ -147,6 +147,15 @@ export type WebsiteDomain = {
   lastError: string | null;
   createdAt: string;
   records: DnsRecord[];
+  /** Whether https:// works right now; null until connected (or when the check couldn't run). */
+  https: DomainHttps | null;
+};
+
+export type DomainHttps = {
+  /** ready: works; pending: certificate being set up; failed: no valid certificate. */
+  status: "ready" | "pending" | "failed";
+  detail: string | null;
+  checkedAt: string;
 };
 
 export type DomainList = {

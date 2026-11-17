@@ -27,7 +27,21 @@ type DomainsPanelProps = {
   onChanged: () => void;
 };
 
-function DomainStatusChip({ status }: { status: WebsiteDomain["status"] }) {
+function DomainStatusChip({ status, https }: { status: WebsiteDomain["status"]; https: WebsiteDomain["https"] }) {
+  if (status === "ACTIVE" && https?.status === "pending") {
+    return (
+      <Chip size="sm" color="warning" variant="soft">
+        Securing HTTPS…
+      </Chip>
+    );
+  }
+  if (status === "ACTIVE" && https?.status === "failed") {
+    return (
+      <Chip size="sm" color="danger" variant="soft">
+        HTTPS not working
+      </Chip>
+    );
+  }
   if (status === "ACTIVE") {
     return (
       <Chip size="sm" color="success">
@@ -84,10 +98,14 @@ function RecordsTable({ records }: { records: DnsRecord[] }) {
             Google Domains, Cloudflare, and similar).
           </li>
           <li>Open DNS settings (often labeled DNS, DNS Management, or Zone File).</li>
-          <li>
-            Create {records.length === 1 ? "the record" : "each record"} below. Copy the Name and Value with the buttons.
-            {records.length > 1 ? " If other A, AAAA, or CNAME records already use this name, remove them first." : ""}
-          </li>
+          <li>Create {records.length === 1 ? "the record" : "each record"} below. Copy the Name and Value with the buttons.</li>
+          {hasRouting && (
+            <li>
+              <span className="font-medium text-ink">Delete every other A, AAAA or CNAME record for this name.</span> Your
+              domain company often adds some on its own, such as GoDaddy's “Parked” A records. Also turn off any domain
+              forwarding. If any of these stay, some visitors land on the wrong page and HTTPS can't be set up.
+            </li>
+          )}
           <li>Save, then come back here and choose Verify now. DNS can take a few minutes up to a few hours.</li>
         </ol>
       </div>
@@ -368,6 +386,8 @@ export default function DomainsPanel({ website, isAdmin, hosting, onHostingChang
               {domains.map((domain) => {
                 const busy = busyId === domain.id;
                 const active = domain.status === "ACTIVE";
+                const httpsProblem = active && domain.https && domain.https.status !== "ready" ? domain.https : null;
+                const needsAttention = Boolean(httpsProblem || (active && domain.lastError));
                 return (
                   <li key={domain.id} className="rounded-lg border border-line p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -384,7 +404,7 @@ export default function DomainsPanel({ website, isAdmin, hosting, onHostingChang
                         ) : (
                           <span className="break-all font-mono text-sm font-medium text-ink">{domain.hostname}</span>
                         )}
-                        <DomainStatusChip status={domain.status} />
+                        <DomainStatusChip status={domain.status} https={domain.https} />
                         {domain.isPrimary && (
                           <Chip size="sm" variant="soft">
                             Main address
@@ -402,13 +422,14 @@ export default function DomainsPanel({ website, isAdmin, hosting, onHostingChang
                             <Star className="size-4" aria-hidden /> Make main
                           </Button>
                         )}
-                        {!active && (
+                        {(!active || needsAttention) && (
                           <Button
                             size="sm"
+                            variant={active ? "outline" : undefined}
                             isPending={busy}
                             onPress={() => runAction(domain, () => websitesApi.verifyDomain(website.id, domain.id))}
                           >
-                            <RefreshCw className="size-4" aria-hidden /> Verify now
+                            <RefreshCw className="size-4" aria-hidden /> {active ? "Check again" : "Verify now"}
                           </Button>
                         )}
                         <Button
@@ -425,12 +446,30 @@ export default function DomainsPanel({ website, isAdmin, hosting, onHostingChang
                     </div>
 
                     {active ? (
-                      <p className="mt-2 text-xs text-ink-muted">
-                        {domain.isPrimary
-                          ? "Visitors to your other addresses are sent here."
-                          : `Connected${domain.verifiedAt ? ` ${formatDateTime(domain.verifiedAt)}` : ""}.`}
-                        {domain.lastError && ` Last check: ${domain.lastError}`}
-                      </p>
+                      <div className="mt-2 space-y-3">
+                        <p className="text-xs text-ink-muted">
+                          {domain.isPrimary
+                            ? "Visitors to your other addresses are sent here."
+                            : `Connected${domain.verifiedAt ? ` ${formatDateTime(domain.verifiedAt)}` : ""}.`}
+                        </p>
+                        {domain.lastError && (
+                          <FormAlert
+                            status="warning"
+                            title={`DNS problem${domain.lastCheckedAt ? ` · checked ${formatDateTime(domain.lastCheckedAt)}` : ""}`}
+                          >
+                            {domain.lastError}
+                          </FormAlert>
+                        )}
+                        {httpsProblem?.detail && (
+                          <FormAlert
+                            status={httpsProblem.status === "failed" ? "danger" : "warning"}
+                            title={httpsProblem.status === "failed" ? "https:// doesn't work for this domain yet" : "Setting up HTTPS"}
+                          >
+                            {httpsProblem.detail}
+                          </FormAlert>
+                        )}
+                        {needsAttention && <RecordsTable records={domain.records} />}
+                      </div>
                     ) : (
                       <div className="mt-4 space-y-3">
                         {domain.lastError && domain.lastCheckedAt && (
