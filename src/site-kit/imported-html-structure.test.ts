@@ -2,6 +2,11 @@
 import { describe, expect, it } from "vitest";
 import {
   applyElementStyle,
+  applyTextLink,
+  canLinkText,
+  normalizeTextHref,
+  readImportedOutline,
+  readTextLink,
   readElementStyle,
   duplicateImportedElement,
   duplicateImportedItem,
@@ -107,5 +112,46 @@ describe("per-element style", () => {
     expect(sized.html).toMatch(/height: 56px !important; width: auto !important/);
     expect(applyElementStyle(sized, { kind: "media", key: "m0" }, { imageHeight: "" }).html).toBe(logo.html);
     expect(applyElementStyle(logo, { kind: "media", key: "m0" }, { imageHeight: "50vh" }).html).toBe(logo.html);
+  });
+});
+
+describe("link on imported text", () => {
+  const topbar: ImportedHtmlData = {
+    html: '<div class="ph"><span data-wb-text-id="t0">Call: <b data-wb-text-id="t1">81119 99526</b></span></div><a href="/" data-wb-text-id="t2">Home</a>',
+    texts: [
+      { id: "t0", label: "Text", value: "Call:" },
+      { id: "t1", label: "Bold text", value: "81119 99526" },
+      { id: "t2", label: "Link", value: "Home" },
+    ],
+  };
+
+  it("turns typed numbers, emails and sites into link targets", () => {
+    expect(normalizeTextHref("+91 81119 99526")).toBe("tel:+918111999526");
+    expect(normalizeTextHref("81119 99526")).toBe("tel:8111999526");
+    expect(normalizeTextHref("sales@woodfit.example")).toBe("mailto:sales@woodfit.example");
+    expect(normalizeTextHref("woodfit.example/about")).toBe("https://woodfit.example/about");
+    expect(normalizeTextHref("/contact")).toBe("/contact");
+  });
+
+  it("wraps the text in a link, keeps its tag, and lists it once in the outline", () => {
+    const linked = applyTextLink(topbar, "t1", "+91 81119 99526");
+    expect(linked.html).toContain('<a href="tel:+918111999526" data-wb-text-link=""');
+    expect(linked.html).toContain('<b data-wb-text-id="t1">81119 99526</b></a>');
+    expect(readTextLink(linked, "t1")).toBe("tel:+918111999526");
+    const outline = readImportedOutline(linked);
+    expect(outline.main.filter((entry) => entry.kind === "link")).toHaveLength(1);
+    expect(outline.main.some((entry) => entry.kind === "text" && entry.id === "t1")).toBe(true);
+  });
+
+  it("changes and removes the link again", () => {
+    const linked = applyTextLink(topbar, "t1", "81119 99526");
+    expect(readTextLink(applyTextLink(linked, "t1", "81119 99527"), "t1")).toBe("tel:8111999527");
+    expect(applyTextLink(linked, "t1", "").html).toBe(topbar.html);
+  });
+
+  it("refuses unsafe targets and text already inside an imported link", () => {
+    expect(applyTextLink(topbar, "t1", "javascript:alert(1)").html).toBe(topbar.html);
+    expect(canLinkText(topbar, "t2")).toBe(false);
+    expect(applyTextLink(topbar, "t2", "/contact").html).toBe(topbar.html);
   });
 });

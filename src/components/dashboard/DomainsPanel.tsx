@@ -184,6 +184,7 @@ export default function DomainsPanel({ website, isAdmin, hosting, onHostingChang
   }, [hosting]);
 
   const freeUrl = getLiveSiteUrl(website.subdomain);
+  const mainHostname = domains?.find((domain) => domain.isPrimary && domain.status === "ACTIVE")?.hostname ?? null;
   const isLive = website.status === "PUBLISHED";
   const needsPlan = hostingBlocksDomainConnect(hosting);
   const selectedPrice =
@@ -450,7 +451,9 @@ export default function DomainsPanel({ website, isAdmin, hosting, onHostingChang
                         <p className="text-xs text-ink-muted">
                           {domain.isPrimary
                             ? "Visitors to your other addresses are sent here."
-                            : `Connected${domain.verifiedAt ? ` ${formatDateTime(domain.verifiedAt)}` : ""}.`}
+                            : `Connected${domain.verifiedAt ? ` ${formatDateTime(domain.verifiedAt)}` : ""}.${
+                                mainHostname ? ` Visitors are sent to ${mainHostname}.` : ""
+                              }`}
                         </p>
                         {domain.lastError && (
                           <FormAlert

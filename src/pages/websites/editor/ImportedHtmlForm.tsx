@@ -17,7 +17,11 @@ import {
 import { onImportedFocus, recentImportedFocus } from "../../../features/builder/imported-focus.ts";
 import {
   applyElementStyle,
+  applyTextLink,
+  canLinkText,
+  normalizeTextHref,
   readElementStyle,
+  readTextLink,
   type ElementStyle,
   duplicateImportedElement,
   duplicateImportedItem,
@@ -343,6 +347,51 @@ function StyleColorField({ label, value, fallback, onCommit }: { label: string; 
   );
 }
 
+/**
+ * Makes one imported text clickable: a phone number becomes tap-to-call, an email opens the mail app.
+ * Applied when the field loses focus, so half-typed values don't change the page.
+ */
+function TextLinkEditor({ data, textId, onChange }: { data: ImportedHtmlData; textId: string; onChange: (data: ImportedHtmlData) => void }) {
+  const current = readTextLink(data, textId);
+  const [draft, setDraft] = useState(current);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => setDraft(current), [current]);
+  const commit = () => {
+    if (draft.trim() === current) return;
+    const next = applyTextLink(data, textId, draft);
+    if (draft.trim() && readTextLink(next, textId) === current) {
+      setError("Enter a phone number, email, web address or page path like /contact.");
+      return;
+    }
+    setError(null);
+    onChange(next);
+  };
+  const preview = normalizeTextHref(draft);
+  return (
+    <TextField
+      label="Link when clicked (optional)"
+      value={draft}
+      onChange={(value) => {
+        setDraft(value);
+        setError(null);
+      }}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") commit();
+      }}
+      placeholder="Phone, email or web address"
+      error={error ?? undefined}
+      hint={
+        preview.startsWith("tel:")
+          ? "Opens the phone dialler (tap to call)."
+          : preview.startsWith("mailto:")
+            ? "Opens the visitor's email app."
+            : "e.g. +91 81119 99526, name@example.com, /contact"
+      }
+    />
+  );
+}
+
 /** Colours, size and visibility for one element only (this button, this heading, this image). */
 function ElementStyleEditor({
   kind,
@@ -459,6 +508,14 @@ function EntryField({
       onToggleStyle={() => setStyling((open) => !open)}
     >
       {field}
+      {entry.kind === "text" && !styling && readTextLink(data, entry.id) ? (
+        <p className="mt-1 truncate text-ed-2xs text-ed-muted">Links to {readTextLink(data, entry.id).replace(/^(tel|mailto):/, "")}</p>
+      ) : null}
+      {styling && entry.kind === "text" && canLinkText(data, entry.id) ? (
+        <div className="mt-2 rounded-ed-md border border-ed-accent/30 bg-ed-accent/5 p-2.5">
+          <TextLinkEditor data={data} textId={entry.id} onChange={onChange} />
+        </div>
+      ) : null}
       {styling ? (
         <ElementStyleEditor
           kind={entry.kind}

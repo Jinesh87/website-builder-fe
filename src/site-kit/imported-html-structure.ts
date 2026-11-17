@@ -231,6 +231,77 @@ export function applyElementStyle(data: ImportedHtmlData, ref: ElementRef, patch
 }
 
 // ---------------------------------------------------------------------------
+// Link on a piece of text (tap-to-call numbers, email addresses, plain words)
+// ---------------------------------------------------------------------------
+
+/** Marks a link added around imported text, so the editor shows it as that text's link, not a separate button. */
+export const TEXT_LINK_ATTR = "data-wb-text-link";
+const SAFE_TEXT_HREF = /^(tel:[+\d\s().-]{3,30}|mailto:[^\s<>"]{3,200}|sms:[+\d\s().-]{3,30}|https?:\/\/[^\s<>"]{1,500}|\/[^\s<>"]{0,300}|#[\w-]{0,100})$/i;
+
+/** Turns what the owner typed into a link target: phone numbers become tel:, emails mailto:, bare sites https://. */
+export function normalizeTextHref(input: string): string {
+  const value = input.trim();
+  if (!value) return "";
+  if (/^(tel|mailto|sms|https?):/i.test(value) || value.startsWith("/") || value.startsWith("#")) return value;
+  if (/^\+?[\d\s().-]{6,20}$/.test(value)) return `tel:${value.replace(/[^\d+]/g, "")}`;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return `mailto:${value}`;
+  if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(value)) return `https://${value}`;
+  return value;
+}
+
+function textLinkOf(el: Element): HTMLAnchorElement | null {
+  const parent = el.parentElement;
+  return parent?.matches(`a[${TEXT_LINK_ATTR}]`) ? (parent as HTMLAnchorElement) : null;
+}
+
+/** Whether this text can get its own link (not when it already sits inside a button or link from the import). */
+export function canLinkText(data: ImportedHtmlData, textId: string): boolean {
+  if (typeof document === "undefined") return false;
+  const el = findRef(parse(data.html || "").content, { kind: "text", id: textId });
+  if (!el) return false;
+  const anchor = el.closest("a");
+  return !anchor || anchor.hasAttribute(TEXT_LINK_ATTR);
+}
+
+/** Where the text links to; empty when it has no link of its own. */
+export function readTextLink(data: ImportedHtmlData, textId: string): string {
+  if (typeof document === "undefined") return "";
+  const el = findRef(parse(data.html || "").content, { kind: "text", id: textId });
+  return el ? (textLinkOf(el)?.getAttribute("href") ?? "") : "";
+}
+
+/**
+ * Links a piece of imported text to `href` (an empty value removes the link). The text is wrapped,
+ * not replaced, so the block's own CSS keeps styling it the same way.
+ */
+export function applyTextLink(data: ImportedHtmlData, textId: string, href: string): ImportedHtmlData {
+  if (typeof document === "undefined") return data;
+  const template = parse(data.html || "");
+  const el = findRef(template.content, { kind: "text", id: textId });
+  if (!el) return data;
+  const existing = textLinkOf(el);
+  const target = normalizeTextHref(href);
+  if (!target) {
+    if (!existing) return data;
+    existing.replaceWith(...Array.from(existing.childNodes));
+    return { ...data, html: template.innerHTML };
+  }
+  if (!SAFE_TEXT_HREF.test(target)) return data;
+  if (existing) {
+    existing.setAttribute("href", target);
+  } else {
+    if (el.closest("a")) return data;
+    const anchor = el.ownerDocument.createElement("a");
+    anchor.setAttribute("href", target);
+    anchor.setAttribute(TEXT_LINK_ATTR, "");
+    anchor.setAttribute("style", "color:inherit;text-decoration:none;cursor:pointer");
+    el.replaceWith(anchor);
+    anchor.append(el);
+  }
+  return { ...data, html: template.innerHTML };
+}
+
+// ---------------------------------------------------------------------------
 // Repeated items (cards, list rows, FAQ rows, link columns)
 // ---------------------------------------------------------------------------
 
@@ -367,6 +438,8 @@ export function readImportedOutline(data: ImportedHtmlData): ImportedOutline {
 
   for (const node of root.querySelectorAll("[data-wb-text-id], [data-wb-media-key], a[href]")) {
     let entry: OutlineEntry | null = null;
+    // A link added around a text is edited on that text, so it isn't listed on its own.
+    if (node.matches(`a[${TEXT_LINK_ATTR}]`) && !node.hasAttribute("data-wb-text-id")) continue;
     if (node.matches("a[href]")) {
       const index = anchors.indexOf(node);
       const info = links[index];
@@ -387,7 +460,7 @@ export function readImportedOutline(data: ImportedHtmlData): ImportedOutline {
 
 /** Which outline entry a click on the canvas landed on (link > image > text). */
 export function entryKeyForElement(blockRoot: Element, target: Element): string | null {
-  const anchor = target.closest("a[href]");
+  const anchor = target.closest(`a[href]:not([${TEXT_LINK_ATTR}])`);
   if (anchor && blockRoot.contains(anchor)) return `link:${[...blockRoot.querySelectorAll("a[href]")].indexOf(anchor)}`;
   const media = target.closest("[data-wb-media-key]");
   if (media && blockRoot.contains(media)) return `media:${media.getAttribute("data-wb-media-key")}`;
