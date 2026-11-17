@@ -1,12 +1,14 @@
 import { Suspense, useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { Button, SearchField, Spinner } from "@heroui/react";
-import { AlertCircle, CheckCircle2, FileText, Film, Folder, FolderPlus, Images, Pencil, Trash2, Upload, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileText, Film, Folder, FolderPlus, Images, Pencil, Trash2, Type, Upload, X } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
 import {
   ACCEPT_ANY,
   ACCEPT_BY_KIND,
   formatBytes,
+  isFontFile,
   kindOfFile,
+  MEDIA_FONT_FILTER,
   mediaApi,
   uploadProblem,
   type MediaFile,
@@ -28,18 +30,27 @@ const MediaDeleteDialog = lazyWithRetry(() => import("./MediaDeleteDialog.tsx"),
 const ImageUploadDialog = lazyWithRetry(() => import("./ImageUploadDialog.tsx"), {
   reloadKey: "image_upload_dialog",
 });
+const FontPreview = lazyWithRetry(() => import("./FontPreview.tsx"), {
+  reloadKey: "media_font_preview",
+});
 const MediaDetailsDialog = lazyWithRetry(() => import("./MediaDetailsDialog.tsx"), {
   reloadKey: "media_details_dialog",
 });
 
 const PAGE_SIZE = 24;
 
-const KIND_OPTIONS: SelectOption<MediaKind | "">[] = [
+type KindFilter = MediaKind | typeof MEDIA_FONT_FILTER | "";
+
+const KIND_OPTIONS: SelectOption<KindFilter>[] = [
   { value: "", label: "All types" },
   { value: "IMAGE", label: "Images" },
   { value: "VIDEO", label: "Videos" },
   { value: "DOCUMENT", label: "Documents" },
+  { value: MEDIA_FONT_FILTER, label: "Fonts" },
 ];
+
+/** Fonts listed in their own section of the "All types" view. */
+const FONT_SECTION_SIZE = 100;
 
 type UploadItem = { key: string; name: string; status: "uploading" | "done" | "error"; message?: string };
 type FolderDialog = { mode: "create" } | { mode: "rename"; folder: MediaFolder };
@@ -60,7 +71,10 @@ type MediaLibraryProps = {
 export default function MediaLibrary({ clientId, requiresClient = false, websiteId, onPick, onlyKind }: MediaLibraryProps) {
   const canManage = !requiresClient || Boolean(clientId);
   const [search, setSearch] = useState("");
-  const [kind, setKind] = useState<MediaKind | "">(onlyKind ?? "");
+  const [kind, setKind] = useState<KindFilter>(onlyKind ?? "");
+  /** "All types" shows fonts in their own section above the other files. */
+  const fontSection = !onlyKind && kind === "";
+  const [fonts, setFonts] = useState<MediaFile[]>([]);
   const [folderFilter, setFolderFilter] = useState("");
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
 
@@ -89,6 +103,7 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
         const result = await mediaApi.list({
           clientId,
           kind: kind || undefined,
+          excludeFonts: fontSection,
           folderId: folderFilter || undefined,
           search: debouncedSearch,
           page: nextPage,
@@ -104,8 +119,27 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
         setLoading(false);
       }
     },
-    [clientId, kind, folderFilter, debouncedSearch],
+    [clientId, kind, fontSection, folderFilter, debouncedSearch],
   );
+
+  const loadFonts = useCallback(async () => {
+    if (!fontSection) {
+      setFonts([]);
+      return;
+    }
+    try {
+      const result = await mediaApi.list({
+        clientId,
+        kind: MEDIA_FONT_FILTER,
+        folderId: folderFilter || undefined,
+        search: debouncedSearch,
+        pageSize: FONT_SECTION_SIZE,
+      });
+      setFonts(result.files);
+    } catch (err) {
+      setLoadError(errorMessage(err));
+    }
+  }, [clientId, fontSection, folderFilter, debouncedSearch]);
 
   const loadFolders = useCallback(async () => {
     if (!canManage) {
@@ -122,6 +156,10 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
   useEffect(() => {
     void load(1);
   }, [load]);
+
+  useEffect(() => {
+    void loadFonts();
+  }, [loadFonts]);
 
   useEffect(() => {
     setFolderFilter("");
@@ -180,7 +218,7 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
   async function afterDelete() {
     setPendingDelete(null);
     setSelected(null);
-    await Promise.all([load(1), loadFolders()]);
+    await Promise.all([load(1), loadFonts(), loadFolders()]);
   }
 
   async function saveFolder({ name }: { name: string }) {
@@ -202,11 +240,44 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
     try {
       await mediaApi.deleteFolder(folder.id);
       if (folderFilter === folder.id) setFolderFilter("");
-      await Promise.all([loadFolders(), load(1)]);
+      await Promise.all([loadFolders(), load(1), loadFonts()]);
     } catch (err) {
       setActionError(errorMessage(err));
     }
   }
+
+  const renderCard = (file: MediaFile) => (
+<li key={file.id}>
+                    <button
+                      type="button"
+                      onClick={() => (onPick ? onPick(file) : setSelected(file))}
+                      aria-label={onPick ? `Use ${file.fileName}` : `Open ${file.fileName}`}
+                      className="group flex w-full flex-col overflow-hidden rounded-lg border border-line bg-surface text-left shadow-xs transition hover:border-brand focus-visible:outline-2 focus-visible:outline-brand"
+                    >
+                      <span className="grid aspect-4/3 place-items-center overflow-hidden bg-canvas">
+                        {file.kind === "IMAGE" ? (
+                          <img src={file.url} alt="" loading="lazy" className="size-full object-cover" />
+                        ) : isFontFile(file) ? (
+                          <Suspense fallback={<span className="text-4xl text-ink">Aa</span>}>
+                            <FontPreview url={file.url} id={file.id} className="text-4xl text-ink" />
+                          </Suspense>
+                        ) : file.kind === "VIDEO" ? (
+                          <Film className="size-8 text-ink-muted" aria-hidden />
+                        ) : (
+                          <FileText className="size-8 text-ink-muted" aria-hidden />
+                        )}
+                      </span>
+                      <span className="flex flex-col px-2 py-1.5">
+                        <span className="truncate text-sm font-medium text-ink">{file.fileName}</span>
+                        <span className="truncate text-xs text-ink-muted">
+                          {formatBytes(file.sizeBytes)}
+                          {file.width && file.height ? ` · ${file.width}×${file.height}` : ""}
+                          {requiresClient && !clientId ? ` · ${file.clientName}` : ""}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+  );
 
   const accept = onlyKind ? ACCEPT_BY_KIND[onlyKind] : ACCEPT_ANY;
   const hasFilters = Boolean(debouncedSearch || (kind && !onlyKind) || folderFilter);
@@ -348,11 +419,11 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
         >
-          {files.length === 0 && loading ? (
+          {files.length === 0 && fonts.length === 0 && loading ? (
             <div className="grid place-items-center py-16">
               <Spinner aria-label="Loading media" />
             </div>
-          ) : files.length === 0 ? (
+          ) : files.length === 0 && fonts.length === 0 ? (
             <div className="px-6 py-14 text-center">
               <span className="mx-auto grid size-12 place-items-center rounded-full bg-brand-soft text-brand">
                 <Images className="size-6" aria-hidden />
@@ -364,35 +435,25 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
             </div>
           ) : (
             <>
+              {fontSection && fonts.length > 0 && (
+                <section aria-labelledby="media-fonts-heading" className="mb-5">
+                  <h2 id="media-fonts-heading" className="mb-1 flex items-center gap-2 text-sm font-semibold text-ink">
+                    <Type className="size-4 text-ink-muted" aria-hidden /> Fonts
+                    <span className="text-xs font-normal text-ink-muted">{fonts.length}</span>
+                  </h2>
+                  <p className="mb-3 text-xs text-ink-muted">
+                    Imported with HTML sites and loaded by their CSS. A font can't be deleted while a site uses it.
+                  </p>
+                  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    {fonts.map((file) => renderCard(file))}
+                  </ul>
+                </section>
+              )}
+              {files.length > 0 && fontSection && fonts.length > 0 && (
+                <h2 className="mb-3 text-sm font-semibold text-ink">Other files</h2>
+              )}
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {files.map((file) => (
-                  <li key={file.id}>
-                    <button
-                      type="button"
-                      onClick={() => (onPick ? onPick(file) : setSelected(file))}
-                      aria-label={onPick ? `Use ${file.fileName}` : `Open ${file.fileName}`}
-                      className="group flex w-full flex-col overflow-hidden rounded-lg border border-line bg-surface text-left shadow-xs transition hover:border-brand focus-visible:outline-2 focus-visible:outline-brand"
-                    >
-                      <span className="grid aspect-4/3 place-items-center overflow-hidden bg-canvas">
-                        {file.kind === "IMAGE" ? (
-                          <img src={file.url} alt="" loading="lazy" className="size-full object-cover" />
-                        ) : file.kind === "VIDEO" ? (
-                          <Film className="size-8 text-ink-muted" aria-hidden />
-                        ) : (
-                          <FileText className="size-8 text-ink-muted" aria-hidden />
-                        )}
-                      </span>
-                      <span className="flex flex-col px-2 py-1.5">
-                        <span className="truncate text-sm font-medium text-ink">{file.fileName}</span>
-                        <span className="truncate text-xs text-ink-muted">
-                          {formatBytes(file.sizeBytes)}
-                          {file.width && file.height ? ` · ${file.width}×${file.height}` : ""}
-                          {requiresClient && !clientId ? ` · ${file.clientName}` : ""}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                {files.map((file) => renderCard(file))}
               </ul>
               {files.length < total && (
                 <div className="mt-4 flex justify-center">
@@ -415,7 +476,8 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
             onSaved={(updated) => {
               setSelected(null);
               setFiles((current) => current.map((file) => (file.id === updated.id ? updated : file)));
-              if (updated.folderId !== selected.folderId) void Promise.all([load(1), loadFolders()]);
+              setFonts((current) => current.map((file) => (file.id === updated.id ? updated : file)));
+              if (updated.folderId !== selected.folderId) void Promise.all([load(1), loadFonts(), loadFolders()]);
             }}
             onDelete={(file) => {
               setSelected(null);

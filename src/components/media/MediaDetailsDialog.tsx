@@ -2,7 +2,8 @@ import { useState, type FormEvent } from "react";
 import { Button, Modal } from "@heroui/react";
 import { Copy, FileText, Trash2 } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
-import { formatBytes, mediaApi, type MediaFile, type MediaFolder } from "../../api/media.ts";
+import { formatBytes, isFontFile, mediaApi, type MediaFile, type MediaFolder } from "../../api/media.ts";
+import FontPreview from "./FontPreview.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../ui/SelectInput.tsx";
 import TextInput from "../ui/TextInput.tsx";
@@ -73,7 +74,14 @@ export default function MediaDetailsDialog({ file, folders, onSaved, onDelete, o
                 <div className="grid min-h-48 place-items-center overflow-hidden rounded-lg border border-line bg-canvas">
                   {file.kind === "IMAGE" && <img src={file.url} alt={file.altText ?? ""} className="max-h-80 w-full object-contain" />}
                   {file.kind === "VIDEO" && <video src={file.url} controls preload="metadata" className="max-h-80 w-full" />}
-                  {file.kind === "DOCUMENT" && (
+                  {isFontFile(file) && (
+                    <div className="flex flex-col items-center gap-3 p-6 text-center text-ink">
+                      <FontPreview url={file.url} id={file.id} className="text-6xl" />
+                      <FontPreview url={file.url} id={file.id} text="The quick brown fox jumps over the lazy dog" className="text-lg" />
+                      <FontPreview url={file.url} id={file.id} text="0123456789 · ABCDEFGHIJKLM" className="text-sm text-ink-muted" />
+                    </div>
+                  )}
+                  {file.kind === "DOCUMENT" && !isFontFile(file) && (
                     <a href={file.url} className="flex flex-col items-center gap-2 p-6 text-sm text-brand hover:underline">
                       <FileText className="size-10" aria-hidden />
                       Download to view

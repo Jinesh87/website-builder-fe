@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Modal, Spinner } from "@heroui/react";
 import { ApiError, errorMessage } from "../../api/http.ts";
-import { describeUsage, mediaApi, type MediaFile, type MediaUsage } from "../../api/media.ts";
+import { describeUsage, isFontFile, mediaApi, type MediaFile, type MediaUsage } from "../../api/media.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 
 type MediaDeleteDialogProps = {
@@ -25,6 +25,7 @@ function usagesFrom(error: unknown): MediaUsage[] | null {
 /** Checks where a file is used before deleting it; in-use files can't be deleted. Mount only while open. */
 export default function MediaDeleteDialog({ file, onDeleted, onClose }: MediaDeleteDialogProps) {
   const [state, setState] = useState<State>({ status: "checking" });
+  const font = isFontFile(file);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -55,7 +56,9 @@ export default function MediaDeleteDialog({ file, onDeleted, onClose }: MediaDel
       <Modal.Container size="sm">
         <Modal.Dialog aria-label={`Delete ${file.fileName}`}>
           <Modal.Header>
-            <Modal.Heading>{state.status === "in-use" ? "This file is in use" : `Delete “${file.fileName}”?`}</Modal.Heading>
+            <Modal.Heading>
+              {state.status === "in-use" ? (font ? "This font is in use" : "This file is in use") : `Delete “${file.fileName}”?`}
+            </Modal.Heading>
           </Modal.Header>
           <Modal.Body>
             <div className="text-sm text-ink-body">
@@ -64,17 +67,36 @@ export default function MediaDeleteDialog({ file, onDeleted, onClose }: MediaDel
                   <Spinner size="sm" aria-label="Checking" /> Checking where this file is used…
                 </p>
               )}
-              {state.status === "unused" && <p>It isn't used on any page, template or saved section. The file is removed from storage.</p>}
+              {state.status === "unused" && (
+                <p>
+                  {font
+                    ? "No site uses this font any more. The font file is removed from storage."
+                    : "It isn't used on any page, template or saved section. The file is removed from storage."}
+                </p>
+              )}
               {state.status === "in-use" && (
                 <>
-                  <p>Remove or replace it in these places first, then delete it:</p>
+                  {font ? (
+                    <FormAlert status="warning">
+                      “{file.fileName}” can't be deleted while it's in use: the places below load it through their imported
+                      CSS, and their text would switch to a fallback font. Remove the blocks that use it, or re-import the site
+                      without this font, first.
+                    </FormAlert>
+                  ) : (
+                    <p>Remove or replace it in these places first, then delete it:</p>
+                  )}
+                  {font && <p className="mt-3">Used by:</p>}
                   <ul aria-label="Used in" className="mt-2 list-disc space-y-1 pl-5">
                     {state.usages.map((usage, index) => (
                       <li key={index}>{describeUsage(usage)}</li>
                     ))}
                   </ul>
                   {state.usages.some((usage) => usage.kind === "LIVE_SITE") && (
-                    <p className="mt-2 text-xs text-ink-muted">For the live site, replace the image in the editor and publish again.</p>
+                    <p className="mt-2 text-xs text-ink-muted">
+                      {font
+                        ? "The published site keeps using the font until you publish again without it."
+                        : "For the live site, replace the image in the editor and publish again."}
+                    </p>
                   )}
                 </>
               )}

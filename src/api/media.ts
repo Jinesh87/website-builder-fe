@@ -60,13 +60,24 @@ export function describeUsage(usage: MediaUsage): string {
 
 export type StorageUsage = { usedBytes: number; limitBytes: number };
 
+/** List filter for web fonts, which HTML imports store as documents with a font/* type. */
+export const MEDIA_FONT_FILTER = "FONT";
+
+/** Web fonts brought in by HTML imports; imported sites load them through their CSS. */
+export function isFontFile(file: Pick<MediaFile, "mimeType">): boolean {
+  return file.mimeType.startsWith("font/");
+}
+
 export type MediaListParams = {
   /** Super Admin only; clients always get their own media. */
   clientId?: string;
   websiteId?: string;
   /** A folder id, or "none" for files outside any folder. */
   folderId?: string;
-  kind?: MediaKind;
+  /** A media kind, or "FONT" for web fonts (imported with HTML sites). */
+  kind?: MediaKind | typeof MEDIA_FONT_FILTER;
+  /** Leaves fonts out of an unfiltered list; the library shows them in their own section. */
+  excludeFonts?: boolean;
   search?: string;
   page?: number;
   pageSize?: number;
@@ -129,10 +140,10 @@ export const ACCEPT_ANY = Object.values(ACCEPT_BY_KIND).join(",");
 
 const BASE = "/media";
 
-function toQuery(params: Record<string, string | number | undefined>): string {
+function toQuery(params: Record<string, string | number | boolean | undefined>): string {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== "") query.set(key, String(value));
+    if (value !== undefined && value !== "" && value !== false) query.set(key, String(value));
   }
   const text = query.toString();
   return text ? `?${text}` : "";
