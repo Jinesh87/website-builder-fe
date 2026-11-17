@@ -350,6 +350,7 @@ export const HERO_VARIANTS = [
   "vintage-editorial",
   "vintage-sunburst",
   "arch-collage",
+  "registration-form",
 ] as const;
 
 export type HeroVariant = (typeof HERO_VARIANTS)[number];
@@ -399,6 +400,25 @@ export type HeroCampaignTickerItem = {
   action: string;
   amount?: string;
   avatarIcon?: string;
+};
+
+/** Small labelled value tile of the registration-form hero, e.g. Fee: Free. */
+export type HeroFact = {
+  label: string;
+  value: string;
+  /** Shows the value in the accent colour. */
+  highlight?: boolean;
+};
+
+/** Sign-up card of the registration-form hero; it posts to the site's contact endpoint like a contact form. */
+export type HeroRegistrationForm = {
+  heading?: string;
+  subheading?: string;
+  submitLabel?: string;
+  /** Small print under the submit button. */
+  note?: string;
+  /** Unset uses DEFAULT_HERO_REGISTRATION_FIELDS. */
+  fields?: ContactFormField[];
 };
 
 export const HERO_ALIGNS = ["left", "center", "right"] as const;
@@ -505,6 +525,12 @@ export type HeroData = {
   };
   sunburstTitleWhite?: string;
   circularPortrait?: ImageRef;
+  // Registration form layout fields
+  /** Small uppercase line above the badge, e.g. "Acme presents". */
+  kicker?: string;
+  heroFacts?: HeroFact[];
+  checklist?: string[];
+  registrationForm?: HeroRegistrationForm;
 };
 
 export type GridColumns = 1 | 2 | 3 | 4;

@@ -17,6 +17,8 @@ export interface ContactFormProps {
   fields?: ContactFormField[];
   /** Lets the server check the answers against the published field list. */
   sectionId?: string;
+  /** Replaces the privacy line beside the submit button. */
+  footerNote?: string;
   onSubmit?: (data: { name: string; email: string; message: string; services: string[] }) => void;
 }
 
@@ -192,6 +194,7 @@ export default function ContactForm({
   serviceOptions,
   fields,
   sectionId,
+  footerNote,
   onSubmit,
 }: ContactFormProps) {
   const endpoint = useContactEndpoint();
@@ -302,7 +305,7 @@ export default function ContactForm({
         <button type="submit" className="wb-btn wb-btn-primary wb-contact-submit-btn" disabled={pending}>
           {pending ? "Sending…" : submitLabel}
         </button>
-        <span className="wb-contact-privacy-note">🔒 We respect your privacy. No spam.</span>
+        <span className="wb-contact-privacy-note">{footerNote ?? "🔒 We respect your privacy. No spam."}</span>
       </div>
       {status && (
         <p className={`wb-contact-form-status${status.ok ? " is-success" : " is-error"}`} role="status">

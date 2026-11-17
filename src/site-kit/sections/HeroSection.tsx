@@ -29,7 +29,15 @@ import {
   heroLayoutVariant,
   vintageHeroPolaroids,
 } from "../hero-layout.ts";
+import {
+  HERO_REGISTRATION_DEFAULTS,
+  heroRegistrationChecklist,
+  heroRegistrationFacts,
+  heroRegistrationFields,
+} from "../hero-registration.ts";
 import type { HeroAlign, HeroAlignElement, HeroData, SectionOf } from "../types.ts";
+import ContactForm from "./ContactFormBackup.tsx";
+import { isLightColor, normalizeHexColor } from "../../utils/colors.ts";
 import CurvedBannerCarousel, {
   DEFAULT_BANNER_ITEMS,
   type CurvedBannerItem,
@@ -1155,6 +1163,113 @@ export default function HeroSection({
                 )}
               </div>
             ))}
+          </div>
+        </div>
+        <BottomShapeDivider shape={data.bottomShape} />
+      </SectionShell>
+    );
+  }
+
+  if (data.variant === "registration-form") {
+    // Headline, key facts and a checklist beside a sign-up card that posts like a contact form.
+    const facts = heroRegistrationFacts(data);
+    const checklist = heroRegistrationChecklist(data);
+    const form = data.registrationForm ?? {};
+    const colors = section.settings.customColors;
+    // The gradient colour doubles as the accent of the kicker, checks and highlighted facts;
+    // a dark custom background is reused for the submit button, as on the original design.
+    const accent = normalizeHexColor(colors?.gradientFrom) ?? normalizeHexColor(colors?.gradientTo);
+    const darkBackground = normalizeHexColor(colors?.background);
+    const registrationStyle = {
+      ...buttonShape.style,
+      ...(accent ? { "--wb-hero-reg-accent": accent } : {}),
+      ...(darkBackground && !isLightColor(darkBackground) ? { "--wb-hero-reg-submit": darkBackground } : {}),
+    } as CSSProperties;
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className={`wb-hero wb-hero-registration-form wb-align-${baseAlign ?? "left"} ${
+          section.settings.customColors?.gradientFrom || section.settings.customColors?.gradientTo
+            ? ""
+            : "wb-hero-reg-solid-highlight"
+        } ${minHeightClass} ${buttonShape.className}`}
+        style={registrationStyle}
+        label="Hero"
+      >
+        <div className="wb-hero-grid">
+          <div className="wb-hero-copy" {...(baseAlign ? { "data-wb-content-align": baseAlign } : {})}>
+            {data.kicker && (
+              <span className="wb-hero-reg-kicker" {...alignAttr(alignOf("badge"))}>
+                {parseRichText(data.kicker)}
+              </span>
+            )}
+            {(data.eyebrow || data.badgeIcon) && (
+              <div className="wb-hero-badge" {...alignAttr(alignOf("badge"))}>
+                {data.badgeIcon && <span>{data.badgeIcon}</span>}
+                {data.eyebrow && <span>{parseRichText(data.eyebrow)}</span>}
+              </div>
+            )}
+            {data.heading
+              ? renderHighlightedHeading(
+                  data.heading,
+                  data.highlightText,
+                  Boolean(
+                    section.settings.customColors?.gradientFrom ||
+                      section.settings.customColors?.gradientTo,
+                  ),
+                  alignOf("heading"),
+                )
+              : null}
+            {data.subheading && (
+              <p className="wb-hero-sub wb-muted" {...alignAttr(alignOf("subheading"))}>
+                {parseRichText(data.subheading)}
+              </p>
+            )}
+            {data.description && (
+              <p className="wb-hero-desc wb-muted" {...alignAttr(alignOf("description"))}>
+                {parseRichText(data.description)}
+              </p>
+            )}
+            {facts.length > 0 && (
+              <dl className="wb-hero-reg-facts" data-count={facts.length}>
+                {facts.map((fact, index) => (
+                  <div key={`${fact.label}-${index}`} className="wb-hero-reg-fact">
+                    <dt>{parseRichText(fact.label)}</dt>
+                    <dd className={fact.highlight ? "is-highlight" : undefined}>{parseRichText(fact.value)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {checklist.length > 0 && (
+              <ul className="wb-hero-reg-checklist">
+                {checklist.map((item, index) => (
+                  <li key={`${item}-${index}`}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                      <path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span>{parseRichText(item)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {actions}
+            <TrustedByStrip trustedBy={data.trustedBy} align={alignOf("trustedBy")} />
+          </div>
+
+          <div className="wb-hero-reg-card">
+            <div className="wb-hero-reg-card-head">
+              <strong>{parseRichText(form.heading || HERO_REGISTRATION_DEFAULTS.heading)}</strong>
+              {form.subheading && <span>{parseRichText(form.subheading)}</span>}
+            </div>
+            <div className="wb-hero-reg-card-body">
+              <ContactForm
+                submitLabel={form.submitLabel || HERO_REGISTRATION_DEFAULTS.submitLabel}
+                fields={heroRegistrationFields(data)}
+                sectionId={section.id}
+                footerNote={form.note ?? ""}
+              />
+            </div>
           </div>
         </div>
         <BottomShapeDivider shape={data.bottomShape} />

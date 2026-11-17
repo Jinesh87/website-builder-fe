@@ -35,6 +35,7 @@ const PLACEMENT_LOCKED_HERO_VARIANTS: readonly HeroVariant[] = [
   "vintage-editorial",
   "vintage-sunburst",
   "arch-collage",
+  "registration-form",
 ];
 
 /** The hero variant whose layout matches a media placement, keeping the current variant when it already fits. */

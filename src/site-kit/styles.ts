@@ -4,6 +4,7 @@ import { BLOG_CSS } from "./blog-styles.ts";
 import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
 import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
 import { HERO_CONTROLS_CSS } from "./hero-controls-styles.ts";
+import { HERO_REGISTRATION_CSS } from "./hero-registration-styles.ts";
 import { CARDS_CSS } from "./cards-styles.ts";
 import { SHOP_CSS } from "./shop-styles.ts";
 import { VINTAGE_CSS } from "./vintage-styles.ts";
@@ -7615,7 +7616,7 @@ details[open] > summary .wb-faq-plus {
 .wb-align-left .wb-hero-rating {
   justify-content: flex-start;
 }
-.wb-align-left .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards):not(.wb-hero-arch-collage) .wb-hero-copy {
+.wb-align-left .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards):not(.wb-hero-arch-collage):not(.wb-hero-registration-form) .wb-hero-copy {
   align-items: flex-start;
 }
 .wb-align-left .wb-stat { text-align: left; }
@@ -7643,7 +7644,7 @@ details[open] > summary .wb-faq-plus {
 .wb-align-center .wb-hero-rating {
   justify-content: center;
 }
-.wb-align-center .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards):not(.wb-hero-arch-collage) .wb-hero-copy {
+.wb-align-center .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards):not(.wb-hero-arch-collage):not(.wb-hero-registration-form) .wb-hero-copy {
   align-items: center;
 }
 .wb-align-center .wb-stat { text-align: center; }
@@ -7671,7 +7672,7 @@ details[open] > summary .wb-faq-plus {
 .wb-align-right .wb-hero-rating {
   justify-content: flex-end;
 }
-.wb-align-right .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards):not(.wb-hero-arch-collage) .wb-hero-copy {
+.wb-align-right .wb-hero:not(.wb-hero-split):not(.wb-hero-split-left):not(.wb-hero-asymmetric):not(.wb-hero-floating-cards):not(.wb-hero-arch-collage):not(.wb-hero-registration-form) .wb-hero-copy {
   align-items: flex-end;
 }
 .wb-align-right .wb-stat { text-align: right; }
@@ -10240,6 +10241,7 @@ ${BLOG_CSS}
 ${PREMIUM_HEADER_CSS}
 ${CONTACT_BUILDER_CSS}
 ${HERO_CONTROLS_CSS}
+${HERO_REGISTRATION_CSS}
 ${CARDS_CSS}
 ${SHOP_CSS}
 ${ACCOUNT_CSS}

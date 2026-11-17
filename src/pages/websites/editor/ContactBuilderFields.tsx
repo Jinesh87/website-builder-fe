@@ -177,12 +177,31 @@ export function ContactFormFieldsEditor({ data, onChange }: Props) {
   }
 
   return (
+    <FormFieldsList
+      fields={fields}
+      onChange={(formFields) => onChange({ ...data, formFields })}
+      onReset={() => onChange({ ...data, formFields: undefined })}
+    />
+  );
+}
+
+/** Editable list of form fields; also used by the registration-form hero. */
+export function FormFieldsList({
+  fields,
+  onChange,
+  onReset,
+}: {
+  fields: ContactFormField[];
+  onChange: (fields: ContactFormField[]) => void;
+  onReset: () => void;
+}) {
+  return (
     <div className="flex flex-col gap-2">
       <ItemList<ContactFormField>
         label="Form fields (drag to reorder)"
         items={fields}
         max={CONTACT_LIMITS.maxFields}
-        onChange={(formFields) => onChange({ ...data, formFields })}
+        onChange={onChange}
         create={() => createContactField("text", fields.map((field) => field.id))}
         itemTitle={(field) =>
           `${field.label || "Untitled field"} · ${CONTACT_FIELD_TYPE_LABELS[field.type]}${field.required ? " *" : ""}`
@@ -197,7 +216,7 @@ export function ContactFormFieldsEditor({ data, onChange }: Props) {
       )}
       <button
         type="button"
-        onClick={() => onChange({ ...data, formFields: undefined })}
+        onClick={onReset}
         className="self-start text-ed-2xs font-medium text-ed-muted underline-offset-2 hover:text-ed-text hover:underline"
       >
         Reset to default fields

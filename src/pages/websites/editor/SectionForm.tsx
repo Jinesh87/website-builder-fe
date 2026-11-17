@@ -90,6 +90,7 @@ import { Bold, Italic, Film, Waves, Compass, Sparkles } from "lucide-react";
 import { isVintageHero, VintageHeroFields } from "./VintageHeroFields.tsx";
 import { heroPlacementForVariant, heroVariantForPlacement } from "../../../site-kit/hero-layout.ts";
 import { HeroFloatingCardsFields } from "./HeroFloatingCardsFields.tsx";
+import { HeroRegistrationFields } from "./HeroRegistrationFields.tsx";
 import ClapperContactFields from "./ClapperContactFields.tsx";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
@@ -539,6 +540,10 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
               value: "arch-collage",
               label: "Arch photo collage (Headline beside a tall arched photo & two tiles)",
             },
+            {
+              value: "registration-form",
+              label: "Registration form (Headline, key facts & sign-up form card)",
+            },
           ]}
           onChange={(value) => {
             const variant = value as HeroData["variant"];
@@ -619,6 +624,10 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
 
       {data.variant === "floating-cards" && (
         <HeroFloatingCardsFields data={data} onChange={onChange} />
+      )}
+
+      {data.variant === "registration-form" && (
+        <HeroRegistrationFields data={data} onChange={onChange} />
       )}
 
       {data.variant === "curved-carousel" && (
