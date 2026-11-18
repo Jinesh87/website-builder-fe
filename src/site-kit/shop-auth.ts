@@ -591,6 +591,66 @@ export function fullNameFromForm(form: HTMLFormElement): string {
  * Plain script for the account section on the published page: asks who is signed in, then shows
  * the member view filled with their data (or the guest prompt), and wires tabs, forms and logout.
  */
+/** Tracking timeline helpers shared by the account popup and the public tracking popup (JS source). */
+const ORDER_TIMELINE_JS = `
+    function trackingSteps(status){
+      var steps=[
+        { key:"paid", label:"Order received" },
+        { key:"processing", label:"Processing" },
+        { key:"shipped", label:"Shipped" },
+        { key:"delivered", label:"Delivered" }
+      ];
+      if(status==="returned") steps.push({ key:"returned", label:"Returned" });
+      if(status==="cancelled") steps.push({ key:"cancelled", label:"Cancelled" });
+      if(status==="failed") steps.push({ key:"failed", label:"Failed" });
+      return steps;
+    }
+    function maxFulfillmentReached(timeline){
+      var keys=["paid","processing","shipped","delivered"];
+      var max=-1;
+      (timeline||[]).forEach(function(event){
+        var index=keys.indexOf(String(event.status||""));
+        if(index>max) max=index;
+      });
+      return max;
+    }
+    function timelineHit(timeline, key){
+      for(var i=(timeline||[]).length-1;i>=0;i--){ if(timeline[i].status===key) return timeline[i]; }
+      return null;
+    }
+    function trackingStepClass(index, step, status, timeline){
+      var steps=trackingSteps(status);
+      var statusIndex=-1;
+      for(var i=0;i<steps.length;i++){ if(steps[i].key===status){ statusIndex=i; break; } }
+      var reached=maxFulfillmentReached(timeline);
+      var current=statusIndex>=0?statusIndex:Math.max(reached,-1);
+      var terminal=status==="returned"||status==="cancelled"||status==="failed";
+      var done=terminal
+        ? (index<current && (index<=reached || !!timelineHit(timeline, step.key)))
+        : index<current;
+      var isCurrent=index===current && current>=0;
+      return (done?" is-done":"")+(isCurrent?" is-current":"");
+    }
+    function timelineHtml(order, variant){
+      var status=String(order.status||"pending");
+      var steps=trackingSteps(status);
+      var timeline=order.timeline||[];
+      if(variant==="steps"){
+        return '<div class="wb-acct-steps">'+steps.map(function(step, index){
+          return '<div class="wb-acct-step'+trackingStepClass(index, step, status, timeline)+'">'+step.label+"</div>";
+        }).join("")+"</div>";
+      }
+      return '<ol class="wb-acct-timeline'+(variant==="compact"?" wb-acct-order-compact":"")+'">'+steps.map(function(step, index){
+        var hit=timelineHit(timeline, step.key);
+        return '<li class="wb-acct-timeline-step'+trackingStepClass(index, step, status, timeline)+'"><span class="wb-acct-timeline-dot" aria-hidden="true"></span><div>'+
+          '<span class="wb-acct-timeline-label">'+step.label+"</span>"+
+          (hit&&hit.createdAt?'<span class="wb-acct-timeline-time">'+day(hit.createdAt)+"</span>":"")+
+          (hit&&hit.note?'<span class="wb-acct-timeline-note">'+String(hit.note)+"</span>":"")+
+          "</div></li>";
+      }).join("")+"</ol>";
+    }
+`;
+
 export const SHOP_ACCOUNT_SCRIPT = `(function(){
   // Drop legacy ?checkout=1 so old Buy links cannot auto-open Razorpay.
   try{
@@ -1125,6 +1185,261 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     });
     if(!(opts&&opts.skipUrl)) syncPanelUrl(name);
   }
+${ORDER_TIMELINE_JS}
+    function themeModal(modal, fromRoot){
+      var site=(fromRoot&&fromRoot.closest&&fromRoot.closest(".wb-site"))||document.querySelector(".wb-site");
+      var styleText=site&&site.getAttribute("style");
+      if(styleText) modal.setAttribute("style", styleText);
+      var cs=site?window.getComputedStyle(site):null;
+      var bg=(cs&&cs.getPropertyValue("--wb-bg").trim())||"#ffffff";
+      var fg=(cs&&cs.getPropertyValue("--wb-text").trim())||"#1a1d23";
+      var dialog=modal.querySelector(".wb-acct-order-dialog, .wb-acct-success-dialog");
+      if(dialog){
+        dialog.style.setProperty("background-color", bg, "important");
+        dialog.style.setProperty("color", fg, "important");
+      }
+    }
+    /** Order detail popup with tracking timeline; cfg says where the order lives (member /orders/:id or guest /track/:token). */
+    function openOrderModal(cfg, orderId, opts){
+      var root=cfg.root, base=cfg.base;
+      if(!orderId) return;
+      var startCancel=!!(opts&&opts.startCancel);
+      var startReturn=!!(opts&&opts.startReturn);
+      request(base, cfg.path(orderId), "GET").then(function(result){
+        if(!result.ok) return;
+        var order=(result.json&&result.json.order)||{};
+        var variant=root.getAttribute("data-wb-order-detail-variant")||"timeline";
+        var existing=document.querySelector("body > [data-wb-account-order-modal]");
+        if(existing) existing.remove();
+        var modal=document.createElement("div");
+        modal.className="wb-acct-order-modal";
+        modal.setAttribute("data-wb-account-order-modal","");
+        var items=(order.items||[]).map(function(item){
+          return '<div class="wb-acct-order-item"><div><strong>'+String(item.productName||"Item")+"</strong><span> · "+String(item.variantName||"")+" · Qty "+String(item.quantity||1)+'</span></div><strong>'+money(item.lineTotalPaise)+"</strong></div>";
+        }).join("");
+        var status=String(order.status||"pending");
+        var badgesHtml='<div class="wb-acct-badges"><span class="wb-acct-badge is-'+status+'">'+status+"</span>";
+        var refund=String(order.refundStatus||"none");
+        if(refund==="pending") badgesHtml+='<span class="wb-acct-badge is-refund-pending">Refund pending</span>';
+        else if(refund==="processed") badgesHtml+='<span class="wb-acct-badge is-refund-processed">Refunded</span>';
+        else if(refund==="failed") badgesHtml+='<span class="wb-acct-badge is-refund-failed">Refund failed</span>';
+        badgesHtml+="</div>";
+        var invoiceBlock="";
+        if(order.canDownloadInvoice || order.paidAt){
+          invoiceBlock='<div class="wb-acct-invoice-actions"><a class="wb-acct-invoice-download" href="'+cfg.invoiceHref(order, orderId)+'" target="_blank" rel="noreferrer">Download invoice</a></div>';
+        }
+        var cancelBlock="";
+        if(order.canCancel){
+          cancelBlock=
+            '<div class="wb-acct-cancel" data-wb-cancel-box>'+
+              '<button type="button" class="wb-acct-cancel-open" data-wb-cancel-open'+(startCancel?" hidden":"")+'>Cancel this order</button>'+
+              '<form class="wb-acct-cancel-form" data-wb-cancel-form'+(startCancel?"":" hidden")+'>'+
+                '<p class="wb-acct-cancel-title">Cancel order</p>'+
+                '<label class="wb-acct-cancel-label">Reason'+
+                  '<textarea name="reason" rows="2" maxlength="500" required placeholder="e.g. Ordered by mistake" class="wb-acct-cancel-reason"></textarea>'+
+                "</label>"+
+                '<p class="wb-acct-cancel-hint">Paid orders are refunded automatically.</p>'+
+                '<p class="wb-acct-form-msg" data-wb-cancel-msg hidden></p>'+
+                '<div class="wb-acct-cancel-actions">'+
+                  '<button type="button" class="wb-acct-cancel-keep" data-wb-cancel-back>Keep order</button>'+
+                  '<button type="submit" class="wb-acct-cancel-confirm" data-wb-cancel-submit>Confirm</button>'+
+                "</div>"+
+              "</form>"+
+            "</div>";
+        } else if(order.cancelReason){
+          cancelBlock='<p class="wb-acct-cancel-reason-view"><strong>Cancel reason:</strong> '+String(order.cancelReason)+"</p>";
+        }
+        var returnUntilHint="";
+        if(order.returnUntil){
+          try{ returnUntilHint="Return by "+day(order.returnUntil)+". "; }catch(_e){}
+        }
+        var returnBlock="";
+        if(order.canReturn){
+          returnBlock=
+            '<div class="wb-acct-return" data-wb-return-box>'+
+              '<button type="button" class="wb-acct-return-open" data-wb-return-open'+(startReturn?" hidden":"")+'>Return this order</button>'+
+              '<form class="wb-acct-return-form" data-wb-return-form'+(startReturn?"":" hidden")+'>'+
+                '<p class="wb-acct-return-title">Return order</p>'+
+                '<label class="wb-acct-return-label">Reason'+
+                  '<textarea name="reason" rows="2" maxlength="500" required placeholder="e.g. Wrong size / damaged" class="wb-acct-return-reason"></textarea>'+
+                "</label>"+
+                '<p class="wb-acct-return-hint">'+returnUntilHint+"Paid orders are refunded automatically.</p>"+
+                '<p class="wb-acct-form-msg" data-wb-return-msg hidden></p>'+
+                '<div class="wb-acct-return-actions">'+
+                  '<button type="button" class="wb-acct-return-keep" data-wb-return-back>Keep order</button>'+
+                  '<button type="submit" class="wb-acct-return-confirm" data-wb-return-submit>Confirm return</button>'+
+                "</div>"+
+              "</form>"+
+            "</div>";
+        } else if(order.returnReason){
+          returnBlock='<p class="wb-acct-return-reason-view"><strong>Return reason:</strong> '+String(order.returnReason)+"</p>";
+        }
+        modal.innerHTML=
+          '<button type="button" class="wb-acct-order-backdrop" aria-label="Close order"></button>'+
+          '<div class="wb-acct-order-dialog is-'+variant+'" role="dialog" aria-modal="true">'+
+            '<div class="wb-acct-order-head"><div><h3 class="wb-acct-success-title">Order #'+String(order.number||"")+'</h3>'+
+            '<p class="wb-acct-success-text">Placed '+day(order.createdAt)+"</p></div>"+
+            '<button type="button" class="wb-acct-order-close" aria-label="Close">×</button></div>'+
+            badgesHtml+
+            invoiceBlock+
+            '<div class="wb-acct-order-items">'+items+"</div>"+
+            '<p class="wb-acct-success-meta"><strong>Total '+money(order.totalPaise)+"</strong></p>"+
+            cancelBlock+
+            returnBlock+
+            '<div class="wb-acct-order-tracking" data-wb-order-tracking'+(startCancel||startReturn?" hidden":"")+'>'+
+              '<h4 class="wb-acct-panel-title" style="margin-top:18px">Tracking</h4>'+
+              timelineHtml(order, variant)+
+            "</div>"+
+          "</div>";
+        themeModal(modal, root);
+        function close(){ modal.remove(); }
+        modal.querySelectorAll(".wb-acct-order-backdrop,.wb-acct-order-close").forEach(function(btn){ btn.addEventListener("click", close); });
+        var openBtn=modal.querySelector("[data-wb-cancel-open]");
+        var form=modal.querySelector("[data-wb-cancel-form]");
+        var backBtn=modal.querySelector("[data-wb-cancel-back]");
+        var msgEl=modal.querySelector("[data-wb-cancel-msg]");
+        var returnOpenBtn=modal.querySelector("[data-wb-return-open]");
+        var returnForm=modal.querySelector("[data-wb-return-form]");
+        var returnBackBtn=modal.querySelector("[data-wb-return-back]");
+        var returnMsgEl=modal.querySelector("[data-wb-return-msg]");
+        var tracking=modal.querySelector("[data-wb-order-tracking]");
+        if(openBtn&&form){
+          openBtn.addEventListener("click", function(){
+            openBtn.hidden=true;
+            form.hidden=false;
+            if(returnOpenBtn) returnOpenBtn.hidden=true;
+            if(returnForm) returnForm.hidden=true;
+            if(tracking) tracking.hidden=true;
+            var area=form.querySelector("textarea");
+            if(area) area.focus();
+          });
+          if(startCancel){
+            var area=form.querySelector("textarea");
+            if(area) setTimeout(function(){ area.focus(); }, 40);
+          }
+        }
+        if(backBtn&&form&&openBtn){
+          backBtn.addEventListener("click", function(){
+            form.hidden=true;
+            openBtn.hidden=false;
+            if(returnOpenBtn) returnOpenBtn.hidden=false;
+            if(tracking) tracking.hidden=false;
+            if(msgEl){ msgEl.hidden=true; msgEl.textContent=""; }
+          });
+        }
+        if(returnOpenBtn&&returnForm){
+          returnOpenBtn.addEventListener("click", function(){
+            returnOpenBtn.hidden=true;
+            returnForm.hidden=false;
+            if(openBtn) openBtn.hidden=true;
+            if(form) form.hidden=true;
+            if(tracking) tracking.hidden=true;
+            var area=returnForm.querySelector("textarea");
+            if(area) area.focus();
+          });
+          if(startReturn){
+            var returnArea=returnForm.querySelector("textarea");
+            if(returnArea) setTimeout(function(){ returnArea.focus(); }, 40);
+          }
+        }
+        if(returnBackBtn&&returnForm&&returnOpenBtn){
+          returnBackBtn.addEventListener("click", function(){
+            returnForm.hidden=true;
+            returnOpenBtn.hidden=false;
+            if(openBtn) openBtn.hidden=false;
+            if(tracking) tracking.hidden=false;
+            if(returnMsgEl){ returnMsgEl.hidden=true; returnMsgEl.textContent=""; }
+          });
+        }
+        if(form){
+          form.addEventListener("submit", function(event){
+            event.preventDefault();
+            var reason=((form.querySelector('textarea[name="reason"]')||{}).value||"").trim();
+            if(reason.length<3){
+              if(msgEl){ msgEl.hidden=false; msgEl.textContent="Please share a short reason."; msgEl.className="wb-acct-form-msg is-error"; }
+              return;
+            }
+            var submit=form.querySelector("[data-wb-cancel-submit]");
+            if(submit) submit.disabled=true;
+            if(msgEl){ msgEl.hidden=true; msgEl.textContent=""; }
+            request(base, cfg.path(orderId)+"/cancel", "POST", { reason:reason }).then(function(cancelResult){
+              if(submit) submit.disabled=false;
+              if(!cancelResult.ok){
+                if(msgEl){
+                  msgEl.hidden=false;
+                  msgEl.className="wb-acct-form-msg is-error";
+                  msgEl.textContent=(cancelResult.json&&cancelResult.json.error&&cancelResult.json.error.message)||"Could not cancel this order.";
+                }
+                return;
+              }
+              var cancelled=(cancelResult.json&&cancelResult.json.order)||{};
+              var notice=cancelled.failureReason||"Order cancelled.";
+              Promise.resolve(cfg.refresh()).then(function(){
+                close();
+                openOrderModal(cfg, orderId);
+                setTimeout(function(){
+                  var next=document.querySelector("body > [data-wb-account-order-modal] .wb-acct-order-dialog");
+                  if(!next) return;
+                  var flash=document.createElement("p");
+                  flash.className="wb-acct-form-msg is-ok";
+                  flash.textContent=notice;
+                  var head=next.querySelector(".wb-acct-order-head");
+                  if(head&&head.nextSibling) next.insertBefore(flash, head.nextSibling);
+                  else next.appendChild(flash);
+                }, 120);
+              });
+            }).catch(function(){
+              if(submit) submit.disabled=false;
+              if(msgEl){ msgEl.hidden=false; msgEl.className="wb-acct-form-msg is-error"; msgEl.textContent="Can't reach the server. Try again."; }
+            });
+          });
+        }
+        if(returnForm){
+          returnForm.addEventListener("submit", function(event){
+            event.preventDefault();
+            var reason=((returnForm.querySelector('textarea[name="reason"]')||{}).value||"").trim();
+            if(reason.length<3){
+              if(returnMsgEl){ returnMsgEl.hidden=false; returnMsgEl.textContent="Please share a short reason."; returnMsgEl.className="wb-acct-form-msg is-error"; }
+              return;
+            }
+            var submit=returnForm.querySelector("[data-wb-return-submit]");
+            if(submit) submit.disabled=true;
+            if(returnMsgEl){ returnMsgEl.hidden=true; returnMsgEl.textContent=""; }
+            request(base, cfg.path(orderId)+"/return", "POST", { reason:reason }).then(function(returnResult){
+              if(submit) submit.disabled=false;
+              if(!returnResult.ok){
+                if(returnMsgEl){
+                  returnMsgEl.hidden=false;
+                  returnMsgEl.className="wb-acct-form-msg is-error";
+                  returnMsgEl.textContent=(returnResult.json&&returnResult.json.error&&returnResult.json.error.message)||"Could not return this order.";
+                }
+                return;
+              }
+              var returned=(returnResult.json&&returnResult.json.order)||{};
+              var notice=returned.failureReason||"Return accepted.";
+              Promise.resolve(cfg.refresh()).then(function(){
+                close();
+                openOrderModal(cfg, orderId);
+                setTimeout(function(){
+                  var next=document.querySelector("body > [data-wb-account-order-modal] .wb-acct-order-dialog");
+                  if(!next) return;
+                  var flash=document.createElement("p");
+                  flash.className="wb-acct-form-msg is-ok";
+                  flash.textContent=notice;
+                  var head=next.querySelector(".wb-acct-order-head");
+                  if(head&&head.nextSibling) next.insertBefore(flash, head.nextSibling);
+                  else next.appendChild(flash);
+                }, 120);
+              });
+            }).catch(function(){
+              if(submit) submit.disabled=false;
+              if(returnMsgEl){ returnMsgEl.hidden=false; returnMsgEl.className="wb-acct-form-msg is-error"; returnMsgEl.textContent="Can't reach the server. Try again."; }
+            });
+          });
+        }
+        document.body.appendChild(modal);
+      });
+    }
   function bind(root, base, loginHref, logoutHref){
     if(root.getAttribute("data-wb-account-bound")) return;
     root.setAttribute("data-wb-account-bound","1");
@@ -1539,313 +1854,14 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       var applyBtn=root.querySelector("[data-wb-account-coupon-apply]");
       if(applyBtn) applyBtn.click();
     });
-    function trackingSteps(status){
-      var steps=[
-        { key:"paid", label:"Order received" },
-        { key:"processing", label:"Processing" },
-        { key:"shipped", label:"Shipped" },
-        { key:"delivered", label:"Delivered" }
-      ];
-      if(status==="returned") steps.push({ key:"returned", label:"Returned" });
-      if(status==="cancelled") steps.push({ key:"cancelled", label:"Cancelled" });
-      if(status==="failed") steps.push({ key:"failed", label:"Failed" });
-      return steps;
-    }
-    function maxFulfillmentReached(timeline){
-      var keys=["paid","processing","shipped","delivered"];
-      var max=-1;
-      (timeline||[]).forEach(function(event){
-        var index=keys.indexOf(String(event.status||""));
-        if(index>max) max=index;
-      });
-      return max;
-    }
-    function timelineHit(timeline, key){
-      for(var i=(timeline||[]).length-1;i>=0;i--){ if(timeline[i].status===key) return timeline[i]; }
-      return null;
-    }
-    function trackingStepClass(index, step, status, timeline){
-      var steps=trackingSteps(status);
-      var statusIndex=-1;
-      for(var i=0;i<steps.length;i++){ if(steps[i].key===status){ statusIndex=i; break; } }
-      var reached=maxFulfillmentReached(timeline);
-      var current=statusIndex>=0?statusIndex:Math.max(reached,-1);
-      var terminal=status==="returned"||status==="cancelled"||status==="failed";
-      var done=terminal
-        ? (index<current && (index<=reached || !!timelineHit(timeline, step.key)))
-        : index<current;
-      var isCurrent=index===current && current>=0;
-      return (done?" is-done":"")+(isCurrent?" is-current":"");
-    }
-    function timelineHtml(order, variant){
-      var status=String(order.status||"pending");
-      var steps=trackingSteps(status);
-      var timeline=order.timeline||[];
-      if(variant==="steps"){
-        return '<div class="wb-acct-steps">'+steps.map(function(step, index){
-          return '<div class="wb-acct-step'+trackingStepClass(index, step, status, timeline)+'">'+step.label+"</div>";
-        }).join("")+"</div>";
-      }
-      return '<ol class="wb-acct-timeline'+(variant==="compact"?" wb-acct-order-compact":"")+'">'+steps.map(function(step, index){
-        var hit=timelineHit(timeline, step.key);
-        return '<li class="wb-acct-timeline-step'+trackingStepClass(index, step, status, timeline)+'"><span class="wb-acct-timeline-dot" aria-hidden="true"></span><div>'+
-          '<span class="wb-acct-timeline-label">'+step.label+"</span>"+
-          (hit&&hit.createdAt?'<span class="wb-acct-timeline-time">'+day(hit.createdAt)+"</span>":"")+
-          (hit&&hit.note?'<span class="wb-acct-timeline-note">'+String(hit.note)+"</span>":"")+
-          "</div></li>";
-      }).join("")+"</ol>";
-    }
-    function themeModal(modal, fromRoot){
-      var site=(fromRoot&&fromRoot.closest&&fromRoot.closest(".wb-site"))||document.querySelector(".wb-site");
-      var styleText=site&&site.getAttribute("style");
-      if(styleText) modal.setAttribute("style", styleText);
-      var cs=site?window.getComputedStyle(site):null;
-      var bg=(cs&&cs.getPropertyValue("--wb-bg").trim())||"#ffffff";
-      var fg=(cs&&cs.getPropertyValue("--wb-text").trim())||"#1a1d23";
-      var dialog=modal.querySelector(".wb-acct-order-dialog, .wb-acct-success-dialog");
-      if(dialog){
-        dialog.style.setProperty("background-color", bg, "important");
-        dialog.style.setProperty("color", fg, "important");
-      }
-    }
     function openOrderDetail(orderId, opts){
-      if(!orderId) return;
-      var startCancel=!!(opts&&opts.startCancel);
-      var startReturn=!!(opts&&opts.startReturn);
-      request(base, "/orders/"+orderId, "GET").then(function(result){
-        if(!result.ok) return;
-        var order=(result.json&&result.json.order)||{};
-        var variant=root.getAttribute("data-wb-order-detail-variant")||"timeline";
-        var existing=document.querySelector("body > [data-wb-account-order-modal]");
-        if(existing) existing.remove();
-        var modal=document.createElement("div");
-        modal.className="wb-acct-order-modal";
-        modal.setAttribute("data-wb-account-order-modal","");
-        var items=(order.items||[]).map(function(item){
-          return '<div class="wb-acct-order-item"><div><strong>'+String(item.productName||"Item")+"</strong><span> · "+String(item.variantName||"")+" · Qty "+String(item.quantity||1)+'</span></div><strong>'+money(item.lineTotalPaise)+"</strong></div>";
-        }).join("");
-        var status=String(order.status||"pending");
-        var badgesHtml='<div class="wb-acct-badges"><span class="wb-acct-badge is-'+status+'">'+status+"</span>";
-        var refund=String(order.refundStatus||"none");
-        if(refund==="pending") badgesHtml+='<span class="wb-acct-badge is-refund-pending">Refund pending</span>';
-        else if(refund==="processed") badgesHtml+='<span class="wb-acct-badge is-refund-processed">Refunded</span>';
-        else if(refund==="failed") badgesHtml+='<span class="wb-acct-badge is-refund-failed">Refund failed</span>';
-        badgesHtml+="</div>";
-        var invoiceBlock="";
-        if(order.canDownloadInvoice || order.paidAt){
-          invoiceBlock='<div class="wb-acct-invoice-actions"><a class="wb-acct-invoice-download" href="'+base+"/orders/"+encodeURIComponent(String(order.id||""))+'/invoice" target="_blank" rel="noreferrer">Download invoice</a></div>';
-        }
-        var cancelBlock="";
-        if(order.canCancel){
-          cancelBlock=
-            '<div class="wb-acct-cancel" data-wb-cancel-box>'+
-              '<button type="button" class="wb-acct-cancel-open" data-wb-cancel-open'+(startCancel?" hidden":"")+'>Cancel this order</button>'+
-              '<form class="wb-acct-cancel-form" data-wb-cancel-form'+(startCancel?"":" hidden")+'>'+
-                '<p class="wb-acct-cancel-title">Cancel order</p>'+
-                '<label class="wb-acct-cancel-label">Reason'+
-                  '<textarea name="reason" rows="2" maxlength="500" required placeholder="e.g. Ordered by mistake" class="wb-acct-cancel-reason"></textarea>'+
-                "</label>"+
-                '<p class="wb-acct-cancel-hint">Paid orders are refunded automatically.</p>'+
-                '<p class="wb-acct-form-msg" data-wb-cancel-msg hidden></p>'+
-                '<div class="wb-acct-cancel-actions">'+
-                  '<button type="button" class="wb-acct-cancel-keep" data-wb-cancel-back>Keep order</button>'+
-                  '<button type="submit" class="wb-acct-cancel-confirm" data-wb-cancel-submit>Confirm</button>'+
-                "</div>"+
-              "</form>"+
-            "</div>";
-        } else if(order.cancelReason){
-          cancelBlock='<p class="wb-acct-cancel-reason-view"><strong>Cancel reason:</strong> '+String(order.cancelReason)+"</p>";
-        }
-        var returnUntilHint="";
-        if(order.returnUntil){
-          try{ returnUntilHint="Return by "+day(order.returnUntil)+". "; }catch(_e){}
-        }
-        var returnBlock="";
-        if(order.canReturn){
-          returnBlock=
-            '<div class="wb-acct-return" data-wb-return-box>'+
-              '<button type="button" class="wb-acct-return-open" data-wb-return-open'+(startReturn?" hidden":"")+'>Return this order</button>'+
-              '<form class="wb-acct-return-form" data-wb-return-form'+(startReturn?"":" hidden")+'>'+
-                '<p class="wb-acct-return-title">Return order</p>'+
-                '<label class="wb-acct-return-label">Reason'+
-                  '<textarea name="reason" rows="2" maxlength="500" required placeholder="e.g. Wrong size / damaged" class="wb-acct-return-reason"></textarea>'+
-                "</label>"+
-                '<p class="wb-acct-return-hint">'+returnUntilHint+"Paid orders are refunded automatically.</p>"+
-                '<p class="wb-acct-form-msg" data-wb-return-msg hidden></p>'+
-                '<div class="wb-acct-return-actions">'+
-                  '<button type="button" class="wb-acct-return-keep" data-wb-return-back>Keep order</button>'+
-                  '<button type="submit" class="wb-acct-return-confirm" data-wb-return-submit>Confirm return</button>'+
-                "</div>"+
-              "</form>"+
-            "</div>";
-        } else if(order.returnReason){
-          returnBlock='<p class="wb-acct-return-reason-view"><strong>Return reason:</strong> '+String(order.returnReason)+"</p>";
-        }
-        modal.innerHTML=
-          '<button type="button" class="wb-acct-order-backdrop" aria-label="Close order"></button>'+
-          '<div class="wb-acct-order-dialog is-'+variant+'" role="dialog" aria-modal="true">'+
-            '<div class="wb-acct-order-head"><div><h3 class="wb-acct-success-title">Order #'+String(order.number||"")+'</h3>'+
-            '<p class="wb-acct-success-text">Placed '+day(order.createdAt)+"</p></div>"+
-            '<button type="button" class="wb-acct-order-close" aria-label="Close">×</button></div>'+
-            badgesHtml+
-            invoiceBlock+
-            '<div class="wb-acct-order-items">'+items+"</div>"+
-            '<p class="wb-acct-success-meta"><strong>Total '+money(order.totalPaise)+"</strong></p>"+
-            cancelBlock+
-            returnBlock+
-            '<div class="wb-acct-order-tracking" data-wb-order-tracking'+(startCancel||startReturn?" hidden":"")+'>'+
-              '<h4 class="wb-acct-panel-title" style="margin-top:18px">Tracking</h4>'+
-              timelineHtml(order, variant)+
-            "</div>"+
-          "</div>";
-        themeModal(modal, root);
-        function close(){ modal.remove(); }
-        modal.querySelectorAll(".wb-acct-order-backdrop,.wb-acct-order-close").forEach(function(btn){ btn.addEventListener("click", close); });
-        var openBtn=modal.querySelector("[data-wb-cancel-open]");
-        var form=modal.querySelector("[data-wb-cancel-form]");
-        var backBtn=modal.querySelector("[data-wb-cancel-back]");
-        var msgEl=modal.querySelector("[data-wb-cancel-msg]");
-        var returnOpenBtn=modal.querySelector("[data-wb-return-open]");
-        var returnForm=modal.querySelector("[data-wb-return-form]");
-        var returnBackBtn=modal.querySelector("[data-wb-return-back]");
-        var returnMsgEl=modal.querySelector("[data-wb-return-msg]");
-        var tracking=modal.querySelector("[data-wb-order-tracking]");
-        if(openBtn&&form){
-          openBtn.addEventListener("click", function(){
-            openBtn.hidden=true;
-            form.hidden=false;
-            if(returnOpenBtn) returnOpenBtn.hidden=true;
-            if(returnForm) returnForm.hidden=true;
-            if(tracking) tracking.hidden=true;
-            var area=form.querySelector("textarea");
-            if(area) area.focus();
-          });
-          if(startCancel){
-            var area=form.querySelector("textarea");
-            if(area) setTimeout(function(){ area.focus(); }, 40);
-          }
-        }
-        if(backBtn&&form&&openBtn){
-          backBtn.addEventListener("click", function(){
-            form.hidden=true;
-            openBtn.hidden=false;
-            if(returnOpenBtn) returnOpenBtn.hidden=false;
-            if(tracking) tracking.hidden=false;
-            if(msgEl){ msgEl.hidden=true; msgEl.textContent=""; }
-          });
-        }
-        if(returnOpenBtn&&returnForm){
-          returnOpenBtn.addEventListener("click", function(){
-            returnOpenBtn.hidden=true;
-            returnForm.hidden=false;
-            if(openBtn) openBtn.hidden=true;
-            if(form) form.hidden=true;
-            if(tracking) tracking.hidden=true;
-            var area=returnForm.querySelector("textarea");
-            if(area) area.focus();
-          });
-          if(startReturn){
-            var returnArea=returnForm.querySelector("textarea");
-            if(returnArea) setTimeout(function(){ returnArea.focus(); }, 40);
-          }
-        }
-        if(returnBackBtn&&returnForm&&returnOpenBtn){
-          returnBackBtn.addEventListener("click", function(){
-            returnForm.hidden=true;
-            returnOpenBtn.hidden=false;
-            if(openBtn) openBtn.hidden=false;
-            if(tracking) tracking.hidden=false;
-            if(returnMsgEl){ returnMsgEl.hidden=true; returnMsgEl.textContent=""; }
-          });
-        }
-        if(form){
-          form.addEventListener("submit", function(event){
-            event.preventDefault();
-            var reason=((form.querySelector('textarea[name="reason"]')||{}).value||"").trim();
-            if(reason.length<3){
-              if(msgEl){ msgEl.hidden=false; msgEl.textContent="Please share a short reason."; msgEl.className="wb-acct-form-msg is-error"; }
-              return;
-            }
-            var submit=form.querySelector("[data-wb-cancel-submit]");
-            if(submit) submit.disabled=true;
-            if(msgEl){ msgEl.hidden=true; msgEl.textContent=""; }
-            request(base, "/orders/"+orderId+"/cancel", "POST", { reason:reason }).then(function(cancelResult){
-              if(submit) submit.disabled=false;
-              if(!cancelResult.ok){
-                if(msgEl){
-                  msgEl.hidden=false;
-                  msgEl.className="wb-acct-form-msg is-error";
-                  msgEl.textContent=(cancelResult.json&&cancelResult.json.error&&cancelResult.json.error.message)||"Could not cancel this order.";
-                }
-                return;
-              }
-              var cancelled=(cancelResult.json&&cancelResult.json.order)||{};
-              var notice=cancelled.failureReason||"Order cancelled.";
-              refreshAccount().then(function(){
-                close();
-                openOrderDetail(orderId);
-                setTimeout(function(){
-                  var next=document.querySelector("body > [data-wb-account-order-modal] .wb-acct-order-dialog");
-                  if(!next) return;
-                  var flash=document.createElement("p");
-                  flash.className="wb-acct-form-msg is-ok";
-                  flash.textContent=notice;
-                  var head=next.querySelector(".wb-acct-order-head");
-                  if(head&&head.nextSibling) next.insertBefore(flash, head.nextSibling);
-                  else next.appendChild(flash);
-                }, 120);
-              });
-            }).catch(function(){
-              if(submit) submit.disabled=false;
-              if(msgEl){ msgEl.hidden=false; msgEl.className="wb-acct-form-msg is-error"; msgEl.textContent="Can't reach the server. Try again."; }
-            });
-          });
-        }
-        if(returnForm){
-          returnForm.addEventListener("submit", function(event){
-            event.preventDefault();
-            var reason=((returnForm.querySelector('textarea[name="reason"]')||{}).value||"").trim();
-            if(reason.length<3){
-              if(returnMsgEl){ returnMsgEl.hidden=false; returnMsgEl.textContent="Please share a short reason."; returnMsgEl.className="wb-acct-form-msg is-error"; }
-              return;
-            }
-            var submit=returnForm.querySelector("[data-wb-return-submit]");
-            if(submit) submit.disabled=true;
-            if(returnMsgEl){ returnMsgEl.hidden=true; returnMsgEl.textContent=""; }
-            request(base, "/orders/"+orderId+"/return", "POST", { reason:reason }).then(function(returnResult){
-              if(submit) submit.disabled=false;
-              if(!returnResult.ok){
-                if(returnMsgEl){
-                  returnMsgEl.hidden=false;
-                  returnMsgEl.className="wb-acct-form-msg is-error";
-                  returnMsgEl.textContent=(returnResult.json&&returnResult.json.error&&returnResult.json.error.message)||"Could not return this order.";
-                }
-                return;
-              }
-              var returned=(returnResult.json&&returnResult.json.order)||{};
-              var notice=returned.failureReason||"Return accepted.";
-              refreshAccount().then(function(){
-                close();
-                openOrderDetail(orderId);
-                setTimeout(function(){
-                  var next=document.querySelector("body > [data-wb-account-order-modal] .wb-acct-order-dialog");
-                  if(!next) return;
-                  var flash=document.createElement("p");
-                  flash.className="wb-acct-form-msg is-ok";
-                  flash.textContent=notice;
-                  var head=next.querySelector(".wb-acct-order-head");
-                  if(head&&head.nextSibling) next.insertBefore(flash, head.nextSibling);
-                  else next.appendChild(flash);
-                }, 120);
-              });
-            }).catch(function(){
-              if(submit) submit.disabled=false;
-              if(returnMsgEl){ returnMsgEl.hidden=false; returnMsgEl.className="wb-acct-form-msg is-error"; returnMsgEl.textContent="Can't reach the server. Try again."; }
-            });
-          });
-        }
-        document.body.appendChild(modal);
-      });
+      return openOrderModal({
+        root:root,
+        base:base,
+        path:function(id){ return "/orders/"+id; },
+        invoiceHref:function(order){ return base+"/orders/"+encodeURIComponent(String(order.id||""))+"/invoice"; },
+        refresh:refreshAccount
+      }, orderId, opts);
     }
     function openInvoice(orderId){
       if(!orderId) return;
@@ -1887,6 +1903,13 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       themeModal(modal, rootNode);
       function close(){ modal.remove(); }
       modal.querySelectorAll(".wb-acct-success-backdrop,[data-wb-success-close]").forEach(function(btn){ btn.addEventListener("click", close); });
+      var memberTrack=modal.querySelector("[data-wb-success-track]");
+      if(memberTrack&&order.id) memberTrack.addEventListener("click", function(event){
+        event.preventDefault();
+        close();
+        activatePanel(rootNode, tabs, "orders");
+        openOrderDetail(String(order.id||""));
+      });
       var view=modal.querySelector("[data-wb-success-view]");
       if(view) view.addEventListener("click", function(){
         close();
@@ -2087,6 +2110,14 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     root.setAttribute("data-wb-account-bound","1");
     root.setAttribute("data-wb-guest-session","1");
     var base=apiBase()+"/shop/"+websiteId+"/auth";
+    // Guests open the same order detail + tracking popup as members, through the order's tracking token.
+    var guestOrderCfg={
+      root:root,
+      base:base,
+      path:function(token){ return "/track/"+encodeURIComponent(token); },
+      invoiceHref:function(order, token){ return base+"/track/"+encodeURIComponent(token)+"/invoice?format=pdf"; },
+      refresh:function(){ return refreshGuestCart(); }
+    };
     var tabs=Array.prototype.slice.call(root.querySelectorAll("[data-wb-account-tab]"));
     var guestAddress=null;
     var guestWishlist=[];
@@ -2284,6 +2315,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       });
     }
     function refreshGuestCart(){ return refreshGuestAccount(); }
+    window.addEventListener("wb:order-updated", function(){ refreshGuestCart(); });
     // Guest orders open the public tracking page (status, items, invoice) instead of the signed-in order popup.
     function renderGuestOrders(){
       var list=root.querySelector('[data-wb-account-list="orders"]');
@@ -2303,13 +2335,28 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         if(refund==="pending") badges.appendChild(el("span","wb-acct-badge is-refund-pending","Refund pending"));
         else if(refund==="processed") badges.appendChild(el("span","wb-acct-badge is-refund-processed","Refunded"));
         if(href){
+          if(order.canCancel){
+            var cancelLink=el("a","wb-acct-row-cancel","Cancel");
+            cancelLink.setAttribute("href", href+"&wbTrackAction=cancel");
+            badges.appendChild(cancelLink);
+          }
+          if(order.canReturn){
+            var returnLink=el("a","wb-acct-row-return","Return");
+            returnLink.setAttribute("href", href+"&wbTrackAction=return");
+            badges.appendChild(returnLink);
+          }
           var track=el("a","wb-acct-row-invoice","Track order");
           track.setAttribute("href", href);
           badges.appendChild(track);
-          row.addEventListener("click", function(event){
-            if(event.target&&event.target.closest&&event.target.closest("a")) return;
-            window.location.href=href;
-          });
+          (function(token){
+            row.addEventListener("click", function(event){
+              var link=event.target&&event.target.closest&&event.target.closest("a");
+              event.preventDefault();
+              var startCancel=!!(link&&link.classList.contains("wb-acct-row-cancel"));
+              var startReturn=!!(link&&link.classList.contains("wb-acct-row-return"));
+              openOrderModal(guestOrderCfg, token, { startCancel:startCancel, startReturn:startReturn });
+            });
+          })(String(order.trackToken));
         }
         row.appendChild(badges);
         row.appendChild(el("strong","wb-acct-row-amount",money(order.totalPaise)));
@@ -2457,11 +2504,18 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
           '<p class="wb-acct-success-text">'+text+"</p>"+
           '<div class="wb-acct-success-meta"><strong>Order #'+String(order.number||"")+"</strong><span>"+money(order.totalPaise)+"</span></div>"+
           '<div class="wb-acct-success-actions">'+
-            (trackHref?'<a class="wb-acct-button is-pay" href="'+trackHref+'" style="text-decoration:none;text-align:center">Track order</a>':"")+
+            (trackHref?'<a class="wb-acct-button is-pay" data-wb-success-track href="'+trackHref+'" style="text-decoration:none;text-align:center">Track order</a>':"")+
             '<button type="button" class="wb-acct-button" data-wb-success-close style="background:transparent;color:inherit;border:1px solid var(--wb-border)">Continue shopping</button>'+
           "</div></div>";
       function close(){ modal.remove(); }
       modal.querySelectorAll(".wb-acct-success-backdrop,[data-wb-success-close]").forEach(function(btn){ btn.addEventListener("click", close); });
+      var trackBtn=modal.querySelector("[data-wb-success-track]");
+      if(trackBtn&&order.trackToken) trackBtn.addEventListener("click", function(event){
+        event.preventDefault();
+        close();
+        activatePanel(rootNode, tabs, "orders");
+        openOrderModal(guestOrderCfg, String(order.trackToken));
+      });
       document.body.appendChild(modal);
     }
     tabs.forEach(function(tab){
@@ -3619,11 +3673,20 @@ export const SHOP_TRACK_SCRIPT = `(function(){
     return String(value==null?"":value)
       .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
-  var token=params().get("wbOrderTrack");
-  if(!token) return;
+  function day(iso){
+    var d=new Date(iso||"");
+    if(isNaN(d.getTime())) return "";
+    try{ return d.toLocaleDateString("en-IN",{ day:"numeric", month:"short", year:"numeric" }); }catch(_e){ return ""; }
+  }
+${ORDER_TIMELINE_JS}
+  // Opens the tracking popup on the current page.
+  function openTrack(token, startAction){
+  if(!token) return false;
   var root=document.querySelector("[data-wb-shop-website]");
   var websiteId=root&&root.getAttribute("data-wb-shop-website");
-  if(!websiteId) return;
+  if(!websiteId) return false;
+  var previous=document.querySelector("body > [data-wb-order-track-modal]");
+  if(previous) previous.remove();
   function money(paise){
     try{ return new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR"}).format((Number(paise)||0)/100); }
     catch(_e){ return "₹"+((Number(paise)||0)/100).toFixed(2); }
@@ -3665,6 +3728,7 @@ export const SHOP_TRACK_SCRIPT = `(function(){
     try{
       var url=new URL(window.location.href);
       url.searchParams.delete("wbOrderTrack");
+      url.searchParams.delete("wbTrackAction");
       window.history.replaceState({}, "", url.pathname+url.search+url.hash);
     }catch(_e){}
   }
@@ -3673,7 +3737,100 @@ export const SHOP_TRACK_SCRIPT = `(function(){
   });
   var body=modal.querySelector("[data-wb-track-body]");
   var invoice=modal.querySelector("[data-wb-track-invoice]");
-  fetch(apiBase()+"/shop/"+websiteId+"/auth/track/"+encodeURIComponent(token),{credentials:"include",cache:"no-store"})
+  var actions=modal.querySelector(".wb-order-track-actions");
+  var trackBase=apiBase()+"/shop/"+websiteId+"/auth/track/"+encodeURIComponent(token);
+  var current=null;
+  function clearOrderButtons(){
+    actions.querySelectorAll("[data-wb-track-action]").forEach(function(btn){ btn.remove(); });
+  }
+  function render(order, notice){
+    current=order;
+    var status=String(order.status||"pending");
+    var statusClass=status.replace(/[^a-z0-9-]/gi,"").toLowerCase();
+    var items=(order.items||[]).map(function(item){
+      return '<li class="wb-order-track-item">'+
+        '<div class="wb-order-track-item-main">'+
+          "<strong>"+esc(item.productName||"Item")+"</strong>"+
+          "<span>"+esc(item.variantName||"")+(item.variantName?" · ":"")+"Qty "+esc(item.quantity)+"</span>"+
+        "</div>"+
+        '<div class="wb-order-track-item-price">'+esc(money(item.lineTotalPaise))+"</div>"+
+      "</li>";
+    }).join("");
+    body.innerHTML=
+      (notice?'<p class="wb-order-track-notice">'+esc(notice)+"</p>":"")+
+      '<div class="wb-order-track-summary">'+
+        '<p class="wb-order-track-row"><span>Order</span><strong>#'+esc(order.number||"")+"</strong></p>"+
+        '<p class="wb-order-track-row"><span>Status</span><strong><span class="wb-order-track-badge is-'+esc(statusClass)+'">'+esc(status)+"</span></strong></p>"+
+        '<p class="wb-order-track-row"><span>Total</span><strong>'+esc(money(order.totalPaise))+"</strong></p>"+
+        (order.returnUntil&&order.canReturn?'<p class="wb-order-track-row"><span>Return by</span><strong>'+esc(new Date(order.returnUntil).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}))+"</strong></p>":"")+
+      "</div>"+
+      (items?'<ul class="wb-order-track-items">'+items+"</ul>":"")+
+      '<div class="wb-order-track-timeline"><h4 class="wb-acct-panel-title">Tracking</h4>'+
+        timelineHtml(order, (document.querySelector("[data-wb-order-detail-variant]")||{getAttribute:function(){return null;}}).getAttribute("data-wb-order-detail-variant")||"timeline")+
+      "</div>";
+    invoice.hidden=!order.canDownloadInvoice;
+    if(order.canDownloadInvoice) invoice.href=trackBase+"/invoice?format=pdf";
+    clearOrderButtons();
+    [["return","Return order",order.canReturn],["cancel","Cancel order",order.canCancel]].forEach(function(spec){
+      if(!spec[2]) return;
+      var btn=document.createElement("button");
+      btn.type="button";
+      btn.className="wb-acct-button is-ghost";
+      btn.setAttribute("data-wb-track-action", spec[0]);
+      btn.textContent=spec[1];
+      btn.addEventListener("click", function(){ askReason(spec[0]); });
+      actions.insertBefore(btn, actions.firstChild);
+    });
+  }
+  function askReason(kind){
+    if(!current) return;
+    var cancel=kind==="cancel";
+    clearOrderButtons();
+    invoice.hidden=true;
+    body.innerHTML=
+      '<form class="wb-order-track-reason" data-wb-track-reason>'+
+        "<p><strong>"+(cancel?"Cancel order #":"Return order #")+esc(current.number||"")+"</strong></p>"+
+        '<label class="wb-order-track-label">'+(cancel?"Why are you cancelling?":"Why are you returning this order?")+
+          '<textarea name="reason" rows="3" minlength="3" maxlength="500" required class="wb-order-track-input"></textarea>'+
+        "</label>"+
+        '<p class="wb-order-track-error" data-wb-track-reason-error hidden></p>'+
+        '<div class="wb-order-track-reason-actions">'+
+          '<button type="submit" class="wb-acct-button is-pay">'+(cancel?"Cancel order":"Request return")+"</button>"+
+          '<button type="button" class="wb-acct-button is-ghost" data-wb-track-back>Back</button>'+
+        "</div>"+
+      "</form>";
+    var form=body.querySelector("[data-wb-track-reason]");
+    var error=body.querySelector("[data-wb-track-reason-error]");
+    var input=form.querySelector("textarea");
+    if(input) input.focus();
+    body.querySelector("[data-wb-track-back]").addEventListener("click", function(){ render(current); });
+    form.addEventListener("submit", function(event){
+      event.preventDefault();
+      var reason=String((input&&input.value)||"").trim();
+      if(reason.length<3){ error.hidden=false; error.textContent="Please share a short reason (at least 3 characters)."; return; }
+      var submit=form.querySelector('[type="submit"]');
+      if(submit) submit.disabled=true;
+      error.hidden=true;
+      fetch(trackBase+"/"+kind,{ method:"POST", credentials:"include", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ reason:reason }) })
+        .then(function(response){ return response.json().catch(function(){ return {}; }).then(function(json){ return { ok:response.ok, json:json }; }); })
+        .then(function(result){
+          if(!result.ok){
+            if(submit) submit.disabled=false;
+            error.hidden=false;
+            error.textContent=(result.json&&result.json.error&&result.json.error.message)||"That didn't go through. Please try again.";
+            return;
+          }
+          render((result.json&&result.json.order)||current, cancel?"Your order has been cancelled.":"Your return request has been sent.");
+          try{ window.dispatchEvent(new CustomEvent("wb:order-updated")); }catch(_e){}
+        })
+        .catch(function(){
+          if(submit) submit.disabled=false;
+          error.hidden=false;
+          error.textContent="Can\'t reach the server.";
+        });
+    });
+  }
+  fetch(trackBase,{credentials:"include",cache:"no-store"})
     .then(function(response){ return response.json().then(function(json){ return { ok:response.ok, json:json }; }); })
     .then(function(result){
       if(!result.ok){
@@ -3681,30 +3838,16 @@ export const SHOP_TRACK_SCRIPT = `(function(){
         return;
       }
       var order=result.json.order||{};
-      var status=String(order.status||"pending");
-      var statusClass=status.replace(/[^a-z0-9-]/gi,"").toLowerCase();
-      var items=(order.items||[]).map(function(item){
-        return '<li class="wb-order-track-item">'+
-          '<div class="wb-order-track-item-main">'+
-            "<strong>"+esc(item.productName||"Item")+"</strong>"+
-            "<span>"+esc(item.variantName||"")+(item.variantName?" · ":"")+"Qty "+esc(item.quantity)+"</span>"+
-          "</div>"+
-          '<div class="wb-order-track-item-price">'+esc(money(item.lineTotalPaise))+"</div>"+
-        "</li>";
-      }).join("");
-      body.innerHTML=
-        '<div class="wb-order-track-summary">'+
-          '<p class="wb-order-track-row"><span>Order</span><strong>#'+esc(order.number||"")+"</strong></p>"+
-          '<p class="wb-order-track-row"><span>Status</span><strong><span class="wb-order-track-badge is-'+esc(statusClass)+'">'+esc(status)+"</span></strong></p>"+
-          '<p class="wb-order-track-row"><span>Total</span><strong>'+esc(money(order.totalPaise))+"</strong></p>"+
-        "</div>"+
-        (items?'<ul class="wb-order-track-items">'+items+"</ul>":"");
-      if(order.canDownloadInvoice){
-        invoice.hidden=false;
-        invoice.href=apiBase()+"/shop/"+websiteId+"/auth/track/"+encodeURIComponent(token)+"/invoice?format=pdf";
-      }
+      render(order);
+      if(startAction==="cancel"&&order.canCancel) askReason("cancel");
+      else if(startAction==="return"&&order.canReturn) askReason("return");
     })
     .catch(function(){
       body.innerHTML='<p class="wb-order-track-error">Can\\'t reach the server.</p>';
     });
+  return true;
+  }
+  window.__wbOpenOrderTrack=openTrack;
+  var initialToken=params().get("wbOrderTrack");
+  if(initialToken) openTrack(initialToken, params().get("wbTrackAction"));
 })();`;

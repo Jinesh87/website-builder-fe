@@ -436,11 +436,16 @@ export const ACCOUNT_CSS = `
   font-family: var(--wb-font-body, system-ui, -apple-system, "Segoe UI", sans-serif);
 }
 /* Editor canvas: keep the popup inside the section, not over the whole builder UI. */
-.wb-acct-root.is-editor-preview { position: relative; min-height: 560px; }
+/* The backdrop covers the whole section (not just the content column), and a tall popup starts at the top
+   instead of being centred past the section's top edge, where it couldn't be scrolled to. */
+.wb-account:has(.wb-acct-root.is-editor-preview) { position: relative; }
+.wb-acct-root.is-editor-preview { position: static; min-height: 640px; }
 .wb-acct-root.is-editor-preview .wb-acct-success-modal,
 .wb-acct-root.is-editor-preview .wb-acct-order-modal {
-  position: absolute; z-index: 5;
+  position: absolute; z-index: 5; align-items: safe center;
 }
+.wb-acct-root.is-editor-preview .wb-acct-success-dialog,
+.wb-acct-root.is-editor-preview .wb-acct-order-dialog { max-height: calc(100% - 24px); }
 .wb-acct-success-modal[hidden], .wb-acct-order-modal[hidden] { display: none !important; }
 .wb-acct-success-backdrop, .wb-acct-order-backdrop {
   position: absolute; inset: 0; border: 0; padding: 0; margin: 0; cursor: pointer;
@@ -740,6 +745,16 @@ export const ACCOUNT_CSS = `
   margin: 0; color: var(--wb-muted); font-size: 0.95rem; line-height: 1.45;
 }
 .wb-order-track-error { color: #b91c1c; }
+.wb-order-track-notice { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, #047857 10%, transparent); color: #047857; font-weight: 600; font-size: 0.9rem; }
+.wb-order-track-reason { display: flex; flex-direction: column; gap: 12px; }
+.wb-order-track-reason p { margin: 0; }
+.wb-order-track-label { display: flex; flex-direction: column; gap: 6px; font-size: 0.9rem; font-weight: 600; }
+.wb-order-track-input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid color-mix(in srgb, currentColor 22%, transparent); border-radius: 10px; font: inherit; font-weight: 400; background: transparent; color: inherit; resize: vertical; }
+.wb-order-track-reason-actions { display: flex; gap: 8px; }
+.wb-order-track-reason-actions .wb-acct-button { margin: 0; min-height: 44px; box-sizing: border-box; }
+.wb-order-track-reason-actions .wb-acct-button.is-pay { flex: 1; }
+.wb-order-track-reason-actions .wb-acct-button.is-ghost { background: transparent; color: var(--wb-text); border: 1px solid var(--wb-border); box-shadow: none; }
+a.wb-acct-row-cancel, a.wb-acct-row-return, a.wb-acct-row-invoice { text-decoration: none; }
 .wb-order-track-summary {
   display: grid; gap: 10px; padding: 14px; border-radius: var(--wb-acct-field-r);
   background: var(--wb-acct-soft); border: 1px solid var(--wb-border);
@@ -773,7 +788,7 @@ export const ACCOUNT_CSS = `
   flex: none; display: grid; gap: 8px; padding: 14px 20px 18px;
   border-top: 1px solid var(--wb-border); background: var(--wb-acct-soft);
 }
-.wb-order-track-actions .wb-acct-button { width: 100%; min-height: 46px; }
+.wb-order-track-actions .wb-acct-button { width: 100%; min-height: 46px; box-sizing: border-box; }
 .wb-order-track-actions .wb-acct-button.is-ghost {
   background: transparent; color: var(--wb-text); border: 1px solid var(--wb-border); box-shadow: none;
 }
