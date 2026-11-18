@@ -780,10 +780,12 @@ export default function SiteHeader({
         <header className={classes}>
           <div className="wb-container wb-drawer-header-inner wb-header-inner wb-side-drawer-inner">
             <div className="wb-side-brand">{brand}</div>
-            <div className="wb-side-summary-pill wb-side-tagline">
-              <span className="wb-pulse-dot wb-side-indicator-dot" />
-              <span className="wb-side-summary-text">{parseRichText(header.tagline || "Digital Studio & Platform")}</span>
-            </div>
+            {header.tagline?.trim() && (
+              <div className="wb-side-summary-pill wb-side-tagline">
+                <span className="wb-pulse-dot wb-side-indicator-dot" />
+                <span className="wb-side-summary-text">{parseRichText(header.tagline)}</span>
+              </div>
+            )}
             <div className="wb-side-actions">
               {header.cta && <HeaderCtaButton link={header.cta} tone="primary" />}
               <button
