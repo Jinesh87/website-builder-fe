@@ -5,11 +5,12 @@ import type { SectionOf } from "../types.ts";
 export default function SplitSection({ section }: { section: SectionOf<"split"> }) {
   const { data } = section;
   const polaroid = data.imageStyle === "polaroid";
+  const arch = data.imageStyle === "arch";
   return (
     <SectionShell
       sectionId={section.id}
       settings={section.settings}
-      className={`wb-split wb-split-${data.imagePosition}${polaroid ? " wb-split-vintage" : ""}`}
+      className={`wb-split wb-split-${data.imagePosition}${polaroid ? " wb-split-vintage" : ""}${arch ? " wb-split-arch" : ""}`}
       label={data.heading}
     >
       <div className="wb-split-grid">
@@ -31,9 +32,10 @@ export default function SplitSection({ section }: { section: SectionOf<"split"> 
               ))}
             </ul>
           )}
+          {data.signature && <p className="wb-split-signature">{parseRichText(data.signature)}</p>}
           {data.cta && (
             <div className="wb-actions">
-              <SiteButton link={data.cta} />
+              <SiteButton link={data.cta} tone={arch ? "secondary" : "primary"} />
             </div>
           )}
         </div>
@@ -52,7 +54,7 @@ export default function SplitSection({ section }: { section: SectionOf<"split"> 
               <SiteImage image={data.image} />
             )
           ) : (
-            <div className="wb-media-placeholder" aria-hidden="true" />
+            <div className={`wb-media-placeholder${arch ? " wb-split-arch-empty" : ""}`} aria-hidden="true" />
           )}
         </div>
       </div>

@@ -31,6 +31,11 @@ export const MEDIA_SIZE = {
   servicesShowcase: sizeForAspect("16:10", 1600),
   galleryImage: sizeForAspect("4:3", 1200),
   splitImage: sizeForAspect("4:3", 1200),
+  /** Arched story photo of the split section, about 480 px tall. */
+  splitArch: "900 × 1100 px (portrait)",
+  /** Collection cards (about 220 × 240) and the split banner photo (half of the banner). */
+  collectionCard: "700 × 760 px (portrait)",
+  ctaBanner: sizeForAspect("4:3", 1200),
   /** Logo strips show logos 40 px tall. */
   logo: "240 × 80 px",
   avatar: sizeForAspect("1:1", 200),

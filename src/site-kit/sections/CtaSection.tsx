@@ -1,5 +1,38 @@
-import { parseRichText, SectionShell, SiteButton, SiteLink } from "../primitives.tsx";
-import type { SectionOf } from "../types.ts";
+import { useState, type CSSProperties, type FormEvent } from "react";
+import { brandIconFor } from "../brand-icons.ts";
+import { parseRichText, SectionShell, SiteButton, SiteIcon, SiteImage, SiteLink } from "../primitives.tsx";
+import { useStaticRender } from "../render-mode.tsx";
+import type { CtaData, SectionOf } from "../types.ts";
+
+/** Email signup of the "newsletter" CTA; the published page's runtime shows the same thank-you line. */
+function CtaNewsletterForm({ data }: { data: CtaData }) {
+  const isStatic = useStaticRender();
+  const [done, setDone] = useState(false);
+  const thanks = data.successText || "Thank you for subscribing!";
+  if (done && !isStatic) return <p className="wb-newsletter-thanks" role="status">{thanks}</p>;
+  return (
+    <form
+      className="wb-newsletter-form wb-cta-newsletter-form"
+      data-wb-success={thanks}
+      onSubmit={(event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setDone(true);
+      }}
+    >
+      <input
+        type="email"
+        name="email"
+        required
+        placeholder={data.placeholder || "Your email address"}
+        aria-label="Email address"
+        className="wb-newsletter-input"
+      />
+      <button type="submit" className="wb-btn wb-btn-primary">
+        {data.button?.label || "Subscribe"}
+      </button>
+    </form>
+  );
+}
 
 function CheckIcon() {
   return (
@@ -25,6 +58,69 @@ export default function CtaSection({ section }: { section: SectionOf<"cta"> }) {
   const variant = data.variant || "centered-card";
   const cardStyle = data.cardStyle || "default";
   const align = data.align || section.settings.align || "center";
+
+  if (variant === "split-banner") {
+    // Coloured text panel beside a photo; the panel colour defaults to the theme's secondary colour.
+    const style = (data.panelColor ? { "--wb-cta-panel": data.panelColor } : undefined) as CSSProperties | undefined;
+    return (
+      <SectionShell sectionId={section.id} settings={section.settings} className="wb-cta-split-banner" label={data.heading}>
+        <div className="wb-cta-banner-split" style={style}>
+          <div className="wb-cta-banner-text">
+            {data.eyebrow && <p className="wb-eyebrow">{parseRichText(data.eyebrow)}</p>}
+            <h2>{parseRichText(data.heading)}</h2>
+            {data.text && <p className="wb-cta-banner-desc">{parseRichText(data.text)}</p>}
+            {(data.button || data.secondaryButton) && (
+              <div className="wb-actions">
+                {data.button && <SiteLink link={data.button} className="wb-btn wb-cta-banner-light-btn" />}
+                {data.secondaryButton && <SiteLink link={data.secondaryButton} className="wb-btn wb-cta-banner-ghost-btn" />}
+              </div>
+            )}
+          </div>
+          <div className={`wb-cta-banner-media${data.image?.url ? "" : " is-empty"}`}>
+            {data.image?.url && <SiteImage image={data.image} />}
+          </div>
+        </div>
+      </SectionShell>
+    );
+  }
+
+  if (variant === "inline-bar") {
+    // One-line card: round icon badge, heading and text, and a button. Brand icons (e.g. WhatsApp) tint the badge and button.
+    const brand = brandIconFor(data.icon);
+    const style = (brand ? { "--wb-cta-accent": `color-mix(in srgb, ${brand.color} 62%, #000)` } : undefined) as
+      | CSSProperties
+      | undefined;
+    return (
+      <SectionShell sectionId={section.id} settings={section.settings} className="wb-cta-inline-bar" label={data.heading}>
+        <div className="wb-cta-inline-card" style={style}>
+          {data.icon && (
+            <span className="wb-cta-inline-icon">
+              <SiteIcon name={data.icon} size={24} />
+            </span>
+          )}
+          <div className="wb-cta-inline-copy">
+            {data.eyebrow && <p className="wb-eyebrow">{parseRichText(data.eyebrow)}</p>}
+            <h3>{parseRichText(data.heading)}</h3>
+            {data.text && <p className="wb-muted">{parseRichText(data.text)}</p>}
+          </div>
+          {data.button && <SiteLink link={data.button} className="wb-btn wb-cta-inline-btn" />}
+        </div>
+      </SectionShell>
+    );
+  }
+
+  if (variant === "newsletter") {
+    return (
+      <SectionShell sectionId={section.id} settings={section.settings} className="wb-cta-newsletter" label={data.heading}>
+        <div className="wb-cta-newsletter-inner">
+          {data.eyebrow && <p className="wb-eyebrow">{parseRichText(data.eyebrow)}</p>}
+          <h2>{parseRichText(data.heading)}</h2>
+          {data.text && <p className="wb-muted">{parseRichText(data.text)}</p>}
+          <CtaNewsletterForm data={data} />
+        </div>
+      </SectionShell>
+    );
+  }
 
   if (variant === "vintage-story") {
     return (

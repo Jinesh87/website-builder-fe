@@ -267,7 +267,7 @@ export function SelectField<T extends string | number>({
           </span>
           <ChevronDown className="size-3.5 shrink-0 text-ed-muted" />
         </Button>
-        <Dropdown.Popover className="min-w-(--trigger-width) rounded-ed-lg border border-ed-border bg-ed-panel p-1 shadow-ed-pop z-(--z-ed-popover)">
+        <Dropdown.Popover className="min-w-(--trigger-width) max-h-72 overflow-y-auto overscroll-contain rounded-ed-lg border border-ed-border bg-ed-panel p-1 shadow-ed-pop z-(--z-ed-popover)">
           <Dropdown.Menu
             selectionMode="single"
             selectedKeys={new Set([String(value)])}

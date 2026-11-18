@@ -13,6 +13,7 @@ import {
   SiteImage,
   SiteLink,
 } from "../primitives.tsx";
+import { accountPanelHref } from "../shop-auth.ts";
 import { useShopCatalog } from "../shop-catalog.tsx";
 import type { BrandDisplayMode, HeaderData, HeaderMenuItem, ImageRef, LinkRef, SectionSettings } from "../types.ts";
 import { chromeStyle } from "./chrome.ts";
@@ -217,6 +218,64 @@ function ActionButtons({ header }: { header: HeaderData }) {
     <div className="wb-header-cta">
       {header.secondaryCta && <HeaderCtaButton link={header.secondaryCta} tone="secondary" />}
       {header.cta && <HeaderCtaButton link={header.cta} tone="primary" />}
+    </div>
+  );
+}
+
+/** Search, account and cart shortcuts of the boutique header; each can be switched off. */
+function BoutiqueShopIcons({ header }: { header: HeaderData }) {
+  const catalog = useShopCatalog();
+  const accountHref = catalog?.accountHref || "/account";
+  const icons: { key: string; label: string; href: string; path: ReactNode }[] = [];
+  if (header.showSearch !== false) {
+    icons.push({
+      key: "search",
+      label: "Search products",
+      href: header.shopHref || "/shop",
+      path: (
+        <>
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.5-3.5" />
+        </>
+      ),
+    });
+  }
+  if (header.showAccount !== false) {
+    icons.push({
+      key: "account",
+      label: "Account",
+      href: accountHref,
+      path: (
+        <>
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+        </>
+      ),
+    });
+  }
+  if (header.showCart !== false) {
+    icons.push({
+      key: "cart",
+      label: "Cart",
+      href: accountPanelHref(accountHref, "cart"),
+      path: (
+        <>
+          <path d="M5 8h14l-1 13H6L5 8z" />
+          <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+        </>
+      ),
+    });
+  }
+  if (icons.length === 0) return null;
+  return (
+    <div className="wb-boutique-icons">
+      {icons.map((icon) => (
+        <a key={icon.key} href={icon.href} className="wb-boutique-icon" aria-label={icon.label}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            {icon.path}
+          </svg>
+        </a>
+      ))}
     </div>
   );
 }
@@ -830,6 +889,35 @@ export default function SiteHeader({
             </div>
           </div>
         )}
+        <MobileDrawer isOpen={mobileOpen} onClose={() => setMobileOpen(false)} header={header} />
+      </>
+    );
+  }
+
+  // =========================================================================
+  // 13. BOUTIQUE (Logo left, centered nav, shop icons + pill CTA)
+  // =========================================================================
+  if (header.design === "boutique") {
+    return (
+      <>
+        {announcement}
+        <header className={classes} style={chrome.style}>
+          <div className="wb-container wb-header-inner">
+            {brand}
+            {header.menu.length > 0 && (
+              <nav className="wb-nav" aria-label="Main">
+                {header.menu.map((item) => (
+                  <NavItem key={`${item.label}-${item.href}`} item={item} />
+                ))}
+              </nav>
+            )}
+            <div className="wb-header-actions">
+              <BoutiqueShopIcons header={header} />
+              <ActionButtons header={header} />
+              {mobileToggle}
+            </div>
+          </div>
+        </header>
         <MobileDrawer isOpen={mobileOpen} onClose={() => setMobileOpen(false)} header={header} />
       </>
     );

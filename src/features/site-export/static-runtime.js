@@ -334,8 +334,10 @@
     }
     if (form.classList.contains("wb-newsletter-form")) {
       const thanks = document.createElement("p");
-      thanks.className = "text-xs font-semibold text-emerald-500";
-      thanks.textContent = "Thank you for subscribing!";
+      const custom = form.getAttribute("data-wb-success");
+      thanks.className = custom ? "wb-newsletter-thanks" : "text-xs font-semibold text-emerald-500";
+      thanks.setAttribute("role", "status");
+      thanks.textContent = custom || "Thank you for subscribing!";
       form.replaceWith(thanks);
       return;
     }

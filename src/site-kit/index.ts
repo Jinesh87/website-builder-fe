@@ -83,5 +83,6 @@ export {
   HERO_BUTTON_RADIUS_MAX,
   HERO_BUTTON_SHAPES,
   HERO_VARIANTS,
+  PRODUCTS_FEATURED_LIMITS,
 } from "./types.ts";
 export type * from "./types.ts";

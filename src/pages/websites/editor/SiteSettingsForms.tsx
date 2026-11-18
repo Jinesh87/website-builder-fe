@@ -291,6 +291,10 @@ export function HeaderForm({
               value: "transparent",
               label: "Transparent overlay (Hero overlay)",
             },
+            {
+              value: "boutique",
+              label: "Boutique (Logo left, nav centre, search/account/cart icons, pill button)",
+            },
             { value: "logo-left", label: "Standard (Logo left, nav right)" },
             { value: "centered", label: "Standard (Logo & nav centered)" },
           ]}
@@ -394,6 +398,7 @@ export function HeaderForm({
         DESIGNS_WITH_SEARCH.includes(design) ||
         DESIGNS_WITH_CURTAIN.includes(design) ||
         design === "split-stacked" ||
+        design === "boutique" ||
         design === "mega-menu-grid") && (
         <FormGroup title="Design content">
           {DESIGNS_WITH_STATUS_COLOR.includes(design) && (
@@ -423,6 +428,34 @@ export function HeaderForm({
                 }
                 maxLength={100}
                 placeholder="Search docs, products..."
+              />
+            </>
+          )}
+
+          {design === "boutique" && (
+            <>
+              <CheckboxField
+                label="Search icon"
+                checked={header.showSearch !== false}
+                onChange={(showSearch) => onChange({ ...header, showSearch })}
+              />
+              <CheckboxField
+                label="Account icon"
+                checked={header.showAccount !== false}
+                onChange={(showAccount) => onChange({ ...header, showAccount })}
+              />
+              <CheckboxField
+                label="Cart icon"
+                checked={header.showCart !== false}
+                onChange={(showCart) => onChange({ ...header, showCart })}
+              />
+              <TextField
+                label="Shop page address"
+                value={header.shopHref ?? ""}
+                onChange={(shopHref) => onChange({ ...header, shopHref: shopHref.trim() || undefined })}
+                maxLength={200}
+                placeholder="/shop"
+                hint="The search icon opens this page. Account and cart open the shop's account page."
               />
             </>
           )}

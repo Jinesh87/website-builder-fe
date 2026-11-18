@@ -66,6 +66,7 @@ export const HEADER_DESIGNS = [
   "side-drawer",
   "headline-ticker",
   "vintage-editorial",
+  "boutique",
 ] as const;
 
 export type HeaderDesign = (typeof HEADER_DESIGNS)[number];
@@ -125,6 +126,8 @@ export type HeaderData = {
   showSearch?: boolean;
   showAccount?: boolean;
   showCart?: boolean;
+  /** Page the boutique header's search icon opens (the page with the product list). Unset is "/shop". */
+  shopHref?: string;
   cartCount?: number;
   currency?: string;
   mobileMenuType?: "drawer" | "fullscreen" | "dropdown";
@@ -576,7 +579,8 @@ export type FeaturesData = {
     | "pastel-icons"
     | "editorial-process"
     | "colored-pillars"
-    | "polaroid-grid";
+    | "polaroid-grid"
+    | "numbered-cards";
   iconStyle?:
     | "pastel-circle"
     | "square-badge"
@@ -608,6 +612,7 @@ export const SERVICES_VARIANTS = [
   "horizontal-cards",
   "minimal-numbered",
   "editorial-specs",
+  "collection-cards",
 ] as const;
 
 export type ServicesVariant = (typeof SERVICES_VARIANTS)[number];
@@ -772,6 +777,9 @@ export const CTA_VARIANTS = [
   "minimal-editorial",
   "vintage-story",
   "vintage-banner",
+  "split-banner",
+  "inline-bar",
+  "newsletter",
 ] as const;
 export type CtaVariant = (typeof CTA_VARIANTS)[number];
 
@@ -803,6 +811,16 @@ export type CtaData = {
   highlightMetric?: CtaMetric;
   cardStyle?: CtaCardStyle;
   align?: SectionAlign;
+  /** "split-banner": photo beside the text panel; an empty slot shows a tinted panel. */
+  image?: ImageRef;
+  /** "split-banner": text panel colour. Unset uses the theme's secondary colour. */
+  panelColor?: string;
+  /** "inline-bar": icon in the round badge, e.g. "brand:whatsapp" or "chat". Brand icons also tint the badge and button. */
+  icon?: string;
+  /** "newsletter": email field placeholder. The button label is the submit text. */
+  placeholder?: string;
+  /** "newsletter": message shown after someone subscribes. */
+  successText?: string;
 };
 
 export const CONTACT_VARIANTS = [
@@ -1006,8 +1024,11 @@ export type SplitData = {
   bullets: string[];
   image?: ImageRef;
   imagePosition: "left" | "right";
-  imageStyle?: "plain" | "polaroid";
+  /** "arch" rounds the photo into a tall arch for founder and brand-story layouts. */
+  imageStyle?: "plain" | "polaroid" | "arch";
   imageTapeLabel?: string;
+  /** Italic sign-off under the text, e.g. "— Mini, Founder". */
+  signature?: string;
   cta?: LinkRef;
 };
 
@@ -1842,6 +1863,8 @@ export type ShopCatalog = {
   /** Applicable coupons when rendering a product detail page. */
   coupons?: ShopCatalogCoupon[];
   products: ShopCatalogProduct[];
+  /** Products hand-picked by featured strips on this page; a paged list may not include them. */
+  picked?: ShopCatalogProduct[];
   productSlug?: string;
   /** Option values to preselect, from the shop-card link. */
   selection?: Record<string, string>;
@@ -1858,17 +1881,40 @@ export type ShopCatalog = {
   live: boolean;
 };
 
+export const PRODUCTS_FEATURED_LIMITS = [4, 8, 12] as const;
+
+/** One hand-picked card of the featured product strip. */
+export type ProductsFeaturedPick = {
+  productId: string;
+  /** Small label on this card, e.g. "NEW" or "BESTSELLER". */
+  badge?: string;
+};
+
 export type ProductsData = {
-  design?: "classic-grid" | "editorial" | "compact" | "showcase";
+  /** "featured-grid" is a homepage strip: no search, filters or pager, just the first `limit` products and a view-all link. */
+  design?: "classic-grid" | "editorial" | "compact" | "showcase" | "featured-grid";
   /** Style of the guest login popup shown when Cart/Buy is clicked while signed out. */
   cartLoginPromptVariant?: "soft-card" | "minimal" | "glass" | "split";
   eyebrow?: string;
   title: string;
   subtitle?: string;
-  layout?: "grid-3" | "grid-2";
+  layout?: "grid-3" | "grid-2" | "grid-4";
+  /** "featured-grid": how many products to show (4, 8 or 12). Unset is 8. */
+  limit?: number;
+  /** "featured-grid": link beside the heading, usually to the full shop page. */
+  viewAllLink?: LinkRef;
+  /** "featured-grid" card buttons: "single" = one ADD TO CART (CHOOSE OPTIONS when the product has choices); "cart-buy" = Cart and Buy. Unset is "cart-buy". */
+  cardButton?: "single" | "cart-buy";
+  /** "featured-grid": the product shown on each card, in order. Empty or unset lists the first `limit` products instead. */
+  picks?: ProductsFeaturedPick[];
+  /** "featured-grid" without picks: small label on the first `badgeCount` cards, e.g. "NEW". */
+  badgeLabel?: string;
+  badgeCount?: number;
   showSearch?: boolean;
   showCategoryFilter?: boolean;
   showSort?: boolean;
+  /** Cart shortcut beside the heading. Unset shows it. */
+  showCartIcon?: boolean;
   /** Address of the page that holds the product detail section, such as "/product". */
   detailBase?: string;
   emptyMessage?: string;

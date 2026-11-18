@@ -2322,6 +2322,206 @@ export const SECTION_PRESETS: SectionPreset[] = [
       }),
   },
   {
+    key: "header-boutique",
+    type: "header",
+    label: "Boutique header · shop icons",
+    category: "Header",
+    description: "Announcement bar, logo left, centred menu, search/account/cart icons and a pill button.",
+    create: () =>
+      createSection("header", {
+        data: {
+          design: "boutique",
+          siteName: "Boutique",
+          announcement: "Curated pieces for every occasion · Free shipping over ₹1,999",
+          menu: [
+            { label: "Home", href: "/" },
+            { label: "Shop", href: "/shop" },
+            { label: "Our Story", href: "/about" },
+            { label: "Contact", href: "/contact" },
+          ],
+          cta: { label: "Shop Now", href: "/shop" },
+          shopHref: "/shop",
+          showSearch: true,
+          showAccount: true,
+          showCart: true,
+          sticky: true,
+          position: "sticky",
+        },
+      }),
+  },
+  {
+    key: "services-collection-cards",
+    type: "services",
+    label: "Shop · collection cards",
+    category: "Shop",
+    description: "Up to five photo cards that each open a shop category, with a view-all button.",
+    create: () =>
+      createSection("services", {
+        settings: { background: "surface" },
+        data: {
+          variant: "collection-cards",
+          eyebrow: "Explore our collections",
+          heading: "Shop by Collection",
+          intro: "From everyday elegance to festive grace, find your perfect piece.",
+          align: "center",
+          columns: 4,
+          mobileColumns: 2,
+          items: [
+            { title: "Sarees", description: "Silk, satin, cotton and embroidered drapes", link: { label: "Shop Now", href: "/shop" } },
+            { title: "Festive", description: "Celebration classics", link: { label: "Shop Now", href: "/shop" } },
+            { title: "Kurtas & Kaftans", description: "Easy, elegant everyday wear", link: { label: "Shop Now", href: "/shop" } },
+            { title: "Men's Wear", description: "Traditional wear for him", link: { label: "Shop Now", href: "/shop" } },
+            { title: "Kids' Wear", description: "Little ones in festive style", link: { label: "Shop Now", href: "/shop" } },
+          ],
+          bottomCta: { label: "View all categories", href: "/shop" },
+        },
+      }),
+  },
+  {
+    key: "shop-product-featured",
+    type: "products",
+    label: "Product list · Featured strip",
+    category: "Shop",
+    description: "Homepage strip of the latest products: heading with a view-all link, four columns, no filters.",
+    create: () =>
+      createSection("products", {
+        data: {
+          design: "featured-grid",
+          eyebrow: "New this season",
+          title: "Latest arrivals",
+          layout: "grid-4",
+          limit: 8,
+          badgeLabel: "NEW",
+          badgeCount: 2,
+          viewAllLink: { label: "View all products", href: "/shop" },
+          detailBase: "/product",
+          emptyMessage: "New arrivals are on their way.",
+          cartLoginPromptVariant: "soft-card",
+        },
+      }),
+  },
+  {
+    key: "shop-product-boutique-strip",
+    type: "products",
+    label: "Product list · Boutique strip",
+    category: "Shop",
+    description: "Featured products with one full-width pill button per card: Add to cart, or Choose options when the product has sizes or colours.",
+    create: () =>
+      createSection("products", {
+        data: {
+          design: "featured-grid",
+          cardButton: "single",
+          eyebrow: "New this season",
+          title: "Latest arrivals",
+          layout: "grid-4",
+          limit: 8,
+          badgeLabel: "NEW",
+          badgeCount: 2,
+          viewAllLink: { label: "View all products", href: "/shop" },
+          detailBase: "/product",
+          emptyMessage: "New arrivals are on their way.",
+          cartLoginPromptVariant: "soft-card",
+        },
+      }),
+  },
+  {
+    key: "cta-split-banner",
+    type: "cta",
+    label: "CTA · split banner",
+    category: "CTA",
+    description: "Rounded banner: coloured text panel with a white button beside a photo.",
+    create: () =>
+      createSection("cta", {
+        data: {
+          variant: "split-banner",
+          eyebrow: "Join the experience",
+          heading: "Step into a World of Elegance",
+          text: "Hand-picked pieces chosen for comfort and grace.",
+          button: { label: "Shop Now", href: "/shop" },
+          panelColor: "#3e4a37",
+        },
+      }),
+  },
+  {
+    key: "cta-inline-whatsapp",
+    type: "cta",
+    label: "CTA · WhatsApp bar",
+    category: "CTA",
+    description: "One-row card with a WhatsApp badge, a short message and a chat button.",
+    create: () =>
+      createSection("cta", {
+        settings: { spacing: "compact" },
+        data: {
+          variant: "inline-bar",
+          icon: "brand:whatsapp",
+          heading: "Pre-book on WhatsApp",
+          text: "Ask about a piece, check availability or reserve new arrivals before they're gone.",
+          button: { label: "Chat on WhatsApp", href: "https://wa.me/910000000000", openInNewTab: true },
+        },
+      }),
+  },
+  {
+    key: "cta-newsletter",
+    type: "cta",
+    label: "CTA · newsletter signup",
+    category: "CTA",
+    description: "Centred heading and text with a rounded email field and subscribe button.",
+    create: () =>
+      createSection("cta", {
+        data: {
+          variant: "newsletter",
+          heading: "Join our email list",
+          text: "Get exclusive deals and early access to new products.",
+          button: { label: "Subscribe", href: "#" },
+          placeholder: "Your email address",
+        },
+      }),
+  },
+  {
+    key: "features-numbered-cards",
+    type: "features",
+    label: "Features · numbered cards",
+    category: "Features",
+    description: "Four clean cards with circled numbers, a heading and one line each.",
+    create: () =>
+      createSection("features", {
+        data: {
+          variant: "numbered-cards",
+          heading: "Crafted with Care",
+          intro: "Every piece reflects our promise of quality and grace.",
+          columns: 4,
+          mobileColumns: 1,
+          items: [
+            { title: "Made with love", description: "A dream brought to life with care." },
+            { title: "Timeless elegance", description: "Grace that belongs in every wardrobe." },
+            { title: "Inspired by tradition", description: "Rooted in the beauty of enduring style." },
+            { title: "Crafted for you", description: "Designed to inspire elegance and confidence." },
+          ],
+        },
+      }),
+  },
+  {
+    key: "split-arch-story",
+    type: "split",
+    label: "Split · arched founder story",
+    category: "Content",
+    description: "Tall arched portrait beside a story, an italic signature and an outline button.",
+    create: () =>
+      createSection("split", {
+        settings: { background: "surface" },
+        data: {
+          eyebrow: "Our story",
+          heading: "Every dream begins with a single step.",
+          body: "What started as a quiet dream became a purpose: to bring elegance, confidence and timeless style to every wardrobe.\n\nWith the support of family and friends, we took the leap.",
+          bullets: [],
+          imagePosition: "left",
+          imageStyle: "arch",
+          signature: "— The Founder",
+          cta: { label: "Read Our Story", href: "/about" },
+        },
+      }),
+  },
+  {
     key: "hero-minimal-typography",
     type: "hero",
     label: "Hero · minimal bold typography",

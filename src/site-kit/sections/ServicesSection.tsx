@@ -251,6 +251,49 @@ export default function ServicesSection({
     );
   };
 
+  // Collection cards: one row of photo cards that each open a category, for shop homepages.
+  if (variant === "collection-cards") {
+    const count = Math.min(Math.max(data.items.length, 1), 5);
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-services-section wb-collection-cards"
+        label={data.heading}
+      >
+        <SectionHead eyebrow={data.eyebrow} heading={data.heading} intro={data.intro} align={data.align ?? "center"} />
+        <div className="wb-collection-grid" data-count={count}>
+          {data.items.map((item, index) => {
+            const body = (
+              <>
+                <div className={`wb-collection-media${item.image?.url ? "" : " is-empty"}`} data-tint={index % 5}>
+                  {item.image?.url && <SiteImage image={item.image} />}
+                </div>
+                <h3 className="wb-collection-title">{parseRichText(item.title)}</h3>
+                {item.description && <p className="wb-collection-desc">{parseRichText(item.description)}</p>}
+                {item.link?.label && <span className="wb-collection-link">{item.link.label} &rarr;</span>}
+              </>
+            );
+            return item.link?.href ? (
+              <SiteLink key={index} link={item.link} className="wb-collection-card">
+                {body}
+              </SiteLink>
+            ) : (
+              <div key={index} className="wb-collection-card">
+                {body}
+              </div>
+            );
+          })}
+        </div>
+        {data.bottomCta && (
+          <div className="wb-collection-bottom">
+            <SiteButton link={data.bottomCta} tone="secondary" />
+          </div>
+        )}
+      </SectionShell>
+    );
+  }
+
   // 1. Bento Grid Variant (Modern 2026 Asymmetric Showcase)
   if (variant === "bento-grid") {
     const featuredIndex = data.items.findIndex((item) => item.featured) >= 0

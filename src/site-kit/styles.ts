@@ -1,5 +1,6 @@
 import { ACCOUNT_CSS } from "./account-styles.ts";
 import { AUTH_CSS } from "./auth-styles.ts";
+import { BOUTIQUE_CSS } from "./boutique-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
 import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
 import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
@@ -10246,6 +10247,7 @@ ${CARDS_CSS}
 ${SHOP_CSS}
 ${ACCOUNT_CSS}
 ${VINTAGE_CSS}
+${BOUTIQUE_CSS}
 ${RICH_TEXT_CSS}
 .wb-device-scroll {
   scrollbar-width: none !important;

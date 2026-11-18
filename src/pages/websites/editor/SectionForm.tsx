@@ -86,6 +86,8 @@ import { chromeToBuilder, chromeToImported, footerFromImported } from "../../../
 import { SwitchBackBar } from "./ImportedHtmlForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
+import { PRODUCTS_FEATURED_LIMITS } from "../../../site-kit/index.ts";
+import { FeaturedProductPicks } from "./FeaturedProductPicks.tsx";
 import { Bold, Italic, Film, Waves, Compass, Sparkles } from "lucide-react";
 import { isVintageHero, VintageHeroFields } from "./VintageHeroFields.tsx";
 import { heroPlacementForVariant, heroVariantForPlacement } from "../../../site-kit/hero-layout.ts";
@@ -1565,6 +1567,11 @@ function FeaturesForm({ data, onChange }: DataFormProps<FeaturesData>) {
               label:
                 "Polaroid photo grid (Vintage photo paper cards with captions)",
             },
+            {
+              value: "numbered-cards",
+              label:
+                "Numbered cards (Circled 1-2-3 promises on clean cards; item badge replaces the number)",
+            },
           ]}
           onChange={(variant) =>
             onChange({
@@ -1985,6 +1992,10 @@ const SERVICES_VARIANT_OPTIONS: { value: ServicesVariant; label: string }[] = [
     value: "editorial-specs",
     label: "Editorial specs list (Vintage Reels 01-06 with chromatic stamp)",
   },
+  {
+    value: "collection-cards",
+    label: "Collection cards (Shop categories: photo, name, line and link; up to 5 in a row)",
+  },
 ];
 
 const SERVICE_CARD_STYLE_OPTIONS = [
@@ -2072,7 +2083,8 @@ function ServicesForm({ data, onChange }: DataFormProps<ServicesData>) {
         </div>
         {!isSplit &&
           data.variant !== "interactive-list" &&
-          data.variant !== "horizontal-cards" && (
+          data.variant !== "horizontal-cards" &&
+          data.variant !== "collection-cards" && (
             <ColumnsFields data={data} onChange={onChange} />
           )}
       </FormGroup>
@@ -2813,6 +2825,9 @@ const CTA_VARIANT_OPTIONS: { value: CtaVariant; label: string }[] = [
     value: "vintage-banner",
     label: "Vintage terracotta banner (Terracotta rounded container with call button)",
   },
+  { value: "split-banner", label: "Split banner (Coloured text panel beside a photo)" },
+  { value: "inline-bar", label: "Inline bar (Icon, message and button in one row, e.g. WhatsApp)" },
+  { value: "newsletter", label: "Newsletter signup (Heading, text and email field)" },
 ];
 
 const CTA_CARD_STYLE_OPTIONS: { value: CtaCardStyle; label: string }[] = [
@@ -2873,6 +2888,58 @@ function CtaForm({ data, onChange }: DataFormProps<CtaData>) {
           rows={3}
         />
       </FormGroup>
+
+      {data.variant === "split-banner" && (
+        <FormGroup title="Split banner">
+          <ImageField
+            label="Photo"
+            value={data.image}
+            onChange={(image) => onChange({ ...data, image })}
+            optional
+            dimensionHint={MEDIA_SIZE.ctaBanner}
+            hint={MEDIA_HINT.cropped}
+          />
+          <ColorField
+            label="Text panel colour"
+            value={data.panelColor}
+            onChange={(panelColor) => onChange({ ...data, panelColor: panelColor || undefined })}
+            fallback="#3e4a37"
+            placeholder="Theme secondary"
+            hint="Pick a dark colour; the panel text is white."
+          />
+        </FormGroup>
+      )}
+
+      {data.variant === "inline-bar" && (
+        <FormGroup title="Inline bar">
+          <IconPickerField
+            label="Badge icon"
+            value={data.icon ?? ""}
+            onChange={({ icon }) => onChange({ ...data, icon: icon || undefined })}
+            hint="Brand icons such as WhatsApp also colour the badge and button."
+          />
+        </FormGroup>
+      )}
+
+      {data.variant === "newsletter" && (
+        <FormGroup title="Newsletter form">
+          <TextField
+            label="Email placeholder"
+            value={data.placeholder ?? ""}
+            onChange={(placeholder) => onChange({ ...data, placeholder: placeholder || undefined })}
+            maxLength={80}
+            placeholder="Your email address"
+          />
+          <TextField
+            label="Thank-you message"
+            value={data.successText ?? ""}
+            onChange={(successText) => onChange({ ...data, successText: successText || undefined })}
+            maxLength={120}
+            placeholder="Thank you for subscribing!"
+            hint="The primary button label below is used as the submit button."
+          />
+        </FormGroup>
+      )}
 
       <FormGroup title="Action Buttons">
         <LinkField
@@ -3207,6 +3274,7 @@ function ProductsForm({ data, onChange }: DataFormProps<ProductsData>) {
           { value: "editorial", label: "Filter sidebar" },
           { value: "compact", label: "Compact catalogue" },
           { value: "showcase", label: "Marketplace" },
+          { value: "featured-grid", label: "Featured strip (homepage, no filters)" },
         ]}
       />
       <RichTextField label="Eyebrow" value={data.eyebrow ?? ""} onChange={(eyebrow) => onChange({ ...data, eyebrow })} maxLength={120} />
@@ -3217,10 +3285,57 @@ function ProductsForm({ data, onChange }: DataFormProps<ProductsData>) {
         value={data.layout ?? "grid-3"}
         onChange={(layout) => onChange({ ...data, layout })}
         options={[
+          ...(data.design === "featured-grid" ? [{ value: "grid-4" as const, label: "4 columns" }] : []),
           { value: "grid-3", label: "3 columns" },
           { value: "grid-2", label: "2 columns" },
         ]}
       />
+      {data.design === "featured-grid" && (
+        <>
+          <SelectField
+            label="Card button"
+            value={data.cardButton ?? "cart-buy"}
+            onChange={(cardButton) => onChange({ ...data, cardButton })}
+            options={[
+              { value: "single", label: "Add to cart (Choose options when the product has sizes or colours)" },
+              { value: "cart-buy", label: "Cart and Buy buttons" },
+            ]}
+          />
+          <FeaturedProductPicks picks={data.picks ?? []} onChange={(picks) => onChange({ ...data, picks })} />
+          <OptionalLinkField
+            label="View-all link"
+            value={data.viewAllLink}
+            onChange={(viewAllLink) => onChange({ ...data, viewAllLink })}
+            fallback={{ label: "View all products", href: "/shop" }}
+          />
+        </>
+      )}
+      {data.design === "featured-grid" && !data.picks?.length && (
+        <>
+          <SelectField
+            label="Products shown"
+            value={String(data.limit ?? 8)}
+            onChange={(limit) => onChange({ ...data, limit: Number(limit) })}
+            options={PRODUCTS_FEATURED_LIMITS.map((limit) => ({ value: String(limit), label: `${limit} products` }))}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <TextField
+              label="Badge text"
+              value={data.badgeLabel ?? ""}
+              onChange={(badgeLabel) => onChange({ ...data, badgeLabel: badgeLabel || undefined })}
+              maxLength={16}
+              placeholder="NEW"
+            />
+            <TextField
+              label="Badge on first"
+              type="number"
+              value={String(data.badgeCount ?? 0)}
+              onChange={(count) => onChange({ ...data, badgeCount: Math.min(12, Math.max(0, Number(count) || 0)) })}
+              hint="Number of cards"
+            />
+          </div>
+        </>
+      )}
       <TextField
         label="Product page address"
         value={data.detailBase ?? "/product"}
@@ -3229,9 +3344,14 @@ function ProductsForm({ data, onChange }: DataFormProps<ProductsData>) {
         hint="Must match the address of the page that has the product detail section. A tee called everyday-tee opens at /product/everyday-tee."
       />
       <TextField label="Empty message" value={data.emptyMessage ?? ""} onChange={(emptyMessage) => onChange({ ...data, emptyMessage })} maxLength={200} />
+      {data.design !== "featured-grid" && (
+        <>
       <CheckboxField label="Show search" checked={data.showSearch !== false} onChange={(showSearch) => onChange({ ...data, showSearch })} />
       <CheckboxField label="Show category filter" checked={data.showCategoryFilter !== false} onChange={(showCategoryFilter) => onChange({ ...data, showCategoryFilter })} />
       <CheckboxField label="Show sorting" checked={data.showSort !== false} onChange={(showSort) => onChange({ ...data, showSort })} />
+      <CheckboxField label="Show cart icon" checked={data.showCartIcon !== false} onChange={(showCartIcon) => onChange({ ...data, showCartIcon })} />
+        </>
+      )}
     </FormGroup>
   );
 }
@@ -3685,6 +3805,14 @@ function SplitForm({ data, onChange }: DataFormProps<SplitData>) {
           onChange={(bullets) => onChange({ ...data, bullets })}
           addLabel="Add bullet"
         />
+        <RichTextField
+          label="Signature (optional)"
+          value={data.signature ?? ""}
+          onChange={(signature) => onChange({ ...data, signature: signature || undefined })}
+          maxLength={120}
+          placeholder="— Mini, Founder"
+          hint="Italic sign-off under the text."
+        />
         <OptionalLinkField
           label="Button"
           value={data.cta}
@@ -3708,9 +3836,10 @@ function SplitForm({ data, onChange }: DataFormProps<SplitData>) {
           options={[
             { value: "plain", label: "Standard image" },
             { value: "polaroid", label: "Polaroid with tape (Vintage)" },
+            { value: "arch", label: "Tall arch (Founder / brand story)" },
           ]}
           onChange={(imageStyle) =>
-            onChange({ ...data, imageStyle: imageStyle as "plain" | "polaroid" })
+            onChange({ ...data, imageStyle: imageStyle as SplitData["imageStyle"] })
           }
         />
         {data.imageStyle === "polaroid" && (
@@ -3727,7 +3856,7 @@ function SplitForm({ data, onChange }: DataFormProps<SplitData>) {
           value={data.image}
           onChange={(image) => onChange({ ...data, image })}
           optional
-          dimensionHint={MEDIA_SIZE.splitImage}
+          dimensionHint={data.imageStyle === "arch" ? MEDIA_SIZE.splitArch : MEDIA_SIZE.splitImage}
         />
       </FormGroup>
     </>

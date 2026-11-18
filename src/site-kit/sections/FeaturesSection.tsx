@@ -297,6 +297,29 @@ export default function FeaturesSection({ section }: { section: SectionOf<"featu
     );
   };
 
+  if (data.variant === "numbered-cards") {
+    // Numbered promise cards: a small circled number (or the item badge), a heading and one line.
+    return (
+      <SectionShell
+        sectionId={section.id}
+        settings={section.settings}
+        className="wb-features wb-numbered-cards"
+        label={data.heading || "Features"}
+      >
+        <SectionHead eyebrow={data.eyebrow} heading={data.heading} intro={data.intro} align={data.align ?? "center"} />
+        <div className="wb-numbered-grid" style={gridStyle(data.columns, data.mobileColumns)}>
+          {data.items.map((item, index) => (
+            <div key={index} className="wb-numbered-card">
+              <span className="wb-numbered-num">{item.badge || index + 1}</span>
+              <h3 className="wb-numbered-title">{parseRichText(item.title)}</h3>
+              {item.description && <p className="wb-numbered-desc">{parseRichText(item.description)}</p>}
+            </div>
+          ))}
+        </div>
+      </SectionShell>
+    );
+  }
+
   if (data.variant === "editorial-process") {
     const romanNumerals = ["i.", "ii.", "iii.", "iv.", "v.", "vi."];
     return (

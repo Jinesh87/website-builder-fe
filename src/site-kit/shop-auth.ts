@@ -2101,6 +2101,15 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       if(link.tagName==="A") link.setAttribute("href", siteHref(loginHref));
     });
     root.querySelectorAll("[data-wb-account-address-form]").forEach(function(form){ form.hidden=true; });
+    // Guests get orders (from this browser), cart, wishlist and addresses; profile and password need an account.
+    var guestPanels=["orders","cart","wishlist","addresses"];
+    var guestOrders=[];
+    [["[data-wb-account-tab]","data-wb-account-tab"],["[data-wb-account-stat]","data-wb-account-stat"],["[data-wb-account-panel]","data-wb-account-panel"]].forEach(function(pair){
+      root.querySelectorAll(pair[0]).forEach(function(node){
+        if(guestPanels.indexOf(node.getAttribute(pair[1]))<0){ node.hidden=true; node.style.display="none"; }
+      });
+    });
+    tabs=tabs.filter(function(tab){ return guestPanels.indexOf(tab.getAttribute("data-wb-account-tab"))>=0; });
     function applyGuestAddress(addr){
       guestAddress=addr||null;
       setText(root, "fullName", (guestAddress&&guestAddress.fullName)||"Guest");
@@ -2250,11 +2259,14 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       return Promise.all([
         request(base, "/guest/cart", "GET"),
         request(base, "/guest/wishlist", "GET"),
-        request(base, "/guest/addresses", "GET")
+        request(base, "/guest/addresses", "GET"),
+        request(base, "/guest/orders", "GET")
       ]).then(function(results){
         var cartResult=results[0];
         var wishResult=results[1];
         var addressResult=results[2];
+        var orderResult=results[3];
+        guestOrders=(orderResult&&orderResult.ok&&orderResult.json&&orderResult.json.orders)||[];
         guestWishlist=(wishResult.ok&&wishResult.json&&wishResult.json.wishlistItems)||[];
         guestAddresses=(addressResult.ok&&addressResult.json&&addressResult.json.addresses)||[];
         applyGuestAddress(guestAddresses[0]||null);
@@ -2265,12 +2277,46 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
         };
         var items=(cartResult.ok&&cartResult.json&&cartResult.json.cartItems)||[];
         cartItemCount=items.length;
-        fill(root, { customer:customer, orders:[], cartItems:items, wishlistItems:guestWishlist, addresses:guestAddresses });
+        fill(root, { customer:customer, orders:guestOrders, cartItems:items, wishlistItems:guestWishlist, addresses:guestAddresses });
+        renderGuestOrders();
         renderGuestAddressShell();
         return items;
       });
     }
     function refreshGuestCart(){ return refreshGuestAccount(); }
+    // Guest orders open the public tracking page (status, items, invoice) instead of the signed-in order popup.
+    function renderGuestOrders(){
+      var list=root.querySelector('[data-wb-account-list="orders"]');
+      if(!list) return;
+      list.innerHTML="";
+      guestOrders.forEach(function(order){
+        var href=order.trackToken ? siteHref("/?wbOrderTrack="+encodeURIComponent(String(order.trackToken))) : "";
+        var row=el("li","wb-acct-row"+(href?" is-clickable":""));
+        var main=el("div","wb-acct-row-main");
+        main.appendChild(el("strong","","Order #"+String(order.number||order.id||"")));
+        main.appendChild(el("span","wb-acct-row-sub",day(order.createdAt)));
+        row.appendChild(main);
+        var status=String(order.status||"pending");
+        var badges=el("div","wb-acct-badges");
+        badges.appendChild(el("span","wb-acct-badge is-"+status,status.charAt(0).toUpperCase()+status.slice(1)));
+        var refund=String(order.refundStatus||"none");
+        if(refund==="pending") badges.appendChild(el("span","wb-acct-badge is-refund-pending","Refund pending"));
+        else if(refund==="processed") badges.appendChild(el("span","wb-acct-badge is-refund-processed","Refunded"));
+        if(href){
+          var track=el("a","wb-acct-row-invoice","Track order");
+          track.setAttribute("href", href);
+          badges.appendChild(track);
+          row.addEventListener("click", function(event){
+            if(event.target&&event.target.closest&&event.target.closest("a")) return;
+            window.location.href=href;
+          });
+        }
+        row.appendChild(badges);
+        row.appendChild(el("strong","wb-acct-row-amount",money(order.totalPaise)));
+        list.appendChild(row);
+      });
+      list.hidden=guestOrders.length===0;
+    }
     function guestPayNow(){
       if(root.getAttribute("data-wb-paying")) return;
       if(!guestAddress){
@@ -2421,9 +2467,9 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
     tabs.forEach(function(tab){
       tab.addEventListener("click", function(){
         var name=tab.getAttribute("data-wb-account-tab");
-        if(name==="cart" || name==="wishlist" || name==="addresses"){
+        if(guestPanels.indexOf(name)>=0){
           activatePanel(root, tabs, name);
-          if(name==="wishlist" || name==="addresses") refreshGuestCart();
+          if(name!=="cart") refreshGuestCart();
           return;
         }
         window.location.href=siteHref(loginHref);
@@ -2566,7 +2612,7 @@ export const SHOP_ACCOUNT_SCRIPT = `(function(){
       showState(root, "member");
       var fromUrl=preferredPanel(root);
       var panel=fromUrl||"cart";
-      if(panel!=="cart" && panel!=="wishlist" && panel!=="addresses") panel="cart";
+      if(guestPanels.indexOf(panel)<0) panel="cart";
       activatePanel(root, tabs, panel, { skipUrl: fromUrl===panel });
     }).catch(function(){
       showState(root, "guest");

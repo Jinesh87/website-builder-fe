@@ -17,6 +17,10 @@ type Props = {
   interactive?: boolean;
   compact?: boolean;
   loginPromptVariant?: "soft-card" | "minimal" | "glass" | "split";
+  /** Text of the cart button; defaults to "Cart". */
+  cartLabel?: string;
+  /** false hides the Buy button, leaving one add-to-cart button. */
+  showBuy?: boolean;
 };
 
 type PendingAction = "add" | "buy";
@@ -40,6 +44,8 @@ export default function ShopCartActions({
   interactive = false,
   compact = false,
   loginPromptVariant = "soft-card",
+  cartLabel = "Cart",
+  showBuy = true,
 }: Props) {
   const [busy, setBusy] = useState<"add" | "buy" | null>(null);
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text?: string } | null>(null);
@@ -248,8 +254,9 @@ export default function ShopCartActions({
             aria-disabled={!variantId || undefined}
             onClick={interactive ? () => openQuantity("add") : undefined}
           >
-            {busy === "add" ? "Adding…" : "Cart"}
+            {busy === "add" ? "Adding…" : cartLabel}
           </button>
+          {showBuy && (
           <button
             type="button"
             className="wb-shop-btn is-buy"
@@ -262,6 +269,7 @@ export default function ShopCartActions({
           >
             {busy === "buy" ? "Buying…" : "Buy"}
           </button>
+          )}
         </div>
         <p
           className={`wb-shop-cart-msg${message ? ` is-${message.kind}` : ""}`}

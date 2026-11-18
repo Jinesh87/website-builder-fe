@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { parseRichText, SectionShell } from "../primitives.tsx";
+import { parseRichText, SectionShell, SiteLink } from "../primitives.tsx";
 import ShopCartActions from "../ShopCartActions.tsx";
 import { formatInr, listingSelection, productHref, shopListings, SHOP_LIST_SCRIPT, useShopCatalog } from "../shop-catalog.tsx";
 import { accountPanelHref, SHOP_CART_SCRIPT, SHOP_TRACK_SCRIPT, siteHref } from "../shop-auth.ts";
@@ -76,6 +76,24 @@ const SAMPLES: ShopCatalogProduct[] = [
   },
 ];
 
+/** Extra preview cards so a 4-column featured strip doesn't look half empty before the shop has products. */
+const FEATURED_SAMPLES: ShopCatalogProduct[] = [
+  ...SAMPLES,
+  ...["Linen scarf", "Woven basket", "Cotton throw", "Scented candle", "Silk pouch"].map((name, index) => ({
+    id: `sample-extra-${index}`,
+    name,
+    slug: name.toLowerCase().replace(/\s+/g, "-"),
+    description: null,
+    categoryName: "Sample",
+    images: [],
+    variants: [{ id: `sx${index}`, name: "Default", pricePaise: 99900 + index * 15000, quantity: 5, images: [], options: [] }],
+  })),
+];
+
+function featuredLimit(value: number | undefined): number {
+  return value === 4 || value === 12 ? value : 8;
+}
+
 function haystack(product: ShopCatalogProduct, label: string): string {
   return [product.name, label, product.categoryName, product.description ?? "", ...product.variants.map((variant) => variant.name)].join(" ").toLowerCase();
 }
@@ -138,7 +156,7 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
   // Site-root path (no /live prefix). Live preview rewrites href=; cart script siteHref()s data-*.
   const cartAccountPath = accountPanelHref(accountHref, "cart");
   const cartPageHref = siteHref(cartAccountPath);
-  const cartIcon = (
+  const cartIcon = data.showCartIcon === false ? null : (
     <a
       className="wb-shop-cart-link"
       href={cartPageHref}
@@ -270,6 +288,99 @@ export default function ProductsSection({ section }: { section: SectionOf<"produ
   ) : (
     <div className="wb-shop-tools">{toolBody}</div>
   );
+
+  if (data.design === "featured-grid") {
+    // Homepage strip: heading row with a view-all link, then the first few products. No search, filters or pager.
+    // Hand-picked cards keep their order; picks whose product was deleted or unlisted are skipped.
+    const picks = live ? (data.picks ?? []).filter((pick) => pick.productId) : [];
+    const pool = live ? [...(catalog?.picked ?? []), ...products] : [];
+    const pickedCards = picks.flatMap((pick) => {
+      const product = pool.find((candidate) => candidate.id === pick.productId);
+      const listing = product ? shopListings(product)[0] : undefined;
+      return listing ? [{ listing, badge: pick.badge }] : [];
+    });
+    const badgeCount = Math.max(0, data.badgeCount ?? 0);
+    const featured =
+      picks.length > 0
+        ? pickedCards
+        : (live ? listings : FEATURED_SAMPLES.flatMap((product) => shopListings(product)))
+            .slice(0, featuredLimit(data.limit))
+            .map((listing, index) => ({ listing, badge: index < badgeCount ? data.badgeLabel : undefined }));
+    const single = data.cardButton === "single";
+    const columns = data.layout === "grid-3" ? 3 : data.layout === "grid-2" ? 2 : 4;
+    return (
+      <SectionShell sectionId={section.id} settings={section.settings} className="wb-shop-list-section wb-shop-featured-section">
+        <div
+          className={`wb-shop wb-shop-featured${single ? " is-single-button" : ""}`}
+          data-wb-shop=""
+          data-wb-shop-website={websiteId || undefined}
+          data-wb-shop-auth-href={authHref}
+          data-wb-shop-account-href={accountHref}
+          data-wb-shop-guest={allowGuestCheckout ? "1" : undefined}
+          data-wb-cart-login-variant={loginPromptVariant}
+        >
+          <div className="wb-shop-featured-head">
+            <div>
+              {data.eyebrow && <span className="wb-shop-eyebrow">{parseRichText(data.eyebrow)}</span>}
+              {data.title && <h2 className="wb-shop-title">{parseRichText(data.title)}</h2>}
+              {data.subtitle && <p className="wb-shop-subtitle">{parseRichText(data.subtitle)}</p>}
+            </div>
+            {data.viewAllLink?.label && (
+              <SiteLink link={data.viewAllLink} className="wb-shop-featured-all">
+                {data.viewAllLink.label} &rarr;
+              </SiteLink>
+            )}
+          </div>
+          {featured.length === 0 ? (
+            <p className="wb-shop-empty">{data.emptyMessage || "No products yet."}</p>
+          ) : (
+            <div className="wb-shop-featured-grid" data-columns={columns}>
+              {featured.map(({ listing, badge }, index) => {
+                const image = listingImage(listing.product, listing.variants);
+                const href = productHref(data.detailBase, listing.product.slug, listingSelection(listing));
+                const variant = listing.variants.find((item) => item.quantity > 0) ?? listing.variants[0];
+                return (
+                  <article key={listing.key} className="wb-shop-featured-card" data-wb-product="">
+                    <a className="wb-shop-featured-link" href={href}>
+                      <div className={`wb-shop-featured-media${image ? "" : " is-empty"}`} data-tint={index % 4}>
+                        {image && <img src={image.url} alt={image.alt || listing.product.name} loading="lazy" />}
+                        {badge && <span className="wb-shop-featured-badge">{badge}</span>}
+                      </div>
+                      <h3 className="wb-shop-name">{listing.product.name}</h3>
+                      <span className="wb-shop-price">{listing.variants[0] ? formatInr(listingPrice(listing)) : ""}</span>
+                    </a>
+                    {single && listing.variants.length > 1 ? (
+                      <a className="wb-shop-featured-choose" href={href}>
+                        Choose options
+                      </a>
+                    ) : (
+                      <ShopCartActions
+                        variantId={variant?.id}
+                        websiteId={websiteId}
+                        authHref={authHref}
+                        accountHref={accountHref}
+                        allowGuestCheckout={allowGuestCheckout}
+                        outOfStock={!variant || variant.quantity <= 0}
+                        stockMax={variant?.quantity ?? 0}
+                        interactive={interactive}
+                        compact
+                        loginPromptVariant={loginPromptVariant}
+                        cartLabel={single ? "Add to cart" : "Cart"}
+                        showBuy={!single}
+                      />
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          )}
+          {!live && !stat && <p className="wb-shop-note">Sample products. The published page lists this website’s shop.</p>}
+          {stat && websiteId && <script dangerouslySetInnerHTML={{ __html: SHOP_CART_SCRIPT }} />}
+          {stat && websiteId && <script dangerouslySetInnerHTML={{ __html: SHOP_TRACK_SCRIPT }} />}
+        </div>
+      </SectionShell>
+    );
+  }
 
   const pageLinks = pageNumbers(currentPage, pageCount);
   const grid = !hasCatalog ? (
