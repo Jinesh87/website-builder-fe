@@ -1,4 +1,5 @@
 import { ACCOUNT_CSS } from "./account-styles.ts";
+import { ACCOUNT_POPUP_CSS } from "./account-popup-styles.ts";
 import { AUTH_CSS } from "./auth-styles.ts";
 import { BOUTIQUE_CSS } from "./boutique-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
@@ -10246,6 +10247,7 @@ ${HERO_REGISTRATION_CSS}
 ${CARDS_CSS}
 ${SHOP_CSS}
 ${ACCOUNT_CSS}
+${ACCOUNT_POPUP_CSS}
 ${VINTAGE_CSS}
 ${BOUTIQUE_CSS}
 ${RICH_TEXT_CSS}

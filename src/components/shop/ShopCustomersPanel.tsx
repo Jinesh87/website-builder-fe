@@ -1,23 +1,14 @@
 import { useEffect, useState } from "react";
+import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
+import { GuestBadge } from "./ShopOrderBadges.tsx";
+import { formatWhen } from "./shop-format.ts";
 import { Button, Spinner } from "@heroui/react";
 import { ArrowLeft, Search } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
 import { shopApi, type ShopCustomer, type ShopCustomerPage, type ShopCustomerStatus } from "../../api/shop.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 
-function useDebounced(value: string): string {
-  const [debounced, setDebounced] = useState(value.trim());
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value.trim()), 250);
-    return () => clearTimeout(timer);
-  }, [value]);
-  return debounced;
-}
 
-function formatWhen(value: string | null): string {
-  if (!value) return "—";
-  return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-}
 
 function statusLabel(status: ShopCustomerStatus): string {
   switch (status) {
@@ -53,13 +44,6 @@ function StatusBadge({ status }: { status: ShopCustomerStatus }) {
   );
 }
 
-function GuestBadge() {
-  return (
-    <span className="inline-flex rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-800 ring-1 ring-inset ring-sky-200">
-      Guest
-    </span>
-  );
-}
 
 function CustomerDetail({
   websiteId,
@@ -147,7 +131,7 @@ function CustomerDetail({
 
 export default function ShopCustomersPanel({ websiteId }: { websiteId: string }) {
   const [search, setSearch] = useState("");
-  const query = useDebounced(search);
+  const query = useDebouncedValue(search.trim(), 250);
   const [page, setPage] = useState(1);
   const [data, setData] = useState<ShopCustomerPage | null>(null);
   const [error, setError] = useState<string | null>(null);

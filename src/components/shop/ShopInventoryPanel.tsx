@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
 import { Button, Spinner } from "@heroui/react";
 import { ChevronLeft, Plus, Search } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
@@ -10,17 +11,10 @@ import {
 } from "../../api/shop.ts";
 import { formatPaise } from "../../api/wallet.ts";
 import CommonModal from "../ui/CommonModal.tsx";
+import { formatWhen } from "./shop-format.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 import TextInput from "../ui/TextInput.tsx";
 
-function useDebounced(value: string): string {
-  const [debounced, setDebounced] = useState(value.trim());
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value.trim()), 250);
-    return () => clearTimeout(timer);
-  }, [value]);
-  return debounced;
-}
 
 function SearchField({ value, onChange, label }: { value: string; onChange: (value: string) => void; label: string }) {
   return (
@@ -79,7 +73,7 @@ function AddQuantityModal({
   const lockedVariant = Boolean(restrictProductId && initialVariantId);
   const selected = sourceItems.find((item) => item.variantId === variantId) ?? null;
   const adding = /^\d+$/.test(quantity.trim()) ? Number(quantity.trim()) : null;
-  const variantQuery = useDebounced(variantSearch).toLowerCase();
+  const variantQuery = useDebouncedValue(variantSearch.trim(), 250).toLowerCase();
   const filteredVariants = sourceItems.filter((item) => variantSearchText(item).includes(variantQuery));
   const visibleVariants = filteredVariants.slice(0, visibleCount);
   const hasMore = visibleCount < filteredVariants.length;
@@ -227,7 +221,7 @@ function AddQuantityModal({
 
 export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
   const [search, setSearch] = useState("");
-  const query = useDebounced(search).toLowerCase();
+  const query = useDebouncedValue(search.trim(), 250).toLowerCase();
   const [items, setItems] = useState<InventoryItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [addingState, setAddingState] = useState<{ variantId: string; productId?: string } | null>(null);
@@ -481,13 +475,10 @@ function optionValue(item: InventoryItem, name: string): string {
   return item.options.find((option) => option.name.toLowerCase() === name.toLowerCase())?.value ?? "—";
 }
 
-function formatWhen(value: string): string {
-  return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-}
 
 export function ShopInventoryLogPanel({ websiteId }: { websiteId: string }) {
   const [search, setSearch] = useState("");
-  const query = useDebounced(search);
+  const query = useDebouncedValue(search.trim(), 250);
   const [page, setPage] = useState(1);
   const [data, setData] = useState<InventoryLogPage | null>(null);
   const [error, setError] = useState<string | null>(null);

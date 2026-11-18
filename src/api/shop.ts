@@ -316,6 +316,8 @@ export type ShopOrder = {
   razorpayPaymentId: string | null;
   razorpayRefundId: string | null;
   paidAt: string | null;
+  /** Set while the order's items are taken out of stock; cancelling puts them back. */
+  stockDeductedAt: string | null;
   refundedAt: string | null;
   failureReason: string | null;
   cancelReason: string | null;
@@ -324,6 +326,37 @@ export type ShopOrder = {
   timeline: ShopOrderTimelineEvent[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type ShopPaymentLogCategory = "payments" | "refunds" | "problems";
+
+export type ShopPaymentLogKind = "order_created" | "payment_verified" | "payment_captured" | "refund" | "webhook";
+
+/** One Razorpay call or webhook for the shop (Shop → Razorpay logs). */
+export type ShopPaymentLog = {
+  id: string;
+  kind: ShopPaymentLogKind;
+  success: boolean;
+  orderId: string | null;
+  orderNumber: number | null;
+  amountPaise: number | null;
+  razorpayRef: string | null;
+  message: string | null;
+  createdAt: string;
+};
+
+export type ShopPaymentLogPage = {
+  logs: ShopPaymentLog[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+/** Returned orders: `awaiting` = waiting for the store's refund (or the refund failed). */
+export type ShopReturnFilter = "all" | "awaiting" | "in-progress" | "refunded";
+
+export type ShopReturnPage = ShopOrderPage & {
+  counts: { awaiting: number; inProgress: number; refunded: number };
 };
 
 export type ShopOrderPage = {
@@ -514,6 +547,41 @@ export const shopApi = {
       body: { status },
     }).then((data) => data.order),
 
+  returns: (websiteId: string, params: { filter?: ShopReturnFilter; search?: string; page?: number } = {}) => {
+    const query = new URLSearchParams();
+    if (params.filter && params.filter !== "all") query.set("filter", params.filter);
+    if (params.search) query.set("search", params.search);
+    if (params.page && params.page > 1) query.set("page", String(params.page));
+    const text = query.toString();
+    return request<ShopReturnPage>(`${base(websiteId)}/returns${text ? `?${text}` : ""}`);
+  },
+
+  paymentLogs: (
+    websiteId: string,
+    params: {
+      view?: "owner" | "technical";
+      category?: ShopPaymentLogCategory;
+      kind?: ShopPaymentLogKind;
+      result?: "success" | "failure";
+      search?: string;
+      page?: number;
+    } = {},
+  ) => {
+    const query = new URLSearchParams();
+    if (params.view === "technical") query.set("view", "technical");
+    if (params.category) query.set("category", params.category);
+    if (params.kind) query.set("kind", params.kind);
+    if (params.result) query.set("result", params.result);
+    if (params.search) query.set("search", params.search);
+    if (params.page && params.page > 1) query.set("page", String(params.page));
+    const text = query.toString();
+    return request<ShopPaymentLogPage>(`${base(websiteId)}/payment-logs${text ? `?${text}` : ""}`);
+  },
+
+  returnsSummary: (websiteId: string) =>
+    request<{ counts: ShopReturnPage["counts"] }>(`${base(websiteId)}/returns/summary`).then((data) => data.counts),
+
+  /** Refunds a returned order through Razorpay (first refund, or a retry after a failure). */
   retryOrderRefund: (websiteId: string, orderId: string) =>
     request<{ order: ShopOrder }>(`${base(websiteId)}/orders/${orderId}/refund`, {
       method: "POST",

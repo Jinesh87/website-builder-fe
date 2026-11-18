@@ -12,6 +12,9 @@ import ShopCustomersPanel from "./ShopCustomersPanel.tsx";
 import ShopInvoiceTemplatePanel from "./ShopInvoiceTemplatePanel.tsx";
 import { ShopInventoryLogPanel, ShopInventoryPanel } from "./ShopInventoryPanel.tsx";
 import ShopOrderEmailsPanel from "./ShopOrderEmailsPanel.tsx";
+import ShopPaymentLogsPanel from "./ShopPaymentLogsPanel.tsx";
+import { useAwaitingReturnsCount } from "./use-awaiting-returns.ts";
+import ShopReturnsPanel from "./ShopReturnsPanel.tsx";
 import ShopOrdersPanel from "./ShopOrdersPanel.tsx";
 import ShopRazorpayPanel from "./ShopRazorpayPanel.tsx";
 import CommonModal from "../ui/CommonModal.tsx";
@@ -340,12 +343,14 @@ type ShopSection =
   | "products"
   | "customers"
   | "orders"
+  | "returns"
   | "invoice-template"
   | "order-emails"
   | "inventory"
   | "inventory-log"
   | "coupons"
-  | "razorpay";
+  | "razorpay"
+  | "razorpay-logs";
 
 const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "category", label: "Category" },
@@ -353,12 +358,14 @@ const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "products", label: "Products" },
   { id: "customers", label: "Customers" },
   { id: "orders", label: "Orders" },
+  { id: "returns", label: "Returns" },
   { id: "coupons", label: "Coupons" },
   { id: "invoice-template", label: "Invoice template" },
   { id: "order-emails", label: "Order emails" },
   { id: "inventory", label: "Inventory" },
   { id: "inventory-log", label: "Inventory log" },
   { id: "razorpay", label: "Razorpay" },
+  { id: "razorpay-logs", label: "Razorpay logs" },
 ];
 
 const SHOP_SECTION_IDS = new Set<string>(SHOP_SECTIONS.map((section) => section.id));
@@ -528,6 +535,8 @@ export default function ShopPanel({
     Number(gstPercentDraft) !== (website.shopGstPercent ?? 0) ||
     priceIncludesGstDraft !== (website.shopPriceIncludesGst !== false);
 
+  const awaitingReturns = useAwaitingReturnsCount(website.id, website.shopEnabled, section);
+
   return (
     <div className="space-y-4">
       <div role="tablist" aria-label="Shop" className="flex gap-1 overflow-x-auto border-b border-line">
@@ -545,6 +554,14 @@ export default function ShopPanel({
               }`}
             >
               {label}
+              {id === "returns" && awaitingReturns > 0 && (
+                <span
+                  className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-semibold leading-5 text-white"
+                  aria-label={`${awaitingReturns} waiting for refund`}
+                >
+                  {awaitingReturns}
+                </span>
+              )}
             </button>
           );
         })}
@@ -801,16 +818,19 @@ export default function ShopPanel({
       )}
 
       {section === "razorpay" && <ShopRazorpayPanel websiteId={website.id} />}
+      {section === "razorpay-logs" && website.shopEnabled && <ShopPaymentLogsPanel websiteId={website.id} />}
 
       {(section === "category" ||
         section === "products" ||
         section === "customers" ||
         section === "orders" ||
+        section === "returns" ||
         section === "coupons" ||
         section === "invoice-template" ||
         section === "order-emails" ||
         section === "inventory" ||
-        section === "inventory-log") &&
+        section === "inventory-log" ||
+        section === "razorpay-logs") &&
         !website.shopEnabled && (
         <section className="rounded-xl border border-line bg-surface px-6 py-12 text-center">
           <p className="text-sm text-ink-body">Turn the shop on in Shop settings before managing categories, products, customers, orders, coupons, or stock.</p>
@@ -822,6 +842,7 @@ export default function ShopPanel({
 
       {section === "customers" && website.shopEnabled && <ShopCustomersPanel websiteId={website.id} />}
       {section === "orders" && website.shopEnabled && <ShopOrdersPanel websiteId={website.id} />}
+      {section === "returns" && website.shopEnabled && <ShopReturnsPanel websiteId={website.id} />}
       {section === "coupons" && website.shopEnabled && <ShopCouponsPanel websiteId={website.id} />}
       {section === "invoice-template" && website.shopEnabled && (
         <ShopInvoiceTemplatePanel
