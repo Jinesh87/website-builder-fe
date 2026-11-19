@@ -5,6 +5,7 @@ import { ApiError, errorMessage } from "../../api/http.ts";
 import { websitesApi, type SavedSection, type ThemeOption, type WebsiteDetail } from "../../api/websites.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import type { CreatedState } from "../../pages/websites/CreateWebsitePage.tsx";
+import { useHandedBackLink } from "../../hooks/use-back-link.ts";
 import EditorErrorBoundary from "./shell/EditorErrorBoundary.tsx";
 import EditorSkeleton from "./shell/EditorSkeleton.tsx";
 import GenerationProgress from "./shell/GenerationProgress.tsx";
@@ -22,6 +23,7 @@ export default function BuilderRoute() {
   const role = user?.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "CLIENT";
   const backTo = role === "SUPER_ADMIN" ? "/admin/websites" : "/websites";
   const justCreated = (location.state as CreatedState | null)?.created === true;
+  const handedBack = useHandedBackLink();
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const reload = useCallback(() => setAttempt((count) => count + 1), []);
@@ -108,7 +110,12 @@ export default function BuilderRoute() {
           themes={state.data.themes}
           savedSections={state.data.savedSections}
           role={role}
-          backTo={state.data.website.isTemplateStudio ? "/admin/templates" : backTo}
+          back={
+            handedBack ??
+            (state.data.website.isTemplateStudio
+              ? { to: "/admin/templates", label: "Templates" }
+              : { to: backTo, label: role === "SUPER_ADMIN" ? "All websites" : "My websites" })
+          }
           justCreated={justCreated}
         />
       </Suspense>

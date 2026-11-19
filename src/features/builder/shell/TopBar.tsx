@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { ArrowLeft, BookUp, ChevronDown, ChevronRight, Code2, ExternalLink, HelpCircle, Monitor, Redo2, ShieldCheck, Smartphone, Tablet, Undo2, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
+import type { BackLink } from "../../../hooks/use-back-link.ts";
 import AppTooltip from "../../../components/ui/AppTooltip.tsx";
 import { lazyWithRetry } from "../../../utils/lazy-with-retry.ts";
 import type { Device } from "../../../components/websites/DevicePreview.tsx";
@@ -41,11 +42,11 @@ function PublishState() {
 }
 
 type TopBarProps = {
-  backTo: string;
+  back: BackLink;
   onPublish: () => void;
 };
 
-export default function TopBar({ backTo, onPublish }: TopBarProps) {
+export default function TopBar({ back, onPublish }: TopBarProps) {
   const { website, draft, page, selectPage, role, device, setDevice, autosave, aiLock, leftPanel, setLeftPanel } = useEditor();
   const { startTour } = useTour();
   const history = useBuilderPuck((state) => state.history);
@@ -83,10 +84,11 @@ export default function TopBar({ backTo, onPublish }: TopBarProps) {
 
   return (
     <header className="z-(--z-ed-toolbar) flex h-12 shrink-0 items-center gap-2 border-b border-ed-border bg-ed-panel px-2">
-      <AppTooltip content="Back to websites" placement="bottom">
+      <AppTooltip content={`Back to ${back.label}`} placement="bottom">
         <Link
-          to={backTo}
-          aria-label="Back to websites"
+          to={back.to}
+          state={back.state}
+          aria-label={`Back to ${back.label}`}
           className="grid size-8 place-items-center rounded-ed text-ed-muted hover:bg-ed-hover hover:text-ed-text"
         >
           <ArrowLeft className="size-4" aria-hidden />

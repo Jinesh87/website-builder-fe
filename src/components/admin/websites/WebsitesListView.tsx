@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Button, SearchField, Spinner } from "@heroui/react";
 import { Globe, Trash2, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useBackLinkState } from "../../../hooks/use-back-link.ts";
 import { errorMessage } from "../../../api/http.ts";
 import { websitesApi, type BuilderType, type WebsiteList, type WebsiteStatus, type WebsiteSummary } from "../../../api/websites.ts";
 import AiSparklesIcon from "../../icons/AiSparklesIcon.tsx";
@@ -31,6 +32,7 @@ const STATUS_OPTIONS: SelectOption<WebsiteStatus | "">[] = [
 export default function WebsitesListView() {
   const [searchParams, setSearchParams] = useSearchParams();
   const clientId = searchParams.get("clientId") ?? "";
+  const backState = useBackLinkState("All websites");
 
   const [search, setSearch] = useState("");
   const [builderType, setBuilderType] = useState<BuilderType | "">("");
@@ -165,7 +167,7 @@ export default function WebsitesListView() {
                   {data.items.map((website) => (
                     <tr key={website.id} className="hover:bg-canvas/40">
                       <td className="px-5 py-3">
-                        <Link to={`/websites/${website.id}`} className="font-medium text-ink hover:text-brand transition-colors">
+                        <Link to={`/websites/${website.id}`} state={backState} className="font-medium text-ink hover:text-brand transition-colors">
                           {website.name}
                         </Link>
                         <p className="font-mono text-xs text-ink-muted">{website.subdomain}</p>
@@ -190,10 +192,10 @@ export default function WebsitesListView() {
                       <td className="px-5 py-3 text-ink-body">{formatDate(website.updatedAt)}</td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <Link to={`/websites/${website.id}`} className="font-medium text-brand hover:underline">
+                          <Link to={`/websites/${website.id}`} state={backState} className="font-medium text-brand hover:underline">
                             Dashboard
                           </Link>
-                          <Link to={`/websites/${website.id}/edit`} className="font-medium text-ink hover:text-brand">
+                          <Link to={`/websites/${website.id}/edit`} state={backState} className="font-medium text-ink hover:text-brand">
                             Edit
                           </Link>
                           <Link to={`/websites/${website.id}/preview`} className="font-medium text-ink-body hover:text-ink">

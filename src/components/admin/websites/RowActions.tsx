@@ -19,10 +19,23 @@ export function RowActions({ children }: { children: ReactNode }) {
   return <div className="flex items-center justify-end gap-0.5">{children}</div>;
 }
 
-export function IconLink({ to, label, icon: Icon, tone = "default" }: { to: string; label: string; icon: LucideIcon; tone?: Tone }) {
+export function IconLink({
+  to,
+  label,
+  icon: Icon,
+  tone = "default",
+  state,
+}: {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  tone?: Tone;
+  /** Router state for the target, e.g. its back link. */
+  state?: unknown;
+}) {
   return (
     <AppTooltip content={label}>
-      <Link to={to} aria-label={label} className={`${BASE} ${TONES[tone]}`}>
+      <Link to={to} state={state} aria-label={label} className={`${BASE} ${TONES[tone]}`}>
         <Icon className="size-4" aria-hidden />
       </Link>
     </AppTooltip>

@@ -18,6 +18,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { useBackLinkState, type BackLinkState } from "../../hooks/use-back-link.ts";
 import { adminHostingApi, hostingApi, type ClientHosting, type ClientHostingWebsite, type WebsiteHosting } from "../../api/hosting.ts";
 import { errorMessage } from "../../api/http.ts";
 import { formatConnects, formatPaise } from "../../api/wallet.ts";
@@ -57,6 +58,7 @@ export default function ClientWebsitesPage() {
   const [active, setActive] = useState<{ mode: ActiveMode; hosting: WebsiteHosting } | null>(null);
   const [opening, setOpening] = useState<string | null>(null);
   const [historyFor, setHistoryFor] = useState<ClientHostingWebsite | null>(null);
+  const backState = useBackLinkState(data?.client.businessName ?? "Client websites");
 
   const load = useCallback(
     () =>
@@ -242,6 +244,7 @@ export default function ClientWebsitesPage() {
                   <WebsiteRow
                     key={website.id}
                     website={website}
+                    backState={backState}
                     isOpening={opening === website.id}
                     onRecordPayment={() => void open(website, "pay")}
                     onEditPrice={() => void open(website, "price")}
@@ -324,6 +327,7 @@ export default function ClientWebsitesPage() {
 
 function WebsiteRow({
   website,
+  backState,
   isOpening,
   onRecordPayment,
   onEditPrice,
@@ -331,6 +335,8 @@ function WebsiteRow({
   onHistory,
 }: {
   website: ClientHostingWebsite;
+  /** Sends the website dashboard's back link to this client's page. */
+  backState: BackLinkState;
   isOpening: boolean;
   onRecordPayment: () => void;
   onEditPrice: () => void;
@@ -344,7 +350,7 @@ function WebsiteRow({
   return (
     <tr className="hover:bg-canvas/40">
       <td className="px-5 py-3">
-        <Link to={`/websites/${website.id}`} className="font-medium text-ink hover:text-brand">
+        <Link to={`/websites/${website.id}`} state={backState} className="font-medium text-ink hover:text-brand">
           {website.name}
         </Link>
         <p className="font-mono text-xs text-ink-muted">{website.subdomain}</p>
@@ -400,8 +406,8 @@ function WebsiteRow({
       </td>
       <td className="px-5 py-3">
         <RowActions>
-          <IconLink to={`/websites/${website.id}`} label="Dashboard" icon={LayoutDashboard} tone="brand" />
-          <IconLink to={`/websites/${website.id}/edit`} label="Edit site" icon={SquarePen} />
+          <IconLink to={`/websites/${website.id}`} state={backState} label="Dashboard" icon={LayoutDashboard} tone="brand" />
+          <IconLink to={`/websites/${website.id}/edit`} state={backState} label="Edit site" icon={SquarePen} />
           <IconLink to={`/websites/${website.id}/preview`} label="Preview" icon={Eye} />
           <IconButton onPress={onRecordPayment} label="Record payment" icon={CreditCard} isDisabled={isOpening} />
           <IconButton onPress={onGrantFree} label="Grant free period" icon={Gift} isDisabled={isOpening} />

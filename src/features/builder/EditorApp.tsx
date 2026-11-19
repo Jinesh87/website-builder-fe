@@ -6,6 +6,8 @@ import { AlertTriangle, CheckCircle2, RotateCw, X } from "lucide-react";
 import type { WebsiteHosting } from "../../api/hosting.ts";
 import type { SavedSection, ThemeOption, WebsiteDetail, WebsitePage } from "../../api/websites.ts";
 import type { Device } from "../../components/websites/DevicePreview.tsx";
+import { dashboardState } from "./back-to-dashboard.ts";
+import type { BackLink } from "../../hooks/use-back-link.ts";
 import PublishSuccessModal from "../../components/websites/PublishSuccessModal.tsx";
 import { draftFromWebsite, homePage, updatePage, type EditorDraft } from "../../pages/websites/editor/editor-state.ts";
 import { LinkTargetsContext, MediaTargetContext } from "../../pages/websites/editor/fields.tsx";
@@ -58,7 +60,7 @@ export type EditorAppProps = {
   themes: ThemeOption[];
   savedSections: SavedSection[];
   role: EditorRole;
-  backTo: string;
+  back: BackLink;
   justCreated: boolean;
 };
 
@@ -90,7 +92,7 @@ function blockHistoryHotkeys(): () => void {
 }
 
 /** Lives inside <Puck> so it can reach editor state; draws the canvas and site chrome. */
-function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublish: () => void; onCommit: (data: Data) => void }) {
+function EditorShell({ back, onPublish, onCommit }: { back: BackLink; onPublish: () => void; onCommit: (data: Data) => void }) {
   const { website, draft, page, siteArea, setSiteArea, setLeftPanel, device, aiOpen, setAiOpen, aiLock, selectPage, notify } = useEditor();
   const dispatch = useBuilderPuck((state) => state.dispatch);
   const getPuck = useGetPuck();
@@ -256,7 +258,7 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
   return (
     <BuilderSiteContext.Provider value={site}>
       <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
-        <TopBar backTo={backTo} onPublish={onPublish} />
+        <TopBar back={back} onPublish={onPublish} />
         <div className="relative flex min-h-0 flex-1 overflow-hidden">
           <LeftRail />
           <CanvasViewport device={device} onDeselect={handleDeselect}>
@@ -280,13 +282,13 @@ function EditorShell({ backTo, onPublish, onCommit }: { backTo: string; onPublis
 /** One Puck instance per page; initial data is read once and later edits flow out through onChange. */
 function PageCanvas({
   page,
-  backTo,
+  back,
   onChange,
   onAction,
   onPublish,
 }: {
   page: WebsitePage;
-  backTo: string;
+  back: BackLink;
   onChange: (data: Data) => void;
   onAction: OnAction;
   onPublish: () => void;
@@ -301,12 +303,12 @@ function PageCanvas({
       onAction={onAction}
       permissions={aiLock ? LOCKED_PERMISSIONS : EDITABLE_PERMISSIONS}
     >
-      <EditorShell backTo={backTo} onPublish={onPublish} onCommit={onChange} />
+      <EditorShell back={back} onPublish={onPublish} onCommit={onChange} />
     </Puck>
   );
 }
 
-export default function EditorApp({ website: initialWebsite, themes, savedSections: initialSaved, role, backTo, justCreated }: EditorAppProps) {
+export default function EditorApp({ website: initialWebsite, themes, savedSections: initialSaved, role, back, justCreated }: EditorAppProps) {
   const [website, setWebsite] = useState(initialWebsite);
   const [draft, setDraft] = useState<EditorDraft>(() => draftFromWebsite(initialWebsite));
   const [pageId, setPageId] = useState(() => homePage(initialWebsite.draft.pages)?.id ?? "");
@@ -455,7 +457,7 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
               <PageCanvas
                 key={page.id}
                 page={page}
-                backTo={backTo}
+                back={back}
                 onChange={handlePuckChange}
                 onAction={handlePuckAction}
                 onPublish={() => setPublishOpen(true)}
@@ -517,7 +519,7 @@ export default function EditorApp({ website: initialWebsite, themes, savedSectio
                 onClose={() => setPublished(null)}
                 website={website}
                 hosting={published?.hosting}
-                redirect={{ to: `/websites/${website.id}`, seconds: 5, stayLabel: "Keep editing" }}
+                redirect={{ to: `/websites/${website.id}`, state: dashboardState(back, website.id), seconds: 5, stayLabel: "Keep editing" }}
               />
 
               <EditorOnboarding />

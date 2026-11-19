@@ -20,7 +20,7 @@ import {
   Rocket,
   Trash2,
 } from "lucide-react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { hostingApi, type WebsiteHosting } from "../../api/hosting.ts";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import {
@@ -46,6 +46,7 @@ import {
   planLabel,
 } from "../../components/hosting/hosting-labels.tsx";
 import LiveSiteLink from "../../components/websites/LiveSiteLink.tsx";
+import { useBackLink, useBackLinkState } from "../../hooks/use-back-link.ts";
 import PublishSuccessModal from "../../components/websites/PublishSuccessModal.tsx";
 import WebsiteHostingPanel from "../../components/hosting/WebsiteHostingPanel.tsx";
 import CommonModal from "../../components/ui/CommonModal.tsx";
@@ -110,13 +111,18 @@ export default function ProjectDashboardPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "SUPER_ADMIN";
   const backTo = isAdmin ? "/admin/websites" : "/websites";
+  const back = useBackLink({ to: backTo, label: isAdmin ? "All websites" : "My websites" });
 
+  const { state: locationState } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  // Keep the router state (the back link) when a tab change replaces this history entry.
   const setTab = useCallback(
-    (next: ProjectTab) => setSearchParams(next === "overview" ? {} : { tab: next }, { replace: true }),
-    [setSearchParams],
+    (next: ProjectTab) =>
+      setSearchParams(next === "overview" ? {} : { tab: next }, { replace: true, state: locationState }),
+    [setSearchParams, locationState],
   );
   const [website, setWebsite] = useState<WebsiteDetail | null>(null);
+  const editorState = useBackLinkState(website?.name ?? "Website");
   const showShop = Boolean(website?.shopFeatureEnabled);
   const tab = parseProjectTab(searchParams.get("tab"), showShop);
   const [hosting, setHosting] = useState<WebsiteHosting | null>(null);
@@ -330,11 +336,12 @@ export default function ProjectDashboardPage() {
           className="flex items-center gap-2 text-sm"
         >
           <Link
-            to={backTo}
+            to={back.to}
+            state={back.state}
             className="inline-flex items-center gap-1.5 text-ink-muted transition-colors hover:text-ink"
           >
             <ArrowLeft className="size-4" aria-hidden />
-            {isAdmin ? "All websites" : "My websites"}
+            {back.label}
           </Link>
           <span className="text-line-strong" aria-hidden>
             /
@@ -390,6 +397,7 @@ export default function ProjectDashboardPage() {
             </Link>
             <Link
               to={editUrl}
+              state={editorState}
               className={buttonVariants({
                 size: "sm",
                 variant: needsPublish ? "outline" : "primary",
@@ -480,6 +488,7 @@ export default function ProjectDashboardPage() {
                 action={
                   <Link
                     to={editUrl}
+              state={editorState}
                     className="inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink"
                   >
                     Manage <ArrowUpRight className="size-3.5" aria-hidden />

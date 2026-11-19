@@ -12,7 +12,7 @@ type PublishSuccessModalProps = {
   hosting?: WebsiteHosting | null;
   title?: string;
   /** Goes here when the countdown ends or "Go to dashboard" is pressed; closing stays put. */
-  redirect?: { to: string; seconds: number; stayLabel: string };
+  redirect?: { to: string; seconds: number; stayLabel: string; /** Router state for the target page. */ state?: unknown };
 };
 
 const CONFETTI_COLORS = ["#2447c7", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#06b6d4"];
@@ -50,7 +50,7 @@ export default function PublishSuccessModal({ isOpen, onClose, website, hosting,
   useEffect(() => {
     if (!isOpen || !redirect) return;
     if (secondsLeft <= 0) {
-      navigate(redirect.to);
+      navigate(redirect.to, { state: redirect.state });
       return;
     }
     const timer = setTimeout(() => setSecondsLeft((value) => value - 1), 1000);
@@ -111,7 +111,7 @@ export default function PublishSuccessModal({ isOpen, onClose, website, hosting,
             <>
               <button
                 type="button"
-                onClick={() => navigate(redirect.to)}
+                onClick={() => navigate(redirect.to, { state: redirect.state })}
                 className="inline-flex h-10 items-center justify-center rounded-full bg-brand px-6 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-hover"
               >
                 Go to dashboard{secondsLeft > 0 && <span className="ml-1.5 tabular-nums text-white/70">· {secondsLeft}s</span>}

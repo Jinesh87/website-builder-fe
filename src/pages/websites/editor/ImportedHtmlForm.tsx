@@ -47,6 +47,7 @@ import {
   applyImportedLinkIcon,
 } from "../../../site-kit/sections/ImportedHtmlSection.tsx";
 import { SiteIcon } from "../../../site-kit/primitives.tsx";
+import { FontSizeField } from "./FontSizeField.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
 import { ImportedCodeButton } from "./ImportedCodeEditor.tsx";
 import type {
@@ -306,7 +307,6 @@ function useEditing(data: ImportedHtmlData, onChange: (data: ImportedHtmlData) =
 }
 
 const KEEP = "As imported";
-const FONT_SIZES = [{ value: "default", label: KEEP }, ...[12, 14, 15, 16, 18, 20, 24, 28, 32, 36, 40, 48, 56, 64].map((n) => ({ value: `${n}px`, label: `${n}px` }))];
 const FONT_WEIGHTS = [
   { value: "default", label: KEEP },
   { value: "400", label: "Regular" },
@@ -405,7 +405,7 @@ function ElementStyleEditor({
   style: ElementStyle;
   onChange: (patch: ElementStyle) => void;
 }) {
-  const pick = (key: "fontSize" | "fontWeight" | "radius" | "imageHeight") => (value: string) => onChange({ [key]: value === "default" ? "" : value });
+  const pick = (key: "fontWeight" | "radius" | "imageHeight") => (value: string) => onChange({ [key]: value === "default" ? "" : value });
   const hasStyle = Object.values(style).some(Boolean);
   return (
     <div className="mt-2 space-y-3 rounded-ed-md border border-ed-accent/30 bg-ed-accent/5 p-2.5">
@@ -421,11 +421,11 @@ function ElementStyleEditor({
       {kind === "text" && (
         <>
           <StyleColorField label="Colour" value={style.color} onCommit={(color) => onChange({ color })} fallback="#0f172a" />
-          <SelectField label="Size" value={style.fontSize ?? "default"} options={FONT_SIZES} onChange={pick("fontSize")} />
+          <FontSizeField label="Size" value={style.fontSize ?? ""} defaultLabel={KEEP} onChange={(fontSize) => onChange({ fontSize })} />
           <SelectField label="Weight" value={style.fontWeight ?? "default"} options={FONT_WEIGHTS} onChange={pick("fontWeight")} />
         </>
       )}
-      {kind === "link" && <SelectField label="Text size" value={style.fontSize ?? "default"} options={FONT_SIZES} onChange={pick("fontSize")} />}
+      {kind === "link" && <FontSizeField label="Text size" value={style.fontSize ?? ""} defaultLabel={KEEP} onChange={(fontSize) => onChange({ fontSize })} />}
       {kind === "media" && (
         <>
           <SelectField label="Size" value={style.imageHeight ?? "default"} options={IMAGE_HEIGHTS} onChange={pick("imageHeight")} />
