@@ -1,4 +1,4 @@
-import type { FooterData, HeaderData, Section, ThemeSettings } from "../site-kit/index.ts";
+import type { FooterData, HeaderData, ImportedHtmlData, ImportedHtmlText, Section, ThemeSettings } from "../site-kit/index.ts";
 import type { AiSuggestion } from "../features/builder/schema/editor-document.ts";
 import { ApiError, request, requestNdjson } from "./http.ts";
 
@@ -360,6 +360,16 @@ export const websitesApi = {
     request<{ section: SavedSection }>(`${BASE}/${websiteId}/saved-sections`, { method: "POST", body: input }).then(
       (data) => data.section,
     ),
+
+  /** Sanitizes, scopes and re-tags hand-edited code of one imported block. Nothing is stored. */
+  rebuildImportedHtml: (
+    websiteId: string,
+    input: { html: string; css: string; scope?: string; texts?: ImportedHtmlText[] },
+  ) =>
+    request<{ block: Pick<ImportedHtmlData, "html" | "css" | "scope" | "texts" | "mediaSlots"> }>(
+      `${BASE}/${websiteId}/imported-html/rebuild`,
+      { method: "POST", body: input },
+    ).then((data) => data.block),
 
   deleteSavedSection: (websiteId: string, savedSectionId: string) =>
     request<void>(`${BASE}/${websiteId}/saved-sections/${savedSectionId}`, { method: "DELETE" }),

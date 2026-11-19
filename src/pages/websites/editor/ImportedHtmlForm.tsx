@@ -48,6 +48,7 @@ import {
 } from "../../../site-kit/sections/ImportedHtmlSection.tsx";
 import { SiteIcon } from "../../../site-kit/primitives.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
+import { ImportedCodeButton } from "./ImportedCodeEditor.tsx";
 import type {
   ImportedHtmlData,
   ImportedHtmlMediaSlot,
@@ -758,6 +759,7 @@ export default function ImportedHtmlForm({ section, onChange, onReplace }: Props
   return (
     <div className="space-y-4">
       {data.chrome ? null : <ConvertRow section={section} onReplace={onReplace} />}
+      <ImportedCodeButton data={data} onChange={onChange} />
       <ImportedHtmlFields data={data} onChange={onChange} sectionId={section.id} />
       <TextField
         label="Block name (only shown in the builder)"
@@ -792,6 +794,7 @@ export function ImportedChromeForm({
           Use a builder {kind} instead
         </button>
       </div>
+      <ImportedCodeButton data={data} onChange={onChange} />
       <ImportedHtmlFields data={data} onChange={onChange} sectionId={sectionId} />
     </div>
   );
