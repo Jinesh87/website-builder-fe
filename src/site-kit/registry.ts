@@ -1,5 +1,6 @@
 import { AUTH_PRESETS, createAuthData } from "./auth-defaults.ts";
 import { CARDS_PRESETS, createCardsData } from "./cards-defaults.ts";
+import { createShowcaseData, SHOWCASE_PRESETS } from "./showcase-defaults.ts";
 import type {
   AccountData,
   GalleryItem,
@@ -31,6 +32,7 @@ export type SectionCategory =
   | "Auth"
   | "Account"
   | "Blog"
+  | "Showcase"
   | "Shop";
 
 export type SectionDefinition<T extends SectionType> = {
@@ -816,6 +818,13 @@ export const SECTION_DEFINITIONS: { [T in SectionType]: SectionDefinition<T> } =
       category: "Account",
       description: "The signed-in customer's orders, cart and profile. Visitors who aren't signed in see a sign-in prompt.",
       createData: () => accountData("sidebar-tabs"),
+    },
+    showcase: {
+      type: "showcase",
+      label: "Product showcase",
+      category: "Showcase",
+      description: "Your products or categories with photos, in several designs. For display only: no cart or checkout.",
+      createData: createShowcaseData,
     },
   };
 
@@ -5126,6 +5135,14 @@ export const SECTION_PRESETS: SectionPreset[] = [
     category: "Cards",
     description: preset.description,
     create: () => createSection("cards", { data: preset.data() }),
+  })),
+  ...SHOWCASE_PRESETS.map((preset): SectionPreset => ({
+    key: preset.key,
+    type: "showcase",
+    label: preset.label,
+    category: "Showcase",
+    description: preset.description,
+    create: () => createSection("showcase", { data: preset.data() }),
   })),
   ...AUTH_PRESETS.map((preset): SectionPreset => ({
     key: preset.key,

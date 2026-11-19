@@ -25,6 +25,7 @@ import {
   PlaySquare,
   Rocket,
   SearchX,
+  Package,
   ShoppingBag,
   SlidersHorizontal,
   UserCircle,
@@ -63,6 +64,7 @@ const SECTION_ICONS: Record<SectionType, ComponentType<LucideProps>> = {
   product_detail: ShoppingBag,
   account: UserCircle,
   imported_html: FileCode2,
+  showcase: Package,
 };
 
 /** Drag-to-insert list backed by Puck's drawer, rendered with the builder's own styling and icons. */

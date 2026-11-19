@@ -81,6 +81,7 @@ import { ContactFormFieldsEditor, ContactLayoutEditor } from "./ContactBuilderFi
 import { createContactLayout, layoutHasForm, resolveContactLayout } from "../../../site-kit/contact-builder.ts";
 import AuthSectionForm from "./AuthSectionForm.tsx";
 import CardsSectionForm from "./CardsSectionForm.tsx";
+import ShowcaseSectionForm from "./ShowcaseSectionForm.tsx";
 import ImportedHtmlForm, { ImportedChromeForm } from "./ImportedHtmlForm.tsx";
 import { chromeToBuilder, chromeToImported, footerFromImported } from "../../../site-kit/imported-html-convert.ts";
 import { SwitchBackBar } from "./ImportedHtmlForm.tsx";
@@ -5613,6 +5614,13 @@ function DataForm({
     case "blog_detail":
       return (
         <BlogDetailForm
+          data={section.data}
+          onChange={(data) => onChange({ ...section, data })}
+        />
+      );
+     case "showcase":
+      return (
+        <ShowcaseSectionForm
           data={section.data}
           onChange={(data) => onChange({ ...section, data })}
         />

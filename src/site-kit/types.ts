@@ -4,8 +4,10 @@
  */
 
 import type { FontKey } from "./fonts.ts";
+import type { ShowcaseData } from "./showcase-types.ts";
 
 export type { FontKey };
+export * from "./showcase-types.ts";
 
 export type ImageRef = {
   url: string;
@@ -1755,6 +1757,7 @@ export type SectionDataMap = {
   product_detail: ProductDetailData;
   account: AccountData;
   imported_html: ImportedHtmlData;
+  showcase: ShowcaseData;
 };
 
 export type ImportedHtmlText = {

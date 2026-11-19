@@ -8,6 +8,7 @@ import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
 import { HERO_CONTROLS_CSS } from "./hero-controls-styles.ts";
 import { HERO_REGISTRATION_CSS } from "./hero-registration-styles.ts";
 import { CARDS_CSS } from "./cards-styles.ts";
+import { SHOWCASE_CSS } from "./showcase-styles.ts";
 import { SHOP_CSS } from "./shop-styles.ts";
 import { VINTAGE_CSS } from "./vintage-styles.ts";
 import { RICH_TEXT_CSS } from "./rich-text.tsx";
@@ -10245,6 +10246,7 @@ ${CONTACT_BUILDER_CSS}
 ${HERO_CONTROLS_CSS}
 ${HERO_REGISTRATION_CSS}
 ${CARDS_CSS}
+${SHOWCASE_CSS}
 ${SHOP_CSS}
 ${ACCOUNT_CSS}
 ${ACCOUNT_POPUP_CSS}

@@ -28,6 +28,7 @@ import TextSection from "./sections/TextSection.tsx";
 import BlogSection from "./sections/BlogSection.tsx";
 import BlogDetailSection from "./sections/BlogDetailSection.tsx";
 import ProductsSection from "./sections/ProductsSection.tsx";
+import ShowcaseSection from "./sections/ShowcaseSection.tsx";
 import ProductDetailSection from "./sections/ProductDetailSection.tsx";
 import AccountSection from "./sections/AccountSection.tsx";
 import ImportedHtmlSection from "./sections/ImportedHtmlSection.tsx";
@@ -97,6 +98,8 @@ export const SectionView = memo(function SectionView({ section }: { section: Sec
       return <AccountSection section={section} />;
     case "imported_html":
       return <ImportedHtmlSection section={section} />;
+    case "showcase":
+      return <ShowcaseSection section={section} />;
   }
 }, (prev, next) => {
   if (prev.section === next.section) return true;
