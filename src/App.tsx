@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { Spinner } from "@heroui/react";
+import { Spinner, Toast } from "@heroui/react";
 import AuthProvider from "./auth/AuthProvider.tsx";
 import { GuestOnly, RequireAuth } from "./auth/RouteGuards.tsx";
 import AdminLayout from "./layouts/AdminLayout.tsx";
@@ -171,6 +171,8 @@ export default function App() {
             </Route>
           </Routes>
         </Suspense>
+        {/* One toast region for the whole app; show toasts with toast.success(...) from @heroui/react. */}
+        <Toast.Provider placement="top" />
       </AuthProvider>
     </BrowserRouter>
   );
