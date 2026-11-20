@@ -20,6 +20,8 @@ import {
   getCuratedFallbackImage,
   normalizeImageUrl,
 } from "../image-utils.ts";
+import HeroBackgroundSlider, { heroBackgroundSlides } from "./HeroBackgroundSlider.tsx";
+import { heroSizingProps } from "../hero-sizing.ts";
 import {
   alignAttr,
   heroBaseAlign,
@@ -426,7 +428,13 @@ export default function HeroSection({
   const baseAlign = heroBaseAlign(data, section.settings);
   const alignOf = (element: HeroAlignElement) =>
     heroElementAlign(data, element, baseAlign);
-  const buttonShape = heroButtonShapeProps(data);
+  // Every layout puts these on its section, so the exact sizes ride along with the button shape.
+  const shape = heroButtonShapeProps(data);
+  const sizing = heroSizingProps(data);
+  const buttonShape = {
+    className: [shape.className, sizing.className].filter(Boolean).join(" "),
+    style: { ...shape.style, ...sizing.style },
+  };
 
   const minHeightClass =
     data.minHeight === "screen"
@@ -1307,7 +1315,9 @@ export default function HeroSection({
         ? data.videoUrl
         : undefined);
 
-  const hasBgMedia = Boolean(bgImage?.url || bgVideoUrl);
+  const bgSlides = isBgMediaMode && !bgVideoUrl ? heroBackgroundSlides(data) : [];
+  const hasBgSlider = bgSlides.length > 1;
+  const hasBgMedia = Boolean(bgImage?.url || bgVideoUrl || hasBgSlider);
 
   const bgEmbedUrl = getEmbedUrl(bgVideoUrl, true);
 
@@ -1440,13 +1450,17 @@ export default function HeroSection({
       {/* Full Background Image / Video media layer */}
       {hasBgMedia && (
         <>
-          <HeroBackgroundMedia
-            bgImage={bgImage}
-            bgVideoUrl={bgVideoUrl}
-            bgEmbedUrl={bgEmbedUrl}
-            bgPosClass={bgPosClass}
-            contextDescription={contextDescription}
-          />
+          {hasBgSlider ? (
+            <HeroBackgroundSlider slides={bgSlides} interval={data.slideInterval} bgPosClass={bgPosClass} />
+          ) : (
+            <HeroBackgroundMedia
+              bgImage={bgImage}
+              bgVideoUrl={bgVideoUrl}
+              bgEmbedUrl={bgEmbedUrl}
+              bgPosClass={bgPosClass}
+              contextDescription={contextDescription}
+            />
+          )}
           {overlayType !== "none" && (
             <div
               className={`wb-hero-overlay wb-overlay-${overlayType}`}

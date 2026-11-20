@@ -1,6 +1,8 @@
 import { AUTH_PRESETS, createAuthData } from "./auth-defaults.ts";
 import { CARDS_PRESETS, createCardsData } from "./cards-defaults.ts";
 import { createShowcaseData, SHOWCASE_PRESETS } from "./showcase-defaults.ts";
+import { GALLERY_PRESETS } from "./gallery-defaults.ts";
+import { HERO_SLIDER_PRESETS } from "./hero-slider-defaults.ts";
 import type {
   AccountData,
   GalleryItem,
@@ -5135,6 +5137,22 @@ export const SECTION_PRESETS: SectionPreset[] = [
     category: "Cards",
     description: preset.description,
     create: () => createSection("cards", { data: preset.data() }),
+  })),
+  ...HERO_SLIDER_PRESETS.map((preset): SectionPreset => ({
+    key: preset.key,
+    type: "hero",
+    label: preset.label,
+    category: "Hero",
+    description: preset.description,
+    create: () => createSection("hero", { data: preset.data() }),
+  })),
+  ...GALLERY_PRESETS.map((preset): SectionPreset => ({
+    key: preset.key,
+    type: "gallery",
+    label: preset.label,
+    category: "Portfolio",
+    description: preset.description,
+    create: () => createSection("gallery", { data: preset.data() }),
   })),
   ...SHOWCASE_PRESETS.map((preset): SectionPreset => ({
     key: preset.key,

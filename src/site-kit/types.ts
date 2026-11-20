@@ -452,8 +452,29 @@ export type HeroButtonShape = ButtonShape;
 
 export const HERO_BUTTON_RADIUS_MAX = BUTTON_RADIUS_MAX;
 
+export const HERO_BUTTON_SIZES = ["sm", "md", "lg", "xl"] as const;
+export type HeroButtonSize = (typeof HERO_BUTTON_SIZES)[number];
+
+/** Exact sizes for the hero; anything unset keeps the layout's own size. */
+export type HeroSizing = {
+  /** Minimum height in % of the screen height (vh). */
+  height?: number;
+  /** Heading size in px on desktop; it scales down on small screens. */
+  headingSize?: number;
+  /** Subheading / description size in px. */
+  textSize?: number;
+  /** Space between the badge, heading and text, in px. */
+  gap?: number;
+  /** Extra space above the buttons, in px. */
+  buttonsGap?: number;
+  buttonSize?: HeroButtonSize;
+  /** Widest the text block may get, in px. */
+  textWidth?: number;
+};
+
 export type HeroData = {
   variant: HeroVariant;
+  sizing?: HeroSizing;
   eyebrow?: string;
   badgeIcon?: string;
   heading: string;
@@ -476,6 +497,10 @@ export type HeroData = {
   /** How many arch collage photos to show: 1 (arch only), 2 (arch + tile) or 3 (arch + two tiles). Unset is 3. */
   collagePhotos?: 1 | 2 | 3;
   backgroundImage?: ImageRef;
+  /** Two or more photos crossfade behind the text (background-image layout), with arrows and dots. */
+  backgroundSlides?: ImageRef[];
+  /** Seconds per background slide; 0 turns autoplay off. Defaults to 5. */
+  slideInterval?: number;
   bgImagePosition?: "bottom" | "center" | "top" | "cover";
   bgOverlayType?: "dark" | "light" | "gradient" | "none";
   backgroundVideoUrl?: string;
@@ -986,7 +1011,8 @@ export type TextData = {
 };
 
 export type GalleryAspect = "4:3" | "1:1" | "16:9" | "3:4" | "auto";
-export type GalleryCardStyle = "default" | "surface" | "overlay";
+/** "reveal" darkens the photo and shows its title only on hover (zooming the photo slowly). */
+export type GalleryCardStyle = "default" | "surface" | "overlay" | "reveal";
 
 export type GalleryItem = ImageRef & {
   name?: string;
@@ -994,6 +1020,8 @@ export type GalleryItem = ImageRef & {
   badge?: string;
   description?: string;
   link?: string;
+  /** Groups the photo under a filter tab (e.g. "Kitchen") when the gallery shows filters. */
+  category?: string;
 };
 
 export type GalleryData = {
@@ -1009,6 +1037,10 @@ export type GalleryData = {
   cardStyle?: GalleryCardStyle;
   imageRadius?: "default" | "soft" | "pill" | "sharp";
   cta?: LinkRef;
+  /** Shows "All" plus one tab per photo category above the grid. */
+  filters?: boolean;
+  /** Label of the tab that shows every photo; "All" when blank. */
+  allLabel?: string;
 };
 
 export type LogosData = {

@@ -225,7 +225,7 @@ function SectionInspector({ item, index }: { item: BuilderItem; index: number })
           (localSection.type === "imported_html" ? (
             <ImportedStyleForm settings={localSection.settings} onChange={changeSettings} onShowContent={() => setTab("content")} />
           ) : (
-            <SectionStyleForm settings={localSection.settings} siteFont={siteFont} sectionType={localSection.type} onChange={changeSettings} />
+            <SectionStyleForm settings={localSection.settings} siteFont={siteFont} sectionType={localSection.type} section={localSection} onChange={changeSettings} />
           ))}
         {tab === "responsive" && <SectionResponsiveForm settings={localSection.settings} onChange={changeSettings} />}
         {tab === "advanced" && <SectionAdvancedForm settings={localSection.settings} onChange={changeSettings} />}

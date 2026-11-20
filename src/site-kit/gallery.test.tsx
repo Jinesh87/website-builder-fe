@@ -94,8 +94,8 @@ describe("gallery section and presets", () => {
 
     const surfaceHtml = renderToStaticMarkup(<GallerySection section={sectionSurface} />);
     expect(surfaceHtml).toContain("wb-gallery-surface");
-    expect(surfaceHtml).toContain("aspect-square");
-    expect(surfaceHtml).toContain("rounded-2xl");
+    expect(surfaceHtml).toContain("wb-gallery-a-1x1");
+    expect(surfaceHtml).toContain("wb-gallery-r-pill");
 
     const sectionOverlay: SectionOf<"gallery"> = {
       id: "test-overlay",
@@ -119,7 +119,19 @@ describe("gallery section and presets", () => {
     };
 
     const overlayHtml = renderToStaticMarkup(<GallerySection section={sectionOverlay} />);
-    expect(overlayHtml).toContain("aspect-[16/9]");
-    expect(overlayHtml).toContain("bg-gradient-to-t");
+    expect(overlayHtml).toContain("wb-gallery-a-16x9");
+    expect(overlayHtml).toContain("wb-gallery-overlay-layer");
+  });
+
+  it("hover reveal preset renders category tabs and reveal cards", () => {
+    const preset = SECTION_PRESETS.find((p) => p.key === "gallery-reveal-filters");
+    expect(preset?.category).toBe("Portfolio");
+    const section = preset!.create() as SectionOf<"gallery">;
+    expect(section.data.images.every((image) => image.category)).toBe(true);
+
+    const html = renderToStaticMarkup(<GallerySection section={section} />);
+    for (const tab of ["All", "Kitchen", "Living Room", "Bathroom"]) expect(html).toContain(`>${tab}</button>`);
+    expect(html).toContain("wb-gallery-reveal-layer");
+    expect(html).toContain("wb-gallery-a-4x3");
   });
 });

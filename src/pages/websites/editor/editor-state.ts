@@ -169,7 +169,7 @@ export function slugify(name: string): string {
   return `/${slug || "page"}`;
 }
 
-function uniqueSlug(base: string, pages: WebsitePage[], ignoreId?: string): string {
+export function uniqueSlug(base: string, pages: WebsitePage[], ignoreId?: string): string {
   const taken = new Set(pages.filter((page) => page.id !== ignoreId).map((page) => page.slug));
   if (!taken.has(base)) return base;
   for (let n = 2; ; n++) {

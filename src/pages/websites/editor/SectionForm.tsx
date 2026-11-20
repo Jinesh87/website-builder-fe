@@ -17,9 +17,6 @@ import type {
   FaqVariant,
   FeaturesData,
   FontKey,
-  GalleryAspect,
-  GalleryCardStyle,
-  GalleryData,
   GridColumns,
   HeroCampaignStat,
   HeroData,
@@ -74,6 +71,10 @@ import {
   VideoField,
 } from "./fields.tsx";
 import { FontPicker } from "./FontPicker.tsx";
+import { COLUMN_OPTIONS, ColumnsFields } from "./ColumnsFields.tsx";
+import GalleryForm from "./GalleryForm.tsx";
+import HeroSlidesFields from "./HeroSlidesFields.tsx";
+import HeroSizingFields from "./HeroSizingFields.tsx";
 import { HeroAlignmentGroup, HeroButtonShapeGroup } from "./HeroLayoutFields.tsx";
 import { cardImageSize, heroImageSize, MEDIA_HINT, MEDIA_SIZE, wideImageSize } from "./media-dimensions.ts";
 import CustomSectionForm from "./CustomSectionForm.tsx";
@@ -88,6 +89,7 @@ import { SwitchBackBar } from "./ImportedHtmlForm.tsx";
 import { BlogDetailForm, BlogForm } from "./BlogSectionForms.tsx";
 import { IconPickerField } from "./IconPicker.tsx";
 import { PRODUCTS_FEATURED_LIMITS } from "../../../site-kit/index.ts";
+import { supportedStyleControls, type StyleControl } from "../../../site-kit/style-support.ts";
 import { FeaturedProductPicks } from "./FeaturedProductPicks.tsx";
 import { Bold, Italic, Film, Waves, Compass, Sparkles } from "lucide-react";
 import { isVintageHero, VintageHeroFields } from "./VintageHeroFields.tsx";
@@ -97,13 +99,6 @@ import { HeroRegistrationFields } from "./HeroRegistrationFields.tsx";
 import ClapperContactFields from "./ClapperContactFields.tsx";
 
 type DataFormProps<T> = { data: T; onChange: (data: T) => void };
-
-const COLUMN_OPTIONS: { value: GridColumns; label: string }[] = [
-  { value: 1, label: "1" },
-  { value: 2, label: "2" },
-  { value: 3, label: "3" },
-  { value: 4, label: "4" },
-];
 
 export const ICON_OPTIONS: { value: IconName | ""; label: string }[] = [
   { value: "", label: "No icon" },
@@ -347,27 +342,6 @@ function StringList({
         />
       )}
     />
-  );
-}
-
-function ColumnsFields<
-  T extends { columns: GridColumns; mobileColumns: GridColumns },
->({ data, onChange }: DataFormProps<T>) {
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      <SelectField
-        label="Columns"
-        value={data.columns}
-        options={COLUMN_OPTIONS}
-        onChange={(columns) => onChange({ ...data, columns })}
-      />
-      <SelectField
-        label="On mobile"
-        value={data.mobileColumns}
-        options={COLUMN_OPTIONS.slice(0, 2)}
-        onChange={(mobileColumns) => onChange({ ...data, mobileColumns })}
-      />
-    </div>
   );
 }
 
@@ -622,6 +596,8 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
           />
         )}
       </FormGroup>
+
+      <HeroSizingFields data={data} onChange={onChange} />
 
       <HeroAlignmentGroup data={data} onChange={onChange} />
 
@@ -1390,6 +1366,7 @@ function HeroForm({ data, onChange }: DataFormProps<HeroData>) {
             dimensionHint={MEDIA_SIZE.fullBleed}
             hint={MEDIA_HINT.cropped}
           />
+          <HeroSlidesFields data={data} onChange={onChange} />
 
           <SelectField
             label="Background image alignment / position"
@@ -3606,134 +3583,6 @@ function TextForm({ data, onChange }: DataFormProps<TextData>) {
   );
 }
 
-function GalleryForm({ data, onChange }: DataFormProps<GalleryData>) {
-  return (
-    <>
-      <FormGroup title="Content & Headings">
-        <TextField
-          label="Eyebrow / Badge (optional)"
-          value={data.eyebrow ?? ""}
-          onChange={(eyebrow) => onChange({ ...data, eyebrow })}
-          placeholder="e.g. PORTFOLIO or HOW WE WORK"
-        />
-        <RichTextField
-          label="Heading"
-          value={data.heading}
-          onChange={(heading) => onChange({ ...data, heading })}
-          maxLength={200}
-        />
-        <TextAreaField
-          label="Intro / Description (optional)"
-          value={data.intro ?? data.description ?? ""}
-          onChange={(intro) => onChange({ ...data, intro, description: intro })}
-          rows={3}
-          hint="Cards, banners, boards and branding we've printed for businesses."
-        />
-        <OptionalLinkField
-          label="Read more / Bottom CTA button"
-          value={data.cta}
-          onChange={(cta) => onChange({ ...data, cta })}
-          fallback={{ label: "View all our work", href: "/portfolio" }}
-        />
-      </FormGroup>
-
-      <FormGroup title="Layout & Styling">
-        <ColumnsFields data={data} onChange={onChange} />
-        <SelectField
-          label="Card style"
-          value={data.cardStyle ?? "default"}
-          options={[
-            { value: "default", label: "Clean photo & caption (Default)" },
-            { value: "surface", label: "Surface card (Tinted background & soft padding)" },
-            { value: "overlay", label: "Overlay (Text overlay over image with gradient)" },
-          ]}
-          onChange={(cardStyle) => onChange({ ...data, cardStyle: cardStyle as GalleryCardStyle })}
-        />
-        <SelectField
-          label="Image aspect ratio"
-          value={data.imageAspect ?? "4:3"}
-          options={[
-            { value: "4:3", label: "Classic standard (4:3)" },
-            { value: "1:1", label: "Square / Instagram (1:1)" },
-            { value: "16:9", label: "Widescreen banner (16:9)" },
-            { value: "3:4", label: "Portrait / Poster (3:4)" },
-            { value: "auto", label: "Natural height (Auto)" },
-          ]}
-          onChange={(imageAspect) => onChange({ ...data, imageAspect: imageAspect as GalleryAspect })}
-        />
-        <SelectField
-          label="Image corner radius"
-          value={data.imageRadius ?? "default"}
-          options={[
-            { value: "default", label: "Rounded corners (Default)" },
-            { value: "soft", label: "Soft subtle radius" },
-            { value: "pill", label: "Extra rounded / Pill (24px)" },
-            { value: "sharp", label: "Sharp / Square edges" },
-          ]}
-          onChange={(imageRadius) => onChange({ ...data, imageRadius: imageRadius as "default" | "soft" | "pill" | "sharp" })}
-        />
-        <SelectField
-          label="Content alignment"
-          value={data.align ?? "center"}
-          options={[
-            { value: "center", label: "Center" },
-            { value: "left", label: "Left" },
-            { value: "right", label: "Right" },
-          ]}
-          onChange={(align) => onChange({ ...data, align: align as SectionAlign })}
-        />
-      </FormGroup>
-
-      <FormGroup title="Images">
-        <ItemList
-          label="Images"
-          items={data.images}
-          max={48}
-          onChange={(images) => onChange({ ...data, images })}
-          create={() => ({ url: "", alt: "", name: "", badge: "", description: "" })}
-          itemTitle={(image, index) => image.name || image.title || image.alt || `Image ${index + 1}`}
-          addLabel="Add image"
-          renderItem={(image, update) => (
-            <div className="flex flex-col gap-3">
-              <ImageField
-                label="Image"
-                value={image}
-                onChange={(next) => update({ ...image, ...(next ?? { url: "", alt: "" }) })}
-                dimensionHint={MEDIA_SIZE.galleryImage}
-              />
-              <TextField
-                label="Name / Title (optional)"
-                value={image.name ?? image.title ?? ""}
-                onChange={(name) => update({ ...image, name, title: name })}
-                placeholder="e.g. Print Factory brand poster"
-              />
-              <TextField
-                label="Badge / Tag (optional)"
-                value={image.badge ?? ""}
-                onChange={(badge) => update({ ...image, badge })}
-                placeholder="e.g. BRANDING"
-              />
-              <TextAreaField
-                label="Description / Caption (optional)"
-                value={image.description ?? ""}
-                onChange={(description) => update({ ...image, description })}
-                rows={2}
-                hint="Brief caption or details about this work sample."
-              />
-              <TextField
-                label="Link URL (optional)"
-                value={image.link ?? ""}
-                onChange={(link) => update({ ...image, link })}
-                placeholder="https://... or /contact"
-              />
-            </div>
-          )}
-        />
-      </FormGroup>
-    </>
-  );
-}
-
 function LogosForm({ data, onChange }: DataFormProps<LogosData>) {
   return (
     <>
@@ -4897,8 +4746,17 @@ export function SectionStyleForm({
   settings,
   siteFont,
   sectionType,
+  section,
   onChange,
-}: SettingsFormProps & { siteFont: FontKey; sectionType?: SectionType }) {
+}: SettingsFormProps & {
+  siteFont: FontKey;
+  sectionType?: SectionType;
+  /** The section being styled; its layout decides which controls are shown (style-support.ts). */
+  section?: Pick<Section, "type" | "data">;
+}) {
+  const supported = section ? supportedStyleControls(section) : null;
+  // Only offer controls that visibly change this section's layout.
+  const can = (...controls: StyleControl[]) => !supported || controls.some((control) => supported.has(control));
   const customColors = settings.customColors ?? {};
   const updateCustomColor = (
     patch: Partial<NonNullable<SectionSettings["customColors"]>>,
@@ -4932,19 +4790,25 @@ export function SectionStyleForm({
 
   return (
     <>
+      {can("background", "spacing", "containerWidth", "align") && (
       <FormGroup title="Section layout & container width">
+        {can("background") && (
         <SelectField
           label="Theme preset background"
           value={settings.background}
           options={BACKGROUND_OPTIONS}
           onChange={(background) => onChange({ ...settings, background })}
         />
+        )}
+        {can("spacing") && (
         <SelectField
           label="Vertical spacing"
           value={settings.spacing ?? "default"}
           options={SPACING_OPTIONS}
           onChange={(spacing) => onChange({ ...settings, spacing })}
         />
+        )}
+        {can("containerWidth") && (
         <SelectField
           label="Content container width"
           value={isCustomWidth ? "custom" : (settings.containerWidth ?? "default")}
@@ -4960,7 +4824,8 @@ export function SectionStyleForm({
             }
           }}
         />
-        {isCustomWidth && (
+        )}
+        {can("containerWidth") && isCustomWidth && (
           <TextField
             label="Custom container width (px, %, or vw)"
             value={settings.containerWidth ?? ""}
@@ -4976,7 +4841,7 @@ export function SectionStyleForm({
             }}
           />
         )}
-        {sectionType === "header" && (
+        {sectionType === "header" && can("align") && (
           <SelectField
             label="Navigation alignment"
             value={settings.align ?? "default"}
@@ -4987,7 +4852,7 @@ export function SectionStyleForm({
             }}
           />
         )}
-        {(!sectionType ||
+        {can("align") && (!sectionType ||
           !["hero", "marquee", "auth", "product_detail", "header"].includes(
             sectionType,
           )) && (
@@ -4999,6 +4864,7 @@ export function SectionStyleForm({
           />
         )}
       </FormGroup>
+      )}
 
       {(() => {
         const isCustomScale = Boolean(
@@ -5028,8 +4894,10 @@ export function SectionStyleForm({
           settings.bodyWeight === "700" ||
           settings.bodyWeight === "bold";
 
+        if (!can("font", "fontSize", "headingSize", "headingWeight", "headingItalic", "bodySize", "bodyWeight", "bodyItalic")) return null;
         return (
           <FormGroup title="Section typography & styling">
+            {can("font") && (
             <FontPicker
               label="Font family"
               value={settings.font}
@@ -5039,6 +4907,8 @@ export function SectionStyleForm({
                 onChange(font ? { ...rest, font } : rest);
               }}
             />
+            )}
+            {can("fontSize") && (
             <SelectField
               label="Overall font size scale"
               value={isCustomScale ? "custom" : (settings.fontSize ?? "default")}
@@ -5054,7 +4924,8 @@ export function SectionStyleForm({
                 }
               }}
             />
-            {isCustomScale && (
+            )}
+            {can("fontSize") && isCustomScale && (
               <TextField
                 label="Custom scale or base pixel size"
                 value={settings.fontSize ?? ""}
@@ -5071,8 +4942,10 @@ export function SectionStyleForm({
               />
             )}
 
+            {can("headingSize", "headingWeight", "headingItalic") && (
             <div className="pt-2 border-t border-ed-border/40 flex flex-col gap-2">
               <span className="text-ed-xs font-semibold text-ed-text">Heading Typography</span>
+              {can("headingSize") && (
               <SelectField
                 label="Heading font size"
                 value={isCustomHeading ? "custom" : (settings.headingSize ?? "default")}
@@ -5088,7 +4961,8 @@ export function SectionStyleForm({
                   }
                 }}
               />
-              {isCustomHeading && (
+              )}
+              {can("headingSize") && isCustomHeading && (
                 <TextField
                   label="Custom heading pixel size (px)"
                   value={settings.headingSize ?? ""}
@@ -5104,6 +4978,7 @@ export function SectionStyleForm({
                   }}
                 />
               )}
+              {can("headingWeight") && (
               <SelectField
                 label="Heading font weight"
                 value={settings.headingWeight ?? "default"}
@@ -5117,8 +4992,10 @@ export function SectionStyleForm({
                   }
                 }}
               />
+              )}
               <div className="flex items-center gap-2">
                 <span className="text-ed-xs text-ed-muted">Quick style:</span>
+                {can("headingWeight") && (
                 <button
                   type="button"
                   onClick={() => {
@@ -5134,6 +5011,8 @@ export function SectionStyleForm({
                   <Bold className="size-3.5" />
                   Bold
                 </button>
+                )}
+                {can("headingItalic") && (
                 <button
                   type="button"
                   onClick={() => {
@@ -5149,11 +5028,15 @@ export function SectionStyleForm({
                   <Italic className="size-3.5" />
                   Italic
                 </button>
+                )}
               </div>
             </div>
+            )}
 
+            {can("bodySize", "bodyWeight", "bodyItalic") && (
             <div className="pt-2 border-t border-ed-border/40 flex flex-col gap-2">
               <span className="text-ed-xs font-semibold text-ed-text">Body / Content Typography</span>
+              {can("bodySize") && (
               <SelectField
                 label="Body / Content font size"
                 value={isCustomBody ? "custom" : (settings.bodySize ?? "default")}
@@ -5169,7 +5052,8 @@ export function SectionStyleForm({
                   }
                 }}
               />
-              {isCustomBody && (
+              )}
+              {can("bodySize") && isCustomBody && (
                 <TextField
                   label="Custom body pixel size (px)"
                   value={settings.bodySize ?? ""}
@@ -5185,6 +5069,7 @@ export function SectionStyleForm({
                   }}
                 />
               )}
+              {can("bodyWeight") && (
               <SelectField
                 label="Body font weight"
                 value={settings.bodyWeight ?? "default"}
@@ -5198,8 +5083,10 @@ export function SectionStyleForm({
                   }
                 }}
               />
+              )}
               <div className="flex items-center gap-2">
                 <span className="text-ed-xs text-ed-muted">Quick style:</span>
+                {can("bodyWeight") && (
                 <button
                   type="button"
                   onClick={() => {
@@ -5215,6 +5102,8 @@ export function SectionStyleForm({
                   <Bold className="size-3.5" />
                   Bold
                 </button>
+                )}
+                {can("bodyItalic") && (
                 <button
                   type="button"
                   onClick={() => {
@@ -5230,13 +5119,17 @@ export function SectionStyleForm({
                   <Italic className="size-3.5" />
                   Italic
                 </button>
+                )}
               </div>
             </div>
+            )}
           </FormGroup>
         );
       })()}
 
+      {can("colorBackground", "colorText", "colorPrimary", "colorMuted", "colorBorder", "colorGradient") && (
       <FormGroup title="Custom dynamic colors (CellColorPicker)">
+        {can("colorBackground") && (
         <ColorField
           label="Section background"
           value={customColors.background}
@@ -5253,6 +5146,8 @@ export function SectionStyleForm({
           placeholder="Theme default"
           hint="Overrides the theme background for this specific section."
         />
+        )}
+        {can("colorText") && (
         <ColorField
           label="Text / Heading color"
           value={customColors.text}
@@ -5260,6 +5155,8 @@ export function SectionStyleForm({
           fallback={settings.background === "dark" ? "#f8fafc" : "#0f172a"}
           placeholder="Auto"
         />
+        )}
+        {can("colorPrimary") && (
         <ColorField
           label="Primary / Accent color"
           value={customColors.primary}
@@ -5268,6 +5165,8 @@ export function SectionStyleForm({
           placeholder="Theme"
           hint="Used for CTA buttons, gradient highlights, and active elements."
         />
+        )}
+        {can("colorMuted") && (
         <ColorField
           label="Muted / Subtitle text"
           value={customColors.muted}
@@ -5275,6 +5174,8 @@ export function SectionStyleForm({
           fallback={settings.background === "dark" ? "#94a3b8" : "#64748b"}
           placeholder="Auto"
         />
+        )}
+        {can("colorBorder") && (
         <ColorField
           label="Border & divider line"
           value={customColors.border}
@@ -5282,6 +5183,9 @@ export function SectionStyleForm({
           fallback={settings.background === "dark" ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0"}
           placeholder="Auto"
         />
+        )}
+        {can("colorGradient") && (
+        <>
         <ColorField
           label="Gradient text start"
           value={customColors.gradientFrom}
@@ -5295,6 +5199,8 @@ export function SectionStyleForm({
           onChange={(gradientTo) => updateCustomColor({ gradientTo })}
           fallback="#8b5cf6"
         />
+        </>
+        )}
 
         {hasAnyCustomColors && (
           <button
@@ -5306,6 +5212,7 @@ export function SectionStyleForm({
           </button>
         )}
       </FormGroup>
+      )}
     </>
   );
 }
@@ -5646,6 +5553,7 @@ export default function SectionForm({
         settings={section.settings}
         siteFont={siteFont}
         sectionType={section.type}
+        section={section}
         onChange={changeSettings}
       />
       <SectionResponsiveForm

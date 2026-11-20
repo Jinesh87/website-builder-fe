@@ -9,6 +9,9 @@ import { HERO_CONTROLS_CSS } from "./hero-controls-styles.ts";
 import { HERO_REGISTRATION_CSS } from "./hero-registration-styles.ts";
 import { CARDS_CSS } from "./cards-styles.ts";
 import { SHOWCASE_CSS } from "./showcase-styles.ts";
+import { GALLERY_CSS } from "./gallery-styles.ts";
+import { HERO_SLIDER_CSS } from "./hero-slider-styles.ts";
+import { HERO_SIZING_CSS } from "./hero-sizing.ts";
 import { SHOP_CSS } from "./shop-styles.ts";
 import { VINTAGE_CSS } from "./vintage-styles.ts";
 import { RICH_TEXT_CSS } from "./rich-text.tsx";
@@ -10247,6 +10250,9 @@ ${HERO_CONTROLS_CSS}
 ${HERO_REGISTRATION_CSS}
 ${CARDS_CSS}
 ${SHOWCASE_CSS}
+${GALLERY_CSS}
+${HERO_SLIDER_CSS}
+${HERO_SIZING_CSS}
 ${SHOP_CSS}
 ${ACCOUNT_CSS}
 ${ACCOUNT_POPUP_CSS}

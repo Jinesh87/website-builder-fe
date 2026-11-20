@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { ChevronDown, ChevronUp, EyeOff, FileText, Home, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, EyeOff, FileText, Home, Plus, Trash2 } from "lucide-react";
 import ConfirmDialog from "../../../../components/ui/ConfirmDialog.tsx";
 import { addPage, deletePage, homePage, LIMITS, moveItem } from "../../../../pages/websites/editor/editor-state.ts";
+import { copyName, duplicatePage } from "../../../../pages/websites/editor/page-copy.ts";
 import type { WebsitePage } from "../../../../api/websites.ts";
 import { useEditor } from "../../editor-context.ts";
 import { PanelHeader, ToolButton } from "../ui.tsx";
@@ -9,17 +10,31 @@ import { PanelHeader, ToolButton } from "../ui.tsx";
 export default function PagesPanel() {
   const { draft, page: current, editDraft, selectPage, setSiteArea, notify } = useEditor();
   const [newName, setNewName] = useState<string | null>(null);
+  /** Set while the name form is creating a copy of this page instead of a blank one. */
+  const [copySource, setCopySource] = useState<WebsitePage | null>(null);
   const [pageToDelete, setPageToDelete] = useState<WebsitePage | null>(null);
   const pages = draft.pages;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (newName === null || !newName.trim()) return;
-    const result = addPage(draft, newName);
+    const result = copySource ? duplicatePage(draft, copySource.id, newName) : addPage(draft, newName);
+    if (!result) return;
     editDraft(() => result.draft);
-    setNewName(null);
+    if (copySource) notify(`Copied “${copySource.name}” — link to it from any button or card`);
+    closeForm();
     selectPage(result.pageId);
     setSiteArea("page");
+  }
+
+  function openForm(source: WebsitePage | null) {
+    setCopySource(source);
+    setNewName(source ? copyName(source) : "");
+  }
+
+  function closeForm() {
+    setNewName(null);
+    setCopySource(null);
   }
 
   function removePage() {
@@ -40,7 +55,7 @@ export default function PagesPanel() {
         title="Pages"
         description={`${pages.length} of ${LIMITS.pages} pages`}
         actions={
-          <ToolButton label="Add page" size="sm" onClick={() => setNewName("")} disabled={pages.length >= LIMITS.pages}>
+          <ToolButton label="Add page" size="sm" onClick={() => openForm(null)} disabled={pages.length >= LIMITS.pages}>
             <Plus className="size-4" aria-hidden />
           </ToolButton>
         }
@@ -49,7 +64,7 @@ export default function PagesPanel() {
         {newName !== null && (
           <form onSubmit={submit} className="mx-2 mb-2 flex flex-col gap-2 rounded-ed border border-ed-border bg-ed-subtle p-2">
             <label htmlFor="new-page-name" className="text-ed-xs font-medium text-ed-text">
-              Page name
+              {copySource ? `Copy “${copySource.name}” as` : "Page name"}
             </label>
             <input
               id="new-page-name"
@@ -58,7 +73,8 @@ export default function PagesPanel() {
               maxLength={120}
               placeholder="e.g. About us"
               onChange={(event) => setNewName(event.target.value)}
-              onKeyDown={(event) => event.key === "Escape" && setNewName(null)}
+              onFocus={(event) => event.target.select()}
+              onKeyDown={(event) => event.key === "Escape" && closeForm()}
               className="h-8 rounded-ed border border-ed-border bg-ed-panel px-2 text-ed-sm focus:border-ed-accent focus:outline-none"
             />
             <div className="flex gap-1.5">
@@ -67,12 +83,15 @@ export default function PagesPanel() {
                 disabled={!newName.trim()}
                 className="h-7 rounded-ed bg-ed-accent px-2.5 text-ed-xs font-medium text-white hover:bg-ed-accent-hover disabled:opacity-50"
               >
-                Create page
+                {copySource ? "Create copy" : "Create page"}
               </button>
-              <button type="button" onClick={() => setNewName(null)} className="h-7 rounded-ed px-2.5 text-ed-xs text-ed-muted hover:bg-ed-hover">
+              <button type="button" onClick={closeForm} className="h-7 rounded-ed px-2.5 text-ed-xs text-ed-muted hover:bg-ed-hover">
                 Cancel
               </button>
             </div>
+            {copySource && (
+              <p className="text-ed-2xs text-ed-muted">All sections are copied. The copy is left out of the menu; turn it on in page settings if needed.</p>
+            )}
           </form>
         )}
         <ul className="flex flex-col gap-0.5 px-1.5">
@@ -117,6 +136,14 @@ export default function PagesPanel() {
                     onClick={() => editDraft((d) => ({ ...d, pages: moveItem(d.pages, index, 1) }))}
                   >
                     <ChevronDown className="size-3.5" aria-hidden />
+                  </ToolButton>
+                  <ToolButton
+                    label={`Duplicate ${candidate.name}`}
+                    size="sm"
+                    disabled={pages.length >= LIMITS.pages}
+                    onClick={() => openForm(candidate)}
+                  >
+                    <Copy className="size-3.5" aria-hidden />
                   </ToolButton>
                   {!isHome && (
                     <ToolButton
