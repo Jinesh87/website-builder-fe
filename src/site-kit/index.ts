@@ -58,7 +58,6 @@ export type { RichTextElement, RichTextNode, RichTextStyle, RichTextTag } from "
 export { usesVintageStyles, VINTAGE_FONTS } from "./vintage-styles.ts";
 export { SiteRenderModeProvider } from "./render-mode.tsx";
 export type { SiteRenderMode } from "./render-mode.tsx";
-export { SAMPLE_SITE } from "./sample-site.ts";
 export { default as EditorialSpecsSection } from "./sections/EditorialSpecsSection.tsx";
 export { default as VintageBlogSection } from "./sections/VintageBlogSection.tsx";
 export { default as ClapperContactSection } from "./sections/ClapperContactSection.tsx";

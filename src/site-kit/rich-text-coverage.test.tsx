@@ -1,7 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { SECTION_DEFINITIONS, SECTION_PRESETS, SECTION_TYPES } from "./registry.ts";
-import { SAMPLE_SITE } from "./sample-site.ts";
 import { SectionView, SiteFooterView, SiteHeaderView } from "./SitePage.tsx";
 import { SiteRenderModeProvider } from "./render-mode.tsx";
 import { getTemplateSite } from "./templates/index.ts";
@@ -34,7 +33,7 @@ function render(node: React.ReactNode): string {
 
 function sectionsToCheck(): { where: string; section: Section }[] {
   const sections: { where: string; section: Section }[] = [];
-  const sites: SiteData[] = [SAMPLE_SITE];
+  const sites: SiteData[] = [];
   for (const id of TEMPLATE_IDS) {
     const site = getTemplateSite(id);
     if (site) sites.push(site);
@@ -60,7 +59,7 @@ describe("rich text rendering", () => {
       const marked = { ...section, data: markRichText(section.data) } as Section;
       leaksIn(render(<SectionView section={marked} />), where, leaks);
     }
-    const sites: SiteData[] = [SAMPLE_SITE, ...TEMPLATE_IDS.map((id) => getTemplateSite(id)).filter((site): site is SiteData => Boolean(site))];
+    const sites: SiteData[] = [...TEMPLATE_IDS.map((id) => getTemplateSite(id)).filter((site): site is SiteData => Boolean(site))];
     for (const site of sites) {
       if (site.header) leaksIn(render(<SiteHeaderView header={markRichText(site.header) as SiteData["header"]} />), "header", leaks);
       if (site.footer) leaksIn(render(<SiteFooterView footer={markRichText(site.footer) as SiteData["footer"]} />), "footer", leaks);
