@@ -55,6 +55,7 @@ import {
   IMPORT_SECTION_TYPES,
 } from "../../features/websites/importHtmlConvention.ts";
 import { getTemplateKey } from "../../site-kit/templates/index.ts";
+import { resolveTemplateKey } from "../../site-kit/templates/template-key-aliases.ts";
 import {
   convertDraftToBuilder,
   convertImportedSection,
@@ -266,7 +267,7 @@ export default function CreateWebsitePage() {
   const isAdmin = user?.role === "SUPER_ADMIN";
   const backTo = isAdmin ? "/admin/websites" : "/websites";
 
-  const rawRequested = searchParams.get("templateKey") ?? "";
+  const rawRequested = resolveTemplateKey(searchParams.get("templateKey") ?? "");
   const requestedThemeParam = searchParams.get("themeId") ?? "";
   const questionnaireId = searchParams.get("questionnaireId");
   const [requestedTemplateKey] = useState(
