@@ -3,7 +3,8 @@
 FROM node:24.19.0-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# Keep npm's download cache between builds, so a changed lock file only fetches what changed.
+RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline --no-audit --no-fund
 COPY . .
 # Vite inlines VITE_* values at build time; docker-compose passes them from .env.
 ARG VITE_APP_NAME
@@ -12,7 +13,8 @@ ARG VITE_PUBLIC_SITE_DOMAIN
 ENV VITE_APP_NAME=$VITE_APP_NAME \
     VITE_API_URL=$VITE_API_URL \
     VITE_PUBLIC_SITE_DOMAIN=$VITE_PUBLIC_SITE_DOMAIN
-RUN npm run build && npm run build:renderer
+# No type-check (tsc -b) here: run `npx tsc -b` before committing; it slows server builds down.
+RUN npm run build:app && npm run build:renderer
 
 # Live-site renderer used by the API to serve published websites (target: renderer).
 FROM node:24.19.0-alpine AS renderer
