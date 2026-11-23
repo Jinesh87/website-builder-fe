@@ -1,5 +1,5 @@
-import { isContactHeaderDesign, type HeaderData, type LinkRef } from "../../../site-kit/index.ts";
-import { CheckboxField, FormGroup, ItemList, LinkField, TextField } from "./fields.tsx";
+import { isContactHeaderDesign, type HeaderData, type HeaderPhoneIcon, type LinkRef } from "../../../site-kit/index.ts";
+import { CheckboxField, FormGroup, ItemList, LinkField, SelectField, TextField } from "./fields.tsx";
 
 /** Design-picker entries for the phone-first header designs. */
 export const CONTACT_HEADER_DESIGN_OPTIONS: { value: HeaderData["design"]; label: string }[] = [
@@ -17,6 +17,15 @@ const SHOWS: Record<string, string> = {
 };
 
 const newLink = (): LinkRef => ({ label: "Link", href: "/" });
+
+const PHONE_ICON_OPTIONS: { value: HeaderPhoneIcon; label: string }[] = [
+  { value: "phone", label: "Phone (outline)" },
+  { value: "phone-solid", label: "Phone (filled)" },
+  { value: "phone-call", label: "Phone ringing" },
+  { value: "smartphone", label: "Mobile phone" },
+  { value: "headset", label: "Support headset" },
+  { value: "whatsapp", label: "WhatsApp" },
+];
 
 /** "Contact details" group of the header form, for the phone-first designs only. */
 export function HeaderContactFields({ header, onChange }: { header: HeaderData; onChange: (header: HeaderData) => void }) {
@@ -43,10 +52,16 @@ export function HeaderContactFields({ header, onChange }: { header: HeaderData; 
           value={header.phoneLabel ?? ""}
           onChange={(phoneLabel) => set({ phoneLabel: text(phoneLabel) })}
           maxLength={40}
-          placeholder="Call us"
-          hint='Small text above the number, e.g. "Call us 24/7" or "Reservations".'
+          placeholder="e.g. Call us 24/7"
+          hint="Small text above the number. Leave empty to show just the number."
         />
       )}
+      <SelectField
+        label="Phone icon"
+        value={header.phoneIcon ?? "phone"}
+        options={PHONE_ICON_OPTIONS}
+        onChange={(phoneIcon) => set({ phoneIcon: phoneIcon === "phone" ? undefined : phoneIcon })}
+      />
       <CheckboxField
         label="Call button on phones"
         checked={header.mobileCallButton !== false}

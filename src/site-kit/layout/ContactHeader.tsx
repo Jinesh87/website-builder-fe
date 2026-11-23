@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { telHref } from "../links.ts";
+import { BRAND_ICONS } from "../brand-icons.ts";
 import { EmailLink, PhoneLink } from "../primitives.tsx";
-import type { HeaderData, HeaderDesign } from "../types.ts";
+import type { HeaderData, HeaderDesign, HeaderPhoneIcon } from "../types.ts";
 
 /** Header designs built around the business phone number (plus optional email, hours and address). */
 export const CONTACT_HEADER_DESIGNS = [
@@ -43,6 +44,59 @@ const ICON_PATHS: Record<IconName, ReactNode> = {
   ),
 };
 
+const HANDSET =
+  "M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z";
+
+/** Outline icons for the phone; "phone-solid" and "whatsapp" are filled. */
+const PHONE_ICON_PATHS: Record<Exclude<HeaderPhoneIcon, "phone-solid" | "whatsapp">, ReactNode> = {
+  phone: <path d={HANDSET} />,
+  "phone-call": (
+    <>
+      <path d={HANDSET} />
+      <path d="M14.05 2a9 9 0 018 7.94M14.05 6A5 5 0 0118 10" />
+    </>
+  ),
+  smartphone: (
+    <>
+      <rect x="5" y="2" width="14" height="20" rx="2" />
+      <path d="M12 18h.01" />
+    </>
+  ),
+  headset: (
+    <>
+      <path d="M3 11h3a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2v-5zm0 0a9 9 0 1118 0m0 0v5a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3z" />
+      <path d="M21 16v2a4 4 0 01-4 4h-5" />
+    </>
+  ),
+};
+
+/** The phone icon the owner picked for this header (default: outline handset). */
+function PhoneIcon({ header }: { header: HeaderData }) {
+  const style = header.phoneIcon ?? "phone";
+  if (style === "phone-solid" || style === "whatsapp") {
+    const d = style === "whatsapp" ? BRAND_ICONS.whatsapp!.path : HANDSET;
+    return (
+      <svg className="wb-ch-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d={d} />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      className="wb-ch-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {PHONE_ICON_PATHS[style] ?? PHONE_ICON_PATHS.phone}
+    </svg>
+  );
+}
+
 function ContactIcon({ name }: { name: IconName }) {
   return (
     <svg
@@ -83,7 +137,7 @@ function ContactInline({ header, include }: { header: HeaderData; include: IconN
   if (include.includes("phone") && contact.phone) {
     items.push(
       <PhoneLink key="phone" value={contact.phone} className="wb-ch-item wb-ch-item-phone">
-        <ContactIcon name="phone" />
+        <PhoneIcon header={header} />
         <span>{contact.phone}</span>
       </PhoneLink>,
     );
@@ -115,17 +169,17 @@ function ContactInline({ header, include }: { header: HeaderData; include: IconN
   return items.length ? <div className="wb-ch-inline">{items}</div> : null;
 }
 
-/** Phone with a round icon and a small label above the number ("Call us 24/7"). */
+/** Phone with a round icon; the small label above the number ("Call us 24/7") shows only when set. */
 function PhoneBlock({ header, compact = false }: { header: HeaderData; compact?: boolean }) {
   const { phone, phoneLabel } = contactOf(header);
   if (!phone) return null;
   return (
     <PhoneLink value={phone} className={`wb-ch-phone-block${compact ? " wb-ch-phone-compact" : ""}`}>
       <span className="wb-ch-phone-icon">
-        <ContactIcon name="phone" />
+        <PhoneIcon header={header} />
       </span>
       <span className="wb-ch-phone-text">
-        <span className="wb-ch-phone-label">{phoneLabel ?? "Call us"}</span>
+        {phoneLabel && <span className="wb-ch-phone-label">{phoneLabel}</span>}
         <span className="wb-ch-phone-number">{phone}</span>
       </span>
     </PhoneLink>
@@ -133,14 +187,12 @@ function PhoneBlock({ header, compact = false }: { header: HeaderData; compact?:
 }
 
 /** Stacked info card (icon, small label, value) for the stacked design's top row. */
-function InfoCard({ icon, label, children }: { icon: IconName; label: string; children: ReactNode }) {
+function InfoCard({ icon, label, children }: { icon: ReactNode; label?: string; children: ReactNode }) {
   return (
     <div className="wb-ch-card">
-      <span className="wb-ch-card-icon">
-        <ContactIcon name={icon} />
-      </span>
+      <span className="wb-ch-card-icon">{icon}</span>
       <span className="wb-ch-card-text">
-        <span className="wb-ch-card-label">{label}</span>
+        {label && <span className="wb-ch-card-label">{label}</span>}
         <span className="wb-ch-card-value">{children}</span>
       </span>
     </div>
@@ -152,28 +204,28 @@ function InfoCards({ header }: { header: HeaderData }) {
   const cards: ReactNode[] = [];
   if (contact.phone) {
     cards.push(
-      <InfoCard key="phone" icon="phone" label={contact.phoneLabel ?? "Call us"}>
+      <InfoCard key="phone" icon={<PhoneIcon header={header} />} label={contact.phoneLabel}>
         <PhoneLink value={contact.phone} />
       </InfoCard>,
     );
   }
   if (contact.email) {
     cards.push(
-      <InfoCard key="mail" icon="mail" label="Email us">
+      <InfoCard key="mail" icon={<ContactIcon name="mail" />} label="Email us">
         <EmailLink value={contact.email} />
       </InfoCard>,
     );
   }
   if (contact.hours) {
     cards.push(
-      <InfoCard key="clock" icon="clock" label="Opening hours">
+      <InfoCard key="clock" icon={<ContactIcon name="clock" />} label="Opening hours">
         {contact.hours}
       </InfoCard>,
     );
   }
   if (contact.address) {
     cards.push(
-      <InfoCard key="pin" icon="pin" label="Visit us">
+      <InfoCard key="pin" icon={<ContactIcon name="pin" />} label="Visit us">
         {contact.address}
       </InfoCard>,
     );
@@ -187,7 +239,7 @@ function MobileCallButton({ header }: { header: HeaderData }) {
   if (!href) return null;
   return (
     <a href={href} className="wb-ch-call-btn" aria-label={`Call ${header.phone?.trim()}`}>
-      <ContactIcon name="phone" />
+      <PhoneIcon header={header} />
     </a>
   );
 }

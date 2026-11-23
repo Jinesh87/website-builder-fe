@@ -79,6 +79,11 @@ export const HEADER_DESIGNS = [
 
 export type HeaderDesign = (typeof HEADER_DESIGNS)[number];
 
+/** Phone icon styles for the phone-first header designs. */
+export const HEADER_PHONE_ICONS = ["phone", "phone-solid", "phone-call", "smartphone", "headset", "whatsapp"] as const;
+
+export type HeaderPhoneIcon = (typeof HEADER_PHONE_ICONS)[number];
+
 export type HeaderSubMenuItem = {
   label: string;
   href: string;
@@ -153,8 +158,10 @@ export type HeaderData = {
   contactEmail?: string;
   /** Business phone for the phone-first designs (contact-topbar, call-now, contact-stacked, centered-phone). */
   phone?: string;
-  /** Small label above the phone number, e.g. "Call us 24/7". Default "Call us". */
+  /** Small label above the phone number, e.g. "Call us 24/7". Hidden when empty. */
   phoneLabel?: string;
+  /** Icon shown with the phone number and on the mobile call button. Default "phone". */
+  phoneIcon?: HeaderPhoneIcon;
   contactHours?: string;
   contactAddress?: string;
   /** Round tap-to-call button beside the menu button on phones. Default on when a phone is set. */
