@@ -136,6 +136,40 @@ export const adminPaymentsApi = {
     ).then((data) => data.secrets),
 };
 
+export type RazorpayPartnerSettings = {
+  configured: boolean;
+  mode: "test" | "live";
+  clientId: string | null;
+  clientSecretMasked: string | null;
+  webhookConfigured: boolean;
+  /** Register on the partner app as the OAuth redirect URL. */
+  redirectUri: string;
+  /** Set as the partner app's webhook URL. */
+  webhookUrl: string;
+  webhookEvents: string[];
+  updatedAt: string | null;
+};
+
+export type RazorpayPartnerInput = {
+  clientId: string;
+  clientSecret?: string;
+  webhookSecret?: string;
+  mode: "test" | "live";
+};
+
+/** The platform's Razorpay Technology Partner app, used for "Connect with Razorpay" on shops. */
+export const adminRazorpayPartnerApi = {
+  get: () => request<{ partner: RazorpayPartnerSettings }>("/admin/settings/payments/partner").then((data) => data.partner),
+  update: (input: RazorpayPartnerInput) =>
+    request<{ partner: RazorpayPartnerSettings }>("/admin/settings/payments/partner", { method: "PUT", body: input }).then(
+      (data) => data.partner,
+    ),
+  revealSecrets: () =>
+    request<{ secrets: { clientSecret: string | null; webhookSecret: string | null } }>(
+      "/admin/settings/payments/partner/secrets",
+    ).then((data) => data.secrets),
+};
+
 export function formatPaise(paise: number, currency = "INR"): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",

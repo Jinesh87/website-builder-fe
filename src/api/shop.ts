@@ -82,8 +82,19 @@ export type ShopProductInput = {
   images?: { mediaId: string; alt?: string }[];
 };
 
+export type ShopRazorpayConnection = {
+  accountId: string | null;
+  mode: "test" | "live";
+  connectedAt: string | null;
+};
+
 export type ShopPaymentConfig = {
+  /** Connected through Razorpay, or API keys saved. */
   configured: boolean;
+  /** "Connect with Razorpay" is offered (the platform's partner app is set up). */
+  connectAvailable: boolean;
+  /** Set while connected; used instead of the API keys. */
+  connection: ShopRazorpayConnection | null;
   mode: "test" | "live" | null;
   razorpayKeyId: string | null;
   razorpayKeySecretMasked: string | null;
@@ -512,6 +523,17 @@ export const shopApi = {
 
   productReturns: (websiteId: string, productId: string) =>
     request<ProductReturnedOrders>(`${base(websiteId)}/inventory/returns/${productId}`),
+
+  /** Razorpay page to send the owner to; `returnTo` is the app path to come back to. */
+  connectRazorpay: (websiteId: string, returnTo: string) =>
+    request<{ url: string }>(`${base(websiteId)}/payments/razorpay/connect`, { method: "POST", body: { returnTo } }).then(
+      (data) => data.url,
+    ),
+
+  disconnectRazorpay: (websiteId: string) =>
+    request<{ config: ShopPaymentConfig }>(`${base(websiteId)}/payments/razorpay/connect`, { method: "DELETE" }).then(
+      (data) => data.config,
+    ),
 
   revealPaymentSecrets: (websiteId: string) =>
     request<{ secrets: { razorpayKeySecret: string | null; razorpayWebhookSecret: string | null } }>(

@@ -13,6 +13,7 @@ import PageHeader from "../../components/app/PageHeader.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import PaymentSettingsPanel, { PaymentStatusChip } from "../../components/admin/PaymentSettingsPanel.tsx";
+import RazorpayPartnerPanel from "../../components/admin/RazorpayPartnerPanel.tsx";
 import AiModelPricingPanel from "../../components/admin/AiModelPricingPanel.tsx";
 import AiBillingRatePanel from "../../components/admin/AiBillingRatePanel.tsx";
 import type { PaymentConfig } from "../../api/wallet.ts";
@@ -326,6 +327,9 @@ export default function SettingsPage() {
       {activeTab === "payments" && (
         <div className="mt-8">
           <PaymentSettingsPanel onLoaded={setPaymentConfig} />
+          <div className="mt-6">
+            <RazorpayPartnerPanel />
+          </div>
         </div>
       )}
 

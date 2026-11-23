@@ -1,11 +1,15 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Button, Spinner } from "@heroui/react";
-import { Check, Copy, CreditCard, ExternalLink, Eye, EyeOff } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { shopApi, type ShopPaymentConfig, type ShopPaymentInput } from "../../api/shop.ts";
 import { PaymentStatusChip } from "../admin/PaymentSettingsPanel.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
+import RevealSecretButton from "../ui/RevealSecretButton.tsx";
+import CopyRow from "../ui/CopyRow.tsx";
 import TextInput from "../ui/TextInput.tsx";
+import { useSavedSecrets } from "../ui/useSavedSecrets.ts";
+import ShopRazorpayConnect from "./ShopRazorpayConnect.tsx";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
 type Errors = Partial<Record<keyof ShopPaymentInput, string>>;
@@ -13,68 +17,7 @@ type SecretField = "razorpayKeySecret" | "razorpayWebhookSecret";
 
 const KEY_ID_PATTERN = /^rzp_(test|live)_[A-Za-z0-9]+$/;
 
-function RevealButton({ shown, disabled, onToggle }: { shown: boolean; disabled: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      disabled={disabled}
-      className="absolute right-3 top-8.5 cursor-pointer text-ink-muted transition-colors hover:text-ink disabled:cursor-wait disabled:opacity-50"
-      title={shown ? "Hide secret" : "Show secret"}
-      aria-label={shown ? "Hide secret" : "Show secret"}
-    >
-      {shown ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-    </button>
-  );
-}
-
 const RAZORPAY_WEBHOOKS_URL = "https://dashboard.razorpay.com/app/website-app-settings/webhooks";
-
-function CopyRow({
-  label,
-  value,
-  hint,
-  actionHref,
-  actionLabel,
-}: {
-  label: string;
-  value: string;
-  hint: ReactNode;
-  actionHref?: string;
-  actionLabel?: string;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  async function copy() {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
-  return (
-    <div className="rounded-lg border border-line bg-canvas/60 p-3.5 text-xs text-ink-body">
-      <p className="font-semibold text-ink">{label}</p>
-      <p className="mt-1">{hint}</p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <code className="min-w-0 flex-1 truncate rounded-md border border-line bg-surface px-2 py-1.5 font-mono text-[11px]">{value}</code>
-        <Button size="sm" variant="outline" onPress={() => void copy()}>
-          {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
-          {copied ? "Copied" : "Copy"}
-        </Button>
-        {actionHref && actionLabel && (
-          <Button
-            size="sm"
-            variant="outline"
-            onPress={() => window.open(actionHref, "_blank", "noopener,noreferrer")}
-          >
-            <ExternalLink className="size-3.5" aria-hidden />
-            {actionLabel}
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function ShopRazorpayPanel({ websiteId }: { websiteId: string }) {
   const [config, setConfig] = useState<ShopPaymentConfig | null>(null);
@@ -83,15 +26,14 @@ export default function ShopRazorpayPanel({ websiteId }: { websiteId: string }) 
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const [shown, setShown] = useState<Record<SecretField, boolean>>({ razorpayKeySecret: false, razorpayWebhookSecret: false });
-  const [savedSecrets, setSavedSecrets] = useState<Record<SecretField, string | null> | null>(null);
-  const [revealing, setRevealing] = useState(false);
+  const secrets = useSavedSecrets<SecretField>(() => shopApi.revealPaymentSecrets(websiteId));
+  /** API keys are the fallback once "Connect with Razorpay" is offered. */
+  const [showKeys, setShowKeys] = useState(false);
 
   function apply(loaded: ShopPaymentConfig) {
     setConfig(loaded);
     setForm({ razorpayKeyId: loaded.razorpayKeyId ?? "", razorpayKeySecret: "", razorpayWebhookSecret: "" });
-    setShown({ razorpayKeySecret: false, razorpayWebhookSecret: false });
-    setSavedSecrets(null);
+    secrets.reset();
   }
 
   useEffect(() => {
@@ -102,35 +44,18 @@ export default function ShopRazorpayPanel({ websiteId }: { websiteId: string }) 
   }, [websiteId]);
 
   async function toggleSecret(field: SecretField) {
-    if (shown[field]) {
-      setShown((current) => ({ ...current, [field]: false }));
-      if (savedSecrets && form[field] === savedSecrets[field]) setForm((current) => ({ ...current, [field]: "" }));
-      return;
+    try {
+      await secrets.toggle(field, form[field], (value) => setForm((current) => ({ ...current, [field]: value })));
+    } catch (err) {
+      setFeedback({ status: "danger", message: errorMessage(err) });
     }
-    if (!form[field]) {
-      let secrets = savedSecrets;
-      if (!secrets) {
-        setRevealing(true);
-        try {
-          secrets = await shopApi.revealPaymentSecrets(websiteId);
-          setSavedSecrets(secrets);
-        } catch (err) {
-          setFeedback({ status: "danger", message: errorMessage(err) });
-          return;
-        } finally {
-          setRevealing(false);
-        }
-      }
-      const value = secrets[field];
-      if (value) setForm((current) => ({ ...current, [field]: value }));
-    }
-    setShown((current) => ({ ...current, [field]: true }));
   }
 
+
   function changedSecret(field: SecretField): string | undefined {
-    const value = form[field].trim();
-    return value && value !== savedSecrets?.[field] ? value : undefined;
+    return secrets.changed(field, form[field]);
   }
+
 
   function update(key: keyof ShopPaymentInput) {
     return (value: string) => setForm((current) => ({ ...current, [key]: value }));
@@ -174,102 +99,121 @@ export default function ShopRazorpayPanel({ websiteId }: { websiteId: string }) 
     );
   }
 
-  return (
-    <form onSubmit={handleSave} noValidate className="max-w-2xl rounded-xl border border-line bg-surface p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
-            <CreditCard className="size-5" aria-hidden />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-ink">Razorpay</h2>
-            <p className="text-xs text-ink-muted">Shop payments settle in this Razorpay account.</p>
-          </div>
-        </div>
-        <PaymentStatusChip config={config} />
-      </div>
+  // One Razorpay setup at a time: while connected, API keys can't be used (disconnect first).
+  const connected = Boolean(config.connection);
+  const offersConnect = config.connectAvailable && !connected;
+  const keysOpen = !connected && (!offersConnect || showKeys || Boolean(config.razorpayKeyId));
 
-      <div className="mt-6 flex flex-col gap-4">
-        <CopyRow
-          label="Website address for Razorpay"
-          value={config.siteUrl}
-          hint="Give Razorpay this address when they verify the business. A connected custom domain is used when there is one. Otherwise this is the live site address, and it has to be public."
-        />
-        <CopyRow
-          label="Webhook address"
-          value={config.webhookUrl}
-          hint={
-            <>
-              Open{" "}
-              <a
-                href={RAZORPAY_WEBHOOKS_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-brand underline-offset-2 hover:underline"
-              >
-                Razorpay → Webhooks
-              </a>
-              , add this URL, then subscribe to payment.captured, order.paid, payment.failed, refund.created,
-              refund.processed, and refund.failed. It is on this platform, not your website, and that is expected.
-            </>
-          }
-          actionHref={RAZORPAY_WEBHOOKS_URL}
-          actionLabel="Open Razorpay"
-        />
-        <TextInput
-          label="Key ID"
-          name="razorpayKeyId"
-          autoComplete="off"
-          placeholder="rzp_test_..."
-          description="Razorpay Dashboard → Account & Settings → API Keys. Use rzp_test_ keys while testing."
-          value={form.razorpayKeyId}
-          onChange={update("razorpayKeyId")}
-          error={errors.razorpayKeyId}
-        />
-        <div className="relative">
-          <TextInput
-            label="Key secret"
-            name="razorpayKeySecret"
-            type={shown.razorpayKeySecret ? "text" : "password"}
-            autoComplete="off"
-            placeholder={config.razorpayKeySecretMasked ?? ""}
-            description={config.configured ? "Leave blank to keep the current secret." : "Shown once when you generate the key."}
-            value={form.razorpayKeySecret}
-            onChange={update("razorpayKeySecret")}
-            error={errors.razorpayKeySecret}
-          />
-          <RevealButton shown={shown.razorpayKeySecret} disabled={revealing} onToggle={() => void toggleSecret("razorpayKeySecret")} />
-        </div>
-        <div className="relative">
-          <TextInput
-            label="Webhook secret"
-            name="razorpayWebhookSecret"
-            type={shown.razorpayWebhookSecret ? "text" : "password"}
-            autoComplete="off"
-            placeholder={config.webhookConfigured ? "••••••••" : ""}
-            description={
-              config.webhookConfigured
-                ? "Leave blank to keep the current secret. Use the same secret you set on the webhook above."
-                : "The secret you choose when adding the webhook above."
-            }
-            value={form.razorpayWebhookSecret}
-            onChange={update("razorpayWebhookSecret")}
-            error={errors.razorpayWebhookSecret}
-          />
-          <RevealButton
-            shown={shown.razorpayWebhookSecret}
-            disabled={revealing}
-            onToggle={() => void toggleSecret("razorpayWebhookSecret")}
-          />
-        </div>
-        <p className="text-xs text-ink-muted">Secrets are encrypted at rest. Saving checks the key ID and secret with Razorpay.</p>
-        {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
-        <div>
-          <Button type="submit" isPending={saving}>
-            Save Razorpay settings
-          </Button>
-        </div>
-      </div>
-    </form>
+  return (
+    <div className="flex max-w-2xl flex-col gap-4">
+      <ShopRazorpayConnect websiteId={websiteId} config={config} onChange={apply} />
+      {offersConnect && (
+        <button
+          type="button"
+          onClick={() => setShowKeys((current) => !current)}
+          className="self-start text-sm font-medium text-brand underline-offset-2 hover:underline"
+        >
+          {keysOpen ? "Hide API key setup" : "Use Razorpay API keys instead"}
+        </button>
+      )}
+      {keysOpen && (
+        <form onSubmit={handleSave} noValidate className="rounded-xl border border-line bg-surface p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex size-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
+                <CreditCard className="size-5" aria-hidden />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-ink">Razorpay</h2>
+                <p className="text-xs text-ink-muted">Shop payments settle in this Razorpay account.</p>
+              </div>
+            </div>
+            <PaymentStatusChip config={config} />
+          </div>
+
+          <div className="mt-6 flex flex-col gap-4">
+            <CopyRow
+              label="Website address for Razorpay"
+              value={config.siteUrl}
+              hint="Give Razorpay this address when they verify the business. A connected custom domain is used when there is one. Otherwise this is the live site address, and it has to be public."
+            />
+            <CopyRow
+              label="Webhook address"
+              value={config.webhookUrl}
+              hint={
+                <>
+                  Open{" "}
+                  <a
+                    href={RAZORPAY_WEBHOOKS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-brand underline-offset-2 hover:underline"
+                  >
+                    Razorpay → Webhooks
+                  </a>
+                  , add this URL, then subscribe to payment.captured, order.paid, payment.failed, refund.created,
+                  refund.processed, and refund.failed. It is on this platform, not your website, and that is expected.
+                </>
+              }
+              actionHref={RAZORPAY_WEBHOOKS_URL}
+              actionLabel="Open Razorpay"
+            />
+            <TextInput
+              label="Key ID"
+              name="razorpayKeyId"
+              autoComplete="off"
+              placeholder="rzp_test_..."
+              description="Razorpay Dashboard → Account & Settings → API Keys. Use rzp_test_ keys while testing."
+              value={form.razorpayKeyId}
+              onChange={update("razorpayKeyId")}
+              error={errors.razorpayKeyId}
+            />
+            <div className="relative">
+              <TextInput
+                label="Key secret"
+                name="razorpayKeySecret"
+                type={secrets.isShown("razorpayKeySecret") ? "text" : "password"}
+                autoComplete="off"
+                placeholder={config.razorpayKeySecretMasked ?? ""}
+                description={config.configured ? "Leave blank to keep the current secret." : "Shown once when you generate the key."}
+                value={form.razorpayKeySecret}
+                onChange={update("razorpayKeySecret")}
+                error={errors.razorpayKeySecret}
+              />
+              <RevealSecretButton shown={secrets.isShown("razorpayKeySecret")} disabled={secrets.revealing} onToggle={() => void toggleSecret("razorpayKeySecret")} />
+            </div>
+            <div className="relative">
+              <TextInput
+                label="Webhook secret"
+                name="razorpayWebhookSecret"
+                type={secrets.isShown("razorpayWebhookSecret") ? "text" : "password"}
+                autoComplete="off"
+                placeholder={config.webhookConfigured ? "••••••••" : ""}
+                description={
+                  config.webhookConfigured
+                    ? "Leave blank to keep the current secret. Use the same secret you set on the webhook above."
+                    : "The secret you choose when adding the webhook above."
+                }
+                value={form.razorpayWebhookSecret}
+                onChange={update("razorpayWebhookSecret")}
+                error={errors.razorpayWebhookSecret}
+              />
+              <RevealSecretButton
+                shown={secrets.isShown("razorpayWebhookSecret")}
+                disabled={secrets.revealing}
+                onToggle={() => void toggleSecret("razorpayWebhookSecret")}
+              />
+            </div>
+            <p className="text-xs text-ink-muted">Secrets are encrypted at rest. Saving checks the key ID and secret with Razorpay.</p>
+            {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
+            <div>
+              <Button type="submit" isPending={saving}>
+                Save Razorpay settings
+              </Button>
+            </div>
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
