@@ -8,10 +8,11 @@ import { formatPaise } from "../../api/wallet.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 import SelectInput from "../ui/SelectInput.tsx";
 import { CYCLE_LABELS, formatBillingDate, SwitchField } from "./hosting-labels.tsx";
+import DaysInput from "./DaysInput.tsx";
 import HostingPackageEditor from "./HostingPackageEditor.tsx";
 
 type Feedback = { status: "success" | "danger" | "warning"; message: string } | null;
-type Form = { enabled: boolean; allowConnectsPayment: boolean; reminderDays: string; graceDays: string };
+type Form = { enabled: boolean; allowConnectsPayment: boolean; graceDays: string };
 type FormErrors = Partial<Record<keyof Form, string>>;
 
 const SCOPE_LABELS: Record<HostingPriceChange["scope"], string> = {
@@ -26,14 +27,13 @@ function toForm(settings: HostingSettings): Form {
   return {
     enabled: settings.enabled,
     allowConnectsPayment: settings.allowConnectsPayment,
-    reminderDays: String(settings.reminderDays),
     graceDays: String(settings.graceDays),
   };
 }
 
 function validate(form: Form): FormErrors {
   const days = (value: string) => (/^\d{1,2}$/.test(value) && Number(value) <= 60 ? undefined : "Enter 0 to 60 days");
-  return { reminderDays: days(form.reminderDays), graceDays: days(form.graceDays) };
+  return { graceDays: days(form.graceDays) };
 }
 
 /** Package prices of 0 aren't offered; a website price of 0 is free. Older changes are in connects. */
@@ -45,6 +45,14 @@ function priceChange(change: HostingPriceChange, before: number | null, after: n
     return formatPaise(value);
   };
   return before === after ? show(after) : `${show(before)} → ${show(after)}`;
+}
+
+function reminderSummary(settings: HostingSettings): string {
+  const parts = [
+    settings.reminderDaysBefore.length ? `${settings.reminderDaysBefore.join(", ")} days before` : "",
+    settings.reminderDaysAfter.length ? `${settings.reminderDaysAfter.join(", ")} days after expiry` : "",
+  ].filter(Boolean);
+  return parts.length ? parts.join("; ") : "off";
 }
 
 /** Hosting packages and billing rules; a website's custom price is set on its own Hosting tab. */
@@ -105,7 +113,6 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
         await adminHostingApi.updateSettings({
           enabled: form.enabled,
           allowConnectsPayment: form.allowConnectsPayment,
-          reminderDays: Number(form.reminderDays),
           graceDays: Number(form.graceDays),
         }),
       );
@@ -200,15 +207,6 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
           <div className="mt-6 flex flex-col gap-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <DaysInput
-                id="hosting-reminder"
-                label="Reminder before expiry"
-                value={form.reminderDays}
-                onChange={update("reminderDays")}
-                hint="Email & notification alert. 0 = disabled."
-                error={errors.reminderDays}
-                isDisabled={saving}
-              />
-              <DaysInput
                 id="hosting-grace"
                 label="Grace period after expiry"
                 value={form.graceDays}
@@ -217,6 +215,13 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
                 error={errors.graceDays}
                 isDisabled={saving}
               />
+              <p className="text-xs text-ink-muted sm:self-end">
+                Reminders ({reminderSummary(settings)}) are set on the{" "}
+                <Link to="/admin/settings?tab=email" className="font-medium underline">
+                  reminder emails
+                </Link>
+                .
+              </p>
             </div>
 
             <div>
@@ -344,51 +349,6 @@ export default function HostingSettingsPanel({ onLoaded }: { onLoaded?: (setting
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function DaysInput({
-  id,
-  label,
-  value,
-  onChange,
-  hint,
-  error,
-  isDisabled,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  hint?: string;
-  error?: string;
-  isDisabled?: boolean;
-}) {
-  return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-ink">
-        {label}
-      </label>
-      <div
-        className={`flex h-9 w-36 items-center rounded-lg border bg-surface shadow-ed-xs focus-within:ring-2 ${
-          error ? "border-ed-danger" : "border-ed-border focus-within:border-ed-accent focus-within:ring-ed-accent/15"
-        }`}
-      >
-        <input
-          id={id}
-          inputMode="numeric"
-          value={value}
-          disabled={isDisabled}
-          aria-invalid={Boolean(error)}
-          onChange={(event) => onChange(event.target.value.replace(/\D/g, "").slice(0, 3))}
-          className="w-full min-w-0 bg-transparent px-3 text-sm text-ink focus:outline-none"
-        />
-        <span className="pr-3 text-xs text-ink-muted" aria-hidden>
-          days
-        </span>
-      </div>
-      {error ? <p className="mt-1 text-xs text-ed-danger">{error}</p> : hint && <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
     </div>
   );
 }

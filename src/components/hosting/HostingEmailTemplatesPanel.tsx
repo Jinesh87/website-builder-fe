@@ -8,6 +8,7 @@ import {
 } from "../../api/hosting.ts";
 import { errorMessage } from "../../api/http.ts";
 import FormAlert from "../ui/FormAlert.tsx";
+import ReminderScheduleEditor from "./ReminderScheduleEditor.tsx";
 
 const SAMPLE: Record<string, string> = {
   websiteName: "rock",
@@ -23,6 +24,9 @@ const SAMPLE: Record<string, string> = {
   restoredNote: "The site is live again.",
   reasonDetail:
     "Razorpay couldn't take the hosting payment for rock, so autopay has stopped.\n\nRenew from the website's Hosting tab, or turn autopay on again with another card or UPI ID.",
+  daysOverdue: "2 days",
+  overdueNote:
+    "The site stays live until 23 Nov 2026. Renew it (₹4,999) from the website's Hosting tab before then, or it goes offline.",
 };
 
 const PLACEHOLDER_LABELS: Record<string, string> = {
@@ -38,6 +42,8 @@ const PLACEHOLDER_LABELS: Record<string, string> = {
   "{{amount}}": "Amount paid",
   "{{restoredNote}}": "Restored note",
   "{{reasonDetail}}": "Autopay stop reason",
+  "{{daysOverdue}}": "Days overdue",
+  "{{overdueNote}}": "Overdue note",
 };
 
 function fill(template: string): string {
@@ -161,6 +167,7 @@ export default function HostingEmailTemplatesPanel() {
   const [message, setMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const isReminder = draft?.kind === "renewal_reminder" || draft?.kind === "overdue_reminder";
 
   useEffect(() => {
     let cancelled = false;
@@ -365,6 +372,12 @@ export default function HostingEmailTemplatesPanel() {
         </div>
 
         <div>
+          {isReminder && (
+            <div className="mb-6">
+              <ReminderScheduleEditor />
+            </div>
+          )}
+
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-muted">Preview</p>
           <div className="overflow-hidden rounded-xl border border-line bg-white shadow-sm">
             <div className="border-b border-line bg-surface-muted px-4 py-2 text-xs text-ink-muted">

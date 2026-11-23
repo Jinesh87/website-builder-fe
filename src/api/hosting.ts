@@ -234,7 +234,12 @@ export type HostingPriceChange = {
 export type HostingSettings = {
   enabled: boolean;
   allowConnectsPayment: boolean;
+  /** Earliest renewal reminder, in days before expiry; 0 = none. */
   reminderDays: number;
+  /** Renewal reminders, in days before expiry, ascending. */
+  reminderDaysBefore: number[];
+  /** Overdue reminders, in days after expiry, ascending. */
+  reminderDaysAfter: number[];
   graceDays: number;
   connectsPerRupee: number;
   /** Clients can only pay online once Razorpay keys are saved. */
@@ -245,7 +250,9 @@ export type HostingSettings = {
   recentPriceChanges: HostingPriceChange[];
 };
 
-export type HostingSettingsInput = Pick<HostingSettings, "enabled" | "allowConnectsPayment" | "reminderDays" | "graceDays">;
+export type HostingSettingsInput = Pick<HostingSettings, "enabled" | "allowConnectsPayment" | "graceDays">;
+
+export type HostingRemindersInput = { daysBefore: number[]; daysAfter: number[] };
 
 export type HostingPackageInput = {
   name: string;
@@ -444,6 +451,7 @@ const SETTINGS = "/admin/settings/hosting";
 
 export type HostingEmailKind =
   | "renewal_reminder"
+  | "overdue_reminder"
   | "paid"
   | "expired"
   | "suspended"
@@ -471,6 +479,10 @@ export const adminHostingApi = {
   settings: () => request<{ settings: HostingSettings }>(SETTINGS).then((data) => data.settings),
   updateSettings: (input: HostingSettingsInput) =>
     request<{ settings: HostingSettings }>(SETTINGS, { method: "PUT", body: input }).then((data) => data.settings),
+  updateReminders: (input: HostingRemindersInput) =>
+    request<{ settings: HostingSettings }>(`${SETTINGS}/reminders`, { method: "PUT", body: input }).then(
+      (data) => data.settings,
+    ),
   updatePackage: (packageId: string, input: HostingPackageInput) =>
     request<{ settings: HostingSettings }>(`${SETTINGS}/packages/${encodeURIComponent(packageId)}`, {
       method: "PUT",
