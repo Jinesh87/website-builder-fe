@@ -48,6 +48,7 @@ import {
   TextField,
 } from "./fields.tsx";
 import { FontPicker } from "./FontPicker.tsx";
+import { CONTACT_HEADER_DESIGN_OPTIONS, HeaderContactFields } from "./HeaderContactFields.tsx";
 import { getLiveSiteDomain } from "../../../utils/live-url.ts";
 
 /** Mirrors the API's page validator. */
@@ -295,6 +296,7 @@ export function HeaderForm({
               value: "boutique",
               label: "Boutique (Logo left, nav centre, search/account/cart icons, pill button)",
             },
+            ...CONTACT_HEADER_DESIGN_OPTIONS,
             { value: "logo-left", label: "Standard (Logo left, nav right)" },
             { value: "centered", label: "Standard (Logo & nav centered)" },
           ]}
@@ -393,6 +395,8 @@ export function HeaderForm({
           fallback={{ label: "Learn more", href: "/" }}
         />
       </FormGroup>
+
+      <HeaderContactFields header={header} onChange={onChange} />
 
       {(DESIGNS_WITH_STATUS_COLOR.includes(design) ||
         DESIGNS_WITH_SEARCH.includes(design) ||

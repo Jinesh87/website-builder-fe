@@ -4,6 +4,7 @@ import { AUTH_CSS } from "./auth-styles.ts";
 import { BOUTIQUE_CSS } from "./boutique-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
 import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
+import { CONTACT_HEADER_CSS } from "./contact-header-styles.ts";
 import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
 import { HERO_CONTROLS_CSS } from "./hero-controls-styles.ts";
 import { HERO_REGISTRATION_CSS } from "./hero-registration-styles.ts";
@@ -10245,6 +10246,7 @@ details[open] > summary .wb-faq-plus {
 ${AUTH_CSS}
 ${BLOG_CSS}
 ${PREMIUM_HEADER_CSS}
+${CONTACT_HEADER_CSS}
 ${CONTACT_BUILDER_CSS}
 ${HERO_CONTROLS_CSS}
 ${HERO_REGISTRATION_CSS}

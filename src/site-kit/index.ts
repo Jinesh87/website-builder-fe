@@ -92,3 +92,4 @@ export {
   SHOWCASE_SUMMARY_LINES_MAX,
 } from "./types.ts";
 export type * from "./types.ts";
+export { CONTACT_HEADER_DESIGNS, isContactHeaderDesign } from "./layout/ContactHeader.tsx";

@@ -542,6 +542,10 @@ function normalizeSection(raw: Section): Section {
       "side-drawer",
       "headline-ticker",
       "clean-transparent",
+      "contact-topbar",
+      "call-now",
+      "contact-stacked",
+      "centered-phone",
     ];
     if (
       typeof mergedData.design !== "string" ||

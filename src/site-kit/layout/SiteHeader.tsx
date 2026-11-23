@@ -17,6 +17,7 @@ import { accountPanelHref } from "../shop-auth.ts";
 import { useShopCatalog } from "../shop-catalog.tsx";
 import type { BrandDisplayMode, HeaderData, HeaderMenuItem, ImageRef, LinkRef, SectionSettings } from "../types.ts";
 import { chromeStyle } from "./chrome.ts";
+import { ContactHeader, DrawerContact, isContactHeaderDesign } from "./ContactHeader.tsx";
 
 function normalizeSitePath(href: string | undefined): string {
   const raw = (href || "").trim().split("?")[0].split("#")[0];
@@ -367,6 +368,7 @@ function MobileDrawer({
               )}
             </div>
           )}
+          <DrawerContact header={header} />
         </div>
       </div>
     </div>
@@ -517,6 +519,30 @@ export default function SiteHeader({
       <MenuIcon />
     </button>
   );
+
+  if (isContactHeaderDesign(header.design)) {
+    return (
+      <ContactHeader
+        header={{ ...header, design: header.design }}
+        className={classes}
+        style={chrome.style}
+        brand={brand}
+        nav={
+          header.menu.length > 0 && (
+            <nav className="wb-nav" aria-label="Main">
+              {header.menu.map((item) => (
+                <NavItem key={`${item.label}-${item.href}`} item={item} />
+              ))}
+            </nav>
+          )
+        }
+        actions={<ActionButtons header={header} />}
+        mobileToggle={mobileToggle}
+        announcement={announcement}
+        drawer={<MobileDrawer isOpen={mobileOpen} onClose={() => setMobileOpen(false)} header={header} />}
+      />
+    );
+  }
 
   // =========================================================================
   // 1. FLOATING PILL DESIGN (Existing)

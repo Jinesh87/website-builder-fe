@@ -2,6 +2,7 @@ import { AUTH_PRESETS, createAuthData } from "./auth-defaults.ts";
 import { CARDS_PRESETS, createCardsData } from "./cards-defaults.ts";
 import { createShowcaseData, SHOWCASE_PRESETS } from "./showcase-defaults.ts";
 import { GALLERY_PRESETS } from "./gallery-defaults.ts";
+import { CONTACT_HEADER_PRESETS } from "./header-contact-defaults.ts";
 import { HERO_SLIDER_PRESETS } from "./hero-slider-defaults.ts";
 import type {
   AccountData,
@@ -5130,6 +5131,14 @@ export const SECTION_PRESETS: SectionPreset[] = [
         },
       }),
   },
+  ...CONTACT_HEADER_PRESETS.map((preset): SectionPreset => ({
+    key: preset.key,
+    type: "header",
+    label: preset.label,
+    category: "Header",
+    description: preset.description,
+    create: () => createSection("header", { data: preset.data() }),
+  })),
   ...CARDS_PRESETS.map((preset): SectionPreset => ({
     key: preset.key,
     type: "cards",

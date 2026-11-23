@@ -124,9 +124,13 @@ export const STYLE_SUPPORT: Record<string, Record<string, readonly StyleControl[
   "header": {
     "*": ["background","containerWidth","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorBorder"],
     "design=boutique": ["background","containerWidth","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorBorder"],
+    "design=call-now": ["background","containerWidth","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorBorder"],
     "design=centered": ["background","containerWidth","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorBorder"],
+    "design=centered-phone": ["background","containerWidth","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorBorder"],
     "design=classical": ["background","containerWidth","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorBorder"],
     "design=comprehensive": ["background","containerWidth","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorBorder"],
+    "design=contact-stacked": ["background","containerWidth","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorBorder"],
+    "design=contact-topbar": ["background","containerWidth","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorBorder"],
     "design=floating": ["background","align","font","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorBorder"],
     "design=glass-dock": ["background","align","bodyItalic"],
     "design=headline-ticker": ["background","containerWidth","align","bodyItalic"],

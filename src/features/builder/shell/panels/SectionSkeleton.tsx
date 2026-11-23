@@ -1,6 +1,9 @@
 import type { SectionPreset } from "../../../../site-kit/index.ts";
+import { CONTACT_HEADER_SKELETONS } from "./ContactHeaderSkeleton.tsx";
 
 export function SectionSkeleton({ preset }: { preset: SectionPreset }) {
+  const contactHeader = CONTACT_HEADER_SKELETONS[preset.key];
+  if (contactHeader) return contactHeader;
   switch (preset.key) {
     case "header-logo-left":
       return (

@@ -14,6 +14,7 @@ import {
   STATUS_LABELS,
 } from "../../components/admin/client-labels.tsx";
 import PageHeader from "../../components/app/PageHeader.tsx";
+import CopyableId from "../../components/ui/CopyableId.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import SelectInput, { type SelectOption } from "../../components/ui/SelectInput.tsx";
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
@@ -170,6 +171,7 @@ export default function ClientsPage() {
                 <thead className="border-b border-line bg-canvas/60 text-xs font-medium text-ink-muted">
                   <tr>
                     <th scope="col" className="px-5 py-3 font-medium">Client</th>
+                    <th scope="col" className="px-5 py-3 font-medium">Client ID</th>
                     <th scope="col" className="px-5 py-3 font-medium">Source</th>
                     <th scope="col" className="px-5 py-3 font-medium">Status</th>
                     <th scope="col" className="px-5 py-3 font-medium">Joined</th>
@@ -186,6 +188,9 @@ export default function ClientsPage() {
                         <p className="text-xs text-ink-muted">
                           {client.owner ? ownerLabel(client.owner) : "No login account"}
                         </p>
+                      </td>
+                      <td className="px-5 py-3">
+                        <CopyableId value={client.id} label="client ID" />
                       </td>
                       <td className="px-5 py-3 text-ink-body">{SOURCE_LABELS[client.source]}</td>
                       <td className="px-5 py-3">

@@ -69,6 +69,10 @@ export const HEADER_DESIGNS = [
   "headline-ticker",
   "vintage-editorial",
   "boutique",
+  "contact-topbar",
+  "call-now",
+  "contact-stacked",
+  "centered-phone",
 ] as const;
 
 export type HeaderDesign = (typeof HEADER_DESIGNS)[number];
@@ -145,6 +149,14 @@ export type HeaderData = {
   /** Contact block shown in the full-height curtain menu. */
   contactLabel?: string;
   contactEmail?: string;
+  /** Business phone for the phone-first designs (contact-topbar, call-now, contact-stacked, centered-phone). */
+  phone?: string;
+  /** Small label above the phone number, e.g. "Call us 24/7". Default "Call us". */
+  phoneLabel?: string;
+  contactHours?: string;
+  contactAddress?: string;
+  /** Round tap-to-call button beside the menu button on phones. Default on when a phone is set. */
+  mobileCallButton?: boolean;
   /** Highlight card shown inside mega-menu dropdowns. */
   featured?: HeaderFeatured;
   /** Subhead / issue banner for vintage-editorial header */
