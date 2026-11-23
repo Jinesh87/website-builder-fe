@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Button } from "@heroui/react";
-import { LogOut, type LucideIcon } from "lucide-react";
+import { ChevronDown, LogOut, type LucideIcon } from "lucide-react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/auth-context.ts";
 import BrandLogo from "../components/BrandLogo.tsx";
 import NotificationBell from "../components/app/NotificationBell.tsx";
+import { useCollapsedNav } from "./useCollapsedNav.ts";
 
 export type ShellNavItem = {
   label: string;
@@ -17,8 +18,36 @@ export type ShellNavItem = {
   /** Count of items waiting for attention; hidden when zero. */
   badge?: number;
   badgeTone?: "brand" | "amber";
-  children?: { label: string; to: string }[];
+  children?: ShellNavChild[];
+  /** Sub-links show all the time with a chevron to fold them away (remembered per browser). */
+  collapsible?: boolean;
 };
+
+export type ShellNavChild = {
+  label: string;
+  /** Page path with the query that picks the view, e.g. "/shop?section=orders". */
+  to: string;
+  /** Active when the page is open without that query (the page's default view). */
+  isDefault?: boolean;
+};
+
+/** Sub-link is active when the path matches and every query value in its link is in the address. */
+function isChildActive(child: ShellNavChild, pathname: string, search: URLSearchParams): boolean {
+  const [path, query = ""] = child.to.split("?");
+  if (pathname !== path) return false;
+  return [...new URLSearchParams(query)].every(([key, value]) =>
+    search.has(key) ? search.get(key) === value : Boolean(child.isDefault),
+  );
+}
+
+/** On the same page, keep the rest of the address (e.g. the chosen website) and swap only the link's own values. */
+function childHref(child: ShellNavChild, pathname: string, search: URLSearchParams): string {
+  const [path, query = ""] = child.to.split("?");
+  if (pathname !== path) return child.to;
+  const next = new URLSearchParams(search);
+  for (const [key, value] of new URLSearchParams(query)) next.set(key, value);
+  return `${path}?${next.toString()}`;
+}
 
 type AppShellProps = {
   tone: "light" | "dark";
@@ -39,8 +68,10 @@ function initials(name: string): string {
 
 export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProps) {
   const { user, logout } = useAuth();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const searchParams = new URLSearchParams(search);
   const [signingOut, setSigningOut] = useState(false);
+  const collapsedNav = useCollapsedNav();
   const dark = tone === "dark";
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -84,21 +115,38 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
         </div>
 
         <nav aria-label="Main" className="mt-6 flex flex-1 flex-col gap-1 overflow-y-auto pr-1">
-          {nav.map(({ label, icon: Icon, to, end, activePrefixes, badge, badgeTone, children }) => {
+          {nav.map(({ label, icon: Icon, to, end, activePrefixes, badge, badgeTone, children, collapsible }) => {
             const isSelfOrChildActive =
               (to ? (end ? pathname === to : pathname.startsWith(to)) : false) ||
               (activePrefixes?.some((prefix) => pathname.startsWith(prefix)) ?? false);
+            const foldable = Boolean(children?.length && collapsible);
+            const folded = foldable && collapsedNav.isCollapsed(label);
+            const showChildren = Boolean(children) && (foldable ? !folded : isSelfOrChildActive);
 
             return (
-              <div key={label} className="flex flex-col gap-0.5">
+              <div key={label} className="relative flex flex-col gap-0.5">
+                {foldable && (
+                  <button
+                    type="button"
+                    onClick={() => collapsedNav.toggle(label)}
+                    aria-expanded={!folded}
+                    aria-label={folded ? `Show ${label} links` : `Hide ${label} links`}
+                    title={folded ? "Expand" : "Collapse"}
+                    className={`absolute right-1 top-1 z-10 grid size-7 cursor-pointer place-items-center rounded-md transition-colors ${
+                      dark ? "text-white/60 hover:bg-white/10 hover:text-white" : "text-ink-muted hover:bg-canvas hover:text-ink"
+                    }`}
+                  >
+                    <ChevronDown className={`size-4 transition-transform ${folded ? "-rotate-90" : ""}`} aria-hidden />
+                  </button>
+                )}
                 {to ? (
                   <NavLink
                     to={to}
                     end={end}
                     className={({ isActive }) =>
-                      linkClass({
+                      `${linkClass({
                         isActive: isActive || isSelfOrChildActive,
-                      })
+                      })}${foldable ? " pr-9" : ""}`
                     }
                   >
                     <Icon className="size-4 shrink-0" aria-hidden />
@@ -130,22 +178,15 @@ export default function AppShell({ tone, nav, roleLabel, caption }: AppShellProp
                   </span>
                 )}
 
-                {children && isSelfOrChildActive && (
-                  <div className="ml-6 flex flex-col gap-0.5 border-l border-white/10 pl-3 pt-0.5 pb-1">
+                {children && showChildren && (
+                  <div className={`ml-6 flex flex-col gap-0.5 border-l pl-3 pt-0.5 pb-1 ${dark ? "border-white/10" : "border-line"}`}>
                     {children.map((sub) => {
-                      const currentSearch = new URLSearchParams(window.location.search);
-                      const targetSearch = sub.to.includes("?")
-                        ? new URLSearchParams(sub.to.split("?")[1])
-                        : null;
-                      const isSubActive = targetSearch
-                        ? targetSearch.get("tab") === currentSearch.get("tab") ||
-                          (!currentSearch.get("tab") && targetSearch.get("tab") === "applications")
-                        : pathname === sub.to;
+                      const isSubActive = isChildActive(sub, pathname, searchParams);
 
                       return (
                         <NavLink
                           key={sub.to}
-                          to={sub.to}
+                          to={childHref(sub, pathname, searchParams)}
                           className={`rounded-md px-2.5 py-1.5 text-xs transition-colors ${
                             isSubActive
                               ? dark

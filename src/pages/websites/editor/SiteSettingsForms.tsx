@@ -47,6 +47,7 @@ import {
   TextAreaField,
   TextField,
 } from "./fields.tsx";
+import { FaviconField } from "./FaviconField.tsx";
 import { FontPicker } from "./FontPicker.tsx";
 import { CONTACT_HEADER_DESIGN_OPTIONS, HeaderContactFields } from "./HeaderContactFields.tsx";
 import { getLiveSiteDomain } from "../../../utils/live-url.ts";
@@ -1152,6 +1153,7 @@ export function ThemeForm({
 }) {
   return (
     <>
+      <FaviconField theme={theme} onChange={onChange} />
       {presets.length > 0 && (
         <FormGroup title="Colour styles">
           <div className="grid grid-cols-2 gap-2">

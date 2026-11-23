@@ -12,7 +12,7 @@ export type AuthUser = {
   role: UserRole;
   status: UserStatus;
   emailVerified: boolean;
-  client: { id: string; businessName: string } | null;
+  client: { id: string; businessName: string; shopFeatureEnabled?: boolean } | null;
   createdAt: string;
 };
 

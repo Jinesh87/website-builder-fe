@@ -75,8 +75,11 @@ function defaultShopSection(shopEnabled: boolean): ShopSection {
   return shopEnabled ? "products" : "settings";
 }
 
+/** Sections that work before the shop is switched on; the rest open Shop settings until then. */
+const SECTIONS_WITHOUT_SHOP = new Set<string>(["settings", "razorpay"]);
+
 function parseShopSection(raw: string | null, shopEnabled: boolean): ShopSection {
-  if (raw && SHOP_SECTION_IDS.has(raw)) return raw as ShopSection;
+  if (raw && SHOP_SECTION_IDS.has(raw) && (shopEnabled || SECTIONS_WITHOUT_SHOP.has(raw))) return raw as ShopSection;
   return defaultShopSection(shopEnabled);
 }
 

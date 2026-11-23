@@ -34,6 +34,8 @@ export type SpacingSize = "compact" | "normal" | "relaxed";
 
 export type ThemeSettings = {
   language?: string;
+  /** Browser-tab icon. Unset falls back to the website logo. */
+  favicon?: ImageRef;
   colors: {
     primary: string;
     secondary: string;

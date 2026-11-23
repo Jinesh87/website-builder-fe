@@ -35,7 +35,7 @@ function adminNav(
       badge: pendingPartners,
       badgeTone: "amber",
       children: [
-        { label: "Applications", to: "/admin/partners?tab=applications" },
+        { label: "Applications", to: "/admin/partners?tab=applications", isDefault: true },
         { label: "Commission", to: "/admin/partners?tab=commission" },
         { label: "Audit log", to: "/admin/partners?tab=audit-log" },
       ],
