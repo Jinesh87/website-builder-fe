@@ -165,6 +165,7 @@ export default function ShopPosPage() {
             inCart={inCart}
             onAdd={(product, variant) => setCart((current) => addToCart(current, product, variant))}
             onNotice={setNotice}
+            scannerEnabled={dialog === null && completed === null}
           />
           <div className="flex min-h-0 flex-col lg:w-[380px] lg:shrink-0">
             <PosCartPanel

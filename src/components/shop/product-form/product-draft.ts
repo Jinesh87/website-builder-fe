@@ -29,6 +29,8 @@ export type SetDraft = {
   overrides: Record<string, string>;
   /** Variant key → SKU. The key of a product without options is "". */
   skus: Record<string, string>;
+  /** Variant key → printed barcode (scanned at the POS till). */
+  barcodes: Record<string, string>;
   /** Variant key → photos for that single variant. */
   images: Record<string, ShopImage[]>;
   /** Key of the option whose values have their own photos, if any. */
@@ -83,6 +85,7 @@ export function blankSet(withOption = false): SetDraft {
     options: withOption ? [blankOption()] : [],
     overrides: {},
     skus: {},
+    barcodes: {},
     images: {},
     photosBy: null,
   };
@@ -161,6 +164,8 @@ export function toInput(draft: ProductDraft): ProductParseResult {
     returnDays = parsed;
   }
   const seen = new Set<string>();
+  /** Barcode → variant label, across every variant group of the product. */
+  const seenBarcodes = new Map<string, string>();
   const optionSets: ShopProductInput["optionSets"] = [];
   for (const set of draft.sets) {
     const pricePaise = rupeesToPaise(set.price);
@@ -176,6 +181,7 @@ export function toInput(draft: ProductDraft): ProductParseResult {
     const combos = options.length === 0 ? [[]] : combinations(options);
     const overrides = [];
     const skus = [];
+    const barcodes = [];
     const imageGroups = [];
     for (const values of combos) {
       const key = variantKey(values);
@@ -193,6 +199,15 @@ export function toInput(draft: ProductDraft): ProductParseResult {
       if (sku) {
         if (sku.length > 64) return { error: `SKU for ${label} must be 64 characters or less` };
         skus.push({ key, sku });
+      }
+      const barcode = (set.barcodes[key] ?? "").trim();
+      if (barcode) {
+        if (barcode.length > 64) return { error: `Barcode for ${label} must be 64 characters or less` };
+        if (!/^[\x21-\x7E]+$/.test(barcode)) return { error: `Barcode for ${label} can't contain spaces or special characters` };
+        const other = seenBarcodes.get(barcode);
+        if (other) return { error: `${other} and ${label} have the same barcode` };
+        seenBarcodes.set(barcode, label);
+        barcodes.push({ key, barcode });
       }
       const photos = set.images[key] ?? [];
       if (photos.length > 0) {
@@ -216,6 +231,7 @@ export function toInput(draft: ProductDraft): ProductParseResult {
       }),
       ...(overrides.length > 0 ? { overrides } : {}),
       ...(skus.length > 0 ? { skus } : {}),
+      ...(barcodes.length > 0 ? { barcodes } : {}),
       ...(imageGroups.length > 0 ? { images: imageGroups } : {}),
     });
   }
@@ -268,6 +284,7 @@ export function setsFromProduct(product: ShopProduct): SetDraft[] {
       options,
       overrides: Object.fromEntries((set.overrides ?? []).map((override) => [override.key, paiseToRupees(override.pricePaise)])),
       skus,
+      barcodes: Object.fromEntries((set.barcodes ?? []).map((row) => [row.key, row.barcode])),
       images: Object.fromEntries((set.images ?? []).map((group) => [group.key, group.images])),
       photosBy: options.find((option) => Object.keys(option.images).length > 0)?.key ?? null,
     };

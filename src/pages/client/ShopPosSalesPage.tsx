@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button, Spinner } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
-import { ArrowLeft, ChevronLeft, ChevronRight, Download, Printer, Store } from "lucide-react";
+import { ArrowLeft, Download, Printer, Store } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { errorMessage } from "../../api/http.ts";
 import { shopApi, type ShopOrder, type ShopOrderPage } from "../../api/shop.ts";
@@ -9,25 +9,22 @@ import { POS_METHOD_LABEL, shopPosApi, type PosDailySummary } from "../../api/sh
 import ShopOrderDetail from "../../components/shop/ShopOrderDetail.tsx";
 import { RefundBadge, StatusBadge } from "../../components/shop/ShopOrderBadges.tsx";
 import { usePosReceiptActions } from "../../components/shop/pos/PosSaleCompleteDialog.tsx";
+import PosPeriodBar from "../../components/shop/pos/PosPeriodBar.tsx";
 import PosSummaryCards, { todayIst } from "../../components/shop/pos/PosSummaryCards.tsx";
+import { periodFromParams, type DayRange, type PosPeriod } from "../../components/shop/pos/pos-period.ts";
 import { formatInr } from "../../components/shop/shop-format.ts";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import SelectInput from "../../components/ui/SelectInput.tsx";
 import { useShopWebsites } from "../../hooks/use-shop-websites.ts";
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-/** YYYY-MM-DD shifted by whole days (calendar arithmetic, no time zone involved). */
-function shiftDay(date: string, days: number): string {
-  const next = new Date(`${date}T00:00:00Z`);
-  next.setUTCDate(next.getUTCDate() + days);
-  return next.toISOString().slice(0, 10);
-}
-
-function dayLabel(date: string): string {
-  if (date === todayIst()) return "Today";
-  if (date === shiftDay(todayIst(), -1)) return "Yesterday";
-  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+/** Time of a sale; with the date too when the report spans several days. */
+function saleTime(createdAt: string, withDate: boolean): string {
+  const at = new Date(createdAt);
+  const time = at.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return withDate ? `${at.toLocaleDateString(undefined, { day: "numeric", month: "short" })}, ${time}` : time;
 }
 
 function SaleActions({ websiteId, order }: { websiteId: string; order: ShopOrder }) {
@@ -60,12 +57,13 @@ function SaleActions({ websiteId, order }: { websiteId: string; order: ShopOrder
   );
 }
 
-/** POS sales for one day: totals by payment method and every sale, with reprints and the full order view. */
+/** POS sales for a day, week, month, year or date range: totals by payment method and every sale, with reprints and the full order view. */
 export default function ShopPosSalesPage() {
   const { websites, error: listError, selectedId } = useShopWebsites({ posOnly: true });
   const [searchParams, setSearchParams] = useSearchParams();
-  const dateParam = searchParams.get("date");
-  const date = dateParam && DATE_PATTERN.test(dateParam) ? dateParam : todayIst();
+  const today = todayIst();
+  const { period, range } = useMemo(() => periodFromParams(searchParams, today), [searchParams, today]);
+  const { from, to } = range;
   const [page, setPage] = useState(1);
   const [summary, setSummary] = useState<PosDailySummary | null>(null);
   const [sales, setSales] = useState<ShopOrderPage | null>(null);
@@ -73,12 +71,18 @@ export default function ShopPosSalesPage() {
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  function setParams(next: { website?: string; date?: string }) {
+  function setParams(next: { website?: string; period?: PosPeriod; range?: DayRange }) {
     const params = new URLSearchParams(searchParams);
     if (next.website) params.set("website", next.website);
-    if (next.date) {
-      if (next.date === todayIst()) params.delete("date");
-      else params.set("date", next.date);
+    if (next.period && next.range) {
+      for (const key of ["period", "date", "from", "to"]) params.delete(key);
+      if (next.period !== "day") params.set("period", next.period);
+      if (next.period === "range") {
+        params.set("from", next.range.from);
+        params.set("to", next.range.to);
+      } else if (next.range.from !== today) {
+        params.set("date", next.range.from);
+      }
     }
     setSearchParams(params, { replace: true });
     setPage(1);
@@ -90,30 +94,31 @@ export default function ShopPosSalesPage() {
     setError(null);
     setSummary(null);
     shopPosApi
-      .summary(selectedId, date)
+      .summary(selectedId, { from, to })
       .then((loaded) => !cancelled && setSummary(loaded))
       .catch((err: unknown) => !cancelled && setError(errorMessage(err)));
     return () => {
       cancelled = true;
     };
-  }, [selectedId, date, reloadKey]);
+  }, [selectedId, from, to, reloadKey]);
 
   useEffect(() => {
     if (!selectedId) return;
     let cancelled = false;
     setSales(null);
     shopApi
-      .orders(selectedId, { channel: "pos", date, page })
+      .orders(selectedId, { channel: "pos", from, to, page })
       .then((loaded) => !cancelled && setSales(loaded))
       .catch((err: unknown) => !cancelled && setError(errorMessage(err)));
     return () => {
       cancelled = true;
     };
-  }, [selectedId, date, page, reloadKey]);
+  }, [selectedId, from, to, page, reloadKey]);
 
   const tillLink = selectedId ? `/shop/pos?website=${selectedId}` : "/shop/pos";
   const totalPages = sales ? Math.max(1, Math.ceil(sales.total / sales.pageSize)) : 1;
-  const isToday = date === todayIst();
+  const singleDay = from === to;
+  const includesToday = from <= today && today <= to;
 
   if (selectedId && openOrderId) {
     return (
@@ -139,7 +144,7 @@ export default function ShopPosSalesPage() {
       <header className="mt-3 flex flex-wrap items-center gap-3">
         <div className="mr-auto">
           <h1 className="text-2xl font-semibold text-ink">POS sales</h1>
-          <p className="mt-1 text-sm text-ink-body">Takings and every in-store sale for the day.</p>
+          <p className="mt-1 text-sm text-ink-body">Takings and every in-store sale for the period you pick.</p>
         </div>
         {websites && websites.length > 1 && selectedId && (
           <SelectInput
@@ -147,7 +152,10 @@ export default function ShopPosSalesPage() {
             className="w-56"
             value={selectedId}
             onChange={(website) => setParams({ website })}
-            options={websites.map((item) => ({ value: item.id, label: item.name }))}
+            options={websites.map((item) => ({
+              value: item.id,
+              label: item.name,
+            }))}
           />
         )}
         <Link to={tillLink} className={buttonVariants({ variant: "outline" })}>
@@ -155,34 +163,13 @@ export default function ShopPosSalesPage() {
         </Link>
       </header>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="outline" isIconOnly aria-label="Previous day" onPress={() => setParams({ date: shiftDay(date, -1) })}>
-          <ChevronLeft className="size-4" />
-        </Button>
-        <input
-          type="date"
-          aria-label="Day"
-          value={date}
-          max={todayIst()}
-          onChange={(event) => DATE_PATTERN.test(event.target.value) && setParams({ date: event.target.value })}
-          className="h-9 rounded-md border border-line-strong bg-surface px-2 text-sm text-ink"
+      <div className="mt-6">
+        <PosPeriodBar
+          period={period}
+          range={range}
+          today={today}
+          onChange={(nextPeriod, nextRange) => setParams({ period: nextPeriod, range: nextRange })}
         />
-        <Button
-          size="sm"
-          variant="outline"
-          isIconOnly
-          aria-label="Next day"
-          isDisabled={isToday}
-          onPress={() => setParams({ date: shiftDay(date, 1) })}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
-        {!isToday && (
-          <Button size="sm" variant="ghost" onPress={() => setParams({ date: todayIst() })}>
-            Today
-          </Button>
-        )}
-        <span className="ml-2 text-sm font-medium text-ink">{dayLabel(date)}</span>
       </div>
 
       {(listError || error) && (
@@ -217,7 +204,11 @@ export default function ShopPosSalesPage() {
         <section className="mt-6 rounded-xl border border-line bg-surface">
           <div className="flex items-center justify-between border-b border-line px-5 py-3">
             <h2 className="text-sm font-semibold text-ink">Sales</h2>
-            {sales && <span className="text-xs text-ink-muted">{sales.total} on this day</span>}
+            {sales && (
+              <span className="text-xs text-ink-muted">
+                {sales.total} {singleDay ? "on this day" : "in this period"}
+              </span>
+            )}
           </div>
           {!sales ? (
             <div className="grid place-items-center py-12">
@@ -225,8 +216,8 @@ export default function ShopPosSalesPage() {
             </div>
           ) : sales.orders.length === 0 ? (
             <p className="px-5 py-12 text-center text-sm text-ink-muted">
-              No POS sales on this day.{" "}
-              {isToday && (
+              No POS sales {singleDay ? "on this day" : "in this period"}.{" "}
+              {includesToday && (
                 <Link to={tillLink} className="font-medium text-brand hover:underline">
                   Open the till
                 </Link>
@@ -261,9 +252,7 @@ export default function ShopPosSalesPage() {
                         className="cursor-pointer hover:bg-canvas focus-visible:outline-2 focus-visible:outline-brand"
                       >
                         <td className="px-5 py-3 font-medium text-ink">#{order.number}</td>
-                        <td className="px-3 py-3 text-ink-body">
-                          {new Date(order.createdAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
-                        </td>
+                        <td className="px-3 py-3 text-ink-body">{saleTime(order.createdAt, !singleDay)}</td>
                         <td className="max-w-48 px-3 py-3">
                           <p className="truncate text-ink">{order.customer.fullName}</p>
                           {(order.customer.phone || order.customer.email) && (

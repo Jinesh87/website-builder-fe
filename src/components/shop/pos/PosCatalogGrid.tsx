@@ -3,7 +3,8 @@ import { ImageOff, ScanBarcode, Search } from "lucide-react";
 import type { PosCatalog, PosCatalogProduct, PosCatalogVariant } from "../../../api/shop-pos.ts";
 import CommonModal from "../../ui/AppModal.tsx";
 import { formatInr } from "../shop-format.ts";
-import { filterCatalog, findBySku } from "./pos-cart.ts";
+import { useBarcodeScanner } from "./barcode-scanner.ts";
+import { filterCatalog, findByCode } from "./pos-cart.ts";
 
 type Props = {
   catalog: PosCatalog;
@@ -12,6 +13,8 @@ type Props = {
   onAdd: (product: PosCatalogProduct, variant: PosCatalogVariant) => void;
   /** Feedback for scans that don't match or are sold out. */
   onNotice: (message: string) => void;
+  /** Off while a dialog is open, so a scan can't add items behind it. */
+  scannerEnabled: boolean;
 };
 
 function stockLeft(variant: PosCatalogVariant, inCart: Map<string, number>): number {
@@ -26,7 +29,7 @@ function priceRange(product: PosCatalogProduct): string {
 }
 
 /** Left side of the till: search or scan, filter by category, tap a product to add it. */
-export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice }: Props) {
+export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice, scannerEnabled }: Props) {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [choosing, setChoosing] = useState<PosCatalogProduct | null>(null);
@@ -46,18 +49,28 @@ export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice }: Pro
     else setChoosing(product);
   }
 
-  /** Barcode scanners type the SKU and press Enter. */
+  /** Adds the item with this barcode (or SKU); true when one matched. */
+  function addByCode(code: string): boolean {
+    const match = findByCode(catalog.products, code);
+    if (match) add(match.product, match.variant);
+    return Boolean(match);
+  }
+
+  // Scans anywhere on the page, e.g. after tapping a cart button moved the cursor out of the search box.
+  useBarcodeScanner((code) => {
+    if (!addByCode(code)) onNotice(`No product with barcode ${code}. Add it to the product under Shop → Products.`);
+  }, scannerEnabled && !choosing);
+
+  /** A scanner in the search box types the barcode and presses Enter. */
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    const match = findBySku(catalog.products, search);
-    if (match) {
-      add(match.product, match.variant);
+    if (addByCode(search)) {
       setSearch("");
     } else if (visible.length === 1) {
       pick(visible[0]);
     } else if (search.trim()) {
-      onNotice(`No product with SKU "${search.trim()}".`);
+      onNotice(`No product with barcode or SKU "${search.trim()}".`);
     }
   }
 
@@ -71,7 +84,7 @@ export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice }: Pro
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Search products, or scan a barcode / type a SKU and press Enter"
+          placeholder="Search products, or scan a barcode"
           className="h-11 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-10 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
           autoFocus
         />

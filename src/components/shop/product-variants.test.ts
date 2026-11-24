@@ -34,6 +34,7 @@ const variant = (name: string, images: ShopVariant["images"] = []): ShopVariant 
   id: name,
   name,
   sku: null,
+  barcode: null,
   pricePaise: 49900,
   sortOrder: 0,
   quantity: 1,

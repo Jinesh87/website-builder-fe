@@ -1,11 +1,22 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { ImagePlus } from "lucide-react";
 import { combinations } from "../product-variants.ts";
 import ImageStrip, { type PhotoUpload } from "./ImageStrip.tsx";
 import { variantKey, type SetDraft, type SetPatch } from "./product-draft.ts";
 
-const COLUMNS = "sm:grid-cols-[minmax(0,1fr)_112px_144px_40px]";
+const COLUMNS = "sm:grid-cols-[minmax(0,1fr)_112px_144px_160px_40px]";
 const CELL_INPUT = "h-8 w-full rounded-lg border border-ed-border bg-surface px-2 text-sm text-ink";
+
+/**
+ * A scanner presses Enter after each code: instead of submitting the form, jump to the next
+ * variant's barcode field so a whole size run can be scanned in one go.
+ */
+function nextBarcodeOnEnter(event: KeyboardEvent<HTMLInputElement>) {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  const fields = [...document.querySelectorAll<HTMLInputElement>("input[data-barcode-input]")];
+  fields[fields.indexOf(event.currentTarget) + 1]?.focus();
+}
 
 /** One row per variant (e.g. Red / S) with its own price, SKU and, when needed, its own photos. */
 export default function VariantTable({
@@ -49,6 +60,7 @@ export default function VariantTable({
           <span>Variant</span>
           <span>Price (₹)</span>
           <span>SKU (optional)</span>
+          <span>Barcode (optional)</span>
           <span className="sr-only">Photos</span>
         </div>
         <ul className="max-h-96 divide-y divide-line overflow-y-auto">
@@ -74,6 +86,18 @@ export default function VariantTable({
                     onChange={(event) => onChange((current) => ({ skus: { ...current.skus, [key]: event.target.value } }))}
                     placeholder="SKU"
                     aria-label={`SKU for ${label}`}
+                    maxLength={64}
+                    className={CELL_INPUT}
+                  />
+                  <input
+                    value={set.barcodes[key] ?? ""}
+                    onChange={(event) =>
+                      onChange((current) => ({ barcodes: { ...current.barcodes, [key]: event.target.value } }))
+                    }
+                    onKeyDown={nextBarcodeOnEnter}
+                    data-barcode-input=""
+                    placeholder="Scan or type"
+                    aria-label={`Barcode for ${label}`}
                     maxLength={64}
                     className={CELL_INPUT}
                   />

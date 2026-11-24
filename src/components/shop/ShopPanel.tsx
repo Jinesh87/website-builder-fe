@@ -1011,6 +1011,7 @@ function ProductVariants({
                   {formatPaise(variant.pricePaise)}
                   <span className="text-ink-muted"> · {variant.quantity} on hand</span>
                   {variant.sku ? <span className="text-ink-muted"> · SKU {variant.sku}</span> : null}
+                  {variant.barcode ? <span className="text-ink-muted"> · Barcode {variant.barcode}</span> : null}
                 </p>
               </div>
             </li>
@@ -1023,7 +1024,7 @@ function ProductVariants({
 
 function matchesQuery(product: ShopProduct, query: string): boolean {
   const needle = query.toLowerCase();
-  const haystack = [product.name, product.description ?? "", product.categoryName, ...product.variants.flatMap((variant) => [variant.name, variant.sku ?? ""])]
+  const haystack = [product.name, product.description ?? "", product.categoryName, ...product.variants.flatMap((variant) => [variant.name, variant.sku ?? "", variant.barcode ?? ""])]
     .join(" ")
     .toLowerCase();
   return haystack.includes(needle);

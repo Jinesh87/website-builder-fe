@@ -7,6 +7,8 @@ export type PosCatalogVariant = {
   id: string;
   name: string;
   sku: string | null;
+  /** Printed barcode; a scan matches this first, then the SKU. */
+  barcode: string | null;
   imageUrl: string | null;
   /** Price per unit, GST included. */
   unitPaise: number;
@@ -77,6 +79,9 @@ export type PosReceipt = {
 
 export type PosDailySummary = {
   date: string;
+  /** Days covered, YYYY-MM-DD, both inclusive. */
+  from: string;
+  to: string;
   salesCount: number;
   totalPaise: number;
   discountPaise: number;
@@ -116,10 +121,11 @@ export const shopPosApi = {
   emailInvoice: (websiteId: string, orderId: string, to?: string) =>
     request<{ to: string }>(`${base(websiteId)}/pos/sales/${orderId}/email`, { method: "POST", body: { to: to ?? "" } }),
 
-  summary: (websiteId: string, date?: string) =>
-    request<{ summary: PosDailySummary }>(`${base(websiteId)}/pos/summary${date ? `?date=${date}` : ""}`).then(
-      (data) => data.summary,
-    ),
+  /** POS totals for the days `from` through `to` (India time, inclusive). */
+  summary: (websiteId: string, range: { from: string; to: string }) =>
+    request<{ summary: PosDailySummary }>(
+      `${base(websiteId)}/pos/summary?${new URLSearchParams({ from: range.from, to: range.to })}`,
+    ).then((data) => data.summary),
 
   /** Any order's A4 GST invoice as a PDF. */
   invoicePdf: (websiteId: string, orderId: string) => requestBlob(`${base(websiteId)}/orders/${orderId}/invoice`),

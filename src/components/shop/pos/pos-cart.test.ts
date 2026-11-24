@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PosCatalogProduct } from "../../../api/shop-pos.ts";
-import { addToCart, cartTotals, filterCatalog, findBySku, rupeesToPaise, setQuantity } from "./pos-cart.ts";
+import { createScanBuffer } from "./barcode-scanner.ts";
+import { addToCart, cartTotals, filterCatalog, findByCode, rupeesToPaise, setQuantity } from "./pos-cart.ts";
 
 const kurta: PosCatalogProduct = {
   id: "p1",
@@ -10,8 +11,8 @@ const kurta: PosCatalogProduct = {
   imageUrl: null,
   listed: true,
   variants: [
-    { id: "v-s", name: "S", sku: "KUR-S", imageUrl: null, unitPaise: 111000, gstPercent: 10, available: 2 },
-    { id: "v-m", name: "M", sku: null, imageUrl: null, unitPaise: 111000, gstPercent: 10, available: 0 },
+    { id: "v-s", name: "S", sku: "KUR-S", barcode: "8901000000017", imageUrl: null, unitPaise: 111000, gstPercent: 10, available: 2 },
+    { id: "v-m", name: "M", sku: null, barcode: null, imageUrl: null, unitPaise: 111000, gstPercent: 10, available: 0 },
   ],
 };
 const saree: PosCatalogProduct = {
@@ -21,7 +22,7 @@ const saree: PosCatalogProduct = {
   categoryName: null,
   imageUrl: null,
   listed: false,
-  variants: [{ id: "v-std", name: "Standard", sku: "SAR-1", imageUrl: null, unitPaise: 155000, gstPercent: 10, available: 5 }],
+  variants: [{ id: "v-std", name: "Standard", sku: "SAR-1", barcode: null, imageUrl: null, unitPaise: 155000, gstPercent: 10, available: 5 }],
 };
 
 describe("pos cart", () => {
@@ -52,9 +53,11 @@ describe("pos cart", () => {
     expect(cartTotals(cart, { type: "amount", value: 999999999 }).discountError).toBeTruthy();
   });
 
-  it("finds a scanned SKU and filters by text or category", () => {
-    expect(findBySku([kurta, saree], " sar-1 ")?.variant.id).toBe("v-std");
-    expect(findBySku([kurta, saree], "nope")).toBeNull();
+  it("finds a scanned barcode, falls back to SKU, and filters by text or category", () => {
+    expect(findByCode([kurta, saree], "8901000000017")?.variant.id).toBe("v-s");
+    expect(findByCode([kurta, saree], " sar-1 ")?.variant.id).toBe("v-std");
+    expect(findByCode([kurta, saree], "nope")).toBeNull();
+    expect(filterCatalog([kurta, saree], "890100", null).map((p) => p.id)).toEqual(["p1"]);
     expect(filterCatalog([kurta, saree], "kur-s", null).map((p) => p.id)).toEqual(["p1"]);
     expect(filterCatalog([kurta, saree], "", "c1").map((p) => p.id)).toEqual(["p1"]);
   });
@@ -64,5 +67,23 @@ describe("pos cart", () => {
     expect(rupeesToPaise("4000")).toBe(400000);
     expect(rupeesToPaise("abc")).toBeNull();
     expect(rupeesToPaise("")).toBeNull();
+  });
+});
+
+describe("barcode scanner buffer", () => {
+  it("turns a fast burst ending in Enter into a code", () => {
+    const buffer = createScanBuffer();
+    let at = 1000;
+    for (const key of "8901234567890") expect(buffer.feed(key, (at += 8))).toBeNull();
+    expect(buffer.feed("Enter", (at += 8))).toBe("8901234567890");
+  });
+
+  it("ignores slow typing and too-short bursts", () => {
+    const buffer = createScanBuffer();
+    let at = 1000;
+    for (const key of "12345") buffer.feed(key, (at += 300));
+    expect(buffer.feed("Enter", (at += 300))).toBeNull();
+    for (const key of "12") buffer.feed(key, (at += 5));
+    expect(buffer.feed("Enter", (at += 5))).toBeNull();
   });
 });

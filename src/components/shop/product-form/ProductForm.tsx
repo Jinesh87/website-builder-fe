@@ -103,7 +103,7 @@ export default function ProductForm({
   function addOptions() {
     commit((current) => ({
       ...current,
-      sets: current.sets.map((set, index) => (index === 0 ? { ...set, options: [blankOption()], skus: {} } : set)),
+      sets: current.sets.map((set, index) => (index === 0 ? { ...set, options: [blankOption()], skus: {}, barcodes: {} } : set)),
     }));
   }
 
@@ -238,6 +238,20 @@ export default function ProductForm({
                     value={firstSet.skus[STANDARD_KEY] ?? ""}
                     onChange={(sku) => updateSet(firstSet.key, (current) => ({ skus: { ...current.skus, [STANDARD_KEY]: sku } }))}
                     placeholder="Your stock code"
+                  />
+                </div>
+              )}
+              {!withOptions && (
+                // A scanner presses Enter after the code; keep that from submitting the form.
+                <div className="w-52" onKeyDownCapture={(event) => event.key === "Enter" && event.preventDefault()}>
+                  <TextInput
+                    label="Barcode (optional)"
+                    name="productBarcode"
+                    value={firstSet.barcodes[STANDARD_KEY] ?? ""}
+                    onChange={(barcode) =>
+                      updateSet(firstSet.key, (current) => ({ barcodes: { ...current.barcodes, [STANDARD_KEY]: barcode } }))
+                    }
+                    placeholder="Scan or type"
                   />
                 </div>
               )}

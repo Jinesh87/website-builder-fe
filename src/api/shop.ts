@@ -11,6 +11,8 @@ export type ShopVariant = {
   id: string;
   name: string;
   sku: string | null;
+  /** Printed barcode, scanned at the POS till. */
+  barcode: string | null;
   pricePaise: number;
   sortOrder: number;
   quantity: number;
@@ -52,6 +54,7 @@ export type ShopOptionSet = {
   options: ShopOption[];
   overrides?: { key: string; pricePaise: number }[];
   skus?: { key: string; sku: string }[];
+  barcodes?: { key: string; barcode: string }[];
   images?: { key: string; images: ShopImage[] }[];
 };
 
@@ -77,6 +80,7 @@ export type ShopProductInput = {
     options: ShopOption[];
     overrides?: { key: string; pricePaise: number }[];
     skus?: { key: string; sku: string }[];
+    barcodes?: { key: string; barcode: string }[];
     images?: { key: string; images: { mediaId: string; alt?: string }[] }[];
   }[];
   images?: { mediaId: string; alt?: string }[];
@@ -569,6 +573,9 @@ export const shopApi = {
       channel?: ShopOrder["channel"];
       /** YYYY-MM-DD: orders placed that day (India time). */
       date?: string;
+      /** YYYY-MM-DD: orders placed from `from` through `to` (India time, inclusive). */
+      from?: string;
+      to?: string;
       page?: number;
     } = {},
   ) => {
@@ -576,6 +583,8 @@ export const shopApi = {
     if (params.search) query.set("search", params.search);
     if (params.channel) query.set("channel", params.channel);
     if (params.date) query.set("date", params.date);
+    if (params.from) query.set("from", params.from);
+    if (params.to) query.set("to", params.to);
     if (params.status) query.set("status", params.status);
     if (params.page) query.set("page", String(params.page));
     const text = query.toString();

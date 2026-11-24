@@ -145,3 +145,28 @@ describe("existing product", () => {
     expect(saved.images).toEqual([{ mediaId: "cover", alt: "cover" }]);
   });
 });
+
+describe("barcodes", () => {
+  it("saves a barcode per variant, trimmed", () => {
+    const draft = withColourAndSize();
+    draft.sets[0]!.barcodes[variantKey(["Red", "S"])] = " 8901000000017 ";
+    expect(input(draft).optionSets[0]?.barcodes).toEqual([{ key: variantKey(["Red", "S"]), barcode: "8901000000017" }]);
+  });
+
+  it("rejects the same barcode on two variants, and spaces inside one", () => {
+    const draft = withColourAndSize();
+    draft.sets[0]!.barcodes[variantKey(["Red", "S"])] = "8901000000017";
+    draft.sets[0]!.barcodes[variantKey(["Blue", "M"])] = "8901000000017";
+    expect(toInput(draft)).toMatchObject({ error: "Red / S and Blue / M have the same barcode" });
+
+    const spaced = simple();
+    spaced.sets[0]!.barcodes[STANDARD_KEY] = "8901 0000";
+    expect(toInput(spaced)).toMatchObject({ error: expect.stringContaining("can't contain spaces") });
+  });
+
+  it("removing all options drops the barcodes too", () => {
+    const draft = withColourAndSize();
+    draft.sets[0]!.barcodes[variantKey(["Red", "S"])] = "8901000000017";
+    expect(input(withoutOptions(draft)).optionSets[0]?.barcodes).toBeUndefined();
+  });
+});
