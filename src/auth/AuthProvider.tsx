@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { authApi, type AuthUser, type LoginInput } from "../api/auth.ts";
 import { setSessionExpiredHandler } from "../api/http.ts";
-import { AuthContext, type AuthContextValue } from "./auth-context.ts";
+import { AuthContext, type AuthContextValue, type LoginOutcome } from "./auth-context.ts";
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -30,10 +30,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (input: LoginInput) => {
-    const { user: signedIn } = await authApi.login(input);
-    setUser(signedIn);
-    return signedIn;
+  const login = useCallback(async (input: LoginInput): Promise<LoginOutcome> => {
+    const result = await authApi.login(input);
+    if ("otpRequired" in result) return { challenge: result };
+    setUser(result.user);
+    return { user: result.user };
   }, []);
 
   const logout = useCallback(async () => {

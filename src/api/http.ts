@@ -47,6 +47,8 @@ export function errorMessage(error: unknown, fallback = "Something went wrong. P
 /** Auth endpoints that must never trigger a refresh-and-retry loop. */
 const SKIP_REFRESH_PATHS = new Set([
   "/auth/login",
+  "/auth/login/verify-otp",
+  "/auth/login/resend-otp",
   "/auth/signup",
   "/auth/verify-email",
   "/auth/resend-verification",

@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from "react";
 import { Button, Checkbox, Label } from "@heroui/react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import type { AuthUser, LoginOtpChallenge } from "../../api/auth.ts";
 import { ApiError, errorMessage } from "../../api/http.ts";
 import { useAuth } from "../../auth/auth-context.ts";
 import { validateEmail } from "../../auth/validation.ts";
+import LoginOtpStep from "../../components/auth/LoginOtpStep.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import TextInput from "../../components/ui/TextInput.tsx";
 import AuthSplitLayout from "../../layouts/AuthSplitLayout.tsx";
 
 export default function PartnerLoginPage() {
-  const { user: currentUser, login, logout } = useAuth();
+  const { user: currentUser, login, logout, setSessionUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,6 +21,21 @@ export default function PartnerLoginPage() {
   const [fieldErrors, setFieldErrors] = useState<{ identifier?: string; password?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [otpChallenge, setOtpChallenge] = useState<LoginOtpChallenge | null>(null);
+
+  /** Only approved Partners may use this portal; anyone else is signed straight back out. */
+  async function finishLogin(user: AuthUser) {
+    if (user.role !== "PARTNER") {
+      await logout();
+      setOtpChallenge(null);
+      setError(
+        "This account is registered as a Client, not an approved Partner. If your application was submitted recently, please wait for admin approval. Otherwise, please sign in via the client portal."
+      );
+      setSubmitting(false);
+      return;
+    }
+    navigate("/partner/dashboard", { replace: true });
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,16 +54,13 @@ export default function PartnerLoginPage() {
 
     setSubmitting(true);
     try {
-      const user = await login({ identifier: trimmed, password, remember });
-      if (user.role !== "PARTNER") {
-        await logout();
-        setError(
-          "This account is registered as a Client, not an approved Partner. If your application was submitted recently, please wait for admin approval. Otherwise, please sign in via the client portal."
-        );
+      const outcome = await login({ identifier: trimmed, password, remember });
+      if (outcome.challenge) {
+        setOtpChallenge(outcome.challenge);
         setSubmitting(false);
         return;
       }
-      navigate("/partner/dashboard", { replace: true });
+      await finishLogin(outcome.user);
     } catch (err) {
       if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
         setError("Your account password has not been set yet. Please check your partner approval email for your activation link.");
@@ -76,6 +90,20 @@ export default function PartnerLoginPage() {
         </div>
       )}
 
+      {otpChallenge ? (
+        <LoginOtpStep
+          challenge={otpChallenge}
+          onVerified={async (user) => {
+            setSessionUser(user);
+            await finishLogin(user);
+          }}
+          onBack={(message) => {
+            setOtpChallenge(null);
+            setPassword("");
+            setError(message ?? null);
+          }}
+        />
+      ) : (
       <form onSubmit={handleSubmit} noValidate className="mt-7 flex flex-col gap-4">
         <TextInput
           label="Email or username"
@@ -121,6 +149,7 @@ export default function PartnerLoginPage() {
           </FormAlert>
         )}
       </form>
+      )}
 
       <div className="mt-6 pt-5 border-t border-line text-center">
         <p className="text-xs text-ink-muted">

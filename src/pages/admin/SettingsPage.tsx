@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button, Chip, Label, Spinner, Switch } from "@heroui/react";
-import { Check, CreditCard, Eye, EyeOff, Gift, Mail, Send, Server, Sliders } from "lucide-react";
+import { Check, CreditCard, Eye, EyeOff, Gift, Mail, Send, Server, ShieldCheck, Sliders } from "lucide-react";
 import AiSparklesIcon from "../../components/icons/AiSparklesIcon.tsx";
 import { adminAiApi, type AiConfig, type AiConfigInput } from "../../api/admin-ai.ts";
 import AiModelPicker from "../../components/ai/AiModelPicker.tsx";
@@ -20,12 +20,13 @@ import type { PaymentConfig } from "../../api/wallet.ts";
 import HostingEmailTemplatesPanel from "../../components/hosting/HostingEmailTemplatesPanel.tsx";
 import HostingSettingsPanel from "../../components/hosting/HostingSettingsPanel.tsx";
 import type { HostingSettings } from "../../api/hosting.ts";
+import LoginOtpRecipientsPanel from "../../components/admin/LoginOtpRecipientsPanel.tsx";
 import ReferralSettingsPanel, { ReferralStatusChip } from "../../components/admin/ReferralSettingsPanel.tsx";
 import type { PartnerProgramConfig } from "../../api/partner.ts";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
-type SettingsTab = "email" | "ai" | "payments" | "hosting" | "referral";
-const SETTINGS_TABS: readonly SettingsTab[] = ["email", "ai", "payments", "hosting", "referral"];
+type SettingsTab = "email" | "ai" | "payments" | "hosting" | "referral" | "security";
+const SETTINGS_TABS: readonly SettingsTab[] = ["email", "ai", "payments", "hosting", "referral", "security"];
 type EmailConfigErrors = Partial<Record<keyof EmailConfigInput, string>>;
 type AiConfigErrors = Partial<Record<keyof AiConfigInput, string>>;
 
@@ -316,7 +317,26 @@ export default function SettingsPage() {
           <Gift className="size-4" />
           <span>Referral Settings</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setTab("security")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all rounded-t-lg border-b-2 -mb-px ${
+            activeTab === "security"
+              ? "border-primary text-ink bg-surface shadow-xs font-semibold"
+              : "border-transparent text-ink-muted hover:text-ink hover:bg-surface/50"
+          }`}
+        >
+          <ShieldCheck className="size-4" />
+          <span>Login Security</span>
+        </button>
       </div>
+
+      {activeTab === "security" && (
+        <div className="mt-8">
+          <LoginOtpRecipientsPanel />
+        </div>
+      )}
 
       {activeTab === "referral" && (
         <div className="mt-8">

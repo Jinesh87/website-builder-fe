@@ -41,6 +41,18 @@ export type LoginInput = {
   remember: boolean;
 };
 
+/** Login answered with "check your email" instead of a session. */
+export type LoginOtpChallenge = {
+  otpRequired: true;
+  challengeId: string;
+  /** Masked inboxes the code was sent to. */
+  sentTo: string[];
+  expiresInMinutes: number;
+  resendAvailableInSeconds: number;
+};
+
+export type LoginResponse = SessionResponse | LoginOtpChallenge;
+
 export type ChangePasswordInput = {
   newPassword: string;
 };
@@ -55,8 +67,13 @@ export const authApi = {
   resendVerification: (email: string) =>
     request<VerificationDispatch>("/auth/resend-verification", { method: "POST", body: { email } }),
 
-  login: (input: LoginInput) =>
-    request<SessionResponse>("/auth/login", { method: "POST", body: input }),
+  login: (input: LoginInput) => request<LoginResponse>("/auth/login", { method: "POST", body: input }),
+
+  verifyLoginOtp: (challengeId: string, code: string) =>
+    request<SessionResponse>("/auth/login/verify-otp", { method: "POST", body: { challengeId, code } }),
+
+  resendLoginOtp: (challengeId: string) =>
+    request<LoginOtpChallenge>("/auth/login/resend-otp", { method: "POST", body: { challengeId } }),
 
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 

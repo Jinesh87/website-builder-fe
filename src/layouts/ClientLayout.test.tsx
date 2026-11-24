@@ -18,7 +18,7 @@ function render(shopFeatureEnabled: boolean, url: string): string {
     client: { id: "c1", businessName: "Ramu", shopFeatureEnabled },
     createdAt: new Date(0).toISOString(),
   } as AuthUser;
-  const auth = { user, loading: false, login: async () => user, logout: async () => {}, setSessionUser: () => {} };
+  const auth = { user, loading: false, login: async () => ({ user }), logout: async () => {}, setSessionUser: () => {} };
   return renderToStaticMarkup(
     <AuthContext.Provider value={auth}>
       <MemoryRouter initialEntries={[url]}>
