@@ -34,6 +34,8 @@ const MyWebsitesPage = lazy(() => import("./pages/client/MyWebsitesPage.tsx"));
 const AccountSettingsPage = lazy(() => import("./pages/client/AccountSettingsPage.tsx"));
 const ConnectsPage = lazy(() => import("./pages/client/ConnectsPage.tsx"));
 const ShopPage = lazy(() => import("./pages/client/ShopPage.tsx"));
+const ShopPosPage = lazy(() => import("./pages/client/ShopPosPage.tsx"));
+const ShopPosSalesPage = lazy(() => import("./pages/client/ShopPosSalesPage.tsx"));
 const MediaLibraryPage = lazy(() => import("./pages/media/MediaLibraryPage.tsx"));
 const CreateWebsitePage = lazy(() => import("./pages/websites/CreateWebsitePage.tsx"));
 const WebsitePreviewPage = lazy(() => import("./pages/websites/WebsitePreviewPage.tsx"));
@@ -128,6 +130,8 @@ export default function App() {
                 <Route path="questionnaire" element={<ClientQuestionnairePage />} />
                 <Route path="websites" element={<MyWebsitesPage />} />
                 <Route path="shop" element={<ShopPage />} />
+                <Route path="shop/pos" element={<ShopPosPage />} />
+                <Route path="shop/pos/sales" element={<ShopPosSalesPage />} />
                 <Route path="media" element={<MediaLibraryPage />} />
                 <Route path="account" element={<AccountSettingsPage />} />
                 <Route path="connects" element={<ConnectsPage />} />

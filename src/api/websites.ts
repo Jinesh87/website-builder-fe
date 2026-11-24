@@ -70,6 +70,8 @@ export type WebsiteSummary = {
   shopEnabled: boolean;
   /** Guests can cart and checkout without creating an account. */
   shopAllowGuestCheckout: boolean;
+  /** In-store POS till turned on for this shop. */
+  shopPosEnabled: boolean;
   /** Inclusive status ceiling for shopper cancels. Null = customers cannot cancel. */
   shopCancelUntilStatus: "paid" | "processing" | "shipped" | null;
   /** Default return window in days. Null = returns off for the shop. */
@@ -263,6 +265,7 @@ export type UpdateWebsiteInput = {
   seoToolsEnabled?: boolean;
   shopEnabled?: boolean;
   shopAllowGuestCheckout?: boolean;
+  shopPosEnabled?: boolean;
   shopCancelUntilStatus?: "paid" | "processing" | "shipped" | null;
   shopReturnDays?: number | null;
   shopReturnGuidelines?: string[];

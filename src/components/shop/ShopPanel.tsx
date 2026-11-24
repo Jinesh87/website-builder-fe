@@ -15,6 +15,7 @@ import ShopPaymentLogsPanel from "./ShopPaymentLogsPanel.tsx";
 import { useAwaitingReturnsCount } from "./use-awaiting-returns.ts";
 import ShopReturnsPanel from "./ShopReturnsPanel.tsx";
 import ShopOrdersPanel from "./ShopOrdersPanel.tsx";
+import PosSettingsCard from "./pos/PosSettingsCard.tsx";
 import ShopRazorpayPanel from "./ShopRazorpayPanel.tsx";
 import ProductForm from "./product-form/ProductForm.tsx";
 import { blankProduct, draftFromProduct, type ProductDraft } from "./product-form/product-draft.ts";
@@ -334,6 +335,8 @@ export default function ShopPanel({
               </div>
             </section>
           )}
+
+          {website.shopEnabled && <PosSettingsCard website={website} onChange={onChange} />}
 
           {website.shopEnabled && (
             <section className="rounded-xl border border-line bg-surface p-6">

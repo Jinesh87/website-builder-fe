@@ -4,8 +4,10 @@ import { ArrowLeft } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
 import { shopApi, type ShopOrder, type ShopOrderStatus } from "../../api/shop.ts";
 import FormAlert from "../ui/FormAlert.tsx";
-import { GuestBadge, RefundBadge, StatusBadge } from "./ShopOrderBadges.tsx";
-import CancelOrderConfirm from "./CancelOrderConfirm.tsx";
+import { GuestBadge, PosBadge, RefundBadge, StatusBadge } from "./ShopOrderBadges.tsx";
+import PosOrderInfo from "./pos/PosOrderInfo.tsx";
+import CancelOrderConfirm, { CancelOrderPoints } from "./CancelOrderConfirm.tsx";
+import ConfirmDialog from "../ui/ConfirmDialog.tsx";
 import OrderRefundBox from "./OrderRefundBox.tsx";
 import { formatInr, formatWhen } from "./shop-format.ts";
 import { awaitingRefund, statusLabel } from "./shop-order-format.ts";
@@ -139,6 +141,9 @@ export default function ShopOrderDetail({
   const cancelRefunds =
     !!order && !!order.razorpayPaymentId && (order.refundStatus === "none" || order.refundStatus === "failed");
 
+  const isPos = order?.channel === "pos";
+  const posCancellable = isPos && (order.status === "delivered" || order.status === "paid");
+
   function applyRefund(next: ShopOrder, message: string) {
     setOrder(next);
     setStatus(next.status);
@@ -156,8 +161,9 @@ export default function ShopOrderDetail({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-sm font-semibold text-ink">{order ? `Order #${order.number}` : "Order"}</h3>
             {order?.customer.isGuest && <GuestBadge />}
+            {order?.channel === "pos" && <PosBadge />}
           </div>
-          <p className="truncate text-xs text-ink-muted">{order?.customer.email || "Order details"}</p>
+          <p className="truncate text-xs text-ink-muted">{order?.customer.email || order?.customer.phone || "Order details"}</p>
         </div>
       </div>
       {error && (
@@ -172,6 +178,27 @@ export default function ShopOrderDetail({
       )}
       {order && (
         <div className="space-y-6 px-5 py-5">
+          {isPos ? (
+            // Till sales are handed over on the spot: no fulfilment statuses, only cancelling a sale.
+            <div className="flex flex-wrap items-center gap-3">
+              <StatusBadge status={order.status} />
+              <RefundBadge status={order.refundStatus} />
+              {posCancellable && !confirmCancel && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="ml-auto"
+                  isDisabled={saving}
+                  onPress={() => {
+                    setStatus("cancelled");
+                    setConfirmCancel(true);
+                  }}
+                >
+                  Cancel sale
+                </Button>
+              )}
+            </div>
+          ) : (
           <div className="flex flex-wrap items-end gap-3">
             <label className="grid gap-1 text-xs font-medium text-ink-muted">
               Status
@@ -199,8 +226,30 @@ export default function ShopOrderDetail({
               <RefundBadge status={order.refundStatus} />
             </div>
           </div>
+          )}
 
-          {confirmCancel && cancelNeedsConfirm && (
+          {isPos && (
+            <ConfirmDialog
+              isOpen={confirmCancel && cancelNeedsConfirm}
+              title={`Cancel sale #${order.number}?`}
+              confirmLabel={cancelRefunds ? `Cancel and refund ${formatInr(order.totalPaise)}` : "Cancel sale"}
+              cancelLabel="Keep sale"
+              tone="danger"
+              isPending={saving}
+              onConfirm={async () => {
+                await saveStatus();
+                setConfirmCancel(false);
+              }}
+              onCancel={() => {
+                setConfirmCancel(false);
+                setStatus(order.status);
+              }}
+            >
+              <CancelOrderPoints order={order} refunds={cancelRefunds} className="text-sm text-ink-body" />
+            </ConfirmDialog>
+          )}
+
+          {!isPos && confirmCancel && cancelNeedsConfirm && (
             <CancelOrderConfirm
               order={order}
               refunds={cancelRefunds}
@@ -209,7 +258,10 @@ export default function ShopOrderDetail({
                 setConfirmCancel(false);
                 void saveStatus();
               }}
-              onKeep={() => setConfirmCancel(false)}
+              onKeep={() => {
+                setConfirmCancel(false);
+                setStatus(order.status);
+              }}
             />
           )}
 
@@ -231,9 +283,10 @@ export default function ShopOrderDetail({
                 <span>{order.customer.fullName}</span>
                 {order.customer.isGuest && <GuestBadge />}
               </dd>
-              <dd className="text-xs text-ink-muted">{order.customer.email}</dd>
+              {order.customer.email && <dd className="text-xs text-ink-muted">{order.customer.email}</dd>}
               {order.customer.phone && <dd className="text-xs text-ink-muted">{order.customer.phone}</dd>}
             </div>
+            {order.channel === "pos" && <PosOrderInfo websiteId={websiteId} order={order} />}
             {order.shippingAddress && (
               <div>
                 <dt className="text-xs font-medium text-ink-muted">Delivery address</dt>
@@ -265,7 +318,7 @@ export default function ShopOrderDetail({
                     <span className="tabular-nums">{formatInr(order.listAmountPaise ?? order.totalPaise + order.discountPaise)}</span>
                   </div>
                   <div className="flex justify-between gap-4 text-emerald-700">
-                    <span>Coupon {order.couponCode || ""}</span>
+                    <span>{order.couponCode ? `Coupon ${order.couponCode}` : "Discount"}</span>
                     <span className="tabular-nums">−{formatInr(order.discountPaise)}</span>
                   </div>
                   <div className="flex justify-between gap-4 font-semibold text-ink">
@@ -281,10 +334,15 @@ export default function ShopOrderDetail({
               )}
             </div>
             <div>
-              <dt className="text-xs font-medium text-ink-muted">Payment</dt>
-              <dd className="truncate text-xs text-ink-muted">{order.razorpayPaymentId || "—"}</dd>
-              <dt className="mt-2 text-xs font-medium text-ink-muted">Refund</dt>
-              <dd className="truncate text-xs text-ink-muted">{order.razorpayRefundId || "—"}</dd>
+              {/* Cash/UPI/card till sales never touch Razorpay; their payment is shown under "Sold at the till". */}
+              {(order.channel !== "pos" || order.razorpayPaymentId) && (
+                <>
+                  <dt className="text-xs font-medium text-ink-muted">Payment</dt>
+                  <dd className="truncate text-xs text-ink-muted">{order.razorpayPaymentId || "—"}</dd>
+                  <dt className="mt-2 text-xs font-medium text-ink-muted">Refund</dt>
+                  <dd className="truncate text-xs text-ink-muted">{order.razorpayRefundId || "—"}</dd>
+                </>
+              )}
               {order.failureReason && <dd className="mt-1 text-xs text-rose-700">{order.failureReason}</dd>}
             </div>
             {order.cancelReason && (
@@ -318,12 +376,14 @@ export default function ShopOrderDetail({
             </ul>
           </div>
 
-          <div>
-            <h4 className="text-xs font-medium text-ink-muted">Fulfillment timeline</h4>
-            <div className="mt-2 rounded-lg border border-line px-4 py-4">
-              <OrderTimeline order={order} />
+          {!isPos && (
+            <div>
+              <h4 className="text-xs font-medium text-ink-muted">Fulfillment timeline</h4>
+              <div className="mt-2 rounded-lg border border-line px-4 py-4">
+                <OrderTimeline order={order} />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </section>

@@ -12,7 +12,8 @@ export type AuthUser = {
   role: UserRole;
   status: UserStatus;
   emailVerified: boolean;
-  client: { id: string; businessName: string; shopFeatureEnabled?: boolean } | null;
+  /** posEnabled: one of the client's shops has the POS till on (shows POS under Shop). */
+  client: { id: string; businessName: string; shopFeatureEnabled?: boolean; posEnabled?: boolean } | null;
   createdAt: string;
 };
 

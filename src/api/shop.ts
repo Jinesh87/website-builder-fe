@@ -315,13 +315,23 @@ export type ShopOrder = {
   couponCode: string | null;
   listAmountPaise: number | null;
   discountPaise: number | null;
+  /** The shop account, or a POS walk-in (`walkIn`, no id, email/phone only if the cashier typed them). */
   customer: {
-    id: string;
+    id: string | null;
     fullName: string;
-    email: string;
+    email: string | null;
     phone: string | null;
     isGuest: boolean;
+    walkIn: boolean;
   };
+  /** Online checkout or the in-store till. */
+  channel: "online" | "pos";
+  pos: {
+    paymentMethod: "cash" | "upi" | "card" | "razorpay_qr" | null;
+    cashReceivedPaise: number | null;
+    changePaise: number | null;
+    paymentReference: string | null;
+  } | null;
   items: ShopOrderItem[];
   razorpayOrderId: string | null;
   razorpayPaymentId: string | null;
@@ -551,9 +561,21 @@ export const shopApi = {
   customer: (websiteId: string, customerId: string) =>
     request<{ customer: ShopCustomer }>(`${base(websiteId)}/customers/${customerId}`).then((data) => data.customer),
 
-  orders: (websiteId: string, params: { search?: string; status?: ShopOrderStatus; page?: number } = {}) => {
+  orders: (
+    websiteId: string,
+    params: {
+      search?: string;
+      status?: ShopOrderStatus;
+      channel?: ShopOrder["channel"];
+      /** YYYY-MM-DD: orders placed that day (India time). */
+      date?: string;
+      page?: number;
+    } = {},
+  ) => {
     const query = new URLSearchParams();
     if (params.search) query.set("search", params.search);
+    if (params.channel) query.set("channel", params.channel);
+    if (params.date) query.set("date", params.date);
     if (params.status) query.set("status", params.status);
     if (params.page) query.set("page", String(params.page));
     const text = query.toString();

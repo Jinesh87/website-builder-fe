@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
 import { shopApi, type ShopOrderPage, type ShopOrderStatus } from "../../api/shop.ts";
 import FormAlert from "../ui/FormAlert.tsx";
-import { GuestBadge, RefundBadge, StatusBadge } from "./ShopOrderBadges.tsx";
+import { GuestBadge, PosBadge, RefundBadge, StatusBadge } from "./ShopOrderBadges.tsx";
 import ShopOrderDetail from "./ShopOrderDetail.tsx";
 import { formatInr, formatWhen } from "./shop-format.ts";
 import { STATUS_OPTIONS } from "./shop-order-format.ts";
@@ -139,8 +139,9 @@ export default function ShopOrdersPanel({ websiteId }: { websiteId: string }) {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-ink">{order.customer.fullName}</p>
                       {order.customer.isGuest && <GuestBadge />}
+                      {order.channel === "pos" && <PosBadge />}
                     </div>
-                    <p className="truncate text-xs text-ink-muted">{order.customer.email}</p>
+                    <p className="truncate text-xs text-ink-muted">{order.customer.email ?? order.customer.phone ?? ""}</p>
                   </td>
                   <td className="px-3 py-3">
                     <div className="flex flex-wrap gap-1.5">

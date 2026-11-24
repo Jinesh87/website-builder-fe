@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Spinner } from "@heroui/react";
 import { ShoppingBag } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
 import { errorMessage } from "../../api/http.ts";
-import { websitesApi, type WebsiteDetail, type WebsiteSummary } from "../../api/websites.ts";
+import { websitesApi, type WebsiteDetail } from "../../api/websites.ts";
 import PageHeader from "../../components/app/PageHeader.tsx";
 import ShopPanel from "../../components/shop/ShopPanel.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
+import { useShopWebsites } from "../../hooks/use-shop-websites.ts";
 import SelectInput from "../../components/ui/SelectInput.tsx";
 
 /**
@@ -15,25 +15,9 @@ import SelectInput from "../../components/ui/SelectInput.tsx";
  * `?website=<id>` so the page can be linked and survives a reload.
  */
 export default function ShopPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [websites, setWebsites] = useState<WebsiteSummary[] | null>(null);
-  const [listError, setListError] = useState<string | null>(null);
+  const { websites, error: listError, selectedId, selectWebsite } = useShopWebsites();
   const [website, setWebsite] = useState<WebsiteDetail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    websitesApi
-      .list({ pageSize: 100 })
-      .then((result) => !cancelled && setWebsites(result.items.filter((item) => item.shopFeatureEnabled)))
-      .catch((err: unknown) => !cancelled && setListError(errorMessage(err)));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const requestedId = searchParams.get("website");
-  const selectedId = websites?.find((item) => item.id === requestedId)?.id ?? websites?.[0]?.id ?? null;
 
   useEffect(() => {
     if (!selectedId) return;
@@ -48,11 +32,6 @@ export default function ShopPage() {
       cancelled = true;
     };
   }, [selectedId]);
-
-  function selectWebsite(id: string) {
-    // Drop the previous website's shop section so the new one opens on its default view.
-    setSearchParams({ website: id }, { replace: true });
-  }
 
   const picker = websites && websites.length > 1 && selectedId && (
     <SelectInput
