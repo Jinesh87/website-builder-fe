@@ -35,3 +35,12 @@ export function PosBadge() {
     </span>
   );
 }
+
+/** Marks an order placed on the online store. */
+export function OnlineBadge() {
+  return (
+    <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800 ring-1 ring-inset ring-emerald-200">
+      Online
+    </span>
+  );
+}

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Spinner } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
 import { ArrowLeft, Download, Printer, Store } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { errorMessage } from "../../api/http.ts";
 import { shopApi, type ShopOrder, type ShopOrderPage } from "../../api/shop.ts";
 import { POS_METHOD_LABEL, shopPosApi, type PosDailySummary } from "../../api/shop-pos.ts";
@@ -10,11 +10,11 @@ import ShopOrderDetail from "../../components/shop/ShopOrderDetail.tsx";
 import { RefundBadge, StatusBadge } from "../../components/shop/ShopOrderBadges.tsx";
 import { usePosReceiptActions } from "../../components/shop/pos/PosSaleCompleteDialog.tsx";
 import PosPeriodBar from "../../components/shop/pos/PosPeriodBar.tsx";
-import PosSummaryCards, { todayIst } from "../../components/shop/pos/PosSummaryCards.tsx";
-import { periodFromParams, type DayRange, type PosPeriod } from "../../components/shop/pos/pos-period.ts";
+import PosSummaryCards from "../../components/shop/pos/PosSummaryCards.tsx";
 import { formatInr } from "../../components/shop/shop-format.ts";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import SelectInput from "../../components/ui/SelectInput.tsx";
+import { useReportPeriod } from "../../hooks/use-report-period.ts";
 import { useShopWebsites } from "../../hooks/use-shop-websites.ts";
 
 /** Time of a sale; with the date too when the report spans several days. */
@@ -60,33 +60,14 @@ function SaleActions({ websiteId, order }: { websiteId: string; order: ShopOrder
 /** POS sales for a day, week, month, year or date range: totals by payment method and every sale, with reprints and the full order view. */
 export default function ShopPosSalesPage() {
   const { websites, error: listError, selectedId } = useShopWebsites({ posOnly: true });
-  const [searchParams, setSearchParams] = useSearchParams();
-  const today = todayIst();
-  const { period, range } = useMemo(() => periodFromParams(searchParams, today), [searchParams, today]);
-  const { from, to } = range;
   const [page, setPage] = useState(1);
   const [summary, setSummary] = useState<PosDailySummary | null>(null);
   const [sales, setSales] = useState<ShopOrderPage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-
-  function setParams(next: { website?: string; period?: PosPeriod; range?: DayRange }) {
-    const params = new URLSearchParams(searchParams);
-    if (next.website) params.set("website", next.website);
-    if (next.period && next.range) {
-      for (const key of ["period", "date", "from", "to"]) params.delete(key);
-      if (next.period !== "day") params.set("period", next.period);
-      if (next.period === "range") {
-        params.set("from", next.range.from);
-        params.set("to", next.range.to);
-      } else if (next.range.from !== today) {
-        params.set("date", next.range.from);
-      }
-    }
-    setSearchParams(params, { replace: true });
-    setPage(1);
-  }
+  const { today, period, range, setParams } = useReportPeriod({ onChange: () => setPage(1) });
+  const { from, to } = range;
 
   useEffect(() => {
     if (!selectedId) return;

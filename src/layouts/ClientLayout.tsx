@@ -7,6 +7,7 @@ const SHOP_LINKS: ShellNavChild[] = [
   { label: "Products", to: "/shop?section=products", isDefault: true },
   { label: "Inventory", to: "/shop?section=inventory" },
   { label: "Orders", to: "/shop?section=orders" },
+  { label: "Sales summary", to: "/shop/sales" },
 ];
 
 /** Shown once a shop has the POS till turned on in its settings. */

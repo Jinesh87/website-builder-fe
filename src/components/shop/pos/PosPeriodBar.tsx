@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@heroui/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import SelectInput from "../../ui/SelectInput.tsx";
 import {
   MAX_RANGE_DAYS,
@@ -120,12 +120,15 @@ export default function PosPeriodBar({
         >
           <ChevronRight className="size-4" />
         </Button>
+        <span className="ml-2 text-sm text-ink-muted">
+          Showing <span className="font-semibold text-ink">{periodLabel(period, range, today)}</span>
+        </span>
         {thisPeriod && !isCurrent && (
-          <Button size="sm" variant="ghost" onPress={() => onChange(period, thisPeriod)}>
-            {period === "day" ? "Today" : `This ${step}`}
+          <Button size="sm" variant="outline" className="ml-auto" onPress={() => onChange(period, thisPeriod)}>
+            <RotateCcw className="size-3.5" aria-hidden />
+            {period === "day" ? "Back to today" : `Back to this ${step}`}
           </Button>
         )}
-        <span className="ml-2 text-sm font-medium text-ink">{periodLabel(period, range, today)}</span>
       </div>
       {draftError && period === "range" && <p className="mt-2 text-xs text-red-600">{draftError}</p>}
     </div>

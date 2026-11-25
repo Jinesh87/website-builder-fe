@@ -36,6 +36,7 @@ const ConnectsPage = lazy(() => import("./pages/client/ConnectsPage.tsx"));
 const ShopPage = lazy(() => import("./pages/client/ShopPage.tsx"));
 const ShopPosPage = lazy(() => import("./pages/client/ShopPosPage.tsx"));
 const ShopPosSalesPage = lazy(() => import("./pages/client/ShopPosSalesPage.tsx"));
+const ShopSalesSummaryPage = lazy(() => import("./pages/client/ShopSalesSummaryPage.tsx"));
 const MediaLibraryPage = lazy(() => import("./pages/media/MediaLibraryPage.tsx"));
 const CreateWebsitePage = lazy(() => import("./pages/websites/CreateWebsitePage.tsx"));
 const WebsitePreviewPage = lazy(() => import("./pages/websites/WebsitePreviewPage.tsx"));
@@ -132,6 +133,7 @@ export default function App() {
                 <Route path="shop" element={<ShopPage />} />
                 <Route path="shop/pos" element={<ShopPosPage />} />
                 <Route path="shop/pos/sales" element={<ShopPosSalesPage />} />
+                <Route path="shop/sales" element={<ShopSalesSummaryPage />} />
                 <Route path="media" element={<MediaLibraryPage />} />
                 <Route path="account" element={<AccountSettingsPage />} />
                 <Route path="connects" element={<ConnectsPage />} />

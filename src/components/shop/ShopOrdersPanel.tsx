@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
 import { shopApi, type ShopOrderPage, type ShopOrderStatus } from "../../api/shop.ts";
 import FormAlert from "../ui/FormAlert.tsx";
-import { GuestBadge, PosBadge, RefundBadge, StatusBadge } from "./ShopOrderBadges.tsx";
+import { GuestBadge, RefundBadge, StatusBadge } from "./ShopOrderBadges.tsx";
 import ShopOrderDetail from "./ShopOrderDetail.tsx";
 import { formatInr, formatWhen } from "./shop-format.ts";
 import { STATUS_OPTIONS } from "./shop-order-format.ts";
@@ -29,6 +29,7 @@ export default function ShopOrdersPanel({ websiteId }: { websiteId: string }) {
     let cancelled = false;
     shopApi
       .orders(websiteId, {
+        channel: "online",
         search: query || undefined,
         status: statusFilter || undefined,
         page,
@@ -65,7 +66,7 @@ export default function ShopOrdersPanel({ websiteId }: { websiteId: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
         <div>
           <h3 className="text-sm font-semibold text-ink">Orders</h3>
-          <p className="mt-0.5 text-xs text-ink-muted">Customer purchases. Open a row to update fulfillment status.</p>
+          <p className="mt-0.5 text-xs text-ink-muted">Online store orders. Open a row to update fulfillment status.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <select
@@ -139,7 +140,6 @@ export default function ShopOrdersPanel({ websiteId }: { websiteId: string }) {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-ink">{order.customer.fullName}</p>
                       {order.customer.isGuest && <GuestBadge />}
-                      {order.channel === "pos" && <PosBadge />}
                     </div>
                     <p className="truncate text-xs text-ink-muted">{order.customer.email ?? order.customer.phone ?? ""}</p>
                   </td>
