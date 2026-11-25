@@ -2,44 +2,67 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button, Chip, Spinner } from "@heroui/react";
 import { Handshake } from "lucide-react";
 import { ApiError, errorMessage } from "../../api/http.ts";
-import { adminRazorpayPartnerApi, type RazorpayPartnerInput, type RazorpayPartnerSettings } from "../../api/wallet.ts";
+import {
+  adminRazorpayPartnerApi,
+  type RazorpayPartnerInput,
+  type RazorpayPartnerMode,
+  type RazorpayPartnerSettings,
+} from "../../api/wallet.ts";
 import CopyRow from "../ui/CopyRow.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
 import RevealSecretButton from "../ui/RevealSecretButton.tsx";
-import SelectInput from "../ui/SelectInput.tsx";
 import TextInput from "../ui/TextInput.tsx";
 import { useSavedSecrets } from "../ui/useSavedSecrets.ts";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
-type Form = { clientId: string; clientSecret: string; webhookSecret: string; mode: "test" | "live" };
+type ClientForm = { clientId: string; clientSecret: string; webhookSecret: string };
 type Errors = Partial<Record<keyof RazorpayPartnerInput, string>>;
 type SecretField = "clientSecret" | "webhookSecret";
 
 const PARTNER_DASHBOARD_URL = "https://dashboard.razorpay.com/app/partners/applications";
-const MODE_OPTIONS = [
-  { value: "live" as const, label: "Live (production client)" },
-  { value: "test" as const, label: "Test (development client)" },
+const MODES: { value: RazorpayPartnerMode; label: string; client: string }[] = [
+  { value: "test", label: "Test", client: "development client" },
+  { value: "live", label: "Production", client: "production client" },
 ];
+const modeLabel = (mode: RazorpayPartnerMode) => (mode === "live" ? "Production" : "Test");
+const emptyForm = (): ClientForm => ({ clientId: "", clientSecret: "", webhookSecret: "" });
 
-/** Super Admin: the Razorpay Technology Partner app shops use for "Connect with Razorpay". */
+/**
+ * Super Admin: the Razorpay Technology Partner app shops use for "Connect with Razorpay". Test and
+ * Production each keep their own client ID and secrets; the saved mode applies to the whole platform.
+ */
 export default function RazorpayPartnerPanel() {
   const [partner, setPartner] = useState<RazorpayPartnerSettings | null>(null);
-  const [form, setForm] = useState<Form>({ clientId: "", clientSecret: "", webhookSecret: "", mode: "live" });
+  /** The mode being viewed and edited; saving makes it the platform's mode. */
+  const [mode, setMode] = useState<RazorpayPartnerMode>("live");
+  const [forms, setForms] = useState<Record<RazorpayPartnerMode, ClientForm>>({ test: emptyForm(), live: emptyForm() });
   const [errors, setErrors] = useState<Errors>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const secrets = useSavedSecrets<SecretField>(adminRazorpayPartnerApi.revealSecrets);
+  const testSecrets = useSavedSecrets<SecretField>(() => adminRazorpayPartnerApi.revealSecrets("test"));
+  const liveSecrets = useSavedSecrets<SecretField>(() => adminRazorpayPartnerApi.revealSecrets("live"));
+  const secrets = mode === "test" ? testSecrets : liveSecrets;
+  const form = forms[mode];
 
   function apply(loaded: RazorpayPartnerSettings) {
     setPartner(loaded);
-    setForm({ clientId: loaded.clientId ?? "", clientSecret: "", webhookSecret: "", mode: loaded.mode });
-    secrets.reset();
+    setMode(loaded.mode);
+    setForms({
+      test: { ...emptyForm(), clientId: loaded.test.clientId ?? "" },
+      live: { ...emptyForm(), clientId: loaded.live.clientId ?? "" },
+    });
+    testSecrets.reset();
+    liveSecrets.reset();
+  }
+
+  function setField(field: keyof ClientForm, value: string) {
+    setForms((current) => ({ ...current, [mode]: { ...current[mode], [field]: value } }));
   }
 
   async function toggleSecret(field: SecretField) {
     try {
-      await secrets.toggle(field, form[field], (value) => setForm((current) => ({ ...current, [field]: value })));
+      await secrets.toggle(field, form[field], (value) => setField(field, value));
     } catch (err) {
       setFeedback({ status: "danger", message: errorMessage(err) });
     }
@@ -52,19 +75,25 @@ export default function RazorpayPartnerPanel() {
       .catch((err: unknown) => setLoadError(errorMessage(err)));
   }, []);
 
-  function update<K extends keyof Form>(key: K) {
-    return (value: Form[K]) => {
-      setForm((current) => ({ ...current, [key]: value }));
+  function update(key: keyof ClientForm) {
+    return (value: string) => {
+      setField(key, value);
       setErrors((current) => ({ ...current, [key]: undefined }));
       setFeedback(null);
     };
+  }
+
+  function chooseMode(next: RazorpayPartnerMode) {
+    setMode(next);
+    setErrors({});
+    setFeedback(null);
   }
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextErrors: Errors = {
       clientId: form.clientId.trim().length >= 4 ? undefined : "Enter the client ID",
-      clientSecret: !partner?.configured && !form.clientSecret.trim() ? "Client secret is required" : undefined,
+      clientSecret: !partner?.[mode].configured && !form.clientSecret.trim() ? "Client secret is required" : undefined,
     };
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) return;
@@ -76,10 +105,10 @@ export default function RazorpayPartnerPanel() {
           clientId: form.clientId.trim(),
           clientSecret: secrets.changed("clientSecret", form.clientSecret),
           webhookSecret: secrets.changed("webhookSecret", form.webhookSecret),
-          mode: form.mode,
+          mode,
         }),
       );
-      setFeedback({ status: "success", message: "Partner app saved. Shops can now connect with Razorpay." });
+      setFeedback({ status: "success", message: `Saved. The platform is in ${modeLabel(mode)} mode; shops connect with the ${mode === "live" ? "production" : "development"} client.` });
     } catch (err) {
       if (err instanceof ApiError) setErrors(err.fieldErrors());
       setFeedback({ status: "danger", message: errorMessage(err) });
@@ -113,7 +142,7 @@ export default function RazorpayPartnerPanel() {
           </div>
         </div>
         {partner.configured ? (
-          <Chip color={partner.mode === "live" ? "success" : "accent"}>{partner.mode === "live" ? "Live" : "Test"}</Chip>
+          <Chip color={partner.mode === "live" ? "success" : "accent"}>Platform: {modeLabel(partner.mode)}</Chip>
         ) : (
           <Chip color="warning">Not set up</Chip>
         )}
@@ -133,12 +162,41 @@ export default function RazorpayPartnerPanel() {
           hint={`On the same application, use Manage Webhook: add this URL, choose a secret, and subscribe to ${partner.webhookEvents.join(", ")}.`}
         />
 
-        <SelectInput label="Client" value={form.mode} onChange={update("mode")} options={MODE_OPTIONS} />
+        <div>
+          <p className="text-sm font-medium text-ink">Mode</p>
+          <div className="mt-1.5 inline-flex rounded-lg border border-line p-0.5" role="radiogroup" aria-label="Mode">
+            {MODES.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={mode === option.value}
+                onClick={() => chooseMode(option.value)}
+                className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                  mode === option.value ? "bg-ink text-surface" : "text-ink-muted hover:text-ink"
+                }`}
+              >
+                {option.label}
+                {partner[option.value].configured ? "" : " · not set"}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-ink-muted">
+            Test and Production keep their own values. Saving makes the mode shown here the one new shops connect with.
+          </p>
+        </div>
+        {mode !== partner.mode && (
+          <FormAlert status="warning">
+            The platform is in {modeLabel(partner.mode)} mode. Saving switches it to {modeLabel(mode)}: shops that connect from
+            now on use the {mode === "live" ? "production" : "development"} client. Shops already connected keep working in the
+            mode they connected in.
+          </FormAlert>
+        )}
         <TextInput
           label="Client ID"
           name="clientId"
           autoComplete="off"
-          description="From the application's credentials. Use the development client with Test, the production client with Live."
+          description={`From the ${mode === "live" ? "production" : "development"} client's credentials on the application.`}
           value={form.clientId}
           onChange={update("clientId")}
           error={errors.clientId}
@@ -149,8 +207,8 @@ export default function RazorpayPartnerPanel() {
             name="clientSecret"
             type={secrets.isShown("clientSecret") ? "text" : "password"}
             autoComplete="off"
-            placeholder={partner.clientSecretMasked ?? ""}
-            description={partner.configured ? "Leave blank to keep the current secret." : undefined}
+            placeholder={partner[mode].clientSecretMasked ?? ""}
+            description={partner[mode].configured ? "Leave blank to keep the current secret." : undefined}
             value={form.clientSecret}
             onChange={update("clientSecret")}
             error={errors.clientSecret}
@@ -167,9 +225,9 @@ export default function RazorpayPartnerPanel() {
             name="webhookSecret"
             type={secrets.isShown("webhookSecret") ? "text" : "password"}
             autoComplete="off"
-            placeholder={partner.webhookConfigured ? "••••••••" : ""}
+            placeholder={partner[mode].webhookConfigured ? "••••••••" : ""}
             description={
-              partner.webhookConfigured
+              partner[mode].webhookConfigured
                 ? "Leave blank to keep the current secret."
                 : "The secret you set on the application's webhook. Without it, payment updates from connected shops are rejected."
             }
@@ -187,7 +245,7 @@ export default function RazorpayPartnerPanel() {
         {feedback && <FormAlert status={feedback.status}>{feedback.message}</FormAlert>}
         <div>
           <Button type="submit" isPending={saving}>
-            Save partner app
+            {mode === partner.mode ? `Save ${modeLabel(mode)} client` : `Save and switch to ${modeLabel(mode)}`}
           </Button>
         </div>
       </div>

@@ -204,7 +204,7 @@ export default function ShopPosPage() {
           discount={discount}
           totalPaise={totals.totalPaise}
           customer={customer}
-          razorpayQrAvailable={catalog.razorpayQrAvailable}
+          razorpayQr={catalog.razorpayQr}
           onComplete={(order) => {
             setDialog(null);
             setCompleted(order);

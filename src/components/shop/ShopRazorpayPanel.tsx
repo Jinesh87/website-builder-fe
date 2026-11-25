@@ -10,6 +10,7 @@ import CopyRow from "../ui/CopyRow.tsx";
 import TextInput from "../ui/TextInput.tsx";
 import { useSavedSecrets } from "../ui/useSavedSecrets.ts";
 import ShopRazorpayConnect from "./ShopRazorpayConnect.tsx";
+import RazorpayQrStatusCard from "./RazorpayQrStatusCard.tsx";
 
 type Feedback = { status: "success" | "danger"; message: string } | null;
 type Errors = Partial<Record<keyof ShopPaymentInput, string>>;
@@ -107,6 +108,7 @@ export default function ShopRazorpayPanel({ websiteId }: { websiteId: string }) 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
       <ShopRazorpayConnect websiteId={websiteId} config={config} onChange={apply} />
+      {config.configured && <RazorpayQrStatusCard websiteId={websiteId} config={config} onChange={setConfig} />}
       {offersConnect && (
         <button
           type="button"

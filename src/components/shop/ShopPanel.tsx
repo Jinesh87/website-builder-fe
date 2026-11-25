@@ -65,12 +65,7 @@ const SHOP_SECTIONS: { id: ShopSection; label: string }[] = [
   { id: "razorpay-logs", label: "Razorpay logs" },
 ];
 
-/** Returns and Razorpay logs are built but not shown yet; set to true to show them. */
-const SHOW_RETURNS_AND_PAYMENT_LOGS = false;
-const HIDDEN_SHOP_SECTIONS = new Set<ShopSection>(SHOW_RETURNS_AND_PAYMENT_LOGS ? [] : ["returns", "razorpay-logs"]);
-const VISIBLE_SHOP_SECTIONS = SHOP_SECTIONS.filter((section) => !HIDDEN_SHOP_SECTIONS.has(section.id));
-
-const SHOP_SECTION_IDS = new Set<string>(VISIBLE_SHOP_SECTIONS.map((section) => section.id));
+const SHOP_SECTION_IDS = new Set<string>(SHOP_SECTIONS.map((section) => section.id));
 
 function defaultShopSection(shopEnabled: boolean): ShopSection {
   return shopEnabled ? "products" : "settings";
@@ -240,12 +235,12 @@ export default function ShopPanel({
     Number(gstPercentDraft) !== (website.shopGstPercent ?? 0) ||
     priceIncludesGstDraft !== (website.shopPriceIncludesGst !== false);
 
-  const awaitingReturns = useAwaitingReturnsCount(website.id, website.shopEnabled && SHOW_RETURNS_AND_PAYMENT_LOGS, section);
+  const awaitingReturns = useAwaitingReturnsCount(website.id, website.shopEnabled, section);
 
   return (
     <div className="space-y-4">
       <div role="tablist" aria-label="Shop" className="flex gap-1 overflow-x-auto border-b border-line">
-        {VISIBLE_SHOP_SECTIONS.map(({ id, label }) => {
+        {SHOP_SECTIONS.map(({ id, label }) => {
           const active = section === id;
           return (
             <button

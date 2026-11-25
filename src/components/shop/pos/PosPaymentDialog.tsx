@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Banknote, CreditCard, QrCode, Smartphone } from "lucide-react";
 import { ApiError, errorMessage } from "../../../api/http.ts";
 import type { ShopOrder } from "../../../api/shop.ts";
-import { POS_METHOD_LABEL, shopPosApi, type PosPaymentMethod, type PosSaleInput } from "../../../api/shop-pos.ts";
+import { POS_METHOD_LABEL, shopPosApi, type PosCatalog, type PosPaymentMethod, type PosSaleInput } from "../../../api/shop-pos.ts";
 import { formatCountdown, useCountdown } from "../../../hooks/use-countdown.ts";
 import CommonModal from "../../ui/AppModal.tsx";
 import FormAlert from "../../ui/FormAlert.tsx";
@@ -29,7 +29,7 @@ type Props = {
   discount: PosDiscount | null;
   totalPaise: number;
   customer: PosCustomer;
-  razorpayQrAvailable: boolean;
+  razorpayQr: PosCatalog["razorpayQr"];
   onComplete: (order: ShopOrder) => void;
   /** Stock changed under us: the till should reload the catalogue. */
   onStale: () => void;
@@ -55,7 +55,7 @@ export default function PosPaymentDialog({
   discount,
   totalPaise,
   customer,
-  razorpayQrAvailable,
+  razorpayQr,
   onComplete,
   onStale,
   onClose,
@@ -207,7 +207,8 @@ export default function PosPaymentDialog({
     >
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Payment method">
         {METHODS.map(({ id, icon: Icon, hint }) => {
-          const disabled = id === "razorpay_qr" && !razorpayQrAvailable;
+          const disabled = id === "razorpay_qr" && razorpayQr !== "ready";
+          const whyDisabled = razorpayQr === "not_enabled" ? "QR Codes is off in Razorpay" : "Razorpay not connected";
           const active = method === id;
           return (
             <button
@@ -216,7 +217,13 @@ export default function PosPaymentDialog({
               role="radio"
               aria-checked={active}
               disabled={disabled}
-              title={disabled ? "Connect Razorpay in Shop → Razorpay to use this" : undefined}
+              title={
+                disabled
+                  ? razorpayQr === "not_enabled"
+                    ? "Turn on QR Codes in Razorpay. See Shop → Razorpay for the steps."
+                    : "Connect Razorpay in Shop → Razorpay to use this"
+                  : undefined
+              }
               onClick={() => setMethod(id)}
               className={`flex flex-col items-center gap-1 rounded-lg border px-2 py-3 text-center transition disabled:cursor-not-allowed disabled:opacity-40 ${
                 active ? "border-brand bg-brand-soft text-ink" : "border-line text-ink-body hover:border-line-strong"
@@ -224,7 +231,7 @@ export default function PosPaymentDialog({
             >
               <Icon className="size-5" aria-hidden />
               <span className="text-sm font-medium">{POS_METHOD_LABEL[id]}</span>
-              <span className="text-[11px] text-ink-muted">{disabled ? "Razorpay not connected" : hint}</span>
+              <span className="text-[11px] text-ink-muted">{disabled ? whyDisabled : hint}</span>
             </button>
           );
         })}

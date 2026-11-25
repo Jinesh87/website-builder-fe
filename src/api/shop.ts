@@ -111,6 +111,9 @@ export type ShopPaymentConfig = {
   razorpayKeyId: string | null;
   razorpayKeySecretMasked: string | null;
   webhookConfigured: boolean;
+  /** Razorpay QR Codes for the POS till: "unknown" until Razorpay has been asked. */
+  qrCodes: "enabled" | "disabled" | "unknown";
+  qrCheckedAt: string | null;
   webhookUrl: string;
   siteUrl: string;
   updatedAt: string | null;
@@ -554,6 +557,12 @@ export const shopApi = {
 
   disconnectRazorpay: (websiteId: string) =>
     request<{ config: ShopPaymentConfig }>(`${base(websiteId)}/payments/razorpay/connect`, { method: "DELETE" }).then(
+      (data) => data.config,
+    ),
+
+  /** Asks Razorpay again whether QR codes work for the shop's account. */
+  checkRazorpayQrCodes: (websiteId: string) =>
+    request<{ config: ShopPaymentConfig }>(`${base(websiteId)}/payments/razorpay/qr-check`, { method: "POST" }).then(
       (data) => data.config,
     ),
 

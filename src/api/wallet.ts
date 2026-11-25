@@ -136,12 +136,23 @@ export const adminPaymentsApi = {
     ).then((data) => data.secrets),
 };
 
-export type RazorpayPartnerSettings = {
+export type RazorpayPartnerMode = "test" | "live";
+
+/** One client's saved values: the development client (Test) or the production client (Live). */
+export type RazorpayPartnerClient = {
   configured: boolean;
-  mode: "test" | "live";
   clientId: string | null;
   clientSecretMasked: string | null;
   webhookConfigured: boolean;
+};
+
+export type RazorpayPartnerSettings = {
+  /** The client for the platform's current mode is saved, so shops can connect. */
+  configured: boolean;
+  /** The whole platform's current mode. */
+  mode: RazorpayPartnerMode;
+  test: RazorpayPartnerClient;
+  live: RazorpayPartnerClient;
   /** Register on the partner app as the OAuth redirect URL. */
   redirectUri: string;
   /** Set as the partner app's webhook URL. */
@@ -150,11 +161,12 @@ export type RazorpayPartnerSettings = {
   updatedAt: string | null;
 };
 
+/** Saves `mode`'s client and switches the whole platform to that mode. */
 export type RazorpayPartnerInput = {
   clientId: string;
   clientSecret?: string;
   webhookSecret?: string;
-  mode: "test" | "live";
+  mode: RazorpayPartnerMode;
 };
 
 /** The platform's Razorpay Technology Partner app, used for "Connect with Razorpay" on shops. */
@@ -164,9 +176,9 @@ export const adminRazorpayPartnerApi = {
     request<{ partner: RazorpayPartnerSettings }>("/admin/settings/payments/partner", { method: "PUT", body: input }).then(
       (data) => data.partner,
     ),
-  revealSecrets: () =>
+  revealSecrets: (mode: RazorpayPartnerMode) =>
     request<{ secrets: { clientSecret: string | null; webhookSecret: string | null } }>(
-      "/admin/settings/payments/partner/secrets",
+      `/admin/settings/payments/partner/secrets?mode=${mode}`,
     ).then((data) => data.secrets),
 };
 

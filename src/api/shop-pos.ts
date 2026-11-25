@@ -30,7 +30,8 @@ export type PosCatalogProduct = {
 export type PosCatalog = {
   products: PosCatalogProduct[];
   categories: { id: string; name: string }[];
-  razorpayQrAvailable: boolean;
+  /** "ready" (or not checked yet), "not_connected" (no Razorpay), or "not_enabled" (QR Codes off in Razorpay). */
+  razorpayQr: "ready" | "not_connected" | "not_enabled";
 };
 
 export type PosSaleInput = {
