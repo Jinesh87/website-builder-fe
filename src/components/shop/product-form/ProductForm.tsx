@@ -230,6 +230,18 @@ export default function ProductForm({
                   isRequired
                 />
               </div>
+              <div className="w-44">
+                <TextInput
+                  label="Base price (₹)"
+                  name={`set-cost-${firstSet.key}`}
+                  value={firstSet.cost}
+                  onChange={(cost) => updateSet(firstSet.key, { cost })}
+                  placeholder="0.00"
+                  description="What one unit costs you. Only you see it."
+                  error={fieldErrors.costBySet?.[firstSet.key]}
+                  isRequired
+                />
+              </div>
               {!withOptions && (
                 <div className="w-52">
                   <TextInput
@@ -255,7 +267,7 @@ export default function ProductForm({
                   />
                 </div>
               )}
-              {withOptions && <p className="pt-7 text-xs text-ink-muted">Every variant uses this price unless you change it below.</p>}
+              {withOptions && <p className="pt-7 text-xs text-ink-muted">Every variant uses these prices unless you change them below.</p>}
             </div>
           )}
 
@@ -292,6 +304,7 @@ export default function ProductForm({
                     productName={draft.name}
                     upload={upload}
                     priceError={fieldErrors.priceBySet?.[set.key]}
+                    costError={fieldErrors.costBySet?.[set.key]}
                     onChange={(change) => updateSet(set.key, change)}
                     onRemove={() => commit((current) => ({ ...current, sets: current.sets.filter((item) => item.key !== set.key) }))}
                   />
@@ -301,7 +314,7 @@ export default function ProductForm({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onPress={() => commit((current) => ({ ...current, sets: [...current.sets, { ...blankSet(true), price: current.sets[0]?.price ?? "" }] }))}
+                  onPress={() => commit((current) => ({ ...current, sets: [...current.sets, { ...blankSet(true), price: current.sets[0]?.price ?? "", cost: current.sets[0]?.cost ?? "" }] }))}
                 >
                   <Layers className="size-3.5" aria-hidden /> Add a separate variant group
                 </Button>

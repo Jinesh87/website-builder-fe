@@ -22,6 +22,7 @@ const product: ShopProduct = {
   optionSets: [
     {
       pricePaise: 49900,
+      costPaise: null,
       options: [
         { name: "Colour", values: ["Red", "Blue"], listOnShop: true, images: [{ value: "red", images: [image("red")] }] },
         { name: "Size", values: ["S", "M"], images: [{ value: "M", images: [image("m")] }] },
@@ -36,6 +37,7 @@ const variant = (name: string, images: ShopVariant["images"] = []): ShopVariant 
   sku: null,
   barcode: null,
   pricePaise: 49900,
+  costPaise: null,
   sortOrder: 0,
   quantity: 1,
   images,

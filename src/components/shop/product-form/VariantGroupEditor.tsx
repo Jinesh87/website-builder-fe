@@ -18,6 +18,7 @@ export default function VariantGroupEditor({
   productName,
   upload,
   priceError,
+  costError,
   onChange,
   onRemove,
 }: {
@@ -29,6 +30,7 @@ export default function VariantGroupEditor({
   productName: string;
   upload: PhotoUpload;
   priceError?: string;
+  costError?: string;
   onChange: (patch: SetPatch) => void;
   onRemove: () => void;
 }) {
@@ -59,6 +61,17 @@ export default function VariantGroupEditor({
                 onChange={(price) => onChange({ price })}
                 placeholder="0.00"
                 error={priceError}
+                isRequired
+              />
+            </div>
+            <div className="w-44">
+              <TextInput
+                label="Base price (₹)"
+                name={`set-cost-${set.key}`}
+                value={set.cost}
+                onChange={(cost) => onChange({ cost })}
+                placeholder="0.00"
+                error={costError}
                 isRequired
               />
             </div>

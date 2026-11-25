@@ -14,6 +14,8 @@ export type ShopVariant = {
   /** Printed barcode, scanned at the POS till. */
   barcode: string | null;
   pricePaise: number;
+  /** Base (cost) price; null on products saved before base prices existed. */
+  costPaise: number | null;
   sortOrder: number;
   quantity: number;
   images: ShopImage[];
@@ -51,8 +53,11 @@ export type ShopOption = {
 
 export type ShopOptionSet = {
   pricePaise: number;
+  /** Null on products saved before base prices existed. */
+  costPaise: number | null;
   options: ShopOption[];
   overrides?: { key: string; pricePaise: number }[];
+  costOverrides?: { key: string; costPaise: number }[];
   skus?: { key: string; sku: string }[];
   barcodes?: { key: string; barcode: string }[];
   images?: { key: string; images: ShopImage[] }[];
@@ -77,8 +82,11 @@ export type ShopProductInput = {
   returnDays?: number | null;
   optionSets: {
     pricePaise: number;
+    /** Base (cost) price per unit; required, never shown to customers. */
+    costPaise: number;
     options: ShopOption[];
     overrides?: { key: string; pricePaise: number }[];
+    costOverrides?: { key: string; costPaise: number }[];
     skus?: { key: string; sku: string }[];
     barcodes?: { key: string; barcode: string }[];
     images?: { key: string; images: { mediaId: string; alt?: string }[] }[];

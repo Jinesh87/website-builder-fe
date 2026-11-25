@@ -15,9 +15,9 @@ import {
 
 const photo = (id: string) => ({ mediaId: id, url: `https://example.test/${id}.webp`, alt: id });
 
-function simple(price = "499"): ProductDraft {
+function simple(price = "499", cost = "300"): ProductDraft {
   const draft = blankProduct();
-  return { ...draft, name: "Chair", sets: [{ ...draft.sets[0]!, price }] };
+  return { ...draft, name: "Chair", sets: [{ ...draft.sets[0]!, price, cost }] };
 }
 
 function withColourAndSize(): ProductDraft {
@@ -37,7 +37,7 @@ describe("new product", () => {
   it("starts with no options, so a simple product needs only a name and price", () => {
     const draft = blankProduct();
     expect(hasOptions(draft)).toBe(false);
-    expect(input(simple()).optionSets).toEqual([{ pricePaise: 49900, options: [] }]);
+    expect(input(simple()).optionSets).toEqual([{ pricePaise: 49900, costPaise: 30000, options: [] }]);
   });
 
   it("saves the SKU of a product without options", () => {
@@ -50,6 +50,25 @@ describe("new product", () => {
     const result = toInput(simple(""));
     expect(result).toMatchObject({ error: "Enter a price" });
     if ("error" in result) expect(Object.values(result.fieldErrors?.priceBySet ?? {})).toEqual(["Enter a price"]);
+  });
+});
+
+describe("base price", () => {
+  it("is required, and asked for against the right field", () => {
+    const result = toInput(simple("499", ""));
+    expect(result).toMatchObject({ error: "Enter a base price" });
+    if ("error" in result) expect(Object.values(result.fieldErrors?.costBySet ?? {})).toEqual(["Enter a base price"]);
+    expect(toInput(simple("499", "abc"))).toMatchObject({ error: expect.stringContaining("valid amount") });
+  });
+
+  it("keeps a different variant base price and drops one equal to the group's", () => {
+    const draft = withColourAndSize();
+    draft.sets[0]!.costOverrides = { [variantKey(["Red", "S"])]: "350", [variantKey(["Blue", "M"])]: "300" };
+    expect(input(draft).optionSets[0]?.costOverrides).toEqual([{ key: variantKey(["Red", "S"]), costPaise: 35000 }]);
+  });
+
+  it("removing all options keeps the base price", () => {
+    expect(withoutOptions(withColourAndSize()).sets[0]).toMatchObject({ cost: "300", costOverrides: {} });
   });
 });
 
@@ -112,6 +131,7 @@ describe("existing product", () => {
     optionSets: [
       {
         pricePaise: 49900,
+        costPaise: 30000,
         options: [
           { name: "Colour", values: ["Red", "Blue"], images: [{ value: "Blue", images: [{ mediaId: "b", alt: "b", url: "https://example.test/b.webp" }] }] },
           { name: "Size", values: ["S", "M"] },
@@ -121,6 +141,11 @@ describe("existing product", () => {
       },
     ],
   };
+
+  it("asks for a base price when an older product without one is saved", () => {
+    const older = { ...product, optionSets: product.optionSets.map((set) => ({ ...set, costPaise: null })) };
+    expect(toInput(draftFromProduct(older, 18, true))).toMatchObject({ error: "Enter a base price" });
+  });
 
   it("opens with the option that has photos selected", () => {
     const draft = draftFromProduct(product, 18, true);
@@ -134,6 +159,7 @@ describe("existing product", () => {
     expect(saved.optionSets).toEqual([
       {
         pricePaise: 49900,
+        costPaise: 30000,
         options: [
           { name: "Colour", values: ["Red", "Blue"], images: [{ value: "Blue", images: [{ mediaId: "b", alt: "b" }] }] },
           { name: "Size", values: ["S", "M"] },

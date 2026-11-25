@@ -7,6 +7,14 @@ export type SalesChannelTotals = {
   discountPaise: number;
   averagePaise: number;
   itemsSold: number;
+  /** Revenue without GST, after discounts. */
+  netSalesPaise: number;
+  /** Base price × quantity of items sold that have a base price. */
+  costPaise: number;
+  /** Net sales minus cost, over items that have a base price. */
+  profitPaise: number;
+  /** Units sold with no base price, left out of cost and profit. */
+  uncostedItems: number;
   cancelledCount: number;
   returnedCount: number;
   returnedPaise: number;

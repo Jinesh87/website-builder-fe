@@ -1,5 +1,7 @@
 import { POS_METHOD_LABEL } from "../../../api/shop-pos.ts";
 import type { SalesChannelTotals, SalesSummary } from "../../../api/shop-sales.ts";
+import { Link } from "react-router-dom";
+import FormAlert from "../../ui/FormAlert.tsx";
 import StatCard from "../StatCard.tsx";
 import { formatInr } from "../shop-format.ts";
 
@@ -16,6 +18,12 @@ const PAYMENT_ROWS = [
 
 function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+/** Profit as a share of the net sales it was earned on, e.g. "32%". */
+function margin(totals: SalesChannelTotals): string {
+  if (totals.itemsSold > 0 && totals.uncostedItems === totals.itemsSold) return "—";
+  return totals.netSalesPaise > 0 ? `${Math.round((totals.profitPaise / totals.netSalesPaise) * 100)}%` : "—";
 }
 
 function share(part: number, whole: number): number {
@@ -45,6 +53,10 @@ const COMPARE_ROWS: { label: string; value: (totals: SalesChannelTotals) => stri
   { label: "Revenue", value: (t) => formatInr(t.revenuePaise) },
   { label: "Average order", value: (t) => formatInr(t.averagePaise) },
   { label: "Items sold", value: (t) => String(t.itemsSold) },
+  { label: "Net sales (excl. GST)", value: (t) => formatInr(t.netSalesPaise) },
+  { label: "Cost of goods", value: (t) => formatInr(t.costPaise) },
+  { label: "Profit", value: (t) => formatInr(t.profitPaise) },
+  { label: "Margin", value: margin },
   { label: "Discounts", value: (t) => formatInr(t.discountPaise) },
   { label: "Cancelled", value: (t) => String(t.cancelledCount) },
   { label: "Returned", value: (t) => (t.returnedCount > 0 ? `${t.returnedCount} (${formatInr(t.returnedPaise)})` : "0") },
@@ -55,6 +67,16 @@ export default function SalesSummaryCards({ summary }: { summary: SalesSummary }
   const { total, online, pos, fulfilment, byPayment, refunds } = summary;
   return (
     <div className="space-y-4">
+      {total.uncostedItems > 0 && (
+        <FormAlert status="warning">
+          {plural(total.uncostedItems, "item")} sold in this period {total.uncostedItems === 1 ? "has" : "have"} no base price, so{" "}
+          {total.uncostedItems === 1 ? "it is" : "they are"} left out of cost and profit. Add a base price to those products in{" "}
+          <Link to="/shop?section=products" className="font-medium underline">
+            Shop → Products
+          </Link>
+          .
+        </FormAlert>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total sales" value={formatInr(total.revenuePaise)} note={`${plural(total.ordersCount, "order")} across both channels`}>
           <ChannelSplit summary={summary} />
@@ -71,11 +93,19 @@ export default function SalesSummaryCards({ summary }: { summary: SalesSummary }
           value={formatInr(pos.revenuePaise)}
           note={`${plural(pos.ordersCount, "sale")} · avg ${formatInr(pos.averagePaise)}`}
         />
-        <StatCard label="Average order value" value={formatInr(total.averagePaise)} note="Per completed order, both channels" />
+        <StatCard
+          label="Profit"
+          value={formatInr(total.profitPaise)}
+          note={`${margin(total)} margin · cost ${formatInr(total.costPaise)}`}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Items sold" value={String(total.itemsSold)} note={`${online.itemsSold} online · ${pos.itemsSold} in store`} />
+        <StatCard
+          label="Items sold"
+          value={String(total.itemsSold)}
+          note={`${online.itemsSold} online · ${pos.itemsSold} in store · avg order ${formatInr(total.averagePaise)}`}
+        />
         <StatCard label="Discounts given" value={formatInr(total.discountPaise)} note="Coupons online, discounts at the till" />
         <StatCard
           label="Online orders to fulfil"

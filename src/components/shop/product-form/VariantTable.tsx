@@ -4,7 +4,7 @@ import { combinations } from "../product-variants.ts";
 import ImageStrip, { type PhotoUpload } from "./ImageStrip.tsx";
 import { variantKey, type SetDraft, type SetPatch } from "./product-draft.ts";
 
-const COLUMNS = "sm:grid-cols-[minmax(0,1fr)_112px_144px_160px_40px]";
+const COLUMNS = "sm:grid-cols-[minmax(0,1fr)_104px_104px_136px_152px_40px]";
 const CELL_INPUT = "h-8 w-full rounded-lg border border-ed-border bg-surface px-2 text-sm text-ink";
 
 /**
@@ -18,7 +18,7 @@ function nextBarcodeOnEnter(event: KeyboardEvent<HTMLInputElement>) {
   fields[fields.indexOf(event.currentTarget) + 1]?.focus();
 }
 
-/** One row per variant (e.g. Red / S) with its own price, SKU and, when needed, its own photos. */
+/** One row per variant (e.g. Red / S) with its own price, base price, SKU and, when needed, its own photos. */
 export default function VariantTable({
   set,
   productName,
@@ -37,6 +37,7 @@ export default function VariantTable({
   // With one option a variant is just a value, which "Photos change with" already covers.
   const rowPhotos = set.options.filter((option) => option.values.length > 0).length > 1 || Object.keys(set.images).length > 0;
   const basePrice = set.price.trim();
+  const baseCost = set.cost.trim();
 
   function setRowPhotos(key: string, images: SetDraft["images"][string]) {
     onChange((current) => {
@@ -53,12 +54,13 @@ export default function VariantTable({
         <span className="text-sm font-medium text-ink">
           {combos.length} {combos.length === 1 ? "variant" : "variants"}
         </span>
-        <span className="text-xs text-ink-muted">Leave a price blank to use {basePrice ? `₹${basePrice}` : "the main price"}.</span>
+        <span className="text-xs text-ink-muted">Leave a cell blank to use the main price{basePrice ? ` (₹${basePrice})` : ""} or base price{baseCost ? ` (₹${baseCost})` : ""}.</span>
       </div>
       <div className="mt-2 overflow-hidden rounded-lg border border-line">
         <div className={`hidden gap-2 border-b border-line bg-canvas/60 px-3 py-2 text-xs font-medium text-ink-muted sm:grid ${COLUMNS}`}>
           <span>Variant</span>
           <span>Price (₹)</span>
+          <span>Base price (₹)</span>
           <span>SKU (optional)</span>
           <span>Barcode (optional)</span>
           <span className="sr-only">Photos</span>
@@ -78,6 +80,16 @@ export default function VariantTable({
                     onChange={(event) => onChange((current) => ({ overrides: { ...current.overrides, [key]: event.target.value } }))}
                     placeholder={basePrice || "0.00"}
                     aria-label={`Price for ${label}`}
+                    inputMode="decimal"
+                    className={CELL_INPUT}
+                  />
+                  <input
+                    value={set.costOverrides[key] ?? ""}
+                    onChange={(event) =>
+                      onChange((current) => ({ costOverrides: { ...current.costOverrides, [key]: event.target.value } }))
+                    }
+                    placeholder={baseCost || "0.00"}
+                    aria-label={`Base price for ${label}`}
                     inputMode="decimal"
                     className={CELL_INPUT}
                   />

@@ -24,9 +24,13 @@ export type OptionDraft = {
 export type SetDraft = {
   key: string;
   price: string;
+  /** Base (cost) price in rupees, as typed: what one unit costs the shop. */
+  cost: string;
   options: OptionDraft[];
   /** Variant key → rupee price, only when it differs from the group price. */
   overrides: Record<string, string>;
+  /** Variant key → rupee base price, only when it differs from the group's. */
+  costOverrides: Record<string, string>;
   /** Variant key → SKU. The key of a product without options is "". */
   skus: Record<string, string>;
   /** Variant key → printed barcode (scanned at the POS till). */
@@ -63,6 +67,7 @@ export type ProductDraft = {
 export type ProductFieldErrors = {
   name?: string;
   priceBySet?: Record<string, string>;
+  costBySet?: Record<string, string>;
   gstPercent?: string;
   returnDays?: string;
 };
@@ -82,8 +87,10 @@ export function blankSet(withOption = false): SetDraft {
   return {
     key: crypto.randomUUID(),
     price: "",
+    cost: "",
     options: withOption ? [blankOption()] : [],
     overrides: {},
+    costOverrides: {},
     skus: {},
     barcodes: {},
     images: {},
@@ -173,6 +180,11 @@ export function toInput(draft: ProductDraft): ProductParseResult {
       const message = set.price.trim() ? "Enter a valid amount like 999 or 999.50" : "Enter a price";
       return { error: message, fieldErrors: { priceBySet: { [set.key]: message } } };
     }
+    const costPaise = rupeesToPaise(set.cost);
+    if (costPaise === null) {
+      const message = set.cost.trim() ? "Enter a valid amount like 450 or 450.50" : "Enter a base price";
+      return { error: message, fieldErrors: { costBySet: { [set.key]: message } } };
+    }
     const options = set.options.filter((option) => option.name.trim() || option.values.length > 0);
     for (const option of options) {
       if (!option.name.trim()) return { error: "Name each option, such as Size or Colour" };
@@ -180,6 +192,7 @@ export function toInput(draft: ProductDraft): ProductParseResult {
     }
     const combos = options.length === 0 ? [[]] : combinations(options);
     const overrides = [];
+    const costOverrides = [];
     const skus = [];
     const barcodes = [];
     const imageGroups = [];
@@ -194,6 +207,12 @@ export function toInput(draft: ProductDraft): ProductParseResult {
         const customPaise = rupeesToPaise(custom);
         if (customPaise === null) return { error: `Enter a valid price for ${label}` };
         if (customPaise !== pricePaise) overrides.push({ key, pricePaise: customPaise });
+      }
+      const customCost = (set.costOverrides[key] ?? "").trim();
+      if (customCost) {
+        const customCostPaise = rupeesToPaise(customCost);
+        if (customCostPaise === null) return { error: `Enter a valid base price for ${label}` };
+        if (customCostPaise !== costPaise) costOverrides.push({ key, costPaise: customCostPaise });
       }
       const sku = (set.skus[key] ?? "").trim();
       if (sku) {
@@ -216,6 +235,7 @@ export function toInput(draft: ProductDraft): ProductParseResult {
     }
     optionSets.push({
       pricePaise,
+      costPaise,
       options: options.map((option) => {
         const images = option.values.flatMap((value) => {
           const photos = option.images[valueKey(value)] ?? [];
@@ -230,6 +250,7 @@ export function toInput(draft: ProductDraft): ProductParseResult {
         };
       }),
       ...(overrides.length > 0 ? { overrides } : {}),
+      ...(costOverrides.length > 0 ? { costOverrides } : {}),
       ...(skus.length > 0 ? { skus } : {}),
       ...(barcodes.length > 0 ? { barcodes } : {}),
       ...(imageGroups.length > 0 ? { images: imageGroups } : {}),
@@ -281,8 +302,11 @@ export function setsFromProduct(product: ShopProduct): SetDraft[] {
     return {
       key: crypto.randomUUID(),
       price: paiseToRupees(set.pricePaise),
+      // Older products have no base price yet; the form asks for one before saving.
+      cost: set.costPaise != null ? paiseToRupees(set.costPaise) : "",
       options,
       overrides: Object.fromEntries((set.overrides ?? []).map((override) => [override.key, paiseToRupees(override.pricePaise)])),
+      costOverrides: Object.fromEntries((set.costOverrides ?? []).map((override) => [override.key, paiseToRupees(override.costPaise)])),
       skus,
       barcodes: Object.fromEntries((set.barcodes ?? []).map((row) => [row.key, row.barcode])),
       images: Object.fromEntries((set.images ?? []).map((group) => [group.key, group.images])),
@@ -309,10 +333,13 @@ export function draftFromProduct(product: ShopProduct, shopGstPercent: number, s
   };
 }
 
-/** Collapses the product to a single price with no options, keeping the first price and SKU-less. */
+/** Collapses the product to a single price with no options, keeping the first price and base price, SKU-less. */
 export function withoutOptions(draft: ProductDraft): ProductDraft {
   const first = draft.sets[0];
-  return { ...draft, sets: [{ ...blankSet(), key: first?.key ?? crypto.randomUUID(), price: first?.price ?? "" }] };
+  return {
+    ...draft,
+    sets: [{ ...blankSet(), key: first?.key ?? crypto.randomUUID(), price: first?.price ?? "", cost: first?.cost ?? "" }],
+  };
 }
 
 /** Points per-value photos at another option; photos uploaded for the previous option are dropped. */
