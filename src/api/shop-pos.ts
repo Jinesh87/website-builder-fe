@@ -32,6 +32,9 @@ export type PosCatalog = {
   categories: { id: string; name: string }[];
   /** "ready" (or not checked yet), "not_connected" (no Razorpay), or "not_enabled" (QR Codes off in Razorpay). */
   razorpayQr: "ready" | "not_connected" | "not_enabled";
+  /** Which page of products this is (1-based), and whether another follows. */
+  page: number;
+  hasMore: boolean;
 };
 
 export type PosSaleInput = {
@@ -105,7 +108,23 @@ function base(websiteId: string): string {
 }
 
 export const shopPosApi = {
-  catalog: (websiteId: string) => request<PosCatalog>(`${base(websiteId)}/pos/catalog`),
+  /** One page of products for the till, matching `search` and optionally one category. */
+  catalog: (websiteId: string, params: { page?: number; search?: string; categoryId?: string | null } = {}) => {
+    const query = new URLSearchParams({ page: String(params.page ?? 1) });
+    if (params.search) query.set("search", params.search);
+    if (params.categoryId) query.set("categoryId", params.categoryId);
+    return request<PosCatalog>(`${base(websiteId)}/pos/catalog?${query}`);
+  },
+
+  /** The product a scanned barcode or typed SKU belongs to (404 when none). */
+  byCode: (websiteId: string, code: string) =>
+    request<{ product: PosCatalogProduct; variantId: string }>(`${base(websiteId)}/pos/code/${encodeURIComponent(code.trim())}`),
+
+  /** Units that can be sold now for these variants (the cart's). */
+  stock: (websiteId: string, variantIds: string[]) =>
+    request<{ available: Record<string, number> }>(
+      `${base(websiteId)}/pos/stock?${new URLSearchParams({ variants: variantIds.join(",") })}`,
+    ).then((data) => data.available),
 
   createSale: (websiteId: string, input: PosSaleInput) =>
     request<PosSaleResult>(`${base(websiteId)}/pos/sales`, { method: "POST", body: input }),

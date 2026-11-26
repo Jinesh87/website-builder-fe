@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PosCatalogProduct } from "../../../api/shop-pos.ts";
 import { createScanBuffer } from "./barcode-scanner.ts";
-import { addToCart, cartTotals, filterCatalog, findByCode, rupeesToPaise, setQuantity } from "./pos-cart.ts";
+import { addToCart, cartTotals, rupeesToPaise, setQuantity } from "./pos-cart.ts";
 
 const kurta: PosCatalogProduct = {
   id: "p1",
@@ -51,15 +51,6 @@ describe("pos cart", () => {
       totalPaise: 99900,
     });
     expect(cartTotals(cart, { type: "amount", value: 999999999 }).discountError).toBeTruthy();
-  });
-
-  it("finds a scanned barcode, falls back to SKU, and filters by text or category", () => {
-    expect(findByCode([kurta, saree], "8901000000017")?.variant.id).toBe("v-s");
-    expect(findByCode([kurta, saree], " sar-1 ")?.variant.id).toBe("v-std");
-    expect(findByCode([kurta, saree], "nope")).toBeNull();
-    expect(filterCatalog([kurta, saree], "890100", null).map((p) => p.id)).toEqual(["p1"]);
-    expect(filterCatalog([kurta, saree], "kur-s", null).map((p) => p.id)).toEqual(["p1"]);
-    expect(filterCatalog([kurta, saree], "", "c1").map((p) => p.id)).toEqual(["p1"]);
   });
 
   it("reads rupee amounts typed at the till", () => {

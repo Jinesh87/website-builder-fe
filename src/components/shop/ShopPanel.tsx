@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, Label, Spinner, Switch } from "@heroui/react";
-import { ChevronLeft, ImagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ChevronLeft, FileSpreadsheet, ImagePlus, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { shopApi, type ShopCategory, type ShopProduct } from "../../api/shop.ts";
 import { errorMessage } from "../../api/http.ts";
@@ -18,6 +18,7 @@ import ShopOrdersPanel from "./ShopOrdersPanel.tsx";
 import PosSettingsCard from "./pos/PosSettingsCard.tsx";
 import ShopRazorpayPanel from "./ShopRazorpayPanel.tsx";
 import ProductForm from "./product-form/ProductForm.tsx";
+import ProductImportModal from "./ProductImportModal.tsx";
 import { blankProduct, draftFromProduct, type ProductDraft } from "./product-form/product-draft.ts";
 import FormAlert from "../ui/FormAlert.tsx";
 import { variantOptions, variantPhotos } from "./product-variants.ts";
@@ -604,6 +605,8 @@ function ShopCatalog({
   const [savingCategory, setSavingCategory] = useState(false);
   const [draft, setDraft] = useState<ProductDraft | null>(null);
   const [viewing, setViewing] = useState<ShopProduct | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -626,7 +629,7 @@ function ShopCatalog({
     return () => {
       cancelled = true;
     };
-  }, [websiteId]);
+  }, [websiteId, reloadKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -646,7 +649,7 @@ function ShopCatalog({
     return () => {
       cancelled = true;
     };
-  }, [websiteId, query, categoryId, page, pageSize]);
+  }, [websiteId, query, categoryId, page, pageSize, reloadKey]);
 
   async function addCategory() {
     const name = categoryName.trim();
@@ -695,6 +698,13 @@ function ShopCatalog({
 
   return (
     <div>
+      {importing && (
+        <ProductImportModal
+          websiteId={websiteId}
+          onClose={() => setImporting(false)}
+          onImported={() => setReloadKey((key) => key + 1)}
+        />
+      )}
       {section === "category" && (
       <section className="rounded-xl border border-line bg-surface p-5">
         <h3 className="text-sm font-semibold text-ink">Categories</h3>
@@ -747,9 +757,14 @@ function ShopCatalog({
             <h3 className="text-sm font-semibold text-ink">Products</h3>
             <p className="mt-0.5 text-xs text-ink-muted">Search by name, description, or variant.</p>
           </div>
-          <Button size="sm" onPress={() => openProduct()}>
-            <Plus className="size-4" aria-hidden /> Add product
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onPress={() => setImporting(true)}>
+              <FileSpreadsheet className="size-4" aria-hidden /> Import
+            </Button>
+            <Button size="sm" onPress={() => openProduct()}>
+              <Plus className="size-4" aria-hidden /> Add product
+            </Button>
+          </div>
         </div>
 
         {viewing ? (

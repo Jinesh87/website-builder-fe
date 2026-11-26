@@ -1,13 +1,25 @@
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
+import { Spinner } from "@heroui/react";
 import { ImageOff, ScanBarcode, Search } from "lucide-react";
-import type { PosCatalog, PosCatalogProduct, PosCatalogVariant } from "../../../api/shop-pos.ts";
+import { shopPosApi, type PosCatalog, type PosCatalogProduct, type PosCatalogVariant } from "../../../api/shop-pos.ts";
+import { useLoadMoreSentinel } from "../../../hooks/use-infinite-list.ts";
 import CommonModal from "../../ui/AppModal.tsx";
 import { formatInr } from "../shop-format.ts";
 import { useBarcodeScanner } from "./barcode-scanner.ts";
-import { filterCatalog, findByCode } from "./pos-cart.ts";
 
 type Props = {
-  catalog: PosCatalog;
+  websiteId: string;
+  /** Products loaded so far for the current search and category; null while page 1 loads. */
+  products: PosCatalogProduct[] | null;
+  categories: PosCatalog["categories"];
+  search: string;
+  onSearch: (search: string) => void;
+  categoryId: string | null;
+  onCategory: (categoryId: string | null) => void;
+  /** More pages to load as the cashier scrolls. */
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
   /** Units of each variant already in the cart, so stock shown is what's left to sell. */
   inCart: Map<string, number>;
   onAdd: (product: PosCatalogProduct, variant: PosCatalogVariant) => void;
@@ -28,13 +40,27 @@ function priceRange(product: PosCatalogProduct): string {
   return low === high ? formatInr(low) : `${formatInr(low)} – ${formatInr(high)}`;
 }
 
-/** Left side of the till: search or scan, filter by category, tap a product to add it. */
-export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice, scannerEnabled }: Props) {
-  const [search, setSearch] = useState("");
-  const [categoryId, setCategoryId] = useState<string | null>(null);
+/** Left side of the till: search or scan, filter by category, tap a product to add it. Scrolling loads more. */
+export default function PosCatalogGrid({
+  websiteId,
+  products,
+  categories,
+  search,
+  onSearch,
+  categoryId,
+  onCategory,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+  inCart,
+  onAdd,
+  onNotice,
+  scannerEnabled,
+}: Props) {
   const [choosing, setChoosing] = useState<PosCatalogProduct | null>(null);
-
-  const visible = useMemo(() => filterCatalog(catalog.products, search, categoryId), [catalog.products, search, categoryId]);
+  const sentinel = useRef<HTMLDivElement>(null);
+  const visible = products ?? [];
+  useLoadMoreSentinel(sentinel, onLoadMore, hasMore && !loadingMore);
 
   function add(product: PosCatalogProduct, variant: PosCatalogVariant) {
     if (stockLeft(variant, inCart) <= 0) {
@@ -49,28 +75,37 @@ export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice, scann
     else setChoosing(product);
   }
 
-  /** Adds the item with this barcode (or SKU); true when one matched. */
-  function addByCode(code: string): boolean {
-    const match = findByCode(catalog.products, code);
-    if (match) add(match.product, match.variant);
-    return Boolean(match);
+  /** Adds the item with this barcode (or SKU), looked up across the whole shop; true when one matched. */
+  async function addByCode(code: string): Promise<boolean> {
+    if (!code.trim()) return false;
+    try {
+      const { product, variantId } = await shopPosApi.byCode(websiteId, code);
+      const variant = product.variants.find((item) => item.id === variantId);
+      if (variant) add(product, variant);
+      return Boolean(variant);
+    } catch {
+      return false;
+    }
   }
 
   // Scans anywhere on the page, e.g. after tapping a cart button moved the cursor out of the search box.
   useBarcodeScanner((code) => {
-    if (!addByCode(code)) onNotice(`No product with barcode ${code}. Add it to the product under Shop → Products.`);
+    void addByCode(code).then((found) => {
+      if (!found) onNotice(`No product with barcode ${code}. Add it to the product under Shop → Products.`);
+    });
   }, scannerEnabled && !choosing);
 
   /** A scanner in the search box types the barcode and presses Enter. */
-  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  async function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") return;
     event.preventDefault();
-    if (addByCode(search)) {
-      setSearch("");
+    const typed = search.trim();
+    if (await addByCode(typed)) {
+      onSearch("");
     } else if (visible.length === 1) {
       pick(visible[0]);
-    } else if (search.trim()) {
-      onNotice(`No product with barcode or SKU "${search.trim()}".`);
+    } else if (typed) {
+      onNotice(`No product with barcode or SKU "${typed}".`);
     }
   }
 
@@ -82,8 +117,8 @@ export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice, scann
         <input
           type="search"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          onKeyDown={handleKeyDown}
+          onChange={(event) => onSearch(event.target.value)}
+          onKeyDown={(event) => void handleKeyDown(event)}
           placeholder="Search products, or scan a barcode"
           className="h-11 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-10 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
           autoFocus
@@ -91,16 +126,16 @@ export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice, scann
         <ScanBarcode className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
       </label>
 
-      {catalog.categories.length > 0 && (
+      {categories.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Category">
-          {[{ id: null, name: "All" }, ...catalog.categories].map((category) => {
+          {[{ id: null, name: "All" }, ...categories].map((category) => {
             const active = categoryId === category.id;
             return (
               <button
                 key={category.id ?? "all"}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setCategoryId(category.id)}
+                onClick={() => onCategory(category.id)}
                 className={`rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset transition ${
                   active ? "bg-brand text-white ring-brand" : "bg-surface text-ink-body ring-line-strong hover:bg-canvas"
                 }`}
@@ -113,9 +148,13 @@ export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice, scann
       )}
 
       <div className="mt-4 min-h-0 flex-1 overflow-y-auto pb-4">
-        {visible.length === 0 ? (
+        {products === null ? (
+          <div className="grid place-items-center py-16">
+            <Spinner aria-label="Loading products" />
+          </div>
+        ) : visible.length === 0 ? (
           <p className="py-16 text-center text-sm text-ink-muted">
-            {catalog.products.length === 0 ? "This shop has no products yet. Add them under Shop → Products." : "No products match."}
+            {search.trim() || categoryId ? "No products match." : "This shop has no products yet. Add them under Shop → Products."}
           </p>
         ) : (
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -153,6 +192,11 @@ export default function PosCatalogGrid({ catalog, inCart, onAdd, onNotice, scann
               );
             })}
           </ul>
+        )}
+        {hasMore && (
+          <div ref={sentinel} className="grid place-items-center py-6">
+            {loadingMore && <Spinner size="sm" aria-label="Loading more products" />}
+          </div>
         )}
       </div>
 
