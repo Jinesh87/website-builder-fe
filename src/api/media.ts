@@ -19,6 +19,8 @@ export type MediaFile = {
   url: string;
   createdAt: string;
   updatedAt: string;
+  /** Whether a page, site, template or saved section uses it; only when the list asked (`withUsage`). */
+  inUse?: boolean;
 };
 
 export type MediaFolder = {
@@ -68,6 +70,8 @@ export function isFontFile(file: Pick<MediaFile, "mimeType">): boolean {
   return file.mimeType.startsWith("font/");
 }
 
+export type MediaBulkDeleteResult = { deleted: number; freedBytes: number; kept: { id: string; fileName: string }[] };
+
 export type MediaListParams = {
   /** Super Admin only; clients always get their own media. */
   clientId?: string;
@@ -78,6 +82,10 @@ export type MediaListParams = {
   kind?: MediaKind | typeof MEDIA_FONT_FILTER;
   /** Leaves fonts out of an unfiltered list; the library shows them in their own section. */
   excludeFonts?: boolean;
+  /** Mark each file with `inUse`. */
+  withUsage?: boolean;
+  /** Only files used somewhere, or only ones that aren't. */
+  usage?: "used" | "unused";
   search?: string;
   page?: number;
   pageSize?: number;
@@ -176,7 +184,23 @@ export function uploadProblem(file: File, onlyKind?: MediaKind): string | null {
   return null;
 }
 
+/** A client as the Super Admin media page lists it. */
+export type MediaClientSummary = {
+  id: string;
+  name: string;
+  /** The platform's own Template Studio workspace. */
+  internal: boolean;
+  files: number;
+  usedBytes: number;
+  limitBytes: number;
+};
+
+export type MediaClientList = { clients: MediaClientSummary[]; page: number; pageSize: number; total: number };
+
 export const mediaApi = {
+  /** Super Admin: clients with their file counts and storage, a page at a time. */
+  clients: (params: { id?: string; search?: string; page?: number } = {}) => request<MediaClientList>(`${BASE}/clients${toQuery(params)}`),
+
   list: (params: MediaListParams = {}) => request<MediaList>(`${BASE}${toQuery(params)}`),
 
   upload: ({ file, ...fields }: UploadMediaInput) => {
@@ -206,6 +230,10 @@ export const mediaApi = {
 
   /** Fails with MEDIA_IN_USE (details.usages) while the file is still referenced. */
   remove: (id: string) => request<void>(`${BASE}/${id}`, { method: "DELETE" }),
+
+  /** Deletes up to 100 files; files still in use are kept and listed in `kept`. */
+  removeMany: (ids: string[]) =>
+    request<MediaBulkDeleteResult>(`${BASE}/bulk-delete`, { method: "POST", body: { ids } }),
 
   folders: (clientId?: string) =>
     request<{ folders: MediaFolder[] }>(`${BASE}/folders${toQuery({ clientId })}`).then((data) => data.folders),
