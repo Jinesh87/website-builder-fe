@@ -1,12 +1,11 @@
 import { Suspense, useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { Button, SearchField, Spinner } from "@heroui/react";
-import { AlertCircle, CheckCircle2, FileText, Film, Folder, FolderPlus, Images, Pencil, Trash2, Type, Upload, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Folder, FolderPlus, Images, Pencil, Trash2, Type, Upload, X } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
 import {
   ACCEPT_ANY,
   ACCEPT_BY_KIND,
   formatBytes,
-  isFontFile,
   kindOfFile,
   MEDIA_FONT_FILTER,
   mediaApi,
@@ -20,6 +19,8 @@ import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
 import SaveNameDialog from "../../pages/websites/editor/SaveNameDialog.tsx";
 import ConfirmDialog from "../ui/ConfirmDialog.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
+import MediaBulkActions from "./MediaBulkActions.tsx";
+import MediaFileCard from "./MediaFileCard.tsx";
 import SelectInput, { type SelectOption } from "../ui/SelectInput.tsx";
 import { optimizeImageToWebP } from "../../utils/image-optimizer.ts";
 import { lazyWithRetry } from "../../utils/lazy-with-retry.ts";
@@ -29,9 +30,6 @@ const MediaDeleteDialog = lazyWithRetry(() => import("./MediaDeleteDialog.tsx"),
 });
 const ImageUploadDialog = lazyWithRetry(() => import("./ImageUploadDialog.tsx"), {
   reloadKey: "image_upload_dialog",
-});
-const FontPreview = lazyWithRetry(() => import("./FontPreview.tsx"), {
-  reloadKey: "media_font_preview",
 });
 const MediaDetailsDialog = lazyWithRetry(() => import("./MediaDetailsDialog.tsx"), {
   reloadKey: "media_details_dialog",
@@ -47,6 +45,14 @@ const KIND_OPTIONS: SelectOption<KindFilter>[] = [
   { value: "VIDEO", label: "Videos" },
   { value: "DOCUMENT", label: "Documents" },
   { value: MEDIA_FONT_FILTER, label: "Fonts" },
+];
+
+type UsageFilter = "" | "unused" | "used";
+
+const USAGE_OPTIONS: SelectOption<UsageFilter>[] = [
+  { value: "", label: "Used or not" },
+  { value: "unused", label: "Not used" },
+  { value: "used", label: "In use" },
 ];
 
 /** Fonts listed in their own section of the "All types" view. */
@@ -76,6 +82,10 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
   const fontSection = !onlyKind && kind === "";
   const [fonts, setFonts] = useState<MediaFile[]>([]);
   const [folderFilter, setFolderFilter] = useState("");
+  const [usageFilter, setUsageFilter] = useState<UsageFilter>("");
+  /** The library marks unused files and allows selecting; the picker doesn't. */
+  const manageMode = !onPick;
+  const [chosen, setChosen] = useState<Map<string, MediaFile>>(new Map());
   const debouncedSearch = useDebouncedValue(search.trim(), 300);
 
   const [files, setFiles] = useState<MediaFile[]>([]);
@@ -105,6 +115,8 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
           kind: kind || undefined,
           excludeFonts: fontSection,
           folderId: folderFilter || undefined,
+          withUsage: manageMode,
+          usage: usageFilter || undefined,
           search: debouncedSearch,
           page: nextPage,
           pageSize: PAGE_SIZE,
@@ -119,7 +131,7 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
         setLoading(false);
       }
     },
-    [clientId, kind, fontSection, folderFilter, debouncedSearch],
+    [clientId, kind, fontSection, folderFilter, debouncedSearch, manageMode, usageFilter],
   );
 
   const loadFonts = useCallback(async () => {
@@ -132,6 +144,8 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
         clientId,
         kind: MEDIA_FONT_FILTER,
         folderId: folderFilter || undefined,
+        withUsage: manageMode,
+        usage: usageFilter || undefined,
         search: debouncedSearch,
         pageSize: FONT_SECTION_SIZE,
       });
@@ -139,7 +153,7 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
     } catch (err) {
       setLoadError(errorMessage(err));
     }
-  }, [clientId, fontSection, folderFilter, debouncedSearch]);
+  }, [clientId, fontSection, folderFilter, debouncedSearch, manageMode, usageFilter]);
 
   const loadFolders = useCallback(async () => {
     if (!canManage) {
@@ -154,6 +168,7 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
   }, [canManage, clientId]);
 
   useEffect(() => {
+    setChosen(new Map());
     void load(1);
   }, [load]);
 
@@ -216,6 +231,13 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
   }
 
   async function afterDelete() {
+    const gone = pendingDelete?.id;
+    setChosen((current) => {
+      if (!gone || !current.has(gone)) return current;
+      const next = new Map(current);
+      next.delete(gone);
+      return next;
+    });
     setPendingDelete(null);
     setSelected(null);
     await Promise.all([load(1), loadFonts(), loadFolders()]);
@@ -246,41 +268,29 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
     }
   }
 
+  const toggle = (file: MediaFile) =>
+    setChosen((current) => {
+      const next = new Map(current);
+      if (next.has(file.id)) next.delete(file.id);
+      else next.set(file.id, file);
+      return next;
+    });
+
   const renderCard = (file: MediaFile) => (
-<li key={file.id}>
-                    <button
-                      type="button"
-                      onClick={() => (onPick ? onPick(file) : setSelected(file))}
-                      aria-label={onPick ? `Use ${file.fileName}` : `Open ${file.fileName}`}
-                      className="group flex w-full flex-col overflow-hidden rounded-lg border border-line bg-surface text-left shadow-xs transition hover:border-brand focus-visible:outline-2 focus-visible:outline-brand"
-                    >
-                      <span className="grid aspect-4/3 place-items-center overflow-hidden bg-canvas">
-                        {file.kind === "IMAGE" ? (
-                          <img src={file.url} alt="" loading="lazy" className="size-full object-cover" />
-                        ) : isFontFile(file) ? (
-                          <Suspense fallback={<span className="text-4xl text-ink">Aa</span>}>
-                            <FontPreview url={file.url} id={file.id} className="text-4xl text-ink" />
-                          </Suspense>
-                        ) : file.kind === "VIDEO" ? (
-                          <Film className="size-8 text-ink-muted" aria-hidden />
-                        ) : (
-                          <FileText className="size-8 text-ink-muted" aria-hidden />
-                        )}
-                      </span>
-                      <span className="flex flex-col px-2 py-1.5">
-                        <span className="truncate text-sm font-medium text-ink">{file.fileName}</span>
-                        <span className="truncate text-xs text-ink-muted">
-                          {formatBytes(file.sizeBytes)}
-                          {file.width && file.height ? ` · ${file.width}×${file.height}` : ""}
-                          {requiresClient && !clientId ? ` · ${file.clientName}` : ""}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
+    <MediaFileCard
+      key={file.id}
+      file={file}
+      onOpen={() => (onPick ? onPick(file) : setSelected(file))}
+      openLabel={onPick ? `Use ${file.fileName}` : `Open ${file.fileName}`}
+      showClient={requiresClient && !clientId}
+      selection={
+        manageMode && canManage ? { selected: chosen.has(file.id), active: chosen.size > 0, onToggle: () => toggle(file) } : undefined
+      }
+    />
   );
 
   const accept = onlyKind ? ACCEPT_BY_KIND[onlyKind] : ACCEPT_ANY;
-  const hasFilters = Boolean(debouncedSearch || (kind && !onlyKind) || folderFilter);
+  const hasFilters = Boolean(debouncedSearch || (kind && !onlyKind) || folderFilter || usageFilter);
   const folderButton = (value: string, label: string, count?: number) => (
     <button
       type="button"
@@ -307,6 +317,9 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
           </SearchField.Group>
         </SearchField>
         {!onlyKind && <SelectInput ariaLabel="Filter by type" value={kind} onChange={setKind} options={KIND_OPTIONS} />}
+        {manageMode && canManage && (
+          <SelectInput ariaLabel="Filter by use" value={usageFilter} onChange={setUsageFilter} options={USAGE_OPTIONS} />
+        )}
         {loading && files.length > 0 && <Spinner size="sm" aria-label="Updating" />}
         <div className="ml-auto flex items-center gap-3">
           {usage && (
@@ -367,6 +380,19 @@ export default function MediaLibrary({ clientId, requiresClient = false, website
             </li>
           )}
         </ul>
+      )}
+
+      {manageMode && canManage && (
+        <MediaBulkActions
+          selected={[...chosen.values()]}
+          unusedOnScreen={[...fonts, ...files].filter((file) => file.inUse === false)}
+          onSelect={(list) => setChosen(new Map(list.map((file) => [file.id, file])))}
+          onClear={() => setChosen(new Map())}
+          onDeleted={() => {
+            setChosen(new Map());
+            void Promise.all([load(1), loadFonts(), loadFolders()]);
+          }}
+        />
       )}
 
       <div className="flex flex-col gap-4 md:flex-row">
