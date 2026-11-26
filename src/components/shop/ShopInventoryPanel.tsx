@@ -1,245 +1,48 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
 import { Button, Spinner } from "@heroui/react";
-import { ChevronLeft, Plus, Search } from "lucide-react";
+import { ChevronLeft, Plus } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
 import {
   shopApi,
   type InventoryItem,
   type InventoryLogPage,
+  type InventoryPage,
   type ProductReturnedOrders,
 } from "../../api/shop.ts";
 import { formatPaise } from "../../api/wallet.ts";
-import CommonModal from "../ui/CommonModal.tsx";
 import { formatWhen } from "./shop-format.ts";
 import FormAlert from "../ui/FormAlert.tsx";
-import TextInput from "../ui/TextInput.tsx";
+import TablePagination from "../ui/TablePagination.tsx";
+import InventoryAddQuantityModal from "./InventoryAddQuantityModal.tsx";
+import ShopSearchField from "./ShopSearchField.tsx";
 
-
-function SearchField({ value, onChange, label }: { value: string; onChange: (value: string) => void; label: string }) {
-  return (
-    <div className="relative min-w-[220px] max-w-sm flex-1">
-      <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-muted" aria-hidden />
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={label}
-        aria-label={label}
-        className="h-9 w-full rounded-lg border border-ed-border bg-surface pl-9 pr-3 text-sm text-ink"
-      />
-    </div>
-  );
-}
-
-const VARIANT_BATCH_SIZE = 12;
-
-function variantLabel(item: InventoryItem): string {
-  const options =
-    item.options.length > 0 ? item.options.map((option) => option.value).join(" / ") : item.variantName;
-  return `${item.productName} · ${item.categoryName} · ${options}`;
-}
-
-function variantSearchText(item: InventoryItem): string {
-  return `${item.productName} ${item.categoryName} ${item.variantName} ${item.options
-    .map((option) => `${option.name} ${option.value}`)
-    .join(" ")}`.toLowerCase();
-}
-
-function AddQuantityModal({
-  websiteId,
-  items,
-  restrictProductId,
-  initialVariantId,
-  onClose,
-  onSaved,
-}: {
-  websiteId: string;
-  items: InventoryItem[];
-  restrictProductId?: string;
-  initialVariantId: string;
-  onClose: () => void;
-  onSaved: (item: InventoryItem) => void;
-}) {
-  const [variantId, setVariantId] = useState(initialVariantId);
-  const [variantSearch, setVariantSearch] = useState("");
-  const [visibleCount, setVisibleCount] = useState(VARIANT_BATCH_SIZE);
-  const [quantity, setQuantity] = useState("");
-  const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLLIElement>(null);
-  const sourceItems = restrictProductId ? items.filter((item) => item.productId === restrictProductId) : items;
-  const lockedVariant = Boolean(restrictProductId && initialVariantId);
-  const selected = sourceItems.find((item) => item.variantId === variantId) ?? null;
-  const adding = /^\d+$/.test(quantity.trim()) ? Number(quantity.trim()) : null;
-  const variantQuery = useDebouncedValue(variantSearch.trim(), 250).toLowerCase();
-  const filteredVariants = sourceItems.filter((item) => variantSearchText(item).includes(variantQuery));
-  const visibleVariants = filteredVariants.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredVariants.length;
-
-  useEffect(() => {
-    setVisibleCount(VARIANT_BATCH_SIZE);
-  }, [variantQuery]);
-
-  useEffect(() => {
-    if (!initialVariantId) return;
-    const index = filteredVariants.findIndex((item) => item.variantId === initialVariantId);
-    if (index >= 0) setVisibleCount(Math.max(VARIANT_BATCH_SIZE, index + 1));
-    // Only align the first open to the preselected variant.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount/initial selection only
-  }, [initialVariantId]);
-
-  useEffect(() => {
-    const root = listRef.current;
-    const sentinel = loadMoreRef.current;
-    if (!root || !sentinel || !hasMore) return;
-    if (typeof IntersectionObserver === "undefined") return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setVisibleCount((count) => Math.min(filteredVariants.length, count + VARIANT_BATCH_SIZE));
-        }
-      },
-      { root, rootMargin: "40px" },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [filteredVariants.length, hasMore, visibleCount]);
-
-  async function save() {
-    if (!selected) {
-      setError("Choose a variant");
-      return;
-    }
-    if (adding === null || adding < 1) {
-      setError("Enter how many to add");
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      onSaved(await shopApi.addInventory(websiteId, selected.variantId, adding, note.trim() || undefined));
-      onClose();
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <CommonModal
-      isOpen
-      onClose={onClose}
-      size="md"
-      title="Add quantity"
-      subtitle={selected ? `${selected.quantity} on hand now` : "Choose a variant and how many to add."}
-      subtitleClassName="whitespace-normal"
-      primaryAction={{ label: "Add quantity", onPress: save, isPending: saving }}
-      secondaryAction={{ label: "Cancel", onPress: onClose }}
-    >
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <span className="block text-sm font-medium text-ink">Variant</span>
-          {!lockedVariant && <SearchField value={variantSearch} onChange={setVariantSearch} label="Search variants" />}
-          {!lockedVariant && (
-            <div className="overflow-hidden rounded-lg border border-ed-border">
-              {visibleVariants.length === 0 ? (
-                <p className="px-3 py-6 text-center text-sm text-ink-muted">
-                  {variantQuery ? "No variants match this search." : "No variants available."}
-                </p>
-              ) : (
-                <div ref={listRef} className="max-h-64 overflow-y-auto">
-                  <ul className="divide-y divide-line" role="listbox" aria-label="Choose a variant">
-                    {visibleVariants.map((item) => {
-                      const active = item.variantId === variantId;
-                      return (
-                        <li key={item.variantId}>
-                          <button
-                            type="button"
-                            role="option"
-                            aria-selected={active}
-                            onClick={() => {
-                              setVariantId(item.variantId);
-                              setError(null);
-                            }}
-                            className={`flex w-full items-start gap-3 px-3 py-2.5 text-left text-sm transition-colors ${
-                              active ? "bg-ed-bg text-ink" : "bg-surface text-ink hover:bg-canvas"
-                            }`}
-                          >
-                            <span
-                              className={`mt-0.5 size-4 shrink-0 rounded-full border ${
-                                active ? "border-ink bg-ink" : "border-ed-border bg-surface"
-                              }`}
-                              aria-hidden
-                            />
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate font-medium">{variantLabel(item)}</span>
-                              <span className="block text-xs text-ink-muted">{item.quantity} on hand</span>
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                    {hasMore && (
-                      <li ref={loadMoreRef} className="px-3 py-2 text-center text-xs text-ink-muted" aria-hidden>
-                        Loading more…
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-          {selected && (
-            <p className="text-xs text-ink-muted">
-              Selected: <span className="font-medium text-ink">{variantLabel(selected)}</span>
-            </p>
-          )}
-        </div>
-        <TextInput
-          label="Quantity to add"
-          name="addQuantity"
-          value={quantity}
-          onChange={setQuantity}
-          placeholder="0"
-          isRequired
-        />
-        <TextInput label="Note (optional)" name="addQuantityNote" value={note} onChange={setNote} placeholder="Received from supplier" />
-        {selected && adding !== null && adding > 0 && (
-          <p className="text-sm text-ink-muted">
-            On hand will be {selected.quantity + adding}.
-          </p>
-        )}
-        {error && <FormAlert status="danger">{error}</FormAlert>}
-      </div>
-    </CommonModal>
-  );
-}
 
 export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
   const [search, setSearch] = useState("");
-  const query = useDebouncedValue(search.trim(), 250).toLowerCase();
-  const [items, setItems] = useState<InventoryItem[] | null>(null);
+  const query = useDebouncedValue(search.trim(), 250);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [data, setData] = useState<InventoryPage | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [addingState, setAddingState] = useState<{ variantId: string; productId?: string } | null>(null);
+  const [adding, setAdding] = useState<{ variant?: InventoryItem } | null>(null);
   const [returnsProduct, setReturnsProduct] = useState<{ id: string; name: string } | null>(null);
-  const visible =
-    items?.filter((item) =>
-      `${item.productName} ${item.categoryName} ${item.variantName} ${item.options.map((option) => `${option.name} ${option.value}`).join(" ")}`
-        .toLowerCase()
-        .includes(query),
-    ) ?? null;
+  const items = data?.items ?? null;
   const optionNames = optionColumns(items ?? []);
 
   useEffect(() => {
+    setPage(1);
+  }, [query, pageSize]);
+
+  useEffect(() => {
     let cancelled = false;
+    setError(null);
     shopApi
-      .inventory(websiteId)
+      .inventory(websiteId, { search: query, page, pageSize })
       .then((next) => {
-        if (!cancelled) setItems(next);
+        if (cancelled) return;
+        setData(next);
+        if (next.page !== page) setPage(next.page);
       })
       .catch((err: unknown) => {
         if (!cancelled) setError(errorMessage(err));
@@ -247,7 +50,11 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [websiteId]);
+  }, [websiteId, query, page, pageSize]);
+
+  function saved(item: InventoryItem) {
+    setData((current) => (current ? { ...current, items: current.items.map((row) => (row.variantId === item.variantId ? item : row)) } : current));
+  }
 
   if (returnsProduct) {
     return (
@@ -270,8 +77,8 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <SearchField value={search} onChange={setSearch} label="Search inventory" />
-          <Button size="sm" onPress={() => setAddingState({ variantId: "" })} isDisabled={!items || items.length === 0}>
+          <ShopSearchField value={search} onChange={setSearch} label="Search inventory" />
+          <Button size="sm" onPress={() => setAdding({})} isDisabled={!data || (data.total === 0 && !query)}>
             <Plus className="size-4" aria-hidden /> Add quantity
           </Button>
         </div>
@@ -281,17 +88,17 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
           <FormAlert status="danger">{error}</FormAlert>
         </div>
       )}
-      {items === null && !error && (
+      {data === null && !error && (
         <div className="grid place-items-center py-12">
           <Spinner aria-label="Loading inventory" />
         </div>
       )}
-      {visible?.length === 0 && (
+      {items?.length === 0 && (
         <p className="px-5 py-10 text-center text-sm text-ink-muted">
           {query ? "No variants match this search." : "No products yet. Add one in Products, then add quantity here."}
         </p>
       )}
-      {visible && visible.length > 0 && (
+      {items && items.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[44rem] text-left text-sm">
             <thead>
@@ -307,7 +114,7 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {visible.map((item) => (
+              {items.map((item) => (
                 <tr key={item.variantId}>
                   <td className="px-5 py-3">
                     <p className="truncate font-medium text-ink">{item.productName}</p>
@@ -332,7 +139,7 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
                     )}
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <Button size="sm" variant="outline" onPress={() => setAddingState({ variantId: item.variantId, productId: item.productId })}>
+                    <Button size="sm" variant="outline" onPress={() => setAdding({ variant: item })}>
                       Add
                     </Button>
                   </td>
@@ -342,15 +149,20 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
           </table>
         </div>
       )}
-      {addingState !== null && items && (
-        <AddQuantityModal
-          websiteId={websiteId}
-          items={items}
-          restrictProductId={addingState.productId}
-          initialVariantId={addingState.variantId}
-          onClose={() => setAddingState(null)}
-          onSaved={(saved) => setItems((current) => current?.map((row) => (row.variantId === saved.variantId ? saved : row)) ?? current)}
-        />
+      {data && data.total > 0 && (
+        <div className="border-t border-line px-5 py-3">
+          <TablePagination
+            page={data.page}
+            pageSize={pageSize}
+            total={data.total}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            itemLabel="variants"
+          />
+        </div>
+      )}
+      {adding && (
+        <InventoryAddQuantityModal websiteId={websiteId} variant={adding.variant} onClose={() => setAdding(null)} onSaved={saved} />
       )}
     </section>
   );
@@ -511,7 +323,7 @@ export function ShopInventoryLogPanel({ websiteId }: { websiteId: string }) {
           <h3 className="text-sm font-semibold text-ink">Inventory log</h3>
           <p className="mt-0.5 text-xs text-ink-muted">Every quantity change, including stock cleared when a variant is removed.</p>
         </div>
-        <SearchField value={search} onChange={setSearch} label="Search the log" />
+        <ShopSearchField value={search} onChange={setSearch} label="Search the log" />
       </div>
       {error && (
         <div className="px-5 pt-4">

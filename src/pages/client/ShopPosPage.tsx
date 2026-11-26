@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button, Checkbox, Label, Spinner } from "@heroui/react";
 import { buttonVariants } from "@heroui/styles";
 import { BarChart3, RefreshCw, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 import { errorMessage } from "../../api/http.ts";
 import type { ShopOrder } from "../../api/shop.ts";
-import { shopPosApi, type PosCatalog } from "../../api/shop-pos.ts";
+import { shopPosApi, type PosCatalog, type PosCatalogProduct } from "../../api/shop-pos.ts";
 import PosCartPanel from "../../components/shop/pos/PosCartPanel.tsx";
 import PosCatalogGrid from "../../components/shop/pos/PosCatalogGrid.tsx";
 import PosCustomerDialog, { WALK_IN, type PosCustomer } from "../../components/shop/pos/PosCustomerDialog.tsx";
@@ -14,6 +14,8 @@ import PosSaleCompleteDialog from "../../components/shop/pos/PosSaleCompleteDial
 import { addToCart, cartTotals, setQuantity, type PosCartLine, type PosDiscount } from "../../components/shop/pos/pos-cart.ts";
 import FormAlert from "../../components/ui/FormAlert.tsx";
 import SelectInput from "../../components/ui/SelectInput.tsx";
+import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
+import { useInfiniteList } from "../../hooks/use-infinite-list.ts";
 import { useShopWebsites } from "../../hooks/use-shop-websites.ts";
 
 const AUTO_PRINT_KEY = "pos:auto-print";
@@ -23,8 +25,11 @@ type Dialog = "customer" | "payment" | null;
 /** In-store till: sell the shop's products at the counter, sharing stock and orders with the online shop. */
 export default function ShopPosPage() {
   const { websites, error: listError, selectedId, selectWebsite } = useShopWebsites({ posOnly: true });
-  const [catalog, setCatalog] = useState<PosCatalog | null>(null);
-  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [meta, setMeta] = useState<Pick<PosCatalog, "categories" | "razorpayQr"> | null>(null);
+  const [stockError, setStockError] = useState<string | null>(null);
+  const query = useDebouncedValue(search.trim(), 250);
   const [cart, setCart] = useState<PosCartLine[]>([]);
   const [discount, setDiscount] = useState<PosDiscount | null>(null);
   const [customer, setCustomer] = useState<PosCustomer>(WALK_IN);
@@ -35,32 +40,50 @@ export default function ShopPosPage() {
   // Remounts the cart panel so its discount field clears with the sale.
   const [saleKey, setSaleKey] = useState(0);
 
-  const loadCatalog = useCallback(async (websiteId: string) => {
-    setCatalogError(null);
-    try {
-      const loaded = await shopPosApi.catalog(websiteId);
-      setCatalog(loaded);
-      // Keep the cart in line with the fresh stock figures.
-      const available = new Map(loaded.products.flatMap((product) => product.variants.map((v) => [v.id, v.available] as const)));
-      setCart((current) =>
-        current
-          .filter((line) => (available.get(line.variantId) ?? 0) > 0)
-          .map((line) => {
-            const left = available.get(line.variantId) ?? 0;
-            return { ...line, available: left, quantity: Math.min(line.quantity, left) };
-          }),
-      );
-    } catch (err) {
-      setCatalogError(errorMessage(err));
-    }
-  }, []);
+  const catalog = useInfiniteList<PosCatalogProduct>(
+    `${selectedId}|${query}|${categoryId ?? ""}`,
+    async (page) => {
+      const loaded = await shopPosApi.catalog(selectedId!, { page, search: query, categoryId });
+      if (page === 1) setMeta({ categories: loaded.categories, razorpayQr: loaded.razorpayQr });
+      return { items: loaded.products, hasMore: loaded.hasMore };
+    },
+    Boolean(selectedId),
+  );
+  const catalogError = catalog.error ?? stockError;
+
+  // The cart only ever holds a few lines, so its stock is checked by id rather than by reloading every page.
+  const cartRef = useRef(cart);
+  cartRef.current = cart;
+  /** Re-reads stock for the cart's items and the products on screen, e.g. after a sale. */
+  const refreshStock = useCallback(
+    async (websiteId: string) => {
+      setStockError(null);
+      catalog.reload();
+      const ids = cartRef.current.map((line) => line.variantId);
+      if (ids.length === 0) return;
+      try {
+        const available = await shopPosApi.stock(websiteId, ids);
+        setCart((current) =>
+          current
+            .filter((line) => (available[line.variantId] ?? 0) > 0)
+            .map((line) => {
+              const left = available[line.variantId] ?? 0;
+              return { ...line, available: left, quantity: Math.min(line.quantity, left) };
+            }),
+        );
+      } catch (err) {
+        setStockError(errorMessage(err));
+      }
+    },
+    [catalog.reload],
+  );
 
   useEffect(() => {
-    if (!selectedId) return;
-    setCatalog(null);
+    setMeta(null);
     setCart([]);
-    void loadCatalog(selectedId);
-  }, [selectedId, loadCatalog]);
+    setSearch("");
+    setCategoryId(null);
+  }, [selectedId]);
 
   useEffect(() => {
     if (!notice) return;
@@ -77,7 +100,7 @@ export default function ShopPosPage() {
     setDiscount(null);
     setCustomer(WALK_IN);
     setSaleKey((key) => key + 1);
-    if (selectedId) void loadCatalog(selectedId);
+    if (selectedId) void refreshStock(selectedId);
   }
 
   function toggleAutoPrint(on: boolean) {
@@ -116,7 +139,7 @@ export default function ShopPosPage() {
         </Checkbox>
         {selectedId && (
           <>
-            <Button size="sm" variant="outline" onPress={() => void loadCatalog(selectedId)} aria-label="Refresh stock">
+            <Button size="sm" variant="outline" onPress={() => void refreshStock(selectedId)} aria-label="Refresh stock">
               <RefreshCw className="size-4" aria-hidden />
             </Button>
             <Link to={`/shop/pos/sales?website=${selectedId}`} className={buttonVariants({ variant: "outline", size: "sm" })}>
@@ -152,16 +175,25 @@ export default function ShopPosPage() {
         </p>
       )}
 
-      {((!websites && !listError) || (selectedId && !catalog && !catalogError)) && (
+      {((!websites && !listError) || (selectedId && !meta && !catalogError)) && (
         <div className="grid flex-1 place-items-center py-20">
           <Spinner aria-label="Loading products" />
         </div>
       )}
 
-      {catalog && selectedId && (
+      {meta && selectedId && (
         <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
           <PosCatalogGrid
-            catalog={catalog}
+            websiteId={selectedId}
+            products={catalog.items}
+            categories={meta.categories}
+            search={search}
+            onSearch={setSearch}
+            categoryId={categoryId}
+            onCategory={setCategoryId}
+            hasMore={catalog.hasMore}
+            loadingMore={catalog.loading}
+            onLoadMore={catalog.loadMore}
             inCart={inCart}
             onAdd={(product, variant) => setCart((current) => addToCart(current, product, variant))}
             onNotice={setNotice}
@@ -197,19 +229,19 @@ export default function ShopPosPage() {
       {selectedId && dialog === "customer" && (
         <PosCustomerDialog websiteId={selectedId} value={customer} onChange={setCustomer} onClose={() => setDialog(null)} />
       )}
-      {selectedId && catalog && dialog === "payment" && (
+      {selectedId && meta && dialog === "payment" && (
         <PosPaymentDialog
           websiteId={selectedId}
           cart={cart}
           discount={discount}
           totalPaise={totals.totalPaise}
           customer={customer}
-          razorpayQr={catalog.razorpayQr}
+          razorpayQr={meta.razorpayQr}
           onComplete={(order) => {
             setDialog(null);
             setCompleted(order);
           }}
-          onStale={() => void loadCatalog(selectedId)}
+          onStale={() => void refreshStock(selectedId)}
           onClose={() => setDialog(null)}
         />
       )}

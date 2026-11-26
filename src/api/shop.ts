@@ -222,6 +222,13 @@ export type InventoryMovement = {
   createdAt: string;
 };
 
+export type InventoryPage = {
+  items: InventoryItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 export type InventoryLogPage = {
   movements: InventoryMovement[];
   page: number;
@@ -405,6 +412,8 @@ export type ShopOrderPage = {
 export type ShopProductQuery = {
   search?: string;
   categoryId?: string;
+  /** Only these products, e.g. the featured products already chosen in the editor (up to 50). */
+  ids?: string[];
   page?: number;
   pageSize?: number;
 };
@@ -479,6 +488,7 @@ function productQuery(params: ShopProductQuery): string {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
   if (params.categoryId) query.set("categoryId", params.categoryId);
+  if (params.ids?.length) query.set("ids", params.ids.join(","));
   if (params.page) query.set("page", String(params.page));
   if (params.pageSize) query.set("pageSize", String(params.pageSize));
   const text = query.toString();
@@ -527,11 +537,11 @@ export const shopApi = {
   updatePaymentConfig: (websiteId: string, input: ShopPaymentInput) =>
     request<{ config: ShopPaymentConfig }>(`${base(websiteId)}/payments`, { method: "PUT", body: input }).then((data) => data.config),
 
-  inventory: (websiteId: string, search = "") => {
-    const query = new URLSearchParams();
-    if (search) query.set("search", search);
-    const text = query.toString();
-    return request<{ items: InventoryItem[] }>(`${base(websiteId)}/inventory${text ? `?${text}` : ""}`).then((data) => data.items);
+  /** One page of variants, matching `search` in product, variant, category, SKU or barcode. */
+  inventory: (websiteId: string, params: { search?: string; page?: number; pageSize?: number } = {}) => {
+    const query = new URLSearchParams({ page: String(params.page ?? 1), pageSize: String(params.pageSize ?? 50) });
+    if (params.search) query.set("search", params.search);
+    return request<InventoryPage>(`${base(websiteId)}/inventory?${query}`);
   },
 
   addInventory: (websiteId: string, variantId: string, quantity: number, note?: string) =>

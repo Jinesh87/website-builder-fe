@@ -92,16 +92,14 @@ export function WebsiteShopCatalogProvider({
       return;
     }
     let cancel = false;
+    // The canvas only ever shows a strip or one page of cards, so the first 100 products are enough;
+    // big shops would otherwise download their whole catalogue every time the editor opens.
     const pageSize = 50;
     shopApi
       .products(website.id, { page: 1, pageSize })
       .then(async (first) => {
         const loaded = [...first.products];
-        const pages = Math.ceil(first.total / pageSize);
-        for (let page = 2; page <= pages; page += 1) {
-          const next = await shopApi.products(website.id, { page, pageSize });
-          loaded.push(...next.products);
-        }
+        if (first.total > pageSize) loaded.push(...(await shopApi.products(website.id, { page: 2, pageSize })).products);
         if (!cancel) setProducts(loaded.map((product) => toCatalogProduct(product, website)));
       })
       .catch(() => {

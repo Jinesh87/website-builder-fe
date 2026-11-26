@@ -67,44 +67,6 @@ export function cartTotals(cart: PosCartLine[], discount: PosDiscount | null): P
   return { subtotalPaise, discountPaise, totalPaise: subtotalPaise - discountPaise, itemCount, discountError: null };
 }
 
-/**
- * The variant a scanned or typed code belongs to: an exact barcode match first, then an exact SKU
- * (shops that put the barcode number in the SKU keep working). Ignores case and surrounding spaces.
- */
-export function findByCode(
-  products: PosCatalogProduct[],
-  code: string,
-): { product: PosCatalogProduct; variant: PosCatalogVariant } | null {
-  const wanted = code.trim().toLowerCase();
-  if (!wanted) return null;
-  for (const field of ["barcode", "sku"] as const) {
-    for (const product of products) {
-      const variant = product.variants.find((item) => item[field]?.trim().toLowerCase() === wanted);
-      if (variant) return { product, variant };
-    }
-  }
-  return null;
-}
-
-/** Products whose name, category, variant name or SKU contain the search text. */
-export function filterCatalog(products: PosCatalogProduct[], search: string, categoryId: string | null): PosCatalogProduct[] {
-  const needle = search.trim().toLowerCase();
-  return products.filter((product) => {
-    if (categoryId && product.categoryId !== categoryId) return false;
-    if (!needle) return true;
-    return (
-      product.name.toLowerCase().includes(needle) ||
-      (product.categoryName?.toLowerCase().includes(needle) ?? false) ||
-      product.variants.some(
-        (variant) =>
-          variant.name.toLowerCase().includes(needle) ||
-          (variant.sku?.toLowerCase().includes(needle) ?? false) ||
-          (variant.barcode?.toLowerCase().includes(needle) ?? false),
-      )
-    );
-  });
-}
-
 /** Rupees typed by the cashier ("1,250.50") to paise; null when not a number. */
 export function rupeesToPaise(text: string): number | null {
   const cleaned = text.replace(/[,\s₹]/g, "");
