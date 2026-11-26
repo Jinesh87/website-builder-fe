@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useDebouncedValue } from "../../hooks/use-debounced-value.ts";
 import { Button, Spinner } from "@heroui/react";
-import { ChevronLeft, Plus } from "lucide-react";
+import { ChevronLeft, Plus, Upload } from "lucide-react";
 import { errorMessage } from "../../api/http.ts";
 import {
   shopApi,
@@ -16,6 +16,8 @@ import FormAlert from "../ui/FormAlert.tsx";
 import TablePagination from "../ui/TablePagination.tsx";
 import InventoryAddQuantityModal from "./InventoryAddQuantityModal.tsx";
 import ShopSearchField from "./ShopSearchField.tsx";
+import StockListDownloadButton from "./StockListDownloadButton.tsx";
+import StockUploadModal from "./StockUploadModal.tsx";
 
 
 export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
@@ -27,6 +29,9 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState<{ variant?: InventoryItem } | null>(null);
   const [returnsProduct, setReturnsProduct] = useState<{ id: string; name: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  // Bumped after a stock list upload so the page reloads.
+  const [reloadKey, setReloadKey] = useState(0);
   const items = data?.items ?? null;
   const optionNames = optionColumns(items ?? []);
 
@@ -50,7 +55,7 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [websiteId, query, page, pageSize]);
+  }, [websiteId, query, page, pageSize, reloadKey]);
 
   function saved(item: InventoryItem) {
     setData((current) => (current ? { ...current, items: current.items.map((row) => (row.variantId === item.variantId ? item : row)) } : current));
@@ -78,6 +83,10 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <ShopSearchField value={search} onChange={setSearch} label="Search inventory" />
+          <StockListDownloadButton websiteId={websiteId} onError={setError} size="sm" />
+          <Button size="sm" variant="outline" onPress={() => setUploading(true)} isDisabled={!data || (data.total === 0 && !query)}>
+            <Upload className="size-4" aria-hidden /> Upload stock list
+          </Button>
           <Button size="sm" onPress={() => setAdding({})} isDisabled={!data || (data.total === 0 && !query)}>
             <Plus className="size-4" aria-hidden /> Add quantity
           </Button>
@@ -163,6 +172,9 @@ export function ShopInventoryPanel({ websiteId }: { websiteId: string }) {
       )}
       {adding && (
         <InventoryAddQuantityModal websiteId={websiteId} variant={adding.variant} onClose={() => setAdding(null)} onSaved={saved} />
+      )}
+      {uploading && (
+        <StockUploadModal websiteId={websiteId} onClose={() => setUploading(false)} onUpdated={() => setReloadKey((key) => key + 1)} />
       )}
     </section>
   );

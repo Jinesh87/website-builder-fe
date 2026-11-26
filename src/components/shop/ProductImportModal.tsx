@@ -5,35 +5,19 @@ import { errorMessage } from "../../api/http.ts";
 import {
   productImportTemplate,
   shopImportApi,
-  type ImportIssue,
   type ProductImportResult,
   type ProductImportSummary,
 } from "../../api/shop-import.ts";
 import { downloadBlob } from "../../utils/download.ts";
 import { CommonModal } from "../ui/AppModal.tsx";
 import FormAlert from "../ui/FormAlert.tsx";
+import IssueList from "./ImportIssueList.tsx";
 
 const ACCEPT = ".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const PREVIEW_ITEMS = 50;
 
 function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
-}
-
-function IssueList({ issues, title }: { issues: ImportIssue[]; title: string }) {
-  return (
-    <div className="rounded-lg border border-danger/30 bg-danger/5 p-3">
-      <p className="text-sm font-medium text-danger">{title}</p>
-      <ul className="mt-2 max-h-56 space-y-1 overflow-y-auto text-sm text-ink-body">
-        {issues.map((issue, index) => (
-          <li key={index}>
-            {issue.line !== null && <span className="font-medium text-ink">Row {issue.line}: </span>}
-            {issue.message}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
 }
 
 function SummaryTiles({ summary }: { summary: ProductImportSummary }) {
