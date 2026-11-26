@@ -3,21 +3,7 @@ import { toPlainText } from "../rich-text-core.ts";
 import { useState, useMemo, type FormEvent } from "react";
 import { parseRichText, SectionShell, SiteImage } from "../primitives.tsx";
 import type { BlogData, SectionOf } from "../types.ts";
-
-function formatBlogHref(slug?: string): string {
-  if (!slug || slug.trim() === "" || slug === "#") return "#";
-  const trimmed = slug.trim();
-  if (
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://") ||
-    trimmed.startsWith("mailto:") ||
-    trimmed.startsWith("tel:") ||
-    trimmed.startsWith("#")
-  ) {
-    return trimmed;
-  }
-  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-}
+import { formatBlogHref } from "./blog-href.ts";
 
 function matchCategory(postCategory?: string, selected?: string): boolean {
   if (!selected || selected.toUpperCase() === "ALL") return true;

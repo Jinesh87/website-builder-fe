@@ -269,6 +269,9 @@ export type SectionCustomColors = {
   /** Start and end colors of gradient text (e.g. the hero's highlighted words). */
   gradientFrom?: string;
   gradientTo?: string;
+  /** Background and text of cards inside the section, for layouts that have cards. */
+  card?: string;
+  cardText?: string;
 };
 
 export const SECTION_FONT_SIZES = [
@@ -1516,7 +1519,7 @@ export type BlogPostItem = {
 };
 
 export type BlogData = {
-  variant?: "default" | "vintage-journal";
+  variant?: "default" | "vintage-journal" | "inset-cards";
   eyebrow?: string;
   title: string;
   italicTitle?: string;

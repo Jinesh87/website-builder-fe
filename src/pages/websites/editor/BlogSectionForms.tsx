@@ -243,6 +243,7 @@ const LAYOUT_OPTIONS = [
 const BLOG_VARIANT_OPTIONS = [
   { value: "default", label: "Standard Modern Grid" },
   { value: "vintage-journal", label: "Vintage Journal (Cutting Room / Editorial)" },
+  { value: "inset-cards", label: "Inset cards (photo, category, title, Read article)" },
 ];
 
 export function BlogForm({

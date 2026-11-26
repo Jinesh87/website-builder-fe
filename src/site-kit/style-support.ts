@@ -21,6 +21,7 @@ export const STYLE_CONTROLS = [
   "colorMuted",
   "colorBorder",
   "colorGradient",
+  "colorCard",
 ] as const;
 export type StyleControl = (typeof STYLE_CONTROLS)[number];
 

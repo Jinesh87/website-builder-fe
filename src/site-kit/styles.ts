@@ -3,6 +3,7 @@ import { ACCOUNT_POPUP_CSS } from "./account-popup-styles.ts";
 import { AUTH_CSS } from "./auth-styles.ts";
 import { BOUTIQUE_CSS } from "./boutique-styles.ts";
 import { BLOG_CSS } from "./blog-styles.ts";
+import { BLOG_INSET_CSS } from "./blog-inset-styles.ts";
 import { PREMIUM_HEADER_CSS } from "./header-styles.ts";
 import { CONTACT_HEADER_CSS } from "./contact-header-styles.ts";
 import { CONTACT_BUILDER_CSS } from "./contact-builder-styles.ts";
@@ -10245,6 +10246,7 @@ details[open] > summary .wb-faq-plus {
 }
 ${AUTH_CSS}
 ${BLOG_CSS}
+${BLOG_INSET_CSS}
 ${PREMIUM_HEADER_CSS}
 ${CONTACT_HEADER_CSS}
 ${CONTACT_BUILDER_CSS}
