@@ -1,4 +1,4 @@
-import { request } from "./http.ts";
+import { request, requestBlob } from "./http.ts";
 import type { PosPaymentMethod } from "./shop-pos.ts";
 
 export type SalesChannelTotals = {
@@ -32,10 +32,15 @@ export type SalesSummary = {
   refunds: { count: number; totalPaise: number };
 };
 
+export type SalesExportFormat = "pdf" | "csv";
+
 export const shopSalesApi = {
   /** Sales across both channels for the days `from` through `to` (India time, inclusive). */
   summary: (websiteId: string, range: { from: string; to: string }) =>
     request<{ summary: SalesSummary }>(
       `/websites/${websiteId}/shop/sales/summary?${new URLSearchParams({ from: range.from, to: range.to })}`,
     ).then((data) => data.summary),
+  /** The summary plus every paid order in the period, as a PDF report or CSV spreadsheet. */
+  export: (websiteId: string, range: { from: string; to: string }, format: SalesExportFormat) =>
+    requestBlob(`/websites/${websiteId}/shop/sales/export.${format}?${new URLSearchParams({ from: range.from, to: range.to })}`),
 };

@@ -5,6 +5,7 @@ import { errorMessage } from "../../api/http.ts";
 import { shopSalesApi, type SalesSummary } from "../../api/shop-sales.ts";
 import ShopOrderDetail from "../../components/shop/ShopOrderDetail.tsx";
 import PosPeriodBar from "../../components/shop/pos/PosPeriodBar.tsx";
+import SalesDownloadMenu from "../../components/shop/sales/SalesDownloadMenu.tsx";
 import SalesOrdersList from "../../components/shop/sales/SalesOrdersList.tsx";
 import SalesSummaryCards from "../../components/shop/sales/SalesSummaryCards.tsx";
 import FormAlert from "../../components/ui/FormAlert.tsx";
@@ -64,6 +65,9 @@ export default function ShopSalesSummaryPage() {
             onChange={(website) => setParams({ website })}
             options={websites.map((item) => ({ value: item.id, label: item.name }))}
           />
+        )}
+        {selectedId && (
+          <SalesDownloadMenu websiteId={selectedId} range={range} onError={setError} />
         )}
       </header>
 
