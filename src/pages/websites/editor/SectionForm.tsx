@@ -5127,7 +5127,7 @@ export function SectionStyleForm({
         );
       })()}
 
-      {can("colorBackground", "colorText", "colorPrimary", "colorMuted", "colorBorder", "colorGradient") && (
+      {can("colorBackground", "colorText", "colorPrimary", "colorMuted", "colorBorder", "colorGradient", "colorCard") && (
       <FormGroup title="Custom dynamic colors (CellColorPicker)">
         {can("colorBackground") && (
         <ColorField
@@ -5183,6 +5183,26 @@ export function SectionStyleForm({
           fallback={settings.background === "dark" ? "rgba(255, 255, 255, 0.12)" : "#e2e8f0"}
           placeholder="Auto"
         />
+        )}
+        {can("colorCard") && (
+        <>
+        <ColorField
+          label="Card background"
+          value={customColors.card}
+          onChange={(card) => updateCustomColor({ card })}
+          fallback="#f5f5f4"
+          placeholder="Theme"
+          hint="Fill of the cards in this section."
+        />
+        <ColorField
+          label="Card text"
+          value={customColors.cardText}
+          onChange={(cardText) => updateCustomColor({ cardText })}
+          fallback="#1c1917"
+          placeholder="Auto"
+          hint="Titles, excerpts and links on the cards. Auto picks a readable colour for the card background."
+        />
+        </>
         )}
         {can("colorGradient") && (
         <>

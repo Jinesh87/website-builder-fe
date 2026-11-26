@@ -665,6 +665,10 @@ export function SectionShell({ sectionId, settings, className, label, children, 
   const primary = normalizeHexColor(customColors?.primary) ?? customColors?.primary;
   const gradFrom = normalizeHexColor(customColors?.gradientFrom) ?? customColors?.gradientFrom;
   const gradTo = normalizeHexColor(customColors?.gradientTo) ?? customColors?.gradientTo;
+  const card = normalizeHexColor(customColors?.card) ?? customColors?.card;
+  // A card background without a card text colour gets readable text, like the section background.
+  const cardText =
+    normalizeHexColor(customColors?.cardText) ?? customColors?.cardText ?? (card ? (isLightColor(card) ? "#0F172A" : "#F8FAFC") : undefined);
 
   // Auto-Contrast Guard:
   // If the user set a custom background (e.g. white #FFFFFF) but text color is missing/invalid,
@@ -715,6 +719,8 @@ export function SectionShell({ sectionId, settings, className, label, children, 
     : {};
 
   const customStyle: CSSProperties = {
+    ...(card ? { "--wb-card-bg": card } : {}),
+    ...(cardText ? { "--wb-card-text": cardText, "--wb-card-muted": `color-mix(in srgb, ${cardText} 78%, transparent)` } : {}),
     ...sectionFontStyle(settings.font),
     ...sectionTypographyStyle(settings),
     ...presetStyle,

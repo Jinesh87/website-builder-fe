@@ -1,4 +1,5 @@
 import { AUTH_PRESETS, createAuthData } from "./auth-defaults.ts";
+import { insetBlogData } from "./blog-inset-defaults.ts";
 import { CARDS_PRESETS, createCardsData } from "./cards-defaults.ts";
 import { createShowcaseData, SHOWCASE_PRESETS } from "./showcase-defaults.ts";
 import { GALLERY_PRESETS } from "./gallery-defaults.ts";
@@ -5322,6 +5323,14 @@ export const SECTION_PRESETS: SectionPreset[] = [
     description:
       "Responsive 3-column blog card grid with category pills, cover media, and read time.",
     create: () => createSection("blog"),
+  },
+  {
+    key: "blog-inset-cards",
+    type: "blog",
+    label: "Blog · Inset cards",
+    category: "Blog",
+    description: "Soft cards with an inset photo, coloured category, bold title, short excerpt and a Read article link.",
+    create: () => createSection("blog", { data: insetBlogData() }),
   },
   {
     key: "shop-product-list",

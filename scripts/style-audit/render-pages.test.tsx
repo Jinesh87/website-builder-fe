@@ -39,6 +39,7 @@ const CHANGES: Record<StyleControl, (s: SectionSettings) => Partial<SectionSetti
   colorMuted: (s) => ({ customColors: { ...s.customColors, muted: "#5500aa" } }),
   colorBorder: (s) => ({ customColors: { ...s.customColors, border: "#00ffff" } }),
   colorGradient: (s) => ({ customColors: { ...s.customColors, gradientFrom: "#ff0000", gradientTo: "#0000ff" } }),
+  colorCard: (s) => ({ customColors: { ...s.customColors, card: "#aa0055", cardText: "#00ff88" } }),
 };
 
 // Images are blanked so the pages render offline and the same every time.

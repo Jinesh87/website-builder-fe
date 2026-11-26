@@ -3,22 +3,9 @@ import { useMemo, useState } from "react";
 import { ArrowRight, User } from "lucide-react";
 import { parseRichText, SectionShell, SiteImage } from "../primitives.tsx";
 import type { BlogData, SectionOf } from "../types.ts";
+import { formatBlogHref } from "./blog-href.ts";
+import InsetBlogSection from "./InsetBlogSection.tsx";
 import VintageBlogSection from "./VintageBlogSection.tsx";
-
-function formatBlogHref(slug?: string): string {
-  if (!slug || slug.trim() === "" || slug === "#") return "#";
-  const trimmed = slug.trim();
-  if (
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://") ||
-    trimmed.startsWith("mailto:") ||
-    trimmed.startsWith("tel:") ||
-    trimmed.startsWith("#")
-  ) {
-    return trimmed;
-  }
-  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-}
 
 export default function BlogSection({ section }: { section: SectionOf<"blog"> }) {
   const data = section.data as BlogData;
@@ -45,6 +32,9 @@ export default function BlogSection({ section }: { section: SectionOf<"blog"> })
 
   if (data.variant === "vintage-journal") {
     return <VintageBlogSection section={section} />;
+  }
+  if (data.variant === "inset-cards") {
+    return <InsetBlogSection section={section} />;
   }
 
   return (

@@ -25,8 +25,9 @@ export const STYLE_SUPPORT: Record<string, Record<string, readonly StyleControl[
     "variant=tabbed-compact": ["background","spacing","font","fontSize","headingSize","headingWeight","headingItalic","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorMuted","colorBorder"],
   },
   "blog": {
-    "*": ["background","spacing","containerWidth","align","font","fontSize","headingSize","headingWeight","headingItalic","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorMuted","colorBorder"],
+    "*": ["background","spacing","containerWidth","align","font","fontSize","headingSize","headingWeight","headingItalic","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorMuted","colorBorder","colorCard"],
     "layout=grid-3": ["background","spacing","containerWidth","align","font","fontSize","headingSize","headingWeight","headingItalic","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorPrimary","colorMuted","colorBorder"],
+    "variant=inset-cards": ["background","spacing","containerWidth","align","font","fontSize","headingSize","headingWeight","headingItalic","bodySize","bodyWeight","bodyItalic","colorBackground","colorText","colorMuted","colorBorder","colorCard"],
     "variant=vintage-journal": ["background","containerWidth","font","fontSize","headingSize","headingWeight","headingItalic","bodySize","bodyWeight","bodyItalic","colorBackground","colorText"],
   },
   "blog_detail": {
