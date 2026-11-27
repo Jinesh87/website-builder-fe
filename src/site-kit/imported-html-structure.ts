@@ -389,7 +389,7 @@ export function moveImportedItem(data: ImportedHtmlData, group: number, item: nu
 
 export type OutlineEntry =
   | { kind: "text"; ref: ElementRef; id: string; label: string; value: string }
-  | { kind: "link"; ref: ElementRef; index: number; link: LinkRef; hasText: boolean; hasIcon: boolean; textId?: string }
+  | { kind: "link"; ref: ElementRef; index: number; link: LinkRef; hasText: boolean; hasIcon: boolean; iconOnly?: boolean; textId?: string }
   | { kind: "media"; ref: ElementRef; key: string; slot: ImportedHtmlMediaSlot };
 
 export type OutlineItem = { index: number; label: string; entries: OutlineEntry[] };
@@ -443,7 +443,7 @@ export function readImportedOutline(data: ImportedHtmlData): ImportedOutline {
     if (node.matches("a[href]")) {
       const index = anchors.indexOf(node);
       const info = links[index];
-      if (info) entry = { kind: "link", ref: { kind: "link", index }, index, link: info.link, hasText: info.hasText, hasIcon: info.hasIcon, ...(info.textId ? { textId: info.textId } : {}) };
+      if (info) entry = { kind: "link", ref: { kind: "link", index }, index, link: info.link, hasText: info.hasText, hasIcon: info.hasIcon, ...(info.iconOnly ? { iconOnly: true } : {}), ...(info.textId ? { textId: info.textId } : {}) };
     } else if (node.hasAttribute("data-wb-media-key")) {
       const slot = slots.get(node.getAttribute("data-wb-media-key")!);
       if (slot) entry = { kind: "media", ref: { kind: "media", key: slot.key }, key: slot.key, slot };
