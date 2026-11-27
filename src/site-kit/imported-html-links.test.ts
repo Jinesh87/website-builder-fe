@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { applyImportedLinkEdit, applyImportedLinkIcon, readImportedLinks } from "./sections/ImportedHtmlSection.tsx";
+import { applyImportedHtmlEdits, applyImportedLinkEdit, applyImportedLinkIcon, readImportedLinks } from "./sections/ImportedHtmlSection.tsx";
 
 const HTML = `<section><a class="btn" href="/contact" data-wb-text-id="t1"><svg viewBox="0 0 1 1"></svg>Call us now</a>
   <a href="https://instagram.com/x" target="_blank" rel="noopener noreferrer"><img src="/ig.png" alt="Instagram"></a></section>`;
@@ -53,5 +53,38 @@ describe("imported HTML links", () => {
     expect(readImportedLinks(html)[2]).toMatchObject({ hasIcon: true, hasText: true, link: { icon: "brand:facebook" } });
     // Removing an icon never empties an icon-only link.
     expect(applyImportedLinkIcon(html, 0, "")).toContain('data-wb-icon="brand:facebook"');
+  });
+
+  it("hides a link's words so only its icon shows, and brings them back", () => {
+    const social = `<footer><a href="https://facebook.com/x" data-wb-text-id="t9"><svg viewBox="0 0 1 1"></svg> F</a></footer>`;
+    const link = readImportedLinks(social)[0]!.link;
+
+    let html = applyImportedLinkEdit(social, 0, { ...link, label: "Facebook" }, true);
+    const hidden = readImportedLinks(html)[0]!;
+    expect(hidden).toMatchObject({ hasText: false, hasIcon: true, iconOnly: true, link: { label: "Facebook" } });
+    expect(html).toContain('aria-label="Facebook"');
+    expect(html).toContain("<svg");
+    expect(html).not.toMatch(/>\s*F\s*</);
+
+    // Text edits elsewhere in the block don't write the hidden words back.
+    expect(applyImportedHtmlEdits(html, [{ id: "t9", value: "F" }], [])).not.toMatch(/>\s*F\s*</);
+
+    // Renaming while hidden only changes the screen-reader name.
+    html = applyImportedLinkEdit(html, 0, { ...hidden.link, label: "Our Facebook" });
+    expect(html).toContain('aria-label="Our Facebook"');
+
+    html = applyImportedLinkEdit(html, 0, readImportedLinks(html)[0]!.link, false);
+    expect(readImportedLinks(html)[0]).toMatchObject({ hasText: true, link: { label: "Our Facebook" } });
+    expect(html).not.toContain("aria-label");
+    expect(html).not.toContain("data-wb-icon-only");
+  });
+
+  it("keeps a link's own aria-label when its words come back", () => {
+    const social = `<a href="/x" aria-label="Follow us"><i class="fa fa-facebook"></i>F</a>`;
+    let html = applyImportedLinkEdit(social, 0, { label: "F", href: "/x" }, true);
+    expect(readImportedLinks(html)[0]!.link.label).toBe("Follow us");
+    html = applyImportedLinkEdit(html, 0, { label: "F", href: "/x" }, false);
+    expect(html).toContain("F</a>");
+    expect(html).toContain('aria-label="Follow us"');
   });
 });

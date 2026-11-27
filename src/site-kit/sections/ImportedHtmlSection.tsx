@@ -48,6 +48,8 @@ export function applyImportedHtmlEdits(
 
   for (const text of texts ?? []) {
     const node = root.querySelector(`[data-wb-text-id="${CSS.escape(text.id)}"]`);
+    // An icon-only link has its words removed on purpose; don't write them back.
+    if (node?.hasAttribute(ICON_ONLY_ATTR)) continue;
     if (node && ownText(node) !== text.value.replace(/\s+/g, " ").trim()) setOwnText(node, text.value);
   }
 
@@ -116,7 +118,36 @@ export type ImportedLink = {
   textId?: string;
   /** The link shows an icon or logo (an inline SVG or an icon-font glyph) that can be swapped. */
   hasIcon: boolean;
+  /** The link's words are hidden so only its icon shows; its label lives in aria-label. */
+  iconOnly?: boolean;
 };
+
+/**
+ * Marks a link whose words were hidden so only its icon shows. Value "1": the editor added the
+ * aria-label; "keep": the link already had one, so it stays when the words come back.
+ */
+const ICON_ONLY_ATTR = "data-wb-icon-only";
+
+function removeOwnText(node: Element): void {
+  for (const child of Array.from(node.childNodes)) {
+    if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) child.textContent = " ";
+  }
+}
+
+/** Hides or restores a link's words; the label stays readable to screen readers via aria-label. */
+function setIconOnly(anchor: Element, iconOnly: boolean, label: string): void {
+  const marked = anchor.getAttribute(ICON_ONLY_ATTR);
+  if (iconOnly) {
+    if (!marked) anchor.setAttribute(ICON_ONLY_ATTR, anchor.hasAttribute("aria-label") ? "keep" : "1");
+    if (label && !anchor.hasAttribute("aria-label")) anchor.setAttribute("aria-label", label);
+    removeOwnText(anchor);
+    return;
+  }
+  if (!marked) return;
+  anchor.removeAttribute(ICON_ONLY_ATTR);
+  if (marked === "1") anchor.removeAttribute("aria-label");
+  if (label) setOwnText(anchor, label);
+}
 
 const ICON_CLASS = /(^|[\s_-])(icon|fa[a-z]?|bi|ri|ti|la[a-z]?|mdi|ion|feather|glyph\w*|social\w*)([\s_-]|$)/i;
 
@@ -159,13 +190,17 @@ export function readImportedLinks(html: string): ImportedLink[] {
       link,
       hasText: Boolean(ownText(anchor)),
       hasIcon: Boolean(icon),
+      ...(anchor.hasAttribute(ICON_ONLY_ATTR) ? { iconOnly: true } : {}),
       ...(anchor.getAttribute("data-wb-text-id") ? { textId: anchor.getAttribute("data-wb-text-id")! } : {}),
     };
   });
 }
 
-/** Applies a link edit (destination, new tab, download/video, label) to link #index. */
-export function applyImportedLinkEdit(html: string, index: number, link: LinkRef): string {
+/**
+ * Applies a link edit (destination, new tab, download/video, label) to link #index.
+ * `iconOnly` hides (true) or restores (false) the link's words; leave it out to keep them as they are.
+ */
+export function applyImportedLinkEdit(html: string, index: number, link: LinkRef, iconOnly?: boolean): string {
   if (typeof document === "undefined") return html;
   const template = parseFragment(html);
   const anchor = template.content.querySelectorAll("a[href]")[index];
@@ -190,7 +225,14 @@ export function applyImportedLinkEdit(html: string, index: number, link: LinkRef
     anchor.removeAttribute("data-wb-video-modal");
     anchor.removeAttribute("data-wb-video-url");
   }
-  if (ownText(anchor) && link.label.trim() && ownText(anchor) !== link.label.trim()) setOwnText(anchor, link.label.trim());
+  const label = link.label.trim();
+  if (iconOnly !== undefined) setIconOnly(anchor, iconOnly, label);
+  if (anchor.hasAttribute(ICON_ONLY_ATTR)) {
+    // Renaming a hidden link changes only its screen-reader name.
+    if (iconOnly === undefined && label) anchor.setAttribute("aria-label", label);
+  } else if (ownText(anchor) && label && ownText(anchor) !== label) {
+    setOwnText(anchor, label);
+  }
   return template.innerHTML;
 }
 

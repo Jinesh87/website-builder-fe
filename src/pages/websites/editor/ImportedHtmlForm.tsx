@@ -209,14 +209,18 @@ function LinkEntry({
   link,
   hasText,
   hasIcon,
+  iconOnly,
   onChange,
+  onIconOnlyChange,
   styling,
   onToggleStyle,
 }: {
   link: LinkRef;
   hasText: boolean;
   hasIcon: boolean;
+  iconOnly: boolean;
   onChange: (next: LinkRef) => void;
+  onIconOnlyChange: (iconOnly: boolean) => void;
   styling: boolean;
   onToggleStyle: () => void;
 }) {
@@ -235,8 +239,13 @@ function LinkEntry({
   }
   return (
     <div className="space-y-2">
-      {hasText ? (
-        <TextField label="Button / link text" value={link.label} onChange={(label) => onChange({ ...link, label })} />
+      {hasText || iconOnly ? (
+        <TextField
+          label={iconOnly ? "Link name" : "Button / link text"}
+          hint={iconOnly ? "Not shown on the page. Screen readers read it out." : undefined}
+          value={link.label}
+          onChange={(label) => onChange({ ...link, label })}
+        />
       ) : (
         <p className="text-ed-xs font-medium text-ed-text">
           {link.label} <span className="font-normal text-ed-muted">({hasIcon ? "icon link" : "image link"})</span>
@@ -250,6 +259,9 @@ function LinkEntry({
           hint="Pick a social media logo or any icon."
           onChange={({ icon, iconImage }) => onChange({ ...link, icon, iconImage })}
         />
+      ) : null}
+      {hasIcon && (hasText || iconOnly) ? (
+        <CheckboxField label="Show icon only (hide the text)" checked={iconOnly} onChange={onIconOnlyChange} />
       ) : null}
       <TextField
         label="Goes to"
@@ -295,12 +307,12 @@ function useEditing(data: ImportedHtmlData, onChange: (data: ImportedHtmlData) =
     media(key: string, patch: Partial<ImportedHtmlMediaSlot>) {
       onChange(withSyncedHtml(data, texts, slots.map((slot) => (slot.key === key ? { ...slot, ...patch } : slot))));
     },
-    link(entry: Extract<OutlineEntry, { kind: "link" }>, next: LinkRef) {
-      let html = applyImportedLinkEdit(data.html || "", entry.index, next);
+    link(entry: Extract<OutlineEntry, { kind: "link" }>, next: LinkRef, iconOnly?: boolean) {
+      let html = applyImportedLinkEdit(data.html || "", entry.index, next, iconOnly);
       const iconChanged = (next.icon || "") !== (entry.link.icon || "") || (next.iconImage?.url || "") !== (entry.link.iconImage?.url || "");
       if (iconChanged) html = applyImportedLinkIcon(html, entry.index, linkIconMarkup(next));
       // The link's words are also a text entry: keep both in step.
-      const nextTexts = entry.textId && entry.hasText ? texts.map((item) => (item.id === entry.textId ? { ...item, value: next.label } : item)) : texts;
+      const nextTexts = entry.textId && (entry.hasText || entry.iconOnly) ? texts.map((item) => (item.id === entry.textId ? { ...item, value: next.label } : item)) : texts;
       onChange({ ...data, html, texts: nextTexts });
     },
   };
@@ -474,7 +486,9 @@ function EntryField({
         link={entry.link}
         hasText={entry.hasText}
         hasIcon={entry.hasIcon}
+        iconOnly={Boolean(entry.iconOnly)}
         onChange={(next) => edit.link(entry, next)}
+        onIconOnlyChange={(iconOnly) => edit.link(entry, entry.link, iconOnly)}
         styling={styling}
         onToggleStyle={() => setStyling((open) => !open)}
       />;
